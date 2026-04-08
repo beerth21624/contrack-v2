@@ -1,0 +1,21 @@
+{
+  "title": "Construction Sequence",
+  "completedSteps": "Completed",
+  "from": "of",
+  "stepsAmount": "steps",
+  "progressTitle": "Project Planning Progress",
+  "viewChecklist": "View Checklist ({count})",
+  "specialInspection": "Special Ins.",
+  "btnWait": "Locked",
+  "btnFinish": "Edit BOQ",
+  "btnProcess": "Start BOQ",
+  "btnWaitMobile": "Locked",
+  "btnFinishMobile": "Edit",
+  "btnProcessMobile": "Start",
+  "checklistTitle": "Checklist: {title}",
+  "acknowledge": "Acknowledge",
+  "statusFinish": "Finished",
+  "statusProcess": "Unlocked",
+  "statusWait": "Locked",
+  "step": "STEP {id}"
+}

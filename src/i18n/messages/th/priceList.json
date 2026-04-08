@@ -1,0 +1,10 @@
+{
+  "title": "ตั้งค่าราคากลาง (Standard Price List)",
+  "searchPlaceholder": "ค้นหารายการ / รหัส...",
+  "code": "รหัส (Code)",
+  "itemName": "รายการวัสดุ (Item Name)",
+  "unit": "หน่วย",
+  "material": "ค่าวัสดุ (Material)",
+  "labor": "ค่าแรง (Labor)",
+  "itemCount": "{count} รายการ"
+}

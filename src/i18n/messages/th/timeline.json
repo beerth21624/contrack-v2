@@ -1,0 +1,21 @@
+{
+  "title": "ลำดับขั้นตอนก่อสร้าง",
+  "completedSteps": "ทำสำเร็จแล้ว",
+  "from": "จาก",
+  "stepsAmount": "ขั้นตอน",
+  "progressTitle": "ความคืบหน้าการวางแผนโครงการ",
+  "viewChecklist": "ดูรายการตรวจ ({count})",
+  "specialInspection": "ตรวจพิเศษ",
+  "btnWait": "รอปลดล็อค",
+  "btnFinish": "แก้ไข BOQ",
+  "btnProcess": "เข้าทำ BOQ",
+  "btnWaitMobile": "ล็อค",
+  "btnFinishMobile": "แก้ไข",
+  "btnProcessMobile": "ทำ BOQ",
+  "checklistTitle": "รายการตรวจ: {title}",
+  "acknowledge": "รับทราบ",
+  "statusFinish": "เสร็จสิ้น",
+  "statusProcess": "ปลดล็อค",
+  "statusWait": "ถูกล็อค",
+  "step": "STEP {id}"
+}

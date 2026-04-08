@@ -1,0 +1,10 @@
+{
+  "title": "Standard Price List",
+  "searchPlaceholder": "Search items / code...",
+  "code": "Code",
+  "itemName": "Item Name",
+  "unit": "Unit",
+  "material": "Material Cost",
+  "labor": "Labor Cost",
+  "itemCount": "{count} items"
+}
