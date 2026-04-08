@@ -22,7 +22,16 @@ export async function POST(request: NextRequest) {
         const page = await browser.newPage();
         await page.setViewport({ width: 1400, height: 0 });
 
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+        // Pass along client cookies (e.g. Vercel Authentication bypass tokens)
+        const cookieHeader = request.headers.get('cookie');
+        if (cookieHeader) {
+            await page.setExtraHTTPHeaders({ cookie: cookieHeader });
+        }
+
+        const protocol = request.headers.get('x-forwarded-proto') ?? 'http';
+        const host = request.headers.get('host');
+        const fallbackBaseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+        const baseUrl = host ? `${protocol}://${host}` : fallbackBaseUrl;
 
         // Navigate to the PDF page first
         await page.goto(`${baseUrl}/pdf/manday`, {
