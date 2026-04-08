@@ -308,13 +308,13 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceLi
                                     <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
                                         {t('cfConfigParams')}
                                     </Text>
-                                    <Space size="large" wrap>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 24px' }}>
                                         <Text strong>{t('cfConfigOverhead', { pct: financialConfig.overheadPercent })}</Text>
                                         <Text strong>{t('cfConfigProfit', { pct: financialConfig.profitPercent })}</Text>
                                         <Text strong style={{ color: '#1890ff' }}>
                                             {t('cfConfigMarkup', { pct: financialConfig.overheadPercent + financialConfig.profitPercent })}
                                         </Text>
-                                    </Space>
+                                    </div>
                                 </div>
 
                                 <div style={{ background: '#fffbe6', padding: '10px 16px', borderRadius: 8, flex: '1 1 300px', border: '1px solid #ffe58f' }}>
@@ -776,7 +776,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceLi
                 background: '#fff',
                 border: '1px solid #f0f0f0',
                 borderRadius: 10,
-                padding: '16px 24px',
+                padding: '16px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -789,38 +789,32 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceLi
                     <Text strong style={{ fontSize: 16, color: '#262626' }}>{t('cfSummaryTitle')}</Text>
                 </div>
 
-                <Space size="large" wrap align="center">
-                    <Space size="small">
+                <div style={{ display: 'flex', gap: '16px 24px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <Text type="secondary" style={{ fontSize: 13 }}>{t('cfSumCost')}</Text>
                         <Text strong style={{ color: '#fa8c16', fontSize: 15 }}>฿{fmt(result.totalConstructionCost)}</Text>
-                    </Space>
-                    <div style={{ width: 1, height: 24, background: '#f0f0f0', margin: '0 4px' }} />
+                    </div>
                     {result.totalContingency > 0 && (
-                        <>
-                            <Space size="small">
-                                <Text type="secondary" style={{ fontSize: 13 }}>{locale === 'en' ? 'Contingency' : 'เงินสำรอง'}</Text>
-                                <Text strong style={{ color: '#faad14', fontSize: 15 }}>฿{fmt(result.totalContingency)}</Text>
-                            </Space>
-                            <div style={{ width: 1, height: 24, background: '#f0f0f0', margin: '0 4px' }} />
-                        </>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <Text type="secondary" style={{ fontSize: 13 }}>{locale === 'en' ? 'Contingency' : 'เงินสำรอง'}</Text>
+                            <Text strong style={{ color: '#faad14', fontSize: 15 }}>฿{fmt(result.totalContingency)}</Text>
+                        </div>
                     )}
-                    <Space size="small">
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <Text type="secondary" style={{ fontSize: 13 }}>{t('cfSumQuote')}</Text>
                         <Text strong style={{ color: '#1890ff', fontSize: 15 }}>฿{fmt(result.quotationPrice)}</Text>
-                    </Space>
-                    <div style={{ width: 1, height: 24, background: '#f0f0f0', margin: '0 4px' }} />
-                    <Space size="small">
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <Text type="secondary" style={{ fontSize: 13 }}>{t('cfSumProfit', { pct: fmtPct(financialConfig.profitPercent) })}</Text>
                         <Text strong style={{ color: '#52c41a', fontSize: 15 }}>฿{fmt(result.totalProfit)}</Text>
-                    </Space>
-                    <div style={{ width: 1, height: 24, background: '#f0f0f0', margin: '0 4px' }} />
-                    <Space size="small">
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <Text type="secondary" style={{ fontSize: 13 }}>{t('cfSumMinCash', { week: result.minCashWeek })}</Text>
                         <Text strong style={{ color: result.minCashBalance >= 0 ? '#52c41a' : '#ff4d4f', fontSize: 18 }}>
                             {result.minCashBalance >= 0 ? '+' : '-'}฿{fmt(Math.abs(result.minCashBalance))}
                         </Text>
-                    </Space>
-                </Space>
+                    </div>
+                </div>
             </div>
 
         </div>

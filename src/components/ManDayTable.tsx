@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useCallback } from 'react';
-import { Table, Card, Typography, Tag, Collapse, Space, Empty, App, Button } from 'antd';
+import { Table, Card, Typography, Tag, Collapse, Empty, App, Button } from 'antd';
 import { FieldTimeOutlined, DownloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { StepSchedule } from '@/data/schedule-data';
@@ -245,7 +245,7 @@ export const ManDayTable: React.FC<ManDayTableProps> = ({ scheduleData, stepSave
                     </div>
                 }
                 style={{ borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,.05)', marginBottom: 16 }}
-                styles={{ header: { padding: '16px 24px' }, body: { padding: 12, backgroundColor: '#f5f5f5' } }}
+                styles={{ header: { padding: '16px', display: 'flex', flexDirection: 'column' }, body: { padding: 12, backgroundColor: '#f5f5f5' } }}
             >
                 <Collapse 
                     activeKey={activeKeys} 
@@ -258,15 +258,15 @@ export const ManDayTable: React.FC<ManDayTableProps> = ({ scheduleData, stepSave
                             return {
                                 key: team,
                                 label: (
-                                    <Space size="large" wrap>
-                                        <Space>
-                                            <Tag color={TEAM_COLORS[team] ?? '#888'} style={{ border: 'none', margin: 0, fontSize: 13, padding: '2px 8px' }}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 8, paddingRight: 8 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                            <Tag color={TEAM_COLORS[team] ?? '#888'} style={{ border: 'none', margin: 0, fontSize: 13, padding: '2px 8px', whiteSpace: 'nowrap' }}>
                                                 {team}
                                             </Tag>
-                                            <Text type="secondary" style={{ fontSize: 12 }}>{t('mdItemsCount', { count: items.length })}</Text>
-                                        </Space>
-                                        <Text strong style={{ color: '#fa8c16' }}>{t('mdTotalManDay', { manDays: teamManDays })}</Text>
-                                    </Space>
+                                            <Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{t('mdItemsCount', { count: items.length })}</Text>
+                                        </div>
+                                        <Text strong style={{ color: '#fa8c16', whiteSpace: 'nowrap' }}>{t('mdTotalManDay', { manDays: teamManDays })}</Text>
+                                    </div>
                                 ),
                                 children: (
                                     <>
@@ -360,22 +360,20 @@ export const ManDayTable: React.FC<ManDayTableProps> = ({ scheduleData, stepSave
                     <Tag>{t('mdSummaryItems', { completed: completedCount, total: 34 })}</Tag>
                 </div>
                 
-                <Space size="large" wrap align="center">
-                    <Space size="small">
+                <div style={{ display: 'flex', gap: '16px 24px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <Text type="secondary" style={{ fontSize: 13 }}>{t('mdSummarySkilled')}</Text>
-                        <Text strong style={{ color: '#1890ff', fontSize: 15 }}>{t('mdSummarySkilledVal', { days: totalSkilledDays })}</Text>
-                    </Space>
-                    <div style={{ width: 1, height: 24, background: '#f0f0f0', margin: '0 4px' }} />
-                    <Space size="small">
+                        <Text strong style={{ color: '#1890ff', fontSize: 14 }}>{t('mdSummarySkilledVal', { days: totalSkilledDays })}</Text>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <Text type="secondary" style={{ fontSize: 13 }}>{t('mdSummaryLaborers')}</Text>
-                        <Text strong style={{ color: '#722ed1', fontSize: 15 }}>{t('mdSummaryLaborersVal', { days: totalLaborerDays })}</Text>
-                    </Space>
-                    <div style={{ width: 1, height: 24, background: '#f0f0f0', margin: '0 4px' }} />
-                    <Space size="small">
+                        <Text strong style={{ color: '#722ed1', fontSize: 14 }}>{t('mdSummaryLaborersVal', { days: totalLaborerDays })}</Text>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <Text type="secondary" style={{ fontSize: 13 }}>{t('mdSummaryTotal')}</Text>
-                        <Text strong style={{ color: '#fa8c16', fontSize: 18 }}>{t('mdSummaryTotalVal', { manDays: totalManDays })}</Text>
-                    </Space>
-                </Space>
+                        <Text strong style={{ color: '#fa8c16', fontSize: 16 }}>{t('mdSummaryTotalVal', { manDays: totalManDays })}</Text>
+                    </div>
+                </div>
             </div>
         </div>
     );

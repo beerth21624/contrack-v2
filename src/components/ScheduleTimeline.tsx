@@ -729,7 +729,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                 background: '#fff',
                 border: '1px solid #f0f0f0',
                 borderRadius: 10,
-                padding: '16px 24px',
+                padding: '16px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -743,22 +743,20 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                     <Tag>{t('summaryItems', { completed: completedCount, total: 34 })}</Tag>
                 </div>
 
-                <Space size="large" wrap align="center">
-                    <Space size="small">
+                <div style={{ display: 'flex', gap: '16px 24px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <Text type="secondary" style={{ fontSize: 13 }}>{t('actualDays')}</Text>
                         <Text strong style={{ color: '#fa8c16', fontSize: 16 }}>{t('actualDaysVal', { days: actualTotalDays, months: displayMonths })}</Text>
-                    </Space>
-                    <div style={{ width: 1, height: 24, background: '#f0f0f0', margin: '0 4px' }} />
-                    <Space size="small">
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <Text type="secondary" style={{ fontSize: 13 }}>{t('crewDays')}</Text>
                         <Text strong style={{ color: '#1890ff', fontSize: 15 }}>{t('crewDaysVal', { days: actualCrewDays })}</Text>
-                    </Space>
-                    <div style={{ width: 1, height: 24, background: '#f0f0f0', margin: '0 4px' }} />
-                    <Space size="small">
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <Text type="secondary" style={{ fontSize: 13 }}>{t('teamSummary')}</Text>
                         <Text strong style={{ color: '#722ed1', fontSize: 15 }}>{t('teamSummaryVal', { count: teams.length })}</Text>
-                    </Space>
-                </Space>
+                    </div>
+                </div>
             </div>
         </div>
     );
