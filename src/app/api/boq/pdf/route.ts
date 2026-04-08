@@ -1,5 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import puppeteer, { type PDFOptions } from 'puppeteer';
+import puppeteer, { type PDFOptions } from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
+
+export const maxDuration = 60; // Increase max duration for Vercel
 
 export async function POST(request: NextRequest) {
     let browser;
@@ -7,26 +10,20 @@ export async function POST(request: NextRequest) {
         // Get BOQ data from the request body
         const boqData = (await request.json()) as unknown;
 
+        const isLocal = !process.env.VERCEL_URL;
+
         browser = await puppeteer.launch({
+            args: isLocal ? puppeteer.defaultArgs() : chromium.args,
+            executablePath: isLocal 
+                ? (process.platform === 'win32' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
+                : await chromium.executablePath(),
             headless: true,
-            executablePath:
-                process.platform === 'win32'
-                    ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
-                    : process.platform === 'linux'
-                        ? '/usr/bin/chromium-browser'
-                        : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-            args: [
-                '--no-sandbox',
-                '--headless',
-                '--disable-gpu',
-                '--disable-dev-shm-usage',
-            ],
         });
 
         const page = await browser.newPage();
         await page.setViewport({ width: 1400, height: 0 });
 
-        const baseUrl = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
         // Navigate to the PDF page first
         await page.goto(`${baseUrl}/pdf/boq`, {
