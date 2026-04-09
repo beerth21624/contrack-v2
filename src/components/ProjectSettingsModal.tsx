@@ -103,7 +103,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ open
                         <Form.Item label={tSettings('overhead')} style={{ marginBottom: 0 }}>
                             <Space.Compact style={{ width: '100%' }}>
                                 <Form.Item name="overheadPercent" noStyle>
-                                    <InputNumber min={0} max={100} style={{ width: 'calc(100% - 36px)' }} />
+                                    <InputNumber onFocus={(e) => e.target.select()} min={0} max={100} style={{ width: 'calc(100% - 36px)' }} />
                                 </Form.Item>
                                 <Input style={{ width: '36px', textAlign: 'center', pointerEvents: 'none', background: '#fafafa', padding: 0 }} defaultValue="%" disabled />
                             </Space.Compact>
@@ -113,7 +113,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ open
                         <Form.Item label="ค่าดำเนินการรายเดือน (Fixed)" style={{ marginBottom: 0 }}>
                             <Space.Compact style={{ width: '100%' }}>
                                 <Form.Item name="fixedMonthlyOverhead" noStyle>
-                                    <InputNumber min={0} step={1000} style={{ width: 'calc(100% - 50px)' }} />
+                                    <InputNumber onFocus={(e) => e.target.select()} min={0} step={1000} style={{ width: 'calc(100% - 50px)' }} />
                                 </Form.Item>
                                 <Input style={{ width: '50px', textAlign: 'center', pointerEvents: 'none', background: '#fafafa', padding: 0 }} defaultValue="฿/ด." disabled />
                             </Space.Compact>
@@ -123,7 +123,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ open
                         <Form.Item label={tSettings('profit')} style={{ marginBottom: 0 }}>
                             <Space.Compact style={{ width: '100%' }}>
                                 <Form.Item name="profitPercent" noStyle>
-                                    <InputNumber min={0} max={100} style={{ width: 'calc(100% - 36px)' }} />
+                                    <InputNumber onFocus={(e) => e.target.select()} min={0} max={100} style={{ width: 'calc(100% - 36px)' }} />
                                 </Form.Item>
                                 <Input style={{ width: '36px', textAlign: 'center', pointerEvents: 'none', background: '#fafafa', padding: 0 }} defaultValue="%" disabled />
                             </Space.Compact>
@@ -133,7 +133,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ open
                         <Form.Item label={tSettings('vat')} style={{ marginBottom: 0 }}>
                             <Space.Compact style={{ width: '100%' }}>
                                 <Form.Item name="taxPercent" noStyle>
-                                    <InputNumber min={0} max={100} style={{ width: 'calc(100% - 36px)' }} />
+                                    <InputNumber onFocus={(e) => e.target.select()} min={0} max={100} style={{ width: 'calc(100% - 36px)' }} />
                                 </Form.Item>
                                 <Input style={{ width: '36px', textAlign: 'center', pointerEvents: 'none', background: '#fafafa', padding: 0 }} defaultValue="%" disabled />
                             </Space.Compact>
@@ -143,7 +143,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({ open
                         <Form.Item label={tSettings('contingency')} style={{ marginBottom: 0 }}>
                             <Space.Compact style={{ width: '100%' }}>
                                 <Form.Item name="contingencyPercent" noStyle>
-                                    <InputNumber min={0} max={30} style={{ width: 'calc(100% - 36px)' }} />
+                                    <InputNumber onFocus={(e) => e.target.select()} min={0} max={30} style={{ width: 'calc(100% - 36px)' }} />
                                 </Form.Item>
                                 <Input style={{ width: '36px', textAlign: 'center', pointerEvents: 'none', background: '#fafafa', padding: 0 }} defaultValue="%" disabled />
                             </Space.Compact>

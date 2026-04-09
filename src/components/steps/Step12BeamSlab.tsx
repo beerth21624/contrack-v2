@@ -92,21 +92,21 @@ export default function Step12BeamSlab({ initialData, onBack, onSave }: Props) {
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('count')}</Text>}
                                 tooltip={t('countTooltip')} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={1}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                                     value={b.count} onChange={v => updateBeam(i, { count: v ?? 1 })} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('width')}</Text>}
                                 tooltip={t('widthTooltip')} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.05} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.05} precision={2}
                                     value={b.width_m} onChange={v => updateBeam(i, { width_m: v ?? 0.20 })} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('depth')}</Text>} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.05} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.05} precision={2}
                                     value={b.depth_m} onChange={v => updateBeam(i, { depth_m: v ?? 0.40 })} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('length')}</Text>}
                                 tooltip={t('lengthTooltip')} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.5} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.5} precision={2}
                                     value={b.avg_length_m} onChange={v => updateBeam(i, { avg_length_m: v ?? 4 })} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('section')}</Text>} style={{ margin: 0 }}>
@@ -127,12 +127,12 @@ export default function Step12BeamSlab({ initialData, onBack, onSave }: Props) {
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('slabArea')}</Text>}
                         tooltip={t('slabAreaTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={5} precision={2}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} precision={2}
                             value={inp.slab_area_m2} onChange={v => update({ slab_area_m2: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('slabThick')}</Text>}
                         tooltip={t('slabThickTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={0.30} step={0.01} precision={2}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={0.30} step={0.01} precision={2}
                             value={inp.slab_thickness_m} onChange={v => update({ slab_thickness_m: v ?? 0.12 })} />
                     </Form.Item>
                 </div>
@@ -143,11 +143,11 @@ export default function Step12BeamSlab({ initialData, onBack, onSave }: Props) {
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('rebarDensity')}</Text>}
                         validateStatus={result?.warningFields?.includes('rebar_kg_per_m3') ? 'warning' : ''}
                         tooltip={t('rebarDensityTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={300} step={10}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={300} step={10}
                             value={inp.rebar_kg_per_m3} onChange={v => update({ rebar_kg_per_m3: v ?? 130 })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
                     </Form.Item>
                 </div>
@@ -160,21 +160,21 @@ export default function Step12BeamSlab({ initialData, onBack, onSave }: Props) {
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('formworkShoring')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('formworkReuse')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={10} step={1} placeholder={t('formworkReusePh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={1} placeholder={t('formworkReusePh')}
                             value={inp.formwork_reuse_times} onChange={v => update({ formwork_reuse_times: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('spacer')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={8} step={1} placeholder={t('spacerPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={8} step={1} placeholder={t('spacerPh')}
                             value={inp.spacer_per_m2} onChange={v => update({ spacer_per_m2: v ?? undefined })} />
                     </Form.Item>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('tieWire')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={3} step={0.5} placeholder={t('tieWirePh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={3} step={0.5} placeholder={t('tieWirePh')}
                             value={inp.tie_wire_factor} onChange={v => update({ tie_wire_factor: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('floorHeight')}</Text>} tooltip={t('floorHeightTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={6} step={0.5} placeholder={t('floorHeightPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={6} step={0.5} placeholder={t('floorHeightPh')}
                             value={inp.floor_height_m} onChange={v => update({ floor_height_m: v ?? undefined })} />
                     </Form.Item>
                 </div>
@@ -189,7 +189,7 @@ export default function Step12BeamSlab({ initialData, onBack, onSave }: Props) {
                                 checkedChildren={t('slopeYes')} unCheckedChildren={t('slopeNo')} />
                         </Form.Item>
                         <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('roofDrain')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                            <InputNumber style={{ width: '100%' }} min={0} step={1}
+                            <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                                 value={inp.roof_drain_count} onChange={v => update({ roof_drain_count: v ?? undefined })} />
                         </Form.Item>
                     </div>
@@ -211,7 +211,7 @@ export default function Step12BeamSlab({ initialData, onBack, onSave }: Props) {
                     </div>
                     <div className="grid grid-cols-2 gap-2 mt-2">
                         <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waterproofAreaOverride')}</Text>} style={{ margin: 0 }}>
-                            <InputNumber style={{ width: '100%' }} min={0} step={5} precision={2} placeholder={t('waterproofAreaPh')}
+                            <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} precision={2} placeholder={t('waterproofAreaPh')}
                                 disabled={inp.waterproofing_required === false}
                                 value={inp.waterproofing_area_m2} onChange={v => update({ waterproofing_area_m2: v ?? undefined })} />
                         </Form.Item>
@@ -237,7 +237,7 @@ export default function Step12BeamSlab({ initialData, onBack, onSave }: Props) {
                     </Form.Item>
                 </div>
                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('vibratorDays')}</Text>} tooltip={t('vibratorDaysTooltip')} style={{ margin: 0 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={10} step={1}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={1}
                         value={inp.vibrator_days} onChange={v => update({ vibrator_days: v ?? undefined })} />
                 </Form.Item>
             </Card>

@@ -79,11 +79,11 @@ export default function Step20FloorTiling({ initialData, onBack, onSave }: Props
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('width')}</Text>}
                                 tooltip={t('widthTooltip')} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.5} precision={2} size="small"
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.5} precision={2} size="small"
                                     value={r.width_m} onChange={v => updateRoom(i, { width_m: v ?? 1 })} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('length')}</Text>} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.5} precision={2} size="small"
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.5} precision={2} size="small"
                                     value={r.length_m} onChange={v => updateRoom(i, { length_m: v ?? 1 })} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('tileSize')}</Text>}
@@ -111,7 +111,7 @@ export default function Step20FloorTiling({ initialData, onBack, onSave }: Props
                             ]} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={25} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={25} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                     </Form.Item>
                 </div>
@@ -123,7 +123,7 @@ export default function Step20FloorTiling({ initialData, onBack, onSave }: Props
         <>
             <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('skirting')}</Text>}
                 tooltip={t('skirtingTooltip')} style={{ margin: 0 }}>
-                <InputNumber style={{ width: '100%' }} min={0} step={5}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5}
                     value={inp.skirting_length_m} onChange={v => update({ skirting_length_m: v ?? undefined })} />
             </Form.Item>
             

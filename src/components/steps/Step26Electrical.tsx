@@ -47,22 +47,22 @@ export default function Step26Electrical({ initialData, onBack, onSave }: Props)
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('lightingCount')}</Text>}
                         tooltip={t('lightingCountTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.lighting_count} onChange={v => update({ lighting_count: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('switchCount')}</Text>}
                         tooltip={t('switchCountTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.switch_count} onChange={v => update({ switch_count: v ?? 0 })} />
                     </Form.Item>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('singleSocket')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.single_socket_count} onChange={v => update({ single_socket_count: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('doubleSocket')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.double_socket_count} onChange={v => update({ double_socket_count: v ?? 0 })} />
                     </Form.Item>
                 </div>
@@ -72,7 +72,7 @@ export default function Step26Electrical({ initialData, onBack, onSave }: Props)
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('acCircuit')}</Text>}
                         tooltip={t('acCircuitTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.ac_circuit_count} onChange={v => update({ ac_circuit_count: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waterHeater')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
@@ -106,16 +106,16 @@ export default function Step26Electrical({ initialData, onBack, onSave }: Props)
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('card3Main')}</span>} size="small" className="shadow-sm mt-4" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('groundRod')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.ground_rod_count} onChange={v => update({ ground_rod_count: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('avgCableRun')}</Text>}
                         tooltip={t('avgCableRunTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={30} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={30} step={1}
                             value={inp.avg_cable_run_m} onChange={v => update({ avg_cable_run_m: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wasteCable')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={25} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={25} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                     </Form.Item>
                 </div>
@@ -128,7 +128,7 @@ export default function Step26Electrical({ initialData, onBack, onSave }: Props)
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('optCardMain')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('outdoorSocket')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.outdoor_socket_count} onChange={v => update({ outdoor_socket_count: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('evCharger')}</Text>}
@@ -143,12 +143,12 @@ export default function Step26Electrical({ initialData, onBack, onSave }: Props)
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('hvacInstallCount')}</Text>}
                         tooltip={t('hvacInstallTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1} placeholder={t('hvacInstallPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1} placeholder={t('hvacInstallPh')}
                             value={inp.hvac_install_count} onChange={v => update({ hvac_install_count: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('hvacCopper')}</Text>}
                         tooltip={t('hvacCopperTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={5} precision={2} placeholder={t('hvacCopperPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} precision={2} placeholder={t('hvacCopperPh')}
                             value={inp.hvac_copper_pipe_m} onChange={v => update({ hvac_copper_pipe_m: v ?? undefined })} />
                     </Form.Item>
                 </div>

@@ -325,7 +325,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceLi
                                     </Text>
                                     <Space size="middle" align="center" wrap>
                                         <Text>{t('cfConfigCreditAvg')}</Text>
-                                        <InputNumber
+                                        <InputNumber onFocus={(e) => e.target.select()}
                                             min={0} max={365}
                                             value={config.creditTermDays}
                                             onChange={(v) => setConfig(prev => ({ ...prev, creditTermDays: v ?? 0 }))}
@@ -409,7 +409,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceLi
                                                     />
                                                 </td>
                                                 <td style={{ padding: '4px 8px', textAlign: 'center' }}>
-                                                    <InputNumber
+                                                    <InputNumber onFocus={(e) => e.target.select()}
                                                         value={inst.percent * 100}
                                                         min={0} max={100} step={5} size="small"
                                                         style={{ width: 70, fontSize: 13, height: 30 }}
@@ -419,7 +419,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceLi
                                                     />
                                                 </td>
                                                 <td style={{ padding: '4px 8px', textAlign: 'center' }}>
-                                                    <InputNumber
+                                                    <InputNumber onFocus={(e) => e.target.select()}
                                                         value={inst.triggerWeek}
                                                         min={1} max={52} size="small"
                                                         style={{ width: 60, fontSize: 13, height: 30 }}

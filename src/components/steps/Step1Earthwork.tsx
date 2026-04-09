@@ -119,25 +119,25 @@ export const Step1Earthwork: React.FC<Props> = ({ onSave, onBack, initialData })
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-2 gap-2">
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('width')}</Text>} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.5} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.5} precision={2}
                                     value={f.width_m} onChange={v => updateFillArea(i, { width_m: v ?? 0 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('length')}</Text>} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.5} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.5} precision={2}
                                     value={f.length_m} onChange={v => updateFillArea(i, { length_m: v ?? 0 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('height')}</Text>} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.1} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.1} precision={2}
                                     value={f.average_fill_height_m} onChange={v => updateFillArea(i, { average_fill_height_m: v ?? 0 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('cf')}</Text>} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} max={1.5} step={0.01} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={1.5} step={0.01} precision={2}
                                     value={f.compaction_factor} onChange={v => updateFillArea(i, { compaction_factor: v ?? 1.25 })} />
                             </Form.Item>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-1 gap-2" style={{ marginTop: 8 }}>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('layerThick')}</Text>} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} max={0.5} step={0.05} placeholder={t('layerPh')}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={0.5} step={0.05} placeholder={t('layerPh')}
                                     value={f.layer_thickness_m} onChange={v => updateFillArea(i, { layer_thickness_m: v ?? undefined })} />
                             </Form.Item>
                         </div>
@@ -157,7 +157,7 @@ export const Step1Earthwork: React.FC<Props> = ({ onSave, onBack, initialData })
                 tooltip={t('wasteTooltip')}
                 style={{ margin: 0 }}
             >
-                <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                     value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
             </Form.Item>
         </>
@@ -169,29 +169,29 @@ export const Step1Earthwork: React.FC<Props> = ({ onSave, onBack, initialData })
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('optTitleClearance')}</span>} size="small" className="shadow-sm mb-4" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('optClearanceArea')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={10} placeholder={t('optClearancePh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={10} placeholder={t('optClearancePh')}
                             value={inp.site_clearance_area_m2} onChange={v => update({ site_clearance_area_m2: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('optDemolitionTrips')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1} placeholder={t('optDemolitionPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1} placeholder={t('optDemolitionPh')}
                             value={inp.demolition_trips} onChange={v => update({ demolition_trips: v ?? undefined })} />
                     </Form.Item>
                 </div>
             </Card>
             <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('optRoller')}</Text>} style={{ margin: 0 }}>
-                <InputNumber style={{ width: '100%' }} min={0} step={5} placeholder={t('optRollerPh')}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} placeholder={t('optRollerPh')}
                     value={inp.roller_productivity_m3_per_hour} onChange={v => update({ roller_productivity_m3_per_hour: v ?? undefined })} />
             </Form.Item>
             <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('optTruck')}</Text>} style={{ margin: 0 }}>
-                <InputNumber style={{ width: '100%' }} min={0} max={30} step={1} placeholder={t('optTruckPh')}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={30} step={1} placeholder={t('optTruckPh')}
                     value={inp.truck_capacity_m3} onChange={v => update({ truck_capacity_m3: v ?? undefined })} />
             </Form.Item>
             <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('optDistance')}</Text>} style={{ margin: 0 }}>
-                <InputNumber style={{ width: '100%' }} min={0} step={5} placeholder={t('optDistancePh')}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} placeholder={t('optDistancePh')}
                     value={inp.haul_distance_km} onChange={v => update({ haul_distance_km: v ?? undefined })} />
             </Form.Item>
             <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('optBackhoe')}</Text>} style={{ margin: 0 }}>
-                <InputNumber style={{ width: '100%' }} min={0} step={5} placeholder={t('optBackhoePh')}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} placeholder={t('optBackhoePh')}
                     value={inp.backhoe_productivity_m3_per_hour} onChange={v => update({ backhoe_productivity_m3_per_hour: v ?? undefined })} />
             </Form.Item>
             <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('optSoilTest')}</Text>} style={{ margin: 0 }}>
@@ -200,7 +200,7 @@ export const Step1Earthwork: React.FC<Props> = ({ onSave, onBack, initialData })
             </Form.Item>
             {inp.soil_test_required && (
                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('optTestPoint')}</Text>} style={{ margin: 0 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={20} step={1} placeholder={t('optTestPh')}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1} placeholder={t('optTestPh')}
                         value={inp.soil_test_point_count} onChange={v => update({ soil_test_point_count: v ?? undefined })} />
                 </Form.Item>
             )}

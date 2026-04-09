@@ -52,7 +52,7 @@ export const Step5Piling: React.FC<Props> = ({ onSave, onBack, initialData }) =>
                 tooltip={t('pileCountTooltip')}
                 style={{ margin: 0 }}
             >
-                <InputNumber style={{ width: '100%' }} min={0} step={1}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                     value={inp.number_of_piles} onChange={v => update({ number_of_piles: v ?? 0 })} />
             </Form.Item>
             <Form.Item required layout="vertical" 
@@ -60,11 +60,11 @@ export const Step5Piling: React.FC<Props> = ({ onSave, onBack, initialData }) =>
                 tooltip={t('pileLengthTooltip')}
                 style={{ margin: 0 }}
             >
-                <InputNumber style={{ width: '100%' }} min={0} step={0.5} precision={1}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.5} precision={1}
                     value={inp.pile_length_m} onChange={v => update({ pile_length_m: v ?? 0 })} />
             </Form.Item>
             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
-                <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                     value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
             </Form.Item>
         </>
@@ -98,7 +98,7 @@ export const Step5Piling: React.FC<Props> = ({ onSave, onBack, initialData }) =>
                             </Form.Item>
                             {inp.pile_head_cut_required && (
                                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('cutDepth')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                                    <InputNumber style={{ width: '100%' }} min={0} max={80} step={5} placeholder={t('cutDepthPh')}
+                                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={80} step={5} placeholder={t('cutDepthPh')}
                                         value={inp.pile_head_cut_depth_cm} onChange={v => update({ pile_head_cut_depth_cm: v ?? undefined })} />
                                 </Form.Item>
                             )}
@@ -120,13 +120,13 @@ export const Step5Piling: React.FC<Props> = ({ onSave, onBack, initialData }) =>
                                     ]} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('rebarCage')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} max={80} step={5} placeholder={t('rebarCagePh')}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={80} step={5} placeholder={t('rebarCagePh')}
                                     value={inp.rebar_cage_kg_per_m} onChange={v => update({ rebar_cage_kg_per_m: v ?? undefined })} />
                             </Form.Item>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('casingLen')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={1} placeholder={t('casingLenPh')}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1} placeholder={t('casingLenPh')}
                                     value={inp.casing_length_m} onChange={v => update({ casing_length_m: v ?? undefined })} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('bentonite')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
@@ -142,22 +142,22 @@ export const Step5Piling: React.FC<Props> = ({ onSave, onBack, initialData }) =>
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('titleTest')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('prodRate')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={30} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={30} step={1}
                             placeholder={isBored ? t('prodRateBoredPh') : t('prodRateDrivenPh')}
                             value={inp.production_rate_per_day} onChange={v => update({ production_rate_per_day: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('mobilizeDays')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={5} step={1} placeholder={t('mobilizeDaysPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={5} step={1} placeholder={t('mobilizeDaysPh')}
                             value={inp.mobilization_days} onChange={v => update({ mobilization_days: v ?? undefined })} />
                     </Form.Item>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('loadTestCount')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={10} step={1} placeholder={t('loadTestCountPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={1} placeholder={t('loadTestCountPh')}
                             value={inp.load_test_count} onChange={v => update({ load_test_count: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('seismicTestCount')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1} placeholder={t('seismicTestCountPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1} placeholder={t('seismicTestCountPh')}
                             value={inp.seismic_test_count} onChange={v => update({ seismic_test_count: v ?? undefined })} />
                     </Form.Item>
                 </div>

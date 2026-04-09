@@ -45,12 +45,12 @@ export default function Step28SanitaryExterior({ initialData, onBack, onSave }: 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('buildingPerimeter')}</Text>}
                         tooltip={t('perimeterTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={5}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5}
                             value={inp.building_perimeter_m} onChange={v => update({ building_perimeter_m: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('meterDistance')}</Text>}
                         tooltip={t('meterDistanceTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.meter_to_building_m} onChange={v => update({ meter_to_building_m: v ?? 0 })} />
                     </Form.Item>
                 </div>
@@ -60,17 +60,17 @@ export default function Step28SanitaryExterior({ initialData, onBack, onSave }: 
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('residentCount')}</Text>}
                         tooltip={t('residentTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.resident_count} onChange={v => update({ resident_count: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('greaseTrap')}</Text>}
                         tooltip={t('greaseTrapTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1} placeholder="auto"
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1} placeholder="auto"
                             value={inp.grease_trap_count} onChange={v => update({ grease_trap_count: v ?? undefined })} />
                     </Form.Item>
                 </div>
                 <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wastePipe')}</Text>} style={{ margin: 0 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={25} step={1}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={25} step={1}
                         value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 0 })} />
                 </Form.Item>
             </Card>
@@ -83,7 +83,7 @@ export default function Step28SanitaryExterior({ initialData, onBack, onSave }: 
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('rainwaterGutter')}</Text>}
                         tooltip={t('rainwaterTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={5}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5}
                             value={inp.rainwater_drain_m} onChange={v => update({ rainwater_drain_m: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('pumpTank')}</Text>}
@@ -94,7 +94,7 @@ export default function Step28SanitaryExterior({ initialData, onBack, onSave }: 
                 </div>
                 <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('septicOverride')}</Text>}
                     tooltip={t('septicOverrideTooltip')} style={{ margin: 0 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} step={0.5} placeholder="auto"
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.5} placeholder="auto"
                         value={inp.septic_size_override_m3} onChange={v => update({ septic_size_override_m3: v ?? undefined })} />
                 </Form.Item>
             </Card>

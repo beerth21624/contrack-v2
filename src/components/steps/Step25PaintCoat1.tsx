@@ -49,18 +49,18 @@ export default function Step25PaintCoat1({ initialData, onBack, onSave }: Props)
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('intWallArea')}</Text>}
                         tooltip={t('intWallTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={10} precision={0}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={10} precision={0}
                             value={inp.interior_wall_area_m2} onChange={v => update({ interior_wall_area_m2: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('extWallArea')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={10} precision={0}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={10} precision={0}
                             value={inp.exterior_wall_area_m2} onChange={v => update({ exterior_wall_area_m2: v ?? 0 })} />
                     </Form.Item>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('ceilArea')}</Text>}
                         tooltip={t('ceilTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={10} precision={0}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={10} precision={0}
                             value={inp.ceiling_area_m2} onChange={v => update({ ceiling_area_m2: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('paintCeil')}</Text>} style={{ margin: 0 }}>
@@ -102,7 +102,7 @@ export default function Step25PaintCoat1({ initialData, onBack, onSave }: Props)
                             ]} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={25} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={25} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                     </Form.Item>
                 </div>
@@ -116,18 +116,18 @@ export default function Step25PaintCoat1({ initialData, onBack, onSave }: Props)
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('accentWall')}</Text>}
                         tooltip={t('accentTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={5}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5}
                             value={inp.accent_wall_area_m2} onChange={v => update({ accent_wall_area_m2: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('woodwork')}</Text>}
                         tooltip={t('woodworkTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={5}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5}
                             value={inp.woodwork_area_m2} onChange={v => update({ woodwork_area_m2: v ?? undefined })} />
                     </Form.Item>
                 </div>
                 <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('colorCount')}</Text>}
                     tooltip={t('colorTooltip')} style={{ margin: 0 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={10} step={1}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={1}
                         value={inp.color_count ?? 1} onChange={v => update({ color_count: v ?? 1 })} />
                 </Form.Item>
             </Card>

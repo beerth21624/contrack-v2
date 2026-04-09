@@ -88,21 +88,21 @@ export default function Step11Column({ initialData, onBack, onSave }: Props) {
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('count')}</Text>}
                                 tooltip={t('countTooltip')} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={1}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                                     value={c.count} onChange={v => updateColumn(i, { count: v ?? 1 })} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('width')}</Text>}
                                 tooltip={t('widthTooltip')} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.05} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.05} precision={2}
                                     value={c.width_m} onChange={v => updateColumn(i, { width_m: v ?? 0.20 })} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('depth')}</Text>} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.05} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.05} precision={2}
                                     value={c.depth_m} onChange={v => updateColumn(i, { depth_m: v ?? 0.20 })} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('height')}</Text>}
                                 tooltip={t('heightTooltip')} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.10} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.10} precision={2}
                                     value={c.height_m} onChange={v => updateColumn(i, { height_m: v ?? 2.70 })} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('section')}</Text>} style={{ margin: 0 }}>
@@ -128,11 +128,11 @@ export default function Step11Column({ initialData, onBack, onSave }: Props) {
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('rebarDensity')}</Text>}
                         validateStatus={result?.warningFields?.includes('rebar_kg_per_m3') ? 'warning' : ''}
                         tooltip={t('rebarDensityTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={300} step={10}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={300} step={10}
                             value={inp.rebar_kg_per_m3} onChange={v => update({ rebar_kg_per_m3: v ?? 120 })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
                     </Form.Item>
                 </div>
@@ -145,16 +145,16 @@ export default function Step11Column({ initialData, onBack, onSave }: Props) {
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('formworkSpecials')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('formworkReuse')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={10} step={1} placeholder={t('formworkReusePh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={1} placeholder={t('formworkReusePh')}
                             value={inp.formwork_reuse_times} onChange={v => update({ formwork_reuse_times: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('tieWire')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={3} step={0.5} placeholder={t('tieWirePh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={3} step={0.5} placeholder={t('tieWirePh')}
                             value={inp.tie_wire_factor} onChange={v => update({ tie_wire_factor: v ?? undefined })} />
                     </Form.Item>
                 </div>
                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('spacer')}</Text>} style={{ margin: 0 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={8} step={1} placeholder={t('spacerPh')}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={8} step={1} placeholder={t('spacerPh')}
                         value={inp.spacer_per_column} onChange={v => update({ spacer_per_column: v ?? undefined })} />
                 </Form.Item>
             </Card>
@@ -176,7 +176,7 @@ export default function Step11Column({ initialData, onBack, onSave }: Props) {
                     </Form.Item>
                 </div>
                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('vibratorDays')}</Text>} tooltip={t('vibratorDaysTooltip')} style={{ margin: 0 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={10} step={1}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={1}
                         value={inp.vibrator_days} onChange={v => update({ vibrator_days: v ?? undefined })} />
                 </Form.Item>
             </Card>

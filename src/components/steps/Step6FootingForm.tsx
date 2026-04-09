@@ -98,7 +98,7 @@ export const Step6FootingForm: React.FC<Props> = ({ onBack, onSave, initialData 
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('name')}</Text>}
                                 style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} 
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} 
                                     controls={false}
                                     value={undefined}
                                     placeholder={f.label}
@@ -108,25 +108,25 @@ export const Step6FootingForm: React.FC<Props> = ({ onBack, onSave, initialData 
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('count')}</Text>}
                                 tooltip={t('countTooltip')}
                                 style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={1}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                                     value={f.count} onChange={v => updateFooting(i, { count: v ?? 1 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('lengthL')}</Text>}
                                 tooltip={t('lengthLTooltip')}
                                 style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.05} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.05} precision={2}
                                     value={f.length_m} onChange={v => updateFooting(i, { length_m: v ?? 1 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('widthW')}</Text>}
                                 tooltip={t('widthWTooltip')}
                                 style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.05} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.05} precision={2}
                                     value={f.width_m} onChange={v => updateFooting(i, { width_m: v ?? 1 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('thickT')}</Text>}
                                 tooltip={t('thickTTooltip')}
                                 style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.05} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.05} precision={2}
                                     value={f.thickness_m} onChange={v => updateFooting(i, { thickness_m: v ?? 0.30 })} />
                             </Form.Item>
                         </div>
@@ -147,16 +147,16 @@ export const Step6FootingForm: React.FC<Props> = ({ onBack, onSave, initialData 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('leanThick')}</Text>}
                         tooltip={t('leanThickTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={0.01} precision={2}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.01} precision={2}
                             value={inp.lean_concrete_thickness_m} onChange={v => update({ lean_concrete_thickness_m: v ?? 0.05 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('sandThick')}</Text>}
                         tooltip={t('sandThickTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={0.01} precision={2}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.01} precision={2}
                             value={inp.sand_bedding_thickness_m} onChange={v => update({ sand_bedding_thickness_m: v ?? 0.05 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wasteConc')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
                     </Form.Item>
                 </div>
@@ -171,12 +171,12 @@ export const Step6FootingForm: React.FC<Props> = ({ onBack, onSave, initialData 
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('excDepth')}</Text>}
                         tooltip={t('excDepthTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={0.05}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.05}
                             value={inp.excavation_depth_m}
                             onChange={v => update({ excavation_depth_m: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('excWiden')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={1} step={0.05} placeholder={t('excWidenPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={1} step={0.05} placeholder={t('excWidenPh')}
                             value={inp.excavation_extra_margin_m}
                             onChange={v => update({ excavation_extra_margin_m: v ?? undefined })} />
                     </Form.Item>
@@ -188,18 +188,18 @@ export const Step6FootingForm: React.FC<Props> = ({ onBack, onSave, initialData 
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('rebarWeight')}</Text>}
                         validateStatus={result?.warningFields?.includes('rebar_weight_kg_per_m3') ? 'warning' : ''}
                         tooltip={t('rebarWeightTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={200} step={5} placeholder={t('rebarWeightPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={200} step={5} placeholder={t('rebarWeightPh')}
                             value={inp.rebar_weight_kg_per_m3}
                             onChange={v => update({ rebar_weight_kg_per_m3: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('tieWire')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={3} step={0.5} placeholder={t('tieWirePh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={3} step={0.5} placeholder={t('tieWirePh')}
                             value={inp.tie_wire_factor}
                             onChange={v => update({ tie_wire_factor: v ?? undefined })} />
                     </Form.Item>
                 </div>
                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('spacer')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={12} step={1} placeholder={t('spacerPh')}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={12} step={1} placeholder={t('spacerPh')}
                         value={inp.spacer_per_footing}
                         onChange={v => update({ spacer_per_footing: v ?? undefined })} />
                 </Form.Item>
@@ -230,7 +230,7 @@ export const Step6FootingForm: React.FC<Props> = ({ onBack, onSave, initialData 
                     </Form.Item>
                     {inp.dewatering_required && (
                         <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('dewaterDays')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                            <InputNumber style={{ width: '100%' }} min={0} max={30} step={1}
+                            <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={30} step={1}
                                 value={inp.dewatering_days}
                                 onChange={v => update({ dewatering_days: v ?? undefined })} />
                         </Form.Item>

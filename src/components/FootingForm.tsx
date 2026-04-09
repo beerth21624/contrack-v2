@@ -53,7 +53,7 @@ export const FootingForm: React.FC<FootingFormProps> = ({ onAdd }) => {
                     </Col>
                     <Col span={8}>
                         <Form.Item name="qty" label="จำนวน (Qty)" rules={[{ required: true }]}>
-                            <InputNumber min={1} style={{ width: '100%' }} />
+                            <InputNumber onFocus={(e) => e.target.select()} min={1} style={{ width: '100%' }} />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -63,22 +63,22 @@ export const FootingForm: React.FC<FootingFormProps> = ({ onAdd }) => {
                 <Row gutter={12}>
                     <Col span={6}>
                         <Form.Item name="w" label="กว้าง (W)" tooltip="หน่วย: เมตร">
-                            <InputNumber min={0} step={0.1} style={{ width: '100%' }} />
+                            <InputNumber onFocus={(e) => e.target.select()} min={0} step={0.1} style={{ width: '100%' }} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
                         <Form.Item name="l" label="ยาว (L)" tooltip="หน่วย: เมตร">
-                            <InputNumber min={0} step={0.1} style={{ width: '100%' }} />
+                            <InputNumber onFocus={(e) => e.target.select()} min={0} step={0.1} style={{ width: '100%' }} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
                         <Form.Item name="t" label="หนา (T)" tooltip="หน่วย: เมตร">
-                            <InputNumber min={0} step={0.05} style={{ width: '100%' }} />
+                            <InputNumber onFocus={(e) => e.target.select()} min={0} step={0.05} style={{ width: '100%' }} />
                         </Form.Item>
                     </Col>
                     <Col span={6}>
                         <Form.Item name="d" label="ลึก (Depth)" tooltip="ระดับขุดดิน (เมตร)">
-                            <InputNumber min={0} step={0.1} style={{ width: '100%' }} />
+                            <InputNumber onFocus={(e) => e.target.select()} min={0} step={0.1} style={{ width: '100%' }} />
                         </Form.Item>
                     </Col>
                 </Row>
@@ -100,7 +100,7 @@ export const FootingForm: React.FC<FootingFormProps> = ({ onAdd }) => {
                     </Col>
                     <Col span={12}>
                         <Form.Item name="mainBarSpacing" label="ระยะเรียง (Spacing)" tooltip="เมตร (เช่น 0.15)">
-                            <InputNumber min={0.05} max={1.0} step={0.05} style={{ width: '100%' }} />
+                            <InputNumber onFocus={(e) => e.target.select()} min={0.05} max={1.0} step={0.05} style={{ width: '100%' }} />
                         </Form.Item>
                     </Col>
                 </Row>

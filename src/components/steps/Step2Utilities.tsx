@@ -38,7 +38,7 @@ export const Step2Utilities: React.FC<Props> = ({ onSave, onBack, initialData })
                 tooltip={t('distPowerTooltip')}
                 style={{ margin: 0 }}
             >
-                <InputNumber style={{ width: '100%' }} min={0} step={5} precision={1}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} precision={1}
                     value={inp.distance_to_power_source_m} onChange={v => update({ distance_to_power_source_m: v ?? 0 })} />
             </Form.Item>
             <Form.Item required layout="vertical" 
@@ -46,11 +46,11 @@ export const Step2Utilities: React.FC<Props> = ({ onSave, onBack, initialData })
                 tooltip={t('distWaterTooltip')}
                 style={{ margin: 0 }}
             >
-                <InputNumber style={{ width: '100%' }} min={0} step={5} precision={1}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} precision={1}
                     value={inp.distance_to_water_source_m} onChange={v => update({ distance_to_water_source_m: v ?? 0 })} />
             </Form.Item>
             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
-                <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                     value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
             </Form.Item>
         </>
@@ -77,11 +77,11 @@ export const Step2Utilities: React.FC<Props> = ({ onSave, onBack, initialData })
                 </Form.Item>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('socketCount')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0}
                             value={inp.number_of_sockets} onChange={v => update({ number_of_sockets: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('lightCount')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0}
                             value={inp.number_of_lights} onChange={v => update({ number_of_lights: v ?? undefined })} />
                     </Form.Item>
                 </div>
@@ -108,7 +108,7 @@ export const Step2Utilities: React.FC<Props> = ({ onSave, onBack, initialData })
                     </Form.Item>
                 </div>
                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('groundRodCount')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={5} step={1}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={5} step={1}
                         value={inp.ground_rod_count} onChange={v => update({ ground_rod_count: v ?? undefined })} />
                 </Form.Item>
             </Card>
@@ -147,11 +147,11 @@ export const Step2Utilities: React.FC<Props> = ({ onSave, onBack, initialData })
                     </Form.Item>
                 </div>
                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waterTank')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} step={500} 
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={500} 
                         value={inp.water_tank_liters} onChange={v => update({ water_tank_liters: v ?? undefined })} />
                 </Form.Item>
                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('siteArea')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} 
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} 
                         value={inp.site_area_m2} onChange={v => update({ site_area_m2: v ?? undefined })} />
                 </Form.Item>
                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('permit')}</Text>} style={{ margin: 0 }}>

@@ -96,16 +96,16 @@ export default function Step24AlumDoorWindow({ initialData, onBack, onSave }: Pr
                                     ]} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('count')}</Text>} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={1} size="small"
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1} size="small"
                                     value={item.count} onChange={v => updateItem(i, { count: v ?? 1 })} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('width')}</Text>}
                                 tooltip={t('widthTooltip')} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.10} precision={2} size="small"
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.10} precision={2} size="small"
                                     value={item.width_m} onChange={v => updateItem(i, { width_m: v ?? 1 })} />
                             </Form.Item>
                             <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('height')}</Text>} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.10} precision={2} size="small"
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.10} precision={2} size="small"
                                     value={item.height_m} onChange={v => updateItem(i, { height_m: v ?? 1 })} />
                             </Form.Item>
                         </div>
@@ -131,7 +131,7 @@ export default function Step24AlumDoorWindow({ initialData, onBack, onSave }: Pr
                             ]} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
                     </Form.Item>
                 </div>
@@ -143,7 +143,7 @@ export default function Step24AlumDoorWindow({ initialData, onBack, onSave }: Pr
         <>
             <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('sealantLength')}</Text>}
                 tooltip={t('sealantTooltip')} style={{ margin: 0 }}>
-                <InputNumber style={{ width: '100%' }} min={0} step={5}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5}
                     value={inp.sealant_length_m} onChange={v => update({ sealant_length_m: v ?? undefined })} />
             </Form.Item>
             

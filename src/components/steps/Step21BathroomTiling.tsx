@@ -96,25 +96,25 @@ export default function Step21BathroomTiling({ initialData, onBack, onSave }: Pr
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 12 }}>{t('width')}</Text>}
                                 tooltip={t('widthTooltip')}
                                 style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} max={10} step={0.1} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={0.1} precision={2}
                                     value={b.width_m} onChange={v => updateBathroom(i, { width_m: v ?? 1 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 12 }}>{t('length')}</Text>}
                                 tooltip={t('lengthTooltip')}
                                 style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} max={10} step={0.1} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={0.1} precision={2}
                                     value={b.length_m} onChange={v => updateBathroom(i, { length_m: v ?? 1 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 12 }}>{t('wallTileHeight')}</Text>}
                                 tooltip={t('wallTileTooltip')}
                                 style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} max={3.5} step={0.1} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={3.5} step={0.1} precision={2}
                                     value={b.wall_tile_height_m} onChange={v => updateBathroom(i, { wall_tile_height_m: v ?? 2.40 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 12 }}>{t('doorWidth')}</Text>}
                                 tooltip={t('doorWidthTooltip')}
                                 style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} max={2} step={0.05} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={2} step={0.05} precision={2}
                                     value={b.door_width_m} onChange={v => updateBathroom(i, { door_width_m: v ?? 0.70 })} />
                             </Form.Item>
                         </div>
@@ -134,7 +134,7 @@ export default function Step21BathroomTiling({ initialData, onBack, onSave }: Pr
                         tooltip={t('waterproofTooltip')}
                         style={{ margin: 0, marginBottom: 12 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} max={3.0} step={0.1} precision={2}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={3.0} step={0.1} precision={2}
                             value={inp.waterproof_height_m} onChange={v => update({ waterproof_height_m: v ?? 1.80 })} />
                     </Form.Item>
                     <Form.Item layout="vertical"
@@ -142,7 +142,7 @@ export default function Step21BathroomTiling({ initialData, onBack, onSave }: Pr
                         tooltip={t('waterproofAreaPh')}
                         style={{ margin: 0, marginBottom: 12 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} step={5} precision={2} placeholder={t('waterproofAreaPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} precision={2} placeholder={t('waterproofAreaPh')}
                             value={inp.waterproof_area_m2} onChange={v => update({ waterproof_area_m2: v ?? undefined })} />
                     </Form.Item>
                 </div>
@@ -152,7 +152,7 @@ export default function Step21BathroomTiling({ initialData, onBack, onSave }: Pr
                         tooltip={t('wasteTooltip')}
                         style={{ margin: 0, marginBottom: 12 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} max={25} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={25} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 15 })} />
                     </Form.Item>
                 </div>

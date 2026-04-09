@@ -40,7 +40,7 @@ export default function Step16Roofing({ initialData, onBack, onSave }: Props) {
                 tooltip={t('slopeAreaTooltip')} 
                 style={{ margin: 0, marginBottom: 12 }}
             >
-                <InputNumber style={{ width: '100%' }} min={0} step={5} precision={2}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} precision={2}
                     value={inp.roof_area_m2} onChange={v => update({ roof_area_m2: v ?? 0 })} />
             </Form.Item>
             <Form.Item required layout="vertical"
@@ -70,7 +70,7 @@ export default function Step16Roofing({ initialData, onBack, onSave }: Props) {
                         tooltip={t('ridgeTooltip')} 
                         style={{ margin: 0, marginBottom: 12 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.ridge_length_m} onChange={v => update({ ridge_length_m: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item layout="vertical"
@@ -78,7 +78,7 @@ export default function Step16Roofing({ initialData, onBack, onSave }: Props) {
                         tooltip={t('hipTooltip')} 
                         style={{ margin: 0, marginBottom: 12 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.hip_length_m} onChange={v => update({ hip_length_m: v ?? 0 })} />
                     </Form.Item>
                 </div>
@@ -88,7 +88,7 @@ export default function Step16Roofing({ initialData, onBack, onSave }: Props) {
                         tooltip={t('eaveTooltip')} 
                         style={{ margin: 0, marginBottom: 12 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.eave_length_m} onChange={v => update({ eave_length_m: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item layout="vertical"
@@ -96,7 +96,7 @@ export default function Step16Roofing({ initialData, onBack, onSave }: Props) {
                         tooltip={t('valleyTooltip')} 
                         style={{ margin: 0, marginBottom: 12 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.valley_length_m} onChange={v => update({ valley_length_m: v ?? 0 })} />
                     </Form.Item>
                 </div>
@@ -126,7 +126,7 @@ export default function Step16Roofing({ initialData, onBack, onSave }: Props) {
                         label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} 
                         style={{ margin: 0 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
                     </Form.Item>
                 </div>

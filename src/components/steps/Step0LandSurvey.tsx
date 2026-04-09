@@ -40,23 +40,23 @@ export const Step0LandSurvey: React.FC<Props> = ({ onSave, onBack, initialData }
     const required = (
         <>
             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('landArea')}</Text>} style={{ margin: 0 }}>
-                <InputNumber style={{ width: '100%' }} min={0} step={10} precision={0}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={10} precision={0}
                     value={inp.land_area_m2} onChange={v => update({ land_area_m2: v ?? 0 })} />
             </Form.Item>
             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('boundaryLength')}</Text>} style={{ margin: 0 }}>
-                <InputNumber style={{ width: '100%' }} min={0} step={5} precision={0}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} precision={0}
                     value={inp.boundary_length_m} onChange={v => update({ boundary_length_m: v ?? 0 })} />
             </Form.Item>
             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('bmCount')}</Text>} style={{ margin: 0 }}>
-                <InputNumber style={{ width: '100%' }} min={0} max={10} step={1}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={1}
                     value={inp.benchmark_count} onChange={v => update({ benchmark_count: v ?? 2 })} />
             </Form.Item>
             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('surveyCrew')}</Text>} style={{ margin: 0 }}>
-                <InputNumber style={{ width: '100%' }} min={0} max={5} step={1}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={5} step={1}
                     value={inp.survey_crew_count} onChange={v => update({ survey_crew_count: v ?? 1 })} />
             </Form.Item>
             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
-                <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                     value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 0 })} />
             </Form.Item>
         </>
@@ -75,7 +75,7 @@ export const Step0LandSurvey: React.FC<Props> = ({ onSave, onBack, initialData }
                     ]} />
             </Form.Item>
             <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('existingMarkers')}</Text>} style={{ margin: 0 }}>
-                <InputNumber style={{ width: '100%' }} min={0} step={1} placeholder={t('markerPh')}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1} placeholder={t('markerPh')}
                     value={inp.existing_boundary_markers} onChange={v => update({ existing_boundary_markers: v ?? undefined })} />
             </Form.Item>
             <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('topoRequired')}</Text>} style={{ margin: 0 }}>

@@ -47,12 +47,12 @@ export default function Step23Primer({ initialData, onBack, onSave }: Props) {
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('intArea')}</Text>}
                         tooltip={t('intAreaTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={10} precision={0}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={10} precision={0}
                             value={inp.interior_area_m2} onChange={v => update({ interior_area_m2: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('extArea')}</Text>}
                         tooltip={t('extAreaTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={10} precision={0}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={10} precision={0}
                             value={inp.exterior_area_m2} onChange={v => update({ exterior_area_m2: v ?? 0 })} />
                     </Form.Item>
                 </div>
@@ -89,7 +89,7 @@ export default function Step23Primer({ initialData, onBack, onSave }: Props) {
                             ]} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={25} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={25} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                     </Form.Item>
                 </div>

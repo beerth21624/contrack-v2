@@ -42,7 +42,7 @@ export default function Step14ColumnCapPlate({ initialData, onBack, onSave }: Pr
                     tooltip={t('plateCountTooltip')}
                     style={{ margin: 0, marginBottom: 12 }}
                 >
-                    <InputNumber style={{ width: '100%' }} min={0} step={1}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                         value={inp.plate_count} onChange={v => update({ plate_count: v ?? 0 })} />
                 </Form.Item>
                 <div className="grid grid-cols-3 gap-2">
@@ -51,11 +51,11 @@ export default function Step14ColumnCapPlate({ initialData, onBack, onSave }: Pr
                         tooltip={t('widthMmTooltip')}
                         style={{ margin: 0 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.plate_width_mm} onChange={v => update({ plate_width_mm: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('depthMm')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.plate_depth_mm} onChange={v => update({ plate_depth_mm: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" 
@@ -63,7 +63,7 @@ export default function Step14ColumnCapPlate({ initialData, onBack, onSave }: Pr
                         tooltip={t('thicknessMmTooltip')} 
                         style={{ margin: 0 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} max={40} step={2}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={40} step={2}
                             value={inp.plate_thickness_mm} onChange={v => update({ plate_thickness_mm: v ?? 0 })} />
                     </Form.Item>
                 </div>
@@ -76,7 +76,7 @@ export default function Step14ColumnCapPlate({ initialData, onBack, onSave }: Pr
                         tooltip={t('boltCountTooltip')}
                         style={{ margin: 0 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} max={16} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={16} step={1}
                             value={inp.anchor_bolt_per_plate} onChange={v => update({ anchor_bolt_per_plate: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" 
@@ -84,7 +84,7 @@ export default function Step14ColumnCapPlate({ initialData, onBack, onSave }: Pr
                         tooltip={t('boltDiameterTooltip')} 
                         style={{ margin: 0 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} max={32} step={2}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={32} step={2}
                             value={inp.bolt_diameter_mm} onChange={v => update({ bolt_diameter_mm: v ?? 0 })} />
                     </Form.Item>
                 </div>
@@ -107,7 +107,7 @@ export default function Step14ColumnCapPlate({ initialData, onBack, onSave }: Pr
                             ]} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('boltLength')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={1} step={0.1} placeholder={t('boltLengthPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={1} step={0.1} placeholder={t('boltLengthPh')}
                             value={inp.bolt_length_m} onChange={v => update({ bolt_length_m: v ?? undefined })} />
                     </Form.Item>
                 </div>
@@ -118,7 +118,7 @@ export default function Step14ColumnCapPlate({ initialData, onBack, onSave }: Pr
                             checkedChildren={t('templateYes')} unCheckedChildren={t('templateNo')} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('groutThick')}</Text>} tooltip={t('groutThickTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={100} step={5}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={100} step={5}
                             value={inp.grout_thickness_mm} onChange={v => update({ grout_thickness_mm: v ?? 30 })} />
                     </Form.Item>
                 </div>
@@ -132,7 +132,7 @@ export default function Step14ColumnCapPlate({ initialData, onBack, onSave }: Pr
                             checkedChildren={t('weldingYes')} unCheckedChildren={t('weldingNo')} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('weldingLength')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={5} step={0.1} placeholder={t('weldingLengthPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={5} step={0.1} placeholder={t('weldingLengthPh')}
                             disabled={!inp.welding_required}
                             value={inp.welding_length_m_per_plate} onChange={v => update({ welding_length_m_per_plate: v ?? undefined })} />
                     </Form.Item>
@@ -144,7 +144,7 @@ export default function Step14ColumnCapPlate({ initialData, onBack, onSave }: Pr
                             checkedChildren={t('antiRustYes')} unCheckedChildren={t('antiRustNo')} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
                     </Form.Item>
                 </div>

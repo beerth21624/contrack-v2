@@ -40,7 +40,7 @@ export default function Step33DefectCheck({ initialData, onBack, onSave }: Props
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('cleaningArea')}</Text>}
                         tooltip={t('cleaningTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={10}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={10}
                             value={inp.total_floor_area_m2} onChange={v => update({ total_floor_area_m2: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('protection')}</Text>}
@@ -55,7 +55,7 @@ export default function Step33DefectCheck({ initialData, onBack, onSave }: Props
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('pressureTest')}</Text>} 
                         tooltip={t('pressureTestTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.pressure_test_systems} onChange={v => update({ pressure_test_systems: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('meggerTest')}</Text>} style={{ margin: 0 }}>

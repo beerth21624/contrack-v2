@@ -47,17 +47,17 @@ export default function Step32FinalPaint({ initialData, onBack, onSave }: Props)
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('interiorWallArea')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={10} precision={0}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={10} precision={0}
                             value={inp.interior_wall_area_m2} onChange={v => update({ interior_wall_area_m2: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('exteriorWallArea')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={10} precision={0}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={10} precision={0}
                             value={inp.exterior_wall_area_m2} onChange={v => update({ exterior_wall_area_m2: v ?? 0 })} />
                     </Form.Item>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('ceilingArea')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={10} precision={0}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={10} precision={0}
                             value={inp.ceiling_area_m2} onChange={v => update({ ceiling_area_m2: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('paintCeiling')}</Text>} style={{ margin: 0 }}>
@@ -87,7 +87,7 @@ export default function Step32FinalPaint({ initialData, onBack, onSave }: Props)
                     </Form.Item>
                 </div>
                 <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wastePercent')}</Text>} style={{ margin: 0 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                         value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 0 })} />
                 </Form.Item>
             </Card>
@@ -99,12 +99,12 @@ export default function Step32FinalPaint({ initialData, onBack, onSave }: Props)
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('optCardMain')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('woodworkArea')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={5}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5}
                             value={inp.woodwork_area_m2} onChange={v => update({ woodwork_area_m2: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('touchUpPercent')}</Text>}
                         tooltip={t('touchUpTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                             value={inp.touch_up_percent ?? 5} onChange={v => update({ touch_up_percent: v ?? 5 })} />
                     </Form.Item>
                 </div>

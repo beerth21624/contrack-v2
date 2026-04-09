@@ -29,7 +29,7 @@ export default function Step29Miscellaneous({ initialData, onBack, onSave }: Pro
     const num = (label: string, field: keyof Step29Input, tooltip?: string) => (
         <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{label}</Text>}
             tooltip={tooltip} style={{ margin: 0, marginBottom: 12 }}>
-            <InputNumber style={{ width: '100%' }} min={0} step={1}
+            <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                 value={inp[field] as number} onChange={v => update({ [field]: v ?? 0 })} />
         </Form.Item>
     );

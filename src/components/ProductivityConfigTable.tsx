@@ -167,7 +167,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
             width: 120,
             align: 'right',
             render: (value: number, record: StepSchedule) => (
-                <InputNumber
+                <InputNumber onFocus={(e) => e.target.select()}
                     size="small"
                     value={value}
                     min={0.5}
@@ -184,7 +184,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
             width: 110,
             align: 'right',
             render: (value: number, record: StepSchedule) => (
-                <InputNumber
+                <InputNumber onFocus={(e) => e.target.select()}
                     size="small"
                     value={value}
                     min={1}
@@ -212,7 +212,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
             align: 'right',
             render: (value: number | null, record: StepSchedule) => (
                 value !== null ? (
-                    <InputNumber
+                    <InputNumber onFocus={(e) => e.target.select()}
                         size="small"
                         value={value}
                         min={0.1}
@@ -383,7 +383,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 16px', background: '#fafbfc', padding: 10, borderRadius: 6, marginBottom: 8 }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                     <Text type="secondary" style={{ fontSize: 10, marginBottom: 4 }}>{t('prodDurationShort')}</Text>
-                                                    <InputNumber 
+                                                    <InputNumber onFocus={(e) => e.target.select()} 
                                                         size="small" 
                                                         value={item.defaultDays} 
                                                         min={0.5} step={0.5} 
@@ -393,7 +393,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                                                 </div>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                     <Text type="secondary" style={{ fontSize: 10, marginBottom: 4 }}>{t('prodCrewsShort')}</Text>
-                                                    <InputNumber 
+                                                    <InputNumber onFocus={(e) => e.target.select()} 
                                                         size="small" 
                                                         value={item.crews} 
                                                         min={1} 
@@ -404,7 +404,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                     <Text type="secondary" style={{ fontSize: 10, marginBottom: 4 }}>{t('prodRateShort')}</Text>
                                                     {item.productivityRate !== null ? (
-                                                        <InputNumber 
+                                                        <InputNumber onFocus={(e) => e.target.select()} 
                                                             size="small" 
                                                             value={item.productivityRate} 
                                                             min={0.1} step={0.5} 

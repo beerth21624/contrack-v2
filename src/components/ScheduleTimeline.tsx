@@ -271,7 +271,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                 return (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                         {isManual ? (
-                            <InputNumber
+                            <InputNumber onFocus={(e) => e.target.select()}
                                 min={1}
                                 value={currentManualDays}
                                 size="small"
@@ -313,7 +313,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                             <Button
                                 disabled={!canEdit || current <= 1}
                                 onClick={() => updateCrew(r.stepId, current - 1)}>-</Button>
-                            <InputNumber
+                            <InputNumber onFocus={(e) => e.target.select()}
                                 disabled={!canEdit}
                                 min={1} max={50} value={current}
                                 onChange={(val) => updateCrew(r.stepId, val ?? v)}
@@ -369,7 +369,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px 16px', alignItems: 'flex-start' }}>
                             <div style={{ flex: '1 1 250px' }}>
                                 <Text style={{ fontSize: 13, display: 'block', marginBottom: 8, fontWeight: 500 }}>{t('weatherBuffer')}</Text>
-                                <InputNumber
+                                <InputNumber onFocus={(e) => e.target.select()}
                                     value={config.weatherBufferPercent * 100}
                                     min={0} max={100} step={5}
                                     formatter={(v) => `${v}%`}
@@ -385,7 +385,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                             <div style={{ flex: '1 1 250px' }}>
                                 <Text style={{ fontSize: 13, display: 'block', marginBottom: 8, fontWeight: 500 }}>{t('curingDaysTitle')}</Text>
                                 <Space.Compact style={{ width: '100%', maxWidth: '300px' }}>
-                                    <InputNumber
+                                    <InputNumber onFocus={(e) => e.target.select()}
                                         value={config.globalCuringDays ?? 7}
                                         step={1}
                                         onChange={(v) => {
@@ -738,7 +738,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                                         <Text style={{ fontSize: 12, color: '#595959' }}><TeamOutlined /> {t('teamIcon')}</Text>
                                         <Space.Compact size="small">
                                             <Button disabled={!hasData || currentCrews <= 1} onClick={() => updateCrew(item.stepId, currentCrews - 1)}>-</Button>
-                                            <InputNumber disabled={!hasData} value={currentCrews} onChange={(val) => updateCrew(item.stepId, val ?? item.crews)} style={{ width: 45, textAlign: 'center', fontSize: 12 }} />
+                                            <InputNumber onFocus={(e) => e.target.select()} disabled={!hasData} value={currentCrews} onChange={(val) => updateCrew(item.stepId, val ?? item.crews)} style={{ width: 45, textAlign: 'center', fontSize: 12 }} />
                                             <Button disabled={!hasData} onClick={() => updateCrew(item.stepId, currentCrews + 1)}>+</Button>
                                         </Space.Compact>
                                         <Tag style={{ margin: 0, background: TEAM_COLORS[item.team] ?? '#888', border: 'none', color: '#fff', fontSize: 11, marginLeft: 'auto' }}>

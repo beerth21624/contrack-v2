@@ -43,7 +43,7 @@ export default function Step17Brickwork({ initialData, onBack, onSave }: Props) 
                     tooltip={t('grossWallTooltip')}
                     style={{ margin: 0, marginBottom: 12 }}
                 >
-                    <InputNumber style={{ width: '100%' }} min={0} step={5} precision={2}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} precision={2}
                         value={inp.total_wall_area_m2} onChange={v => update({ total_wall_area_m2: v ?? 0 })} />
                 </Form.Item>
                 <Form.Item required layout="vertical"
@@ -51,7 +51,7 @@ export default function Step17Brickwork({ initialData, onBack, onSave }: Props) 
                     tooltip={t('openingsTooltip')}
                     style={{ margin: 0, marginBottom: 12 }}
                 >
-                    <InputNumber style={{ width: '100%' }} min={0} step={2} precision={2}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={2} precision={2}
                         value={inp.doors_windows_area_m2} onChange={v => update({ doors_windows_area_m2: v ?? 0 })} />
                 </Form.Item>
             </div>
@@ -71,7 +71,7 @@ export default function Step17Brickwork({ initialData, onBack, onSave }: Props) 
                     tooltip={t('wasteTooltip')}
                     style={{ margin: 0 }}
                 >
-                    <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                         value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                 </Form.Item>
             </div>
@@ -87,7 +87,7 @@ export default function Step17Brickwork({ initialData, onBack, onSave }: Props) 
                     tooltip={t('lintelTooltip')}
                     style={{ margin: 0 }}
                 >
-                    <InputNumber style={{ width: '100%' }} min={0} step={1} precision={2}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1} precision={2}
                         value={inp.lintel_length_m} onChange={v => update({ lintel_length_m: v ?? undefined })} />
                 </Form.Item>
             </Card>

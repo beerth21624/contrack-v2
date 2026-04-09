@@ -53,12 +53,12 @@ export default function Step34Handover({ initialData, onBack, onSave }: Props) {
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('asbuiltDocs')}</Text>}
                         tooltip={t('asbuiltDocsTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.document_set_count} onChange={v => update({ document_set_count: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('keySets')}</Text>}
                         tooltip={t('keySetsTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.key_set_count} onChange={v => update({ key_set_count: v ?? 0 })} />
                     </Form.Item>
                 </div>
@@ -73,7 +73,7 @@ export default function Step34Handover({ initialData, onBack, onSave }: Props) {
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('card2Main')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('warrantyYears')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={5} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={5} step={1}
                             value={inp.warranty_years} onChange={v => update({ warranty_years: v ?? 1 })} />
                     </Form.Item>
                     <div style={{ marginTop: 24 }}>
@@ -89,7 +89,7 @@ export default function Step34Handover({ initialData, onBack, onSave }: Props) {
                     {inp.big_cleaning_required && (
                         <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('buildingArea')}</Text>}
                             tooltip={t('buildingAreaTooltip')} style={{ margin: 0 }}>
-                            <InputNumber style={{ width: '100%' }} min={0} step={10} precision={2}
+                            <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={10} precision={2}
                                 value={inp.building_area_m2} onChange={v => update({ building_area_m2: v ?? 0 })} />
                         </Form.Item>
                     )}
@@ -103,7 +103,7 @@ export default function Step34Handover({ initialData, onBack, onSave }: Props) {
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('optCardMain')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('punchList')}</Text>}
                     tooltip={t('punchListTooltip')} style={{ margin: 0 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} step={1}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                         value={inp.punch_list_remaining ?? 0} onChange={v => update({ punch_list_remaining: v ?? 0 })} />
                 </Form.Item>
             </Card>

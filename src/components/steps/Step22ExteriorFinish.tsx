@@ -40,7 +40,7 @@ export default function Step22ExteriorFinish({ initialData, onBack, onSave }: Pr
                 tooltip={t('facadeTooltip')}
                 style={{ margin: 0, marginBottom: 12 }}
             >
-                <InputNumber style={{ width: '100%' }} min={0} step={10} precision={2}
+                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={10} precision={2}
                     value={inp.facade_area_m2} onChange={v => update({ facade_area_m2: v ?? 0 })} />
             </Form.Item>
             <div className="grid grid-cols-2 gap-2">
@@ -63,7 +63,7 @@ export default function Step22ExteriorFinish({ initialData, onBack, onSave }: Pr
                     tooltip={t('wasteTooltip')}
                     style={{ margin: 0, marginBottom: 12 }}
                 >
-                    <InputNumber style={{ width: '100%' }} min={0} max={25} step={1}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={25} step={1}
                         value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                 </Form.Item>
             </div>
@@ -79,7 +79,7 @@ export default function Step22ExteriorFinish({ initialData, onBack, onSave }: Pr
                     tooltip={t('sealantTooltip')}
                     style={{ margin: 0 }}
                 >
-                    <InputNumber style={{ width: '100%' }} min={0} step={5} precision={2}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} precision={2}
                         value={inp.sealant_length_m} onChange={v => update({ sealant_length_m: v ?? undefined })} />
                 </Form.Item>
             </Card>

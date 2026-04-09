@@ -41,7 +41,7 @@ export default function Step15RoofStructure({ initialData, onBack, onSave }: Pro
                     tooltip={t('roofAreaTooltip')} 
                     style={{ margin: 0, marginBottom: 12 }}
                 >
-                    <InputNumber style={{ width: '100%' }} min={0} step={5} precision={2}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} precision={2}
                         value={inp.roof_area_m2} onChange={v => update({ roof_area_m2: v ?? 0 })} />
                 </Form.Item>
                 <div className="grid grid-cols-2 gap-2">
@@ -63,7 +63,7 @@ export default function Step15RoofStructure({ initialData, onBack, onSave }: Pro
                         tooltip={t('roofPitchTooltip')} 
                         style={{ margin: 0 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} max={80} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={80} step={1}
                             value={inp.roof_pitch_deg} onChange={v => update({ roof_pitch_deg: v ?? 0 })} />
                     </Form.Item>
                 </div>
@@ -89,7 +89,7 @@ export default function Step15RoofStructure({ initialData, onBack, onSave }: Pro
                     </Form.Item>
                 </div>
                 <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('purlinSpacing')}</Text>} tooltip={t('purlinSpacingTooltip')} style={{ margin: 0 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={2.00} step={0.05} precision={2}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={2.00} step={0.05} precision={2}
                         value={inp.purlin_spacing_m} onChange={v => update({ purlin_spacing_m: v ?? 0 })} />
                 </Form.Item>
             </Card>
@@ -102,7 +102,7 @@ export default function Step15RoofStructure({ initialData, onBack, onSave }: Pro
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('fixingsRafter')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('rafterSpacing')}</Text>} tooltip={t('rafterSpacingTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={2.00} step={0.10} precision={2}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={2.00} step={0.10} precision={2}
                             value={inp.rafter_spacing_m}
                             onChange={v => update({ rafter_spacing_m: v ?? undefined })} />
                     </Form.Item>
@@ -114,12 +114,12 @@ export default function Step15RoofStructure({ initialData, onBack, onSave }: Pro
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('weldingRod')}</Text>} tooltip={t('weldingRodTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={10} step={0.5} precision={1} placeholder={t('weldingRodPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={0.5} precision={1} placeholder={t('weldingRodPh')}
                             value={inp.welding_rod_factor}
                             onChange={v => update({ welding_rod_factor: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('antiRustCoats')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={3} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={3} step={1}
                             value={inp.anti_rust_coats}
                             onChange={v => update({ anti_rust_coats: v ?? undefined })} />
                     </Form.Item>
@@ -129,12 +129,12 @@ export default function Step15RoofStructure({ initialData, onBack, onSave }: Pro
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('trimsWaste')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('ridgeLength')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.ridge_length_m}
                             onChange={v => update({ ridge_length_m: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
                     </Form.Item>
                 </div>

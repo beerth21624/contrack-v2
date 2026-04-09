@@ -44,7 +44,7 @@ export default function Step13Staircase({ initialData, onBack, onSave }: Props) 
                         tooltip={t('flightCountTooltip')} 
                         style={{ margin: 0, marginBottom: 12 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.stair_flight_count} onChange={v => update({ stair_flight_count: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" 
@@ -52,7 +52,7 @@ export default function Step13Staircase({ initialData, onBack, onSave }: Props) 
                         tooltip={t('stepsPerFlightTooltip')} 
                         style={{ margin: 0, marginBottom: 12 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.steps_per_flight} onChange={v => update({ steps_per_flight: v ?? 0 })} />
                     </Form.Item>
                 </div>
@@ -62,7 +62,7 @@ export default function Step13Staircase({ initialData, onBack, onSave }: Props) 
                         tooltip={t('stairRiseTooltip')} 
                         style={{ margin: 0, marginBottom: 12 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} max={0.25} step={0.005} precision={3}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={0.25} step={0.005} precision={3}
                             value={inp.stair_rise_m} onChange={v => update({ stair_rise_m: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" 
@@ -70,7 +70,7 @@ export default function Step13Staircase({ initialData, onBack, onSave }: Props) 
                         tooltip={t('stairGoingTooltip')} 
                         style={{ margin: 0, marginBottom: 12 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} max={0.40} step={0.01} precision={3}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={0.40} step={0.01} precision={3}
                             value={inp.stair_going_m} onChange={v => update({ stair_going_m: v ?? 0 })} />
                     </Form.Item>
                 </div>
@@ -79,7 +79,7 @@ export default function Step13Staircase({ initialData, onBack, onSave }: Props) 
                     tooltip={t('stairWidthTooltip')}
                     style={{ margin: 0 }}
                 >
-                    <InputNumber style={{ width: '100%' }} min={0} step={0.05} precision={2}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.05} precision={2}
                         value={inp.stair_width_m} onChange={v => update({ stair_width_m: v ?? 0 })} />
                 </Form.Item>
             </Card>
@@ -90,16 +90,16 @@ export default function Step13Staircase({ initialData, onBack, onSave }: Props) 
                     tooltip={t('landingAreaTooltip')} 
                     style={{ margin: 0, marginBottom: 12 }}
                 >
-                    <InputNumber style={{ width: '100%' }} min={0} step={0.5} precision={2}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.5} precision={2}
                         value={inp.landing_area_m2} onChange={v => update({ landing_area_m2: v ?? 0 })} />
                 </Form.Item>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('rebarDensity')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={250} step={10}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={250} step={10}
                             value={inp.rebar_kg_per_m3} onChange={v => update({ rebar_kg_per_m3: v ?? 120 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
                     </Form.Item>
                 </div>
@@ -113,30 +113,30 @@ export default function Step13Staircase({ initialData, onBack, onSave }: Props) 
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('structureFormwork')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waistThick')}</Text>} tooltip={t('waistThickTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={0.30} step={0.01} precision={2} placeholder={t('waistPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={0.30} step={0.01} precision={2} placeholder={t('waistPh')}
                             value={inp.waist_slab_thickness_m}
                             onChange={v => update({ waist_slab_thickness_m: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('landingThick')}</Text>} tooltip={t('landingThickTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={0.30} step={0.01} precision={2} placeholder={t('landingPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={0.30} step={0.01} precision={2} placeholder={t('landingPh')}
                             value={inp.landing_thickness_m}
                             onChange={v => update({ landing_thickness_m: v ?? undefined })} />
                     </Form.Item>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('floorHeight')}</Text>} tooltip={t('floorHeightTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={10} step={0.5} placeholder={t('floorHeightPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={0.5} placeholder={t('floorHeightPh')}
                             value={inp.floor_height_m}
                             onChange={v => update({ floor_height_m: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('spacer')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={8} step={1} placeholder={t('spacerPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={8} step={1} placeholder={t('spacerPh')}
                             value={inp.spacer_per_m2}
                             onChange={v => update({ spacer_per_m2: v ?? undefined })} />
                     </Form.Item>
                 </div>
                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('tieWire')}</Text>} style={{ margin: 0 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={5} step={0.5} placeholder={t('tieWirePh')}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={5} step={0.5} placeholder={t('tieWirePh')}
                         value={inp.tie_wire_factor}
                         onChange={v => update({ tie_wire_factor: v ?? undefined })} />
                 </Form.Item>
@@ -179,7 +179,7 @@ export default function Step13Staircase({ initialData, onBack, onSave }: Props) 
                     </Form.Item>
                 </div>
                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('vibratorDays')}</Text>} tooltip={t('vibratorDaysTooltip')} style={{ margin: 0 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={10} step={1} placeholder="1"
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={1} placeholder="1"
                         value={inp.vibrator_days} onChange={v => update({ vibrator_days: v ?? undefined })} />
                 </Form.Item>
             </Card>

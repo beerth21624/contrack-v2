@@ -90,21 +90,21 @@ export const Step7Pedestal: React.FC<Props> = ({ onBack, onSave, initialData }) 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('count')}</Text>}
                                 tooltip={t('countTooltip')} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={1}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                                     value={p.count} onChange={v => updatePedestal(i, { count: v ?? 1 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('widthW')}</Text>}
                                 tooltip={t('widthWTooltip')} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.05} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.05} precision={2}
                                     value={p.width_m} onChange={v => updatePedestal(i, { width_m: v ?? 0.3 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('lengthL')}</Text>} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.05} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.05} precision={2}
                                     value={p.length_m} onChange={v => updatePedestal(i, { length_m: v ?? 0.3 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('heightH')}</Text>}
                                 tooltip={t('heightHTooltip')} style={{ margin: 0 }}>
-                                <InputNumber style={{ width: '100%' }} min={0} step={0.05} precision={2}
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.05} precision={2}
                                     value={p.height_m} onChange={v => updatePedestal(i, { height_m: v ?? 0.6 })} />
                             </Form.Item>
                         </div>
@@ -122,7 +122,7 @@ export const Step7Pedestal: React.FC<Props> = ({ onBack, onSave, initialData }) 
 
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('globalParams')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wasteConc')}</Text>} style={{ margin: 0 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                         value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
                 </Form.Item>
             </Card>
@@ -137,11 +137,11 @@ export const Step7Pedestal: React.FC<Props> = ({ onBack, onSave, initialData }) 
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('rebarWeight')}</Text>}
                         validateStatus={result?.warningFields?.includes('rebar_weight_kg_per_m3') ? 'warning' : ''}
                         tooltip={t('rebarWeightTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={250} step={5}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={250} step={5}
                             value={inp.rebar_weight_kg_per_m3} onChange={v => update({ rebar_weight_kg_per_m3: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('tieWire')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={3} step={0.5} placeholder="1.5%"
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={3} step={0.5} placeholder="1.5%"
                             value={inp.tie_wire_factor} onChange={v => update({ tie_wire_factor: v ?? undefined })} />
                     </Form.Item>
                 </div>
@@ -156,17 +156,17 @@ export const Step7Pedestal: React.FC<Props> = ({ onBack, onSave, initialData }) 
                             ]} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('dowelBarLen')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={1.5} step={0.1} placeholder={t('dowelBarLenPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={1.5} step={0.1} placeholder={t('dowelBarLenPh')}
                             value={inp.dowel_bar_length_m} onChange={v => update({ dowel_bar_length_m: v ?? undefined })} />
                     </Form.Item>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('formReuse')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={10} step={1} placeholder={t('formReusePh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={1} placeholder={t('formReusePh')}
                             value={inp.formwork_reuse_times} onChange={v => update({ formwork_reuse_times: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('spacer')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={20} step={1} placeholder={t('spacerPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1} placeholder={t('spacerPh')}
                             value={inp.spacer_per_pedestal} onChange={v => update({ spacer_per_pedestal: v ?? undefined })} />
                     </Form.Item>
                 </div>
@@ -190,7 +190,7 @@ export const Step7Pedestal: React.FC<Props> = ({ onBack, onSave, initialData }) 
                     </Form.Item>
                 </div>
                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('vibratorDays')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={10} step={1}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={1}
                         value={inp.vibrator_days} onChange={v => update({ vibrator_days: v ?? undefined })} />
                 </Form.Item>
             </Card>

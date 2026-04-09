@@ -132,7 +132,7 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
             width: 140,
             align: 'right',
             render: (value: number, record: PriceItem) => (
-                <InputNumber
+                <InputNumber onFocus={(e) => e.target.select()}
                     size="small"
                     value={value}
                     min={0}
@@ -150,7 +150,7 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
             width: 140,
             align: 'right',
             render: (value: number, record: PriceItem) => (
-                <InputNumber
+                <InputNumber onFocus={(e) => e.target.select()}
                     size="small"
                     value={value}
                     min={0}
@@ -265,7 +265,7 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
                                                 <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>
                                                     {t('material')} ({locale === 'en' && item.uomEn ? item.uomEn : item.uom})
                                                 </Text>
-                                                <InputNumber
+                                                <InputNumber onFocus={(e) => e.target.select()}
                                                     size="middle"
                                                     value={item.costMaterial}
                                                     min={0}
@@ -279,7 +279,7 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
                                                 <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>
                                                     {t('labor')} ({locale === 'en' && item.uomEn ? item.uomEn : item.uom})
                                                 </Text>
-                                                <InputNumber
+                                                <InputNumber onFocus={(e) => e.target.select()}
                                                     size="middle"
                                                     value={item.costLabor}
                                                     min={0}

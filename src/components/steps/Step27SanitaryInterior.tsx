@@ -44,11 +44,11 @@ export default function Step27SanitaryInterior({ initialData, onBack, onSave }: 
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('bathroomCount')}</Text>}
                         tooltip={t('bathroomCountTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.bathroom_count} onChange={v => update({ bathroom_count: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('kitchenCount')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.kitchen_count} onChange={v => update({ kitchen_count: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('laundryPoint')}</Text>} style={{ margin: 0 }}>
@@ -79,11 +79,11 @@ export default function Step27SanitaryInterior({ initialData, onBack, onSave }: 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('cleanout')}</Text>}
                         tooltip={t('cleanoutTooltip')} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.cleanout_count} onChange={v => update({ cleanout_count: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wastePipe')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={25} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={25} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                     </Form.Item>
                 </div>
@@ -96,11 +96,11 @@ export default function Step27SanitaryInterior({ initialData, onBack, onSave }: 
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('optCardMain')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('supplyOverride')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={5} placeholder="auto"
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} placeholder="auto"
                             value={inp.supply_pipe_override_m} onChange={v => update({ supply_pipe_override_m: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('drainOverride')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={5} placeholder="auto"
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={5} placeholder="auto"
                             value={inp.drain_pipe_override_m} onChange={v => update({ drain_pipe_override_m: v ?? undefined })} />
                     </Form.Item>
                 </div>

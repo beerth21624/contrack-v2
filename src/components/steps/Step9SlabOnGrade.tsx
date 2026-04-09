@@ -42,7 +42,7 @@ export const Step9SlabOnGrade: React.FC<Props> = ({ onBack, onSave, initialData 
                         tooltip={t('areaTooltip')}
                         style={{ margin: 0 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.slab_area_m2} onChange={v => update({ slab_area_m2: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" 
@@ -50,7 +50,7 @@ export const Step9SlabOnGrade: React.FC<Props> = ({ onBack, onSave, initialData 
                         tooltip={t('thicknessTooltip')} 
                         style={{ margin: 0 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} step={0.01} precision={2}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.01} precision={2}
                             value={inp.slab_thickness_m} onChange={v => update({ slab_thickness_m: v ?? 0 })} />
                     </Form.Item>
                 </div>
@@ -63,7 +63,7 @@ export const Step9SlabOnGrade: React.FC<Props> = ({ onBack, onSave, initialData 
                         tooltip={t('sandThickTooltip')} 
                         style={{ margin: 0 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} step={0.01} precision={3}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.01} precision={3}
                             value={inp.sand_fill_thickness_m} onChange={v => update({ sand_fill_thickness_m: v ?? 0 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" 
@@ -71,11 +71,11 @@ export const Step9SlabOnGrade: React.FC<Props> = ({ onBack, onSave, initialData 
                         tooltip={t('plasticFactorTooltip')} 
                         style={{ margin: 0 }}
                     >
-                        <InputNumber style={{ width: '100%' }} min={0} max={1.5} step={0.01} precision={2}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={1.5} step={0.01} precision={2}
                             value={inp.plastic_sheet_area_factor} onChange={v => update({ plastic_sheet_area_factor: v ?? 1.10 })} />
                     </Form.Item>
                     <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wasteConc')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                             value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
                     </Form.Item>
                 </div>
@@ -98,13 +98,13 @@ export const Step9SlabOnGrade: React.FC<Props> = ({ onBack, onSave, initialData 
                     </Form.Item>
                     {(inp.rebar_type ?? 'wiremesh') === 'wiremesh' ? (
                         <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wiremeshWeight')}</Text>} tooltip={t('wiremeshWeightTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                            <InputNumber style={{ width: '100%' }} min={0} max={10} step={0.5}
+                            <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={0.5}
                                 value={inp.wiremesh_kg_per_m2}
                                 onChange={v => update({ wiremesh_kg_per_m2: v ?? undefined })} />
                         </Form.Item>
                     ) : (
                         <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('rebarWeight')}</Text>} tooltip={t('rebarWeightTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                            <InputNumber style={{ width: '100%' }} min={0} max={250} step={5}
+                            <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={250} step={5}
                                 value={inp.rebar_weight_kg_per_m3}
                                 onChange={v => update({ rebar_weight_kg_per_m3: v ?? undefined })} />
                         </Form.Item>
@@ -112,12 +112,12 @@ export const Step9SlabOnGrade: React.FC<Props> = ({ onBack, onSave, initialData 
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('perimeter')}</Text>} tooltip={t('perimeterTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.slab_perimeter_m}
                             onChange={v => update({ slab_perimeter_m: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('edgeFormworkLen')}</Text>} tooltip={t('edgeFormworkLenTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.edge_formwork_length_m}
                             onChange={v => update({ edge_formwork_length_m: v ?? undefined })} />
                     </Form.Item>
@@ -127,12 +127,12 @@ export const Step9SlabOnGrade: React.FC<Props> = ({ onBack, onSave, initialData 
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('titleJointsSpecials')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('controlJointSpace')}</Text>} tooltip={t('controlJointSpaceTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={6} step={0.5} placeholder={t('jointPh')}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={6} step={0.5} placeholder={t('jointPh')}
                             value={inp.control_joint_spacing_m}
                             onChange={v => update({ control_joint_spacing_m: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('expJointLen')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             placeholder={t('expJointLenPh')}
                             value={inp.expansion_joint_length_m}
                             onChange={v => update({ expansion_joint_length_m: v ?? undefined })} />
@@ -140,12 +140,12 @@ export const Step9SlabOnGrade: React.FC<Props> = ({ onBack, onSave, initialData 
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('sleeveCount')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} step={1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={1}
                             value={inp.sleeve_count}
                             onChange={v => update({ sleeve_count: v ?? undefined })} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('slopePct')}</Text>} tooltip={t('slopePctTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber style={{ width: '100%' }} min={0} max={10} step={0.1}
+                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={0.1}
                             value={inp.slope_percent}
                             onChange={v => update({ slope_percent: v ?? undefined })} />
                     </Form.Item>
@@ -175,7 +175,7 @@ export const Step9SlabOnGrade: React.FC<Props> = ({ onBack, onSave, initialData 
                     </Form.Item>
                 </div>
                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('screedDays')}</Text>} tooltip={t('screedDaysTooltip')} style={{ margin: 0, marginBottom: 12 }}>
-                    <InputNumber style={{ width: '100%' }} min={0} max={20} step={1}
+                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
                         value={inp.vibrator_days}
                         onChange={v => update({ vibrator_days: v ?? undefined })} />
                 </Form.Item>
