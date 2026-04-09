@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { Table, InputNumber, Typography, Card, Tag, Input, Select, Space, Collapse, Button, App } from 'antd';
+import { Table, InputNumber, Typography, Card, Tag, Input, Select, Space, Collapse, Button, App, Grid } from 'antd';
 import { SearchOutlined, FilterOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { StepSchedule } from '@/data/schedule-data';
@@ -23,6 +23,8 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
     const [mounted, setMounted] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
     const { message: messageApi } = App.useApp();
+    const screens = Grid.useBreakpoint();
+    const isMobile = screens.md === false;
 
     React.useEffect(() => {
         setMounted(true);
@@ -218,8 +220,8 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
         },
     ];
 
-    const titleExtra = (
-        <Space size="middle" wrap>
+    const desktopExtra = !isMobile && (
+        <Space size="middle">
             <Input
                 placeholder="ค้นหารายการงาน..."
                 prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
@@ -257,6 +259,47 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
         </Space>
     );
 
+    const mobileHeaderActions = isMobile && (
+        <div style={{ paddingBottom: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Input
+                placeholder="ค้นหารายการงาน..."
+                prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                value={searchText}
+                onChange={e => setSearchText(e.target.value)}
+                allowClear
+                size="large"
+                style={{ width: '100%', borderRadius: 8 }}
+            />
+            <Select
+                placeholder={<><FilterOutlined /> ทุกทีม (All Teams)</>}
+                options={teams}
+                value={selectedTeam}
+                onChange={setSelectedTeam}
+                size="large"
+                style={{ width: '100%' }}
+                allowClear
+                showSearch
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+                <Button
+                    icon={<DownloadOutlined />}
+                    onClick={handleExport}
+                    style={{ flex: 1, borderColor: '#217346', color: '#217346', fontWeight: 500, borderRadius: 8 }}
+                >
+                    Export
+                </Button>
+                <Button
+                    icon={<UploadOutlined />}
+                    onClick={() => setImportOpen(true)}
+                    type="dashed"
+                    style={{ flex: 1, fontWeight: 500, borderRadius: 8 }}
+                >
+                    Import
+                </Button>
+            </div>
+        </div>
+    );
+
     if (!mounted) return null;
 
     return (
@@ -267,10 +310,11 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                     <Tag color="cyan">{scheduleData.length} รายการงาน</Tag>
                 </Space>
             }
-            extra={titleExtra}
+            extra={desktopExtra}
             style={{ borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}
             styles={{ body: { padding: 12, backgroundColor: '#f5f5f5' } }}
         >
+            {mobileHeaderActions}
             <div style={{ marginBottom: 16, fontSize: 12, color: '#8c8c8c', background: '#fff', padding: '8px 12px', border: '1px solid #f0f0f0', borderRadius: 6 }}>
                 ปรับระยะเวลา, จำนวนคนงาน, และ Productivity Rate สำหรับแต่ละรายการ — ข้อมูลเริ่มต้นอ้างอิงจาก คู่มือ 4 (บ้าน คสล. 1 ชั้น 128 ตร.ม.)
             </div>
