@@ -267,6 +267,17 @@ export const StepFormShell: React.FC<StepFormShellProps> = ({
                         icon={<CheckCircleOutlined />}
                         disabled={!result}
                         onClick={onSave}
+                        onPointerDown={(e) => {
+                            // On mobile Safari/Chrome, tapping while keyboard is open swallows the first click to fire blur.
+                            // onPointerDown fires immediately, allowing us to capture the save instantly.
+                            if (e.pointerType === 'touch') {
+                                e.preventDefault();
+                                if (document.activeElement instanceof HTMLElement) {
+                                    document.activeElement.blur();
+                                }
+                                if (result) onSave();
+                            }
+                        }}
                         style={{ width: '100%', fontWeight: 600 }}
                     >
                         {t('saveToBoq')}
