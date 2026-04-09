@@ -15,6 +15,7 @@ import type { StepResult } from '@/types';
 import { useAppStore } from '@/lib/store';
 import { useTranslations } from 'next-intl';
 import { useAppLocale } from '@/i18n/LocaleProvider';
+import { ScheduleCalendar } from './ScheduleCalendar';
 
 const { Text } = Typography;
 
@@ -123,7 +124,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
     const t = useTranslations('schedule');
     const { locale } = useAppLocale();
     const [startDate, setStartDate] = useState<Dayjs>(dayjs());
-    const [showTable, setShowTable] = useState(false);
+    const [viewMode, setViewMode] = useState<'gantt' | 'calendar' | 'table'>('gantt');
 
     // Connect to global Zastrand store for config persistency
     const config = useAppStore(state => state.scheduleConfig);
@@ -433,13 +434,37 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                     </Text>
                 </div>
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Text style={{ fontSize: 12, color: '#8c8c8c' }}>{t('showTable')}</Text>
-                    <Switch size="small" checked={showTable} onChange={setShowTable} />
+                    <div className="bg-gray-100 p-1 rounded-md flex gap-1">
+                        <Button 
+                            type={viewMode === 'gantt' ? 'primary' : 'text'} 
+                            size="small" 
+                            onClick={() => setViewMode('gantt')}
+                            style={{ borderRadius: 4, fontWeight: viewMode === 'gantt' ? 600 : 400 }}
+                        >
+                            {t('viewGantt')}
+                        </Button>
+                        <Button 
+                            type={viewMode === 'calendar' ? 'primary' : 'text'} 
+                            size="small" 
+                            onClick={() => setViewMode('calendar')}
+                            style={{ borderRadius: 4, fontWeight: viewMode === 'calendar' ? 600 : 400 }}
+                        >
+                            {t('viewCalendar')}
+                        </Button>
+                        <Button 
+                            type={viewMode === 'table' ? 'primary' : 'text'} 
+                            size="small" 
+                            onClick={() => setViewMode('table')}
+                            style={{ borderRadius: 4, fontWeight: viewMode === 'table' ? 600 : 400 }}
+                        >
+                            {t('viewTable')}
+                        </Button>
+                    </div>
                 </div>
             </Card>
 
             {/* ── Gantt Chart ── */}
-            {!showTable && (
+            {viewMode === 'gantt' && (
                 <Card
                     size="small"
                     style={{
@@ -638,8 +663,20 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                 </Card>
             )}
 
+            {/* ── Calendar View ── */}
+            {viewMode === 'calendar' && (
+                <div style={{ marginBottom: 16 }}>
+                    <ScheduleCalendar 
+                        items={schedule.items} 
+                        startDate={startDate} 
+                        stepSaves={stepSaves as Record<number, { res: StepResult } | undefined>}
+                        locale={locale}
+                    />
+                </div>
+            )}
+
             {/* ── Table View ── */}
-            {showTable && (
+            {viewMode === 'table' && (
                 <>
                     {/* Mobile Card View for Table Data */}
                     <div className="md:hidden flex flex-col gap-3 mb-4">
