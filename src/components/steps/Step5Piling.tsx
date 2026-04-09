@@ -156,6 +156,12 @@ export const Step5Piling: React.FC<Props> = ({ onSave, onBack, initialData }) =>
                         <InputNumber style={{ width: '100%' }} min={0} max={10} step={1} placeholder={t('loadTestCountPh')}
                             value={inp.load_test_count} onChange={v => update({ load_test_count: v ?? undefined })} />
                     </Form.Item>
+                    <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('seismicTestCount')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
+                        <InputNumber style={{ width: '100%' }} min={0} step={1} placeholder={t('seismicTestCountPh')}
+                            value={inp.seismic_test_count} onChange={v => update({ seismic_test_count: v ?? undefined })} />
+                    </Form.Item>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                     {(inp.load_test_count ?? 0) > 0 && (
                         <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('loadTestType')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
                             <Select value={inp.load_test_type ?? 'dynamic'}

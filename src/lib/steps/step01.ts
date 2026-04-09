@@ -16,7 +16,10 @@ export interface FillAreaEntry {
 export interface Step1Input {
   fill_areas: FillAreaEntry[];
   waste_percent: number;               // default 10 (ร่วง/สูญเสียระหว่างขนส่ง)
-  // optional
+  // optional - pre-work clearance
+  site_clearance_area_m2?: number;     // พื้นที่แผ้วถางเตรียมหน้างาน
+  demolition_trips?: number;           // จำนวนเที่ยวรถบรรทุกขนเศษวัสดุทิ้ง
+  // optional - machinery
   roller_productivity_m3_per_hour?: number;  // ผลผลิตเครื่องบดอัด
   // ─── cost-related inputs ────────────────────────────────
   truck_capacity_m3?: number;          // ปริมาตรรถดินต่อเที่ยว (default 12 ม³)
@@ -90,6 +93,22 @@ export function calcStep1(inp: Step1Input): StepResult {
       qty: r2(compacted_volume / roller_productivity_m3_per_hour),
       uom: 'ชม.',
       label: 'เครื่องบดอัด (Roller Hours)',
+    };
+  }
+
+  // Site Clearance
+  if (inp.site_clearance_area_m2 && inp.site_clearance_area_m2 > 0) {
+    quantities.site_clearance = {
+      qty: inp.site_clearance_area_m2,
+      uom: 'm²',
+      label: 'พื้นที่แผ้วถางเตรียมหน้างาน',
+    };
+  }
+  if (inp.demolition_trips && inp.demolition_trips > 0) {
+    quantities.demolition_debris = {
+      qty: inp.demolition_trips,
+      uom: 'เที่ยว',
+      label: 'รื้อถอนและขนเศษวัสดุทิ้ง',
     };
   }
 

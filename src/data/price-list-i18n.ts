@@ -10,6 +10,8 @@ export const PRICE_LIST_I18N: Record<string, { nameEn: string; uomEn: string }> 
     'SRV-PHOTO': { nameEn: 'Pre-construction Site Photos', uomEn: 'set' },
   
     // Step 1 : Earthwork
+    'SITE-CLEAR': { nameEn: 'Site Clearance & Preparation', uomEn: 'm2' },
+    'SITE-DEMO': { nameEn: 'Demolition & Debris Disposal', uomEn: 'trip' },
     'FILL-SITE': { nameEn: 'Site Backfill & Compaction', uomEn: 'm3' },
     'FILL-SELECTED': { nameEn: 'Selected Fill & Compaction', uomEn: 'm3' },
     'FILL-SOFT': { nameEn: 'Soft Soil & Compaction', uomEn: 'm3' },
@@ -73,6 +75,7 @@ export const PRICE_LIST_I18N: Record<string, { nameEn: string; uomEn: string }> 
     'PILE-CAGE': { nameEn: 'Rebar Cage (Bored Pile)', uomEn: 'kg' },
     'PILE-BENTO': { nameEn: 'Bentonite Slurry', uomEn: 'm3' },
     'PILE-LOADTEST': { nameEn: 'Load Test (Dynamic/Static)', uomEn: 'pcs' },
+    'PILE-SEISMIC': { nameEn: 'Seismic Integrity Test', uomEn: 'pcs' },
   
     // Step 6 : Footing
     'FTG-EXC': { nameEn: 'Footing Excavation (Machine)', uomEn: 'm3' },
@@ -113,6 +116,7 @@ export const PRICE_LIST_I18N: Record<string, { nameEn: string; uomEn: string }> 
     'GBM-PUMP': { nameEn: 'Concrete Pump', uomEn: 'day' },
     'GBM-VIBRATOR': { nameEn: 'Concrete Vibrator', uomEn: 'day' },
     'GBM-CURING': { nameEn: 'Curing Compound / Plastic', uomEn: 'm2' },
+    'GBM-TERMITE': { nameEn: 'Termite Protection Piping', uomEn: 'm' },
   
     // Step 9 : Slab on Grade
     'SOG-SAND': { nameEn: 'Sand Bedding (Under Slab)', uomEn: 'm3' },
@@ -263,16 +267,17 @@ export const PRICE_LIST_I18N: Record<string, { nameEn: string; uomEn: string }> 
     'PNT-DROP': { nameEn: 'Drop Cloth', uomEn: 'pcs' },
   
     // Step 26 : Electrical
-    'ELC-CONDUIT': { nameEn: 'PVC Conduit Pipe', uomEn: 'm' },
-    'ELC-MAIN': { nameEn: 'Main Wire THW', uomEn: 'm' },
-    'ELC-BRANCH': { nameEn: 'Branch Wire VAF', uomEn: 'm' },
-    'ELC-AC': { nameEn: 'AC Wire VCT', uomEn: 'm' },
-    'ELC-SOCKET': { nameEn: 'Switch / Socket', uomEn: 'pcs' },
+    'ELC-MAIN1P': { nameEn: 'Main Cable (1 Phase)', uomEn: 'm' },
+    'ELC-MAIN3P': { nameEn: 'Main Cable (3 Phase)', uomEn: 'm' },
+    'ELC-BRANCH': { nameEn: 'Branch Cable (VAF/THW)', uomEn: 'm' },
+    'ELC-AC': { nameEn: 'AC Dedicated VCT Cable', uomEn: 'm' },
+    'ELC-AC-COPPER': { nameEn: 'AC Copper Pipe + Insulation', uomEn: 'm' },
+    'ELC-AC-INSTALL': { nameEn: 'AC Installation (Wall Type)', uomEn: 'set' },
+    'ELC-EV': { nameEn: 'EV Charger 1P (Wiring + Install)', uomEn: 'set' },
     'ELC-LIGHT': { nameEn: 'Light Fixture', uomEn: 'pcs' },
     'ELC-CU': { nameEn: 'Consumer Unit + Breaker', uomEn: 'set' },
     'ELC-GROUND': { nameEn: 'Ground Rod', uomEn: 'pcs' },
     'ELC-OUT': { nameEn: 'Outdoor Socket IP55', uomEn: 'pcs' },
-    'ELC-EV': { nameEn: 'EV Charger Wall Box', uomEn: 'set' },
   
     // Step 27 : San Int
     'SIP-SUPPLY': { nameEn: 'Water Supply Pipe PVC', uomEn: 'm' },

@@ -26,6 +26,8 @@ export interface Step8Input {
   dowel_count?: number;                  // จำนวน dowel bar (เส้น)
   dowel_length_m?: number;               // ความยาว dowel bar (ม.)
   shoring_required?: boolean;            // ค้ำยันคาน (ถ้าคานสูง)
+  termite_protection_required?: boolean; // ระบบกันปลวก
+
   direct_rebar_kg?: number;              // น้ำหนักเหล็กตรงจาก Bar Schedule (bypass ratio)
   concrete_grade?: ConcreteGrade;        // default '240'
 }
@@ -117,6 +119,11 @@ export function calcStep8(inp: Step8Input): StepResult {
   if (curing === 'plastic' || curing === 'compound') {
     const surface = Lb * (2 * bh + bw) * 1.1; // ข้าง 2 ด้าน + หน้าบน × overlap 10%
     quantities.curing = { qty: r2(surface), uom: 'm²', label: curing === 'plastic' ? 'พลาสติกปิดบ่ม (+10% overlap)' : 'น้ำยาบ่ม Curing Compound' };
+  }
+
+  // ─── ปลวก ──────────────────────────────────────────────────
+  if (inp.termite_protection_required) {
+    quantities.termite_pipe = { qty: Lb, uom: 'm', label: `ท่ออัดน้ำยาปลวกใต้แนวคาน` };
   }
 
   // ─── Warnings ─────────────────────────────────────────────

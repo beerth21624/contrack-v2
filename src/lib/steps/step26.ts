@@ -23,6 +23,10 @@ export interface Step26Input {
   ground_rod_count?: number;           // สายดิน
   avg_cable_run_m?: number;            // ระยะวิ่งสายเฉลี่ยจาก DB ถึงจุดใช้งาน (default 8 ม.)
   ev_charger?: boolean;                // ติดตั้ง EV Charger
+
+  // ─── HVAC (ระบบปรับอากาศ) ────────────────────────────────
+  hvac_install_count?: number;         // จำนวนแอร์ติดตั้ง (เครื่อง)
+  hvac_copper_pipe_m?: number;         // ระยะเดินท่อน้ำยาแอร์รวม (ม.)
 }
 
 // ─── STEP 26 — ระบบไฟฟ้า ─────────────────────────────────────────────────────
@@ -101,6 +105,16 @@ export function calcStep26(inp: Step26Input): StepResult {
   // 11. EV Charger
   if (inp.ev_charger) {
     quantities.ev_charger = { qty: 1, uom: 'ชุด', label: 'EV Charger Wall Box + สายเดิน' };
+  }
+
+  // 12. HVAC
+  const hvacCount = inp.hvac_install_count ?? ac_circuit_count;
+  if (hvacCount > 0) {
+    quantities.hvac_install = { qty: hvacCount, uom: 'ชุด', label: `ติดตั้งแอร์ Wall Type (${hvacCount} เครื่อง)` };
+    const copper = inp.hvac_copper_pipe_m ?? (hvacCount * 10);
+    if (copper > 0) {
+        quantities.hvac_copper = { qty: r2(copper * wf), uom: 'm', label: 'ท่อทองแดงน้ำยาแอร์+ฉนวน (เผื่อ waste)' };
+    }
   }
 
   // ─── Warnings ──────────────────────────────────────────

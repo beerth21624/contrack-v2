@@ -16,6 +16,10 @@ export interface Step34Input {
   // ─── optional ─────────────────────────────────────────
   punch_list_remaining?: number;       // Punch list ค้าง
   handover_training: boolean;          // สอนการใช้งานอุปกรณ์
+
+  // ─── Cleaning ───────────────────────────────────────────
+  big_cleaning_required?: boolean;
+  building_area_m2?: number;
 }
 
 export function calcStep34(inp: Step34Input): StepResult {
@@ -52,6 +56,11 @@ export function calcStep34(inp: Step34Input): StepResult {
   // 7. Handover training
   if (inp.handover_training)
     quantities.training = { qty: 1, uom: 'วัน', label: 'สอนการใช้งาน (ไฟฟ้า/ประปา/แอร์)' };
+
+  // 8. Big Cleaning
+  if (inp.big_cleaning_required && inp.building_area_m2) {
+    quantities.big_cleaning = { qty: inp.building_area_m2, uom: 'm²', label: 'ทำความสะอาดก่อนส่งมอบ (Big Cleaning)' };
+  }
 
   const warnings: string[] = [];
   if (inp.document_set_count === 0) {

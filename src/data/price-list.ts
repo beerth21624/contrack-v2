@@ -17,6 +17,8 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 1 : Earthwork & Compaction
   // ═══════════════════════════════════════════════════════════════════════════
+  { code: 'SITE-CLEAR',     name: 'แผ้วถาง/ปรับระดับพื้นที่เตรียมงาน',  uom: 'm2',  costMaterial: 0,    costLabor: 15,   category: 'Earthwork' },
+  { code: 'SITE-DEMO',      name: 'รื้อถอนและขนเศษวัสดุทิ้ง',        uom: 'เที่ยว', costMaterial: 0,    costLabor: 1500, category: 'Earthwork' },
   { code: 'FILL-SITE',      name: 'ดินถม + บดอัดบริเวณไซต์ (ทั่วไป)', uom: 'm3',  costMaterial: 250,  costLabor: 80,   category: 'Earthwork' },
   { code: 'FILL-SELECTED',  name: 'ดินลูกรัง + บดอัด',              uom: 'm3',  costMaterial: 300,  costLabor: 80,   category: 'Earthwork' },
   { code: 'FILL-SOFT',      name: 'ดินอ่อน + บดอัด',               uom: 'm3',  costMaterial: 150,  costLabor: 80,   category: 'Earthwork' },
@@ -96,6 +98,7 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   { code: 'PILE-CAGE',     name: 'เหล็กเสริม Cage (เข็มเจาะ)',       uom: 'kg',  costMaterial: 23,   costLabor: 6,    category: 'Piling' },
   { code: 'PILE-BENTO',    name: 'น้ำ Bentonite (Slurry)',           uom: 'm3',  costMaterial: 800,  costLabor: 0,    category: 'Piling' },
   { code: 'PILE-LOADTEST', name: 'Load Test (Dynamic/Static)',       uom: 'ต้น',  costMaterial: 0,    costLabor: 35000, category: 'Piling' },
+  { code: 'PILE-SEISMIC',  name: 'Seismic Integrity Test',           uom: 'ต้น',  costMaterial: 0,    costLabor: 1500,  category: 'Piling' },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 6 : Footing / Foundation
@@ -143,6 +146,7 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   { code: 'GBM-PUMP',     name: 'ปั๊มคอนกรีต',                      uom: 'วัน',  costMaterial: 0,    costLabor: 8000, category: 'Ground Beam' },
   { code: 'GBM-VIBRATOR', name: 'เครื่องจี้คอนกรีต',                 uom: 'วัน',  costMaterial: 0,    costLabor: 500,  category: 'Ground Beam' },
   { code: 'GBM-CURING',   name: 'พลาสติก/น้ำยาบ่มคอนกรีต',         uom: 'm2',  costMaterial: 15,   costLabor: 5,    category: 'Ground Beam' },
+  { code: 'GBM-TERMITE',  name: 'ระบบท่ออัดน้ำยาปลวก',               uom: 'm',   costMaterial: 60,   costLabor: 20,   category: 'Ground Beam' },
 
 
   // ═══════════════════════════════════════════════════════════════════════════

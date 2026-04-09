@@ -209,6 +209,13 @@ export default function Step12BeamSlab({ initialData, onBack, onSave }: Props) {
                                 ]} disabled={inp.waterproofing_required === false} />
                         </Form.Item>
                     </div>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                        <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waterproofAreaOverride')}</Text>} style={{ margin: 0 }}>
+                            <InputNumber style={{ width: '100%' }} min={0} step={5} precision={2} placeholder={t('waterproofAreaPh')}
+                                disabled={inp.waterproofing_required === false}
+                                value={inp.waterproofing_area_m2} onChange={v => update({ waterproofing_area_m2: v ?? undefined })} />
+                        </Form.Item>
+                    </div>
                 </Card>
             )}
 

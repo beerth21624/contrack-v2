@@ -25,6 +25,7 @@ export interface Step12Input {
   tie_wire_factor?: number;            // default 1.5
   spacer_per_m2?: number;              // default 4
   waterproofing_required?: boolean;
+  waterproofing_area_m2?: number;      // override
   waterproofing_type?: 'acrylic' | 'pu' | 'cementitious';
   roof_drain_count?: number;
   slope_concrete_required?: boolean;
@@ -99,9 +100,10 @@ export function calcStep12(inp: Step12Input): StepResult {
   quantities.shoring = { qty: Math.ceil(sa * shorePcsPerM2 * (h / 3.0)), uom: 'pcs', label: `ค้ำยันท้องคาน+พื้น (สูง ~${h} ม.)` };
 
   // ─── กันซึม ──────────────────────────────────────────────
-  if (inp.waterproofing_required == false) {
+  if (inp.waterproofing_required !== false) {
     const wpType = inp.waterproofing_type ?? 'pu';
-    quantities.waterproofing = { qty: r2(sa * 1.1), uom: 'm²', label: `กันซึมดาดฟ้า ${wpType.toUpperCase()}` };
+    const wpArea = inp.waterproofing_area_m2 ?? r2(sa * 1.1);
+    quantities.waterproofing = { qty: wpArea, uom: 'm²', label: `กันซึมดาดฟ้า ${wpType.toUpperCase()}` };
   }
   if (inp.roof_drain_count) {
     quantities.roof_drain = { qty: inp.roof_drain_count, uom: 'pcs', label: 'หัว Roof Drain' };

@@ -137,6 +137,16 @@ export default function Step21BathroomTiling({ initialData, onBack, onSave }: Pr
                         <InputNumber style={{ width: '100%' }} min={0} max={3.0} step={0.1} precision={2}
                             value={inp.waterproof_height_m} onChange={v => update({ waterproof_height_m: v ?? 1.80 })} />
                     </Form.Item>
+                    <Form.Item layout="vertical"
+                        label={<Text style={{ fontSize: 13 }}>{t('waterproofAreaOverride')}</Text>} 
+                        tooltip={t('waterproofAreaPh')}
+                        style={{ margin: 0, marginBottom: 12 }}
+                    >
+                        <InputNumber style={{ width: '100%' }} min={0} step={5} precision={2} placeholder={t('waterproofAreaPh')}
+                            value={inp.waterproof_area_m2} onChange={v => update({ waterproof_area_m2: v ?? undefined })} />
+                    </Form.Item>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                     <Form.Item required layout="vertical"
                         label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} 
                         tooltip={t('wasteTooltip')}

@@ -23,9 +23,9 @@ const SOIL_COMPACTION = {
 
 const createFillArea = (index: number): FillAreaEntry => ({
     label: `พื้นที่ ${index}`,
-    width_m: 10,
-    length_m: 10,
-    average_fill_height_m: 0.5,
+    width_m: 0,
+    length_m: 0,
+    average_fill_height_m: 0,
     compaction_factor: 1.30,
     layer_thickness_m: 0.30,
 });
@@ -117,18 +117,18 @@ export const Step1Earthwork: React.FC<Props> = ({ onSave, onBack, initialData })
                                     ]} />
                             </Form.Item>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div className="grid grid-cols-2 md:grid-cols-2 gap-2">
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('width')}</Text>} style={{ margin: 0 }}>
                                 <InputNumber style={{ width: '100%' }} min={0} step={0.5} precision={2}
-                                    value={f.width_m} onChange={v => updateFillArea(i, { width_m: v ?? 1 })} />
+                                    value={f.width_m} onChange={v => updateFillArea(i, { width_m: v ?? 0 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('length')}</Text>} style={{ margin: 0 }}>
                                 <InputNumber style={{ width: '100%' }} min={0} step={0.5} precision={2}
-                                    value={f.length_m} onChange={v => updateFillArea(i, { length_m: v ?? 1 })} />
+                                    value={f.length_m} onChange={v => updateFillArea(i, { length_m: v ?? 0 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('height')}</Text>} style={{ margin: 0 }}>
                                 <InputNumber style={{ width: '100%' }} min={0} step={0.1} precision={2}
-                                    value={f.average_fill_height_m} onChange={v => updateFillArea(i, { average_fill_height_m: v ?? 0.5 })} />
+                                    value={f.average_fill_height_m} onChange={v => updateFillArea(i, { average_fill_height_m: v ?? 0 })} />
                             </Form.Item>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 11 }}>{t('cf')}</Text>} style={{ margin: 0 }}>
                                 <InputNumber style={{ width: '100%' }} min={0} max={1.5} step={0.01} precision={2}
@@ -166,6 +166,18 @@ export const Step1Earthwork: React.FC<Props> = ({ onSave, onBack, initialData })
     /* ── Optional fields ────────────────────────────────────── */
     const optional = (
         <>
+            <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('optTitleClearance')}</span>} size="small" className="shadow-sm mb-4" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
+                <div className="grid grid-cols-2 gap-2">
+                    <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('optClearanceArea')}</Text>} style={{ margin: 0 }}>
+                        <InputNumber style={{ width: '100%' }} min={0} step={10} placeholder={t('optClearancePh')}
+                            value={inp.site_clearance_area_m2} onChange={v => update({ site_clearance_area_m2: v ?? undefined })} />
+                    </Form.Item>
+                    <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('optDemolitionTrips')}</Text>} style={{ margin: 0 }}>
+                        <InputNumber style={{ width: '100%' }} min={0} step={1} placeholder={t('optDemolitionPh')}
+                            value={inp.demolition_trips} onChange={v => update({ demolition_trips: v ?? undefined })} />
+                    </Form.Item>
+                </div>
+            </Card>
             <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('optRoller')}</Text>} style={{ margin: 0 }}>
                 <InputNumber style={{ width: '100%' }} min={0} step={5} placeholder={t('optRollerPh')}
                     value={inp.roller_productivity_m3_per_hour} onChange={v => update({ roller_productivity_m3_per_hour: v ?? undefined })} />

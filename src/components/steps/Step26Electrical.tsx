@@ -139,7 +139,20 @@ export default function Step26Electrical({ initialData, onBack, onSave }: Props)
                 </div>
             </Card>
 
-            
+            <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('optHvacMain')}</span>} size="small" className="shadow-sm mt-4" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
+                <div className="grid grid-cols-2 gap-2">
+                    <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('hvacInstallCount')}</Text>}
+                        tooltip={t('hvacInstallTooltip')} style={{ margin: 0, marginBottom: 12 }}>
+                        <InputNumber style={{ width: '100%' }} min={0} step={1} placeholder={t('hvacInstallPh')}
+                            value={inp.hvac_install_count} onChange={v => update({ hvac_install_count: v ?? undefined })} />
+                    </Form.Item>
+                    <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('hvacCopper')}</Text>}
+                        tooltip={t('hvacCopperTooltip')} style={{ margin: 0, marginBottom: 12 }}>
+                        <InputNumber style={{ width: '100%' }} min={0} step={5} precision={2} placeholder={t('hvacCopperPh')}
+                            value={inp.hvac_copper_pipe_m} onChange={v => update({ hvac_copper_pipe_m: v ?? undefined })} />
+                    </Form.Item>
+                </div>
+            </Card>
         </div>
     );
 

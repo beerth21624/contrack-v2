@@ -38,6 +38,11 @@
     "addArea": "+ เพิ่มขอบเขตงานถม (Add Fill Area)",
     "waste": "เผื่อวัสดุสูญเสีย (Waste %)",
     "wasteTooltip": "เผื่อความสูญเสียจากกระบวนการขนส่งและการทำงาน (มาตรฐาน 5-10%)",
+    "optTitleClearance": "งานเคลียร์พื้นที่และรื้อถอน (Site Clearance)",
+    "optClearanceArea": "พื้นที่แผ้วถาง (ม²)",
+    "optClearancePh": "ตร.ม. ที่ต้องเคลียร์/ตัดหญ้า",
+    "optDemolitionTrips": "เที่ยวรถขนเศษวัสดุทิ้ง (เที่ยว)",
+    "optDemolitionPh": "ประเมินจำนวนเที่ยวรถบรรทุก",
     "optRoller": "ประสิทธิภาพเครื่องจักรบดอัด (Roller Productivity) ม³/ชม.",
     "optRollerPh": "ตัวอย่าง: 50 ม³/ชม.",
     "optTruck": "ความจุรถบรรทุกวัสดุ (Truck Capacity) ม³/เที่ยว",
@@ -197,8 +202,10 @@
     "loadTestCount": "จำนวนจุดทดสอบรับน้ำหนัก (Load Test Quantity)",
     "loadTestCountPh": "มาตรฐาน: 1-2 จุด หรือ 1% ของทั้งหมด",
     "loadTestType": "วิธีการทดสอบรับน้ำหนัก (Test Method)",
-    "testDynamic": "ทดสอบแบบพลศาสตร์ (Dynamic PDA Load Test)",
-    "testStatic": "ทดสอบแบบสถิตยศาสตร์ (Static Load Test)"
+    "testDynamic": "Dynamic PDA Load Test",
+    "testStatic": "Static Load Test",
+    "seismicTestCount": "จำนวนทดสอบ Seismic (ต้น)",
+    "seismicTestCountPh": "ทดสอบความสมบูรณ์เข็ม"
   },
   "step6": {
     "footingFormula": "{count} ฐาน × {l}×{w}×{t} ม. = {vol} ม³",
@@ -784,6 +791,8 @@
     "optionsWaste": "ตัวเลือกเพิ่มเติมและการเผื่อวัสดุ (Options & Waste)",
     "waterproofHeight": "ความสูงทากันซึม (ม.)",
     "waterproofTooltip": "มาตรฐาน ผนังเปียก (โซนฝักบัว) ทากันซึมสูง 1.80 ม. ผนังแห้ง 0.30 ม. ระบุค่าเฉลี่ยที่ครอบคลุม",
+    "waterproofAreaOverride": "พื้นที่ทากันซึม (ม²)",
+    "waterproofAreaPh": "ปล่อยว่างเพื่อใช้ค่า Default (คำนวณตามความสูงผนัง)",
     "waste": "เผื่อ/เศษตัด (Waste %)",
     "wasteTooltip": "ห้องน้ำมักเผื่อ 15% เพราะห้องเล็กต้องตัดเศษรอบมุมเยอะ"
   },
@@ -1140,6 +1149,10 @@
     "optCardMain": "ความต้องการเพิ่มเติม (Optional Tracking)",
     "punchList": "Punch List ค้าง",
     "punchListTooltip": "ควรเป็น 0 ก่อนเซ็นรับมอบ",
-    "checklistTitle": " Handover Checklist:"
+    "checklistTitle": "รายการตรวจสอบเอกสาร ณ วันส่งมอบ:",
+    "cleaningMain": "ทำความสะอาดงานก่อสร้าง",
+    "bigCleaning": "Big Cleaning ก่อนส่งมอบบ้าน",
+    "buildingArea": "พื้นที่ใช้สอยบ้าน (ม²)",
+    "buildingAreaTooltip": "ใช้พื้นที่รวมของบ้าน (Indoor + Outdoor) เพื่อประเมินค่าแรงช่างทำความสะอาด"
   }
 }

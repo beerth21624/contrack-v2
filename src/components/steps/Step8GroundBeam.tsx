@@ -15,7 +15,7 @@ const DEFAULTS: Step8Input = {
     total_beam_length_m: 0, beam_width_m: 0, beam_height_m: 0,
     lean_concrete_thickness_m: 0, waste_percent: 0,
     rebar_weight_kg_per_m3: 0, concrete_pump_required: false,
-    excavation_extra_margin_m: 0,
+    excavation_extra_margin_m: 0, termite_protection_required: false,
 };
 
 export const Step8GroundBeam: React.FC<Props> = ({ onBack, onSave, initialData }) => {
@@ -161,6 +161,12 @@ export const Step8GroundBeam: React.FC<Props> = ({ onBack, onSave, initialData }
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('shoring')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
                         <Switch checked={inp.shoring_required} onChange={v => update({ shoring_required: v })}
                             checkedChildren={t('shoringYes')} unCheckedChildren={t('shoringNo')} />
+                    </Form.Item>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                    <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('termite')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
+                        <Switch checked={inp.termite_protection_required} onChange={v => update({ termite_protection_required: v })}
+                            checkedChildren={t('termiteYes')} unCheckedChildren={t('termiteNo')} />
                     </Form.Item>
                 </div>
             </Card>

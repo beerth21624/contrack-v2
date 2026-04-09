@@ -120,6 +120,8 @@ const build = (
             build(1, 'งานถมดิน', 'Earthwork & Compaction', () => {
                 const q = stepSaves[1]?.res.quantities;
                 return q ? [
+                    makeRow(priceList, 'SITE-CLEAR',      q.site_clearance?.qty ?? 0,         '1.0.1'),
+                    makeRow(priceList, 'SITE-DEMO',       q.demolition_debris?.qty ?? 0,      '1.0.2'),
                     makeRow(priceList, 'FILL-SITE',       q.volume_general?.qty ?? 0,         '1.1.1'),
                     makeRow(priceList, 'FILL-SELECTED',   q.volume_selected?.qty ?? 0,        '1.1.2'),
                     makeRow(priceList, 'FILL-SOFT',       q.volume_soft?.qty ?? 0,            '1.1.3'),
@@ -197,6 +199,7 @@ const build = (
                     makeRow(priceList, 'PILE-CAGE',      q.rebar_cage?.qty ?? 0,         '5.6'),
                     makeRow(priceList, 'PILE-BENTO',     q.bentonite?.qty ?? 0,          '5.7'),
                     makeRow(priceList, 'PILE-LOADTEST',  q.load_test?.qty ?? 0,          '5.8'),
+                    makeRow(priceList, 'PILE-SEISMIC',   q.seismic_test?.qty ?? 0,       '5.9'),
                 ] : [];
             }),
             build(6, 'งานฐานราก', 'Foundation Footing', () => {
@@ -249,6 +252,7 @@ const build = (
                     makeRow(priceList, 'GBM-PUMP',     q.concrete_pump?.qty ?? 0,       '8.10'),
                     makeRow(priceList, 'GBM-VIBRATOR', q.vibrator?.qty ?? 0,            '8.11'),
                     makeRow(priceList, 'GBM-CURING',   q.curing?.qty ?? 0,              '8.12'),
+                    makeRow(priceList, 'GBM-TERMITE',  q.termite_pipe?.qty ?? 0,        '8.13'),
                 ] : [];
             }),
             build(9, 'งานพื้นหล่อในที่', 'Slab on Grade', () => {
@@ -475,6 +479,8 @@ const build = (
                     makeRow(priceList, 'ELC-GROUND',   q.ground_rod?.qty ?? 0,        '26.8'),
                     makeRow(priceList, 'ELC-OUT',      q.outdoor_socket?.qty ?? 0,    '26.9'),
                     makeRow(priceList, 'ELC-EV',       q.ev_charger?.qty ?? 0,        '26.10'),
+                    makeRow(priceList, 'ELC-AC-INSTALL', q.hvac_install?.qty ?? 0,    '26.11'),
+                    makeRow(priceList, 'ELC-AC-COPPER', q.hvac_copper?.qty ?? 0,      '26.12'),
                 ] : [];
             }),
             build(27, 'งานสุขาภิบาลภายใน', 'Sanitary Int', () => {
@@ -581,6 +587,7 @@ const build = (
                     makeRow(priceList, 'HDV-MANUAL',  q.manual?.qty ?? 0,         '34.5'),
                     makeRow(priceList, 'HDV-PHOTO',   q.photos?.qty ?? 0,         '34.6'),
                     makeRow(priceList, 'HDV-TRAIN',   q.training?.qty ?? 0,       '34.7'),
+                    makeRow(priceList, 'DEF-CLEAN',   q.big_cleaning?.qty ?? 0,   '34.8'),
                 ] : [];
             }),
         ];

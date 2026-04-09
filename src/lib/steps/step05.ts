@@ -20,6 +20,7 @@ export interface Step5Input {
   pile_head_cut_depth_cm?: number;     // ตัดหัวเข็มลึก (ซม.) default 30
   load_test_count?: number;            // จำนวนเข็มที่ต้องทำ Load Test (default 0)
   load_test_type?: 'dynamic' | 'static'; // ประเภท load test
+  seismic_test_count?: number;         // จำนวนเสาเข็มที่ทดสอบ Seismic Test
   // bored pile only
   rebar_cage_kg_per_m?: number;        // น้ำหนักเหล็ก cage ต่อ ม. (default 25 กก./ม.)
   bentonite_required?: boolean;        // ใช้ bentonite ไหม (default true สำหรับเข็มเจาะ)
@@ -121,6 +122,11 @@ export function calcStep5(inp: Step5Input): StepResult {
   if (inp.load_test_count && inp.load_test_count > 0) {
     const test_type = inp.load_test_type === 'static' ? 'Static' : 'Dynamic (PDA)';
     quantities.load_test = { qty: inp.load_test_count, uom: 'ต้น', label: `Load Test — ${test_type}` };
+  }
+
+  // ─── Seismic Test ──────────────────────────────────────────
+  if (inp.seismic_test_count && inp.seismic_test_count > 0) {
+    quantities.seismic_test = { qty: inp.seismic_test_count, uom: 'ต้น', label: `Seismic Integrity Test` };
   }
 
   // ─── Common warnings ──────────────────────────────────────

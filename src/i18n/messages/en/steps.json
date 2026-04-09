@@ -38,6 +38,11 @@
     "addArea": "+ Add Fill Area",
     "waste": "Waste Allowance (%)",
     "wasteTooltip": "Material loss allowance during transport and compaction (Standard 5-10%)",
+    "optTitleClearance": "Site Clearance & Demolition",
+    "optClearanceArea": "Clearance Area (m²)",
+    "optClearancePh": "Sq.m. to clear or mow",
+    "optDemolitionTrips": "Debris Hauling Trips (Count)",
+    "optDemolitionPh": "Est. dump truck trips",
     "optRoller": "Compactor Productivity (m³/h)",
     "optRollerPh": "e.g., 50 m³/h",
     "optTruck": "Dump Truck Capacity (m³/trip)",
@@ -198,7 +203,9 @@
     "loadTestCountPh": "Standard: 1-2 points or 1%",
     "loadTestType": "Load Test Method",
     "testDynamic": "Dynamic PDA Load Test",
-    "testStatic": "Static Load Test"
+    "testStatic": "Static Load Test",
+    "seismicTestCount": "Seismic Test Quantity",
+    "seismicTestCountPh": "Integrity Test Count"
   },
   "step6": {
     "footingFormula": "{count} ea. × {l}×{w}×{t} m = {vol} m³",
@@ -325,7 +332,10 @@
     "vibratorDays": "Concrete Vibrator Duration (Days)",
     "shoring": "Beam Shoring Required",
     "shoringYes": "Required",
-    "shoringNo": "Not Required"
+    "shoringNo": "Not Required",
+    "termite": "Termite Protection System",
+    "termiteYes": "Piping along Beams",
+    "termiteNo": "Not Required"
   },
   "step9": {
     "specTitle": "Slab on Grade Specifications",
@@ -492,12 +502,14 @@
     "floorHeightTooltip": "Required to calculate shoring quantity (Standard ~3 m)",
     "floorHeightPh": "Standard 3 m",
     "waterproofSlope": "Waterproofing & Drainage",
+    "waterproofAreaOverride": "Waterproofing Area (m²)",
+    "waterproofAreaPh": "Leave blank to use default (Slab +10%)",
     "slopeConcrete": "Slope Concrete Topping",
     "slopeYes": "~5 cm Thick",
     "slopeNo": "Not Required",
     "roofDrain": "Roof Drain Count",
     "waterproofSystem": "Waterproofing System",
-    "waterproofYes": "Applied",
+    "waterproofYes": "Required",
     "waterproofNo": "None",
     "waterproofType": "Waterproofing Type",
     "wpPu": "PU (High Elasticity)",
@@ -784,6 +796,8 @@
     "optionsWaste": "Options & Waste",
     "waterproofHeight": "Waterproofing Height (m)",
     "waterproofTooltip": "Standard: wet zone 1.80m, dry zone 0.30m. Enter an average value to use.",
+    "waterproofAreaOverride": "Waterproofing Area (m²)",
+    "waterproofAreaPh": "Leave blank to use default",
     "waste": "Breakage Waste (%)",
     "wasteTooltip": "Bathrooms typically need a 15% waste margin due to more corners and cuts."
   },
@@ -1140,6 +1154,10 @@
     "optCardMain": "Optional Tracking",
     "punchList": "Remaining Punch List Items",
     "punchListTooltip": "Should be 0 before signing handover",
-    "checklistTitle": "Handover Checklist:"
+    "checklistTitle": "Handover Day Checklist:",
+    "cleaningMain": "Construction Cleaning",
+    "bigCleaning": "Big Cleaning Before Handover",
+    "buildingArea": "Total Building Area (m²)",
+    "buildingAreaTooltip": "Total house area (Indoor + Outdoor) used to estimate cleaning crew cost."
   }
 }

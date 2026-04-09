@@ -15,6 +15,7 @@ const DEFAULTS: Step34Input = {
     has_asbuilt_drawing: false, has_equipment_manual: false,
     has_warranty_cert: false, has_photo_record: false,
     handover_training: false,
+    big_cleaning_required: false, building_area_m2: 0,
 };
 
 export default function Step34Handover({ initialData, onBack, onSave }: Props) {
@@ -78,6 +79,20 @@ export default function Step34Handover({ initialData, onBack, onSave }: Props) {
                     <div style={{ marginTop: 24 }}>
                         {toggle(t('training'), 'handover_training', '')}
                     </div>
+                </div>
+            </Card>
+            <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('cleaningMain')}</span>} size="small" className="shadow-sm mt-4" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div style={{ marginTop: 24 }}>
+                        {toggle(t('bigCleaning'), 'big_cleaning_required', '')}
+                    </div>
+                    {inp.big_cleaning_required && (
+                        <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('buildingArea')}</Text>}
+                            tooltip={t('buildingAreaTooltip')} style={{ margin: 0 }}>
+                            <InputNumber style={{ width: '100%' }} min={0} step={10} precision={2}
+                                value={inp.building_area_m2} onChange={v => update({ building_area_m2: v ?? 0 })} />
+                        </Form.Item>
+                    )}
                 </div>
             </Card>
         </div>

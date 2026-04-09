@@ -17,6 +17,7 @@ export interface Step21Input {
   bathrooms: BathroomEntry[];          // รายการห้องน้ำ (Dynamic List)
   waste_percent: number;               // เผื่อเสียหาย (ปกติ 10-15%)
   waterproof_height_m: number;         // ความสูงทากันซึม (default 1.80 ม.)
+  waterproof_area_m2?: number;         // Override พื้นที่กันซึม (ม²)
 }
 
 // ─── STEP 21 — งานปูกระเบื้องห้องน้ำ (Bathroom Tiling) ────────────────────────
@@ -60,7 +61,8 @@ export function calcStep21(inp: Step21Input): StepResult {
     ? bathrooms.reduce((s, b) => s + b.wall_tile_height_m, 0) / bathrooms.length 
     : 2.40;
   const wallWpRatio = Math.min(waterproof_height_m / avgTileHeight, 1.0);
-  const wpArea = totalFloorArea + (totalWallArea * wallWpRatio);
+  const wpAreaBase = totalFloorArea + (totalWallArea * wallWpRatio);
+  const wpArea = inp.waterproof_area_m2 ?? wpAreaBase;
 
   quantities.waterproof = {
     qty: r2(wpArea * wf),
