@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState, useCallback } from 'react';
-import { Table, Card, Typography, InputNumber, Divider, Tag, Tooltip, Collapse, Space, Button, Input, Popconfirm, App, Popover } from 'antd';
+import { Table, Card, Typography, InputNumber, Divider, Tag, Tooltip, Collapse, Space, Button, Input, Popconfirm, App, Popover, Grid } from 'antd';
 import {
     DollarOutlined, BankOutlined,
     WarningOutlined, CheckCircleFilled, PlusOutlined, DeleteOutlined,
@@ -35,6 +35,8 @@ interface CashFlowTableProps {
 
 export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceList, scheduleData }) => {
     const { message: messageApi } = App.useApp();
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
     const scheduleConfig = useAppStore(state => state.scheduleConfig);
     const financialConfig = useAppStore(state => state.financialConfig);
     const [config, setConfig] = useState<CashFlowConfig>({ ...DEFAULT_CASHFLOW_CONFIG });
@@ -601,6 +603,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceLi
                                             <Tooltip
                                                 key={`tt-${w.weekNumber}`}
                                                 styles={{ root: { maxWidth: 280 } }}
+                                                trigger={isMobile ? [] : ['hover']}
                                                 title={
                                                     <div style={{ fontSize: 11, minWidth: 150 }}>
                                                         <div style={{ fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 4, marginBottom: 4 }}>{w.weekLabel}</div>
@@ -631,7 +634,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceLi
                                                     </div>
                                                 }
                                             >
-                                                <rect x={x} y={0} width={colWidth} height={CHART_HEIGHT} fill="transparent" style={{ cursor: 'pointer' }} />
+                                                <rect x={x} y={0} width={colWidth} height={CHART_HEIGHT} fill="transparent" style={{ cursor: isMobile ? 'default' : 'pointer' }} />
                                             </Tooltip>
                                         );
                                     })}
