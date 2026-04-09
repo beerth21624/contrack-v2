@@ -23,6 +23,40 @@ interface QuantityRow {
     uom: string;
 }
 
+const LOCALIZED_UOM: Record<string, string> = {
+    'วัน': 'Days',
+    'คน-วัน': 'Man-Days',
+    'จุด': 'Points',
+    'ชุด': 'Sets',
+    'เที่ยว': 'Trips',
+    'ชม.': 'Hrs',
+    'ตัว': 'EA',
+    'ตู้': 'Sets',
+    'ต้น': 'Piles',
+    'ลิตร': 'Liters',
+    'ช่อง': 'Slots',
+    'เดือน': 'Months',
+    'ป้าย': 'Signs',
+    'อัน': 'EA',
+    'กระป๋อง': 'Cans',
+    'ห้อง': 'Rooms',
+    'ถุง': 'Bags',
+    'แผ่น': 'Sheets',
+    'ตร.ม.': 'sq.m.',
+    'บ่อ': 'Pits',
+    'ม้วน': 'Rolls',
+    'ผืน': 'Pieces',
+    'หลอด': 'Tubes',
+    'วงจร': 'Circuits',
+    'แกลลอน': 'Gallons',
+    'ครั้ง': 'Times',
+    'เหมา': 'Lump Sum',
+    'แปลง': 'Plots',
+    'm2': 'sq.m.',
+    'm3': 'cu.m.',
+    'kg': 'kg'
+};
+
 interface StepFormShellProps {
     stepId: number;
     title: string;
@@ -59,7 +93,7 @@ export const StepFormShell: React.FC<StepFormShellProps> = ({
             key: k,
             label: tQty.has(k) ? tQty(k) : v.label,
             qty: v.qty.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-            uom: v.uom,
+            uom: isEn ? (LOCALIZED_UOM[v.uom] ?? v.uom) : v.uom,
         }))
         : [];
 

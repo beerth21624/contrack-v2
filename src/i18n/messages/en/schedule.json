@@ -152,5 +152,8 @@
   "prodDetailsTag": "Details",
   "prodDurationShort": "Duration",
   "prodCrewsShort": "Crews",
-  "prodRateShort": "Prod. Rate"
+  "prodRateShort": "Prod. Rate",
+  "curingDaysTitle": "Curing Days",
+  "curingDaysHint": "Number of rest days after concrete pouring before the next structural work begins",
+  "curingDaysWarning": "Curing time should not exceed 28 days"
 }

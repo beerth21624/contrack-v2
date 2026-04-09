@@ -13,8 +13,12 @@ export interface ScheduleItem {
     /** Number of crews */
     crews: number;
     crewSetup: string;
+    crewSetupEn?: string;
     team: string;
+    teamEn?: string;
     productivity: string;
+    productivityEn?: string;
+    productivityUnitEn?: string;
     /** Calculated start day (1-indexed from project start) */
     startDay: number;
     /** Calculated end day */
@@ -169,8 +173,12 @@ export function buildSchedule(
             days,
             crews,
             crewSetup: sched.crewSetup,
+            crewSetupEn: sched.crewSetupEn,
             team: sched.team,
+            teamEn: sched.teamEn,
             productivity: sched.productivity,
+            productivityEn: sched.productivityEn,
+            productivityUnitEn: sched.productivityUnitEn,
             startDay: 0,
             endDay: 0,
             hasBoqData: hasBoq,

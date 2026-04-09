@@ -152,5 +152,8 @@
   "prodDetailsTag": "Details",
   "prodDurationShort": "ระยะเวลา",
   "prodCrewsShort": "จำนวนทีม",
-  "prodRateShort": "Prod. Rate"
+  "prodRateShort": "Prod. Rate",
+  "curingDaysTitle": "ระยะเวลาบ่มคอนกรีต (Curing Days)",
+  "curingDaysHint": "จำนวนวันพักหลังจากเทคอนกรีต ก่อนเริ่มงานโครงสร้างส่วนถัดไป",
+  "curingDaysWarning": "ระยะเวลาบ่มคอนกรีตไม่ควรเกิน 28 วัน"
 }

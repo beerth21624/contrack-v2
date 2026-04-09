@@ -34,10 +34,16 @@ const GanttBar: React.FC<{
     hasData: boolean;
     t: (key: string, values?: Record<string, string | number | Date>) => string;
     startDate: Dayjs;
-}> = ({ item, totalDays, isCritical, hasData, t, startDate }) => {
+    locale: string;
+}> = ({ item, totalDays, isCritical, hasData, t, startDate, locale }) => {
     const left = ((item.startDay - 1) / totalDays) * 100;
     const width = (item.days / totalDays) * 100;
     const baseColor = TEAM_COLORS[item.team] ?? '#888';
+
+    const itemTitle = locale === 'en' && item.titleEn ? item.titleEn : item.title;
+    const itemCrew = locale === 'en' && item.crewSetupEn ? item.crewSetupEn : item.crewSetup;
+    const itemTeam = locale === 'en' && item.teamEn ? item.teamEn : item.team;
+    const itemProd = locale === 'en' && item.productivityEn ? item.productivityEn : item.productivity;
 
     const startFormatted = startDate.add(item.startDay - 1, 'day').format('DD MMM YYYY');
     const endFormatted = startDate.add(item.endDay - 1, 'day').format('DD MMM YYYY');
@@ -48,8 +54,8 @@ const GanttBar: React.FC<{
             <Tooltip
                 title={
                     <div style={{ fontSize: 12, lineHeight: 1.6 }}>
-                        <div style={{ fontWeight: 700, marginBottom: 2 }}>{item.title} — {t('noBoqData')}</div>
-                        <div>{startFormatted} - {endFormatted} ({item.days} วัน)</div>
+                        <div style={{ fontWeight: 700, marginBottom: 2 }}>{itemTitle} — {t('noBoqData')}</div>
+                        <div>{startFormatted} - {endFormatted} ({item.days} {locale === 'en' ? 'Days' : 'วัน'})</div>
                     </div>
                 }
             >
@@ -73,12 +79,15 @@ const GanttBar: React.FC<{
         <Tooltip
             title={
                 <div style={{ fontSize: 12, lineHeight: 1.6 }}>
-                    <div style={{ fontWeight: 700, marginBottom: 2 }}>{item.title} ({item.titleEn})</div>
+                    <div style={{ fontWeight: 700, marginBottom: 2 }}>
+                        {itemTitle}
+                        {locale !== 'en' && ` (${item.titleEn})`}
+                    </div>
                     <div>{startFormatted} - {endFormatted}</div>
                     <div>{t('dayRange', { start: item.startDay, end: item.endDay, days: item.days })}</div>
-                    <div>{t('teamCount', { crews: item.crews, crewSetup: item.crewSetup })}</div>
-                    <div>{t('teamLabel', { team: item.team })}</div>
-                    <div>Prod: {item.productivity}</div>
+                    <div>{t('teamCount', { crews: item.crews, crewSetup: itemCrew })}</div>
+                    <div>{t('teamLabel', { team: itemTeam })}</div>
+                    <div>Prod: {itemProd}</div>
                     {item.hasBoqData && <Tag color="green" style={{ marginTop: 4, fontSize: 10 }}>{t('calcFromBoq')}</Tag>}
                 </div>
             }
@@ -238,9 +247,15 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
             title: t('colStep'), dataIndex: 'title', key: 'title', ellipsis: true,
             render: (v: string, r: ScheduleItem) => (
                 <div style={{ opacity: stepSaves[r.stepId] ? 1 : 0.4 }}>
-                    <Text strong style={{ fontSize: 13 }}>{v}</Text>
-                    <br />
-                    <Text type="secondary" style={{ fontSize: 11 }}>{r.titleEn}</Text>
+                    <Text strong style={{ fontSize: 13 }}>
+                        {locale === 'en' && r.titleEn ? r.titleEn : v}
+                    </Text>
+                    {locale !== 'en' && (
+                        <>
+                            <br />
+                            <Text type="secondary" style={{ fontSize: 11 }}>{r.titleEn}</Text>
+                        </>
+                    )}
                 </div>
             ),
         },
@@ -315,9 +330,9 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
         {
             title: t('colTeamName'), dataIndex: 'team', key: 'team', width: 150,
             responsive: ['md'] as ('xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl')[],
-            render: (v: string) => (
+            render: (v: string, r: ScheduleItem) => (
                 <Tag style={{ background: TEAM_COLORS[v] ?? '#888', color: '#fff', border: 'none', fontSize: 11 }}>
-                    {v}
+                    {locale === 'en' && r.teamEn ? r.teamEn : v}
                 </Tag>
             ),
         },
@@ -368,7 +383,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                                 </div>
                             </div>
                             <div style={{ flex: '1 1 250px' }}>
-                                <Text style={{ fontSize: 13, display: 'block', marginBottom: 8, fontWeight: 500 }}>ระยะเวลาบ่มคอนกรีต (Curing Days)</Text>
+                                <Text style={{ fontSize: 13, display: 'block', marginBottom: 8, fontWeight: 500 }}>{t('curingDaysTitle')}</Text>
                                 <Space.Compact style={{ width: '100%', maxWidth: '300px' }}>
                                     <InputNumber
                                         value={config.globalCuringDays ?? 7}
@@ -376,7 +391,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                                         onChange={(v) => {
                                             let val = v ?? 7;
                                             if (val > 28) {
-                                                messageApi.warning('ระยะเวลาบ่มคอนกรีตไม่ควรเกิน 28 วัน');
+                                                messageApi.warning(t('curingDaysWarning'));
                                                 val = 28;
                                             } else if (val < 0) {
                                                 val = 0;
@@ -386,10 +401,10 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                                         style={{ width: '100%' }}
                                         size="large"
                                     />
-                                    <Button disabled size="large" style={{ color: '#595959', background: '#f5f5f5', border: '1px solid #d9d9d9' }}>วัน</Button>
+                                    <Button disabled size="large" style={{ color: '#595959', background: '#f5f5f5', border: '1px solid #d9d9d9' }}>{t('colDays')}</Button>
                                 </Space.Compact>
                                 <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>
-                                    จำนวนวันพักหลังจากเทคอนกรีต ก่อนเริ่มงานโครงสร้างส่วนถัดไป
+                                    {t('curingDaysHint')}
                                 </div>
                             </div>
                         </div>
@@ -583,7 +598,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                                                     whiteSpace: 'nowrap',
                                                     color: '#434343',
                                                 }}>
-                                                    {item.title}
+                                                    {locale === 'en' ? item.titleEn : item.title}
                                                 </span>
                                             </div>
 
@@ -611,6 +626,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                                                         hasData={hasData}
                                                         t={t}
                                                         startDate={startDate}
+                                                        locale={locale}
                                                     />
                                                 </div>
                                             </div>
@@ -709,8 +725,10 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                                                 {String(item.stepId).padStart(2, '0')}
                                             </div>
                                             <div>
-                                                <div style={{ fontWeight: 700, fontSize: 13, color: '#1a1a1a' }}>{item.title}</div>
-                                                <div style={{ fontSize: 11, color: '#8c8c8c' }}>{item.titleEn}</div>
+                                                <div style={{ fontWeight: 700, fontSize: 13, color: '#1a1a1a' }}>
+                                                    {locale === 'en' ? item.titleEn : item.title}
+                                                </div>
+                                                {locale !== 'en' && <div style={{ fontSize: 11, color: '#8c8c8c' }}>{item.titleEn}</div>}
                                             </div>
                                         </div>
                                         {isCritical && <Tag color="gold" style={{ border: 'none', margin: 0, padding: '0 6px', fontSize: 10, fontWeight: 600 }}>{t('criticalLabel')}</Tag>}
@@ -724,7 +742,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                                             <Button disabled={!hasData} onClick={() => updateCrew(item.stepId, currentCrews + 1)}>+</Button>
                                         </Space.Compact>
                                         <Tag style={{ margin: 0, background: TEAM_COLORS[item.team] ?? '#888', border: 'none', color: '#fff', fontSize: 11, marginLeft: 'auto' }}>
-                                            {item.team}
+                                            {locale === 'en' && item.teamEn ? item.teamEn : item.team}
                                         </Tag>
                                     </div>
 
