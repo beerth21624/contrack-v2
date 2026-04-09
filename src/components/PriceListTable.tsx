@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Table, InputNumber, Typography, Card, Input, Collapse, Space, Tag, Button, App } from 'antd';
+import { Table, InputNumber, Typography, Card, Input, Collapse, Space, Tag, Button, App, Grid } from 'antd';
 import { SearchOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { type PriceItem } from '@/types';
@@ -18,6 +18,9 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
     const [searchText, setSearchText] = useState('');
     const [activeKeys, setActiveKeys] = useState<string[] | string>([]);
     const [importOpen, setImportOpen] = useState(false);
+    const screens = Grid.useBreakpoint();
+    const isMobile = screens.md === false;
+
     const t = useTranslations('priceList');
     const tCat = useTranslations('categories');
     const { message: messageApi } = App.useApp();
@@ -100,13 +103,6 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
 
     const columns: ColumnsType<PriceItem> = [
         {
-            title: t('code'),
-            dataIndex: 'code',
-            key: 'code',
-            width: 100,
-            render: (text) => <Text type="secondary" code style={{ fontSize: 12 }}>{text}</Text>
-        },
-        {
             title: t('itemName'),
             dataIndex: 'name',
             key: 'name',
@@ -166,7 +162,7 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
                 value={searchText}
                 onChange={e => setSearchText(e.target.value)}
                 allowClear
-                style={{ width: 250 }}
+                style={{ width: isMobile ? '100%' : 250 }}
             />
             <Button
                 icon={<DownloadOutlined />}
@@ -216,7 +212,41 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
                                 </Text>
                             </Text>
                         ),
-                        children: (
+                        children: isMobile ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {items.map(item => (
+                                    <div key={item.code} style={{ border: '1px solid #f0f0f0', borderRadius: 8, padding: 12, background: '#fafafa' }}>
+                                        <Text strong style={{ fontSize: 14, display: 'block', marginBottom: 12 }}>{item.name}</Text>
+                                        <div style={{ display: 'flex', gap: 12 }}>
+                                            <div style={{ flex: 1 }}>
+                                                <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>{t('material')} ({item.uom})</Text>
+                                                <InputNumber
+                                                    size="middle"
+                                                    value={item.costMaterial}
+                                                    min={0}
+                                                    style={{ width: '100%' }}
+                                                    formatter={val => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                                                    parser={val => val?.replace(/\$\s?|(,*)/g, '') as unknown as number}
+                                                    onChange={(val) => onUpdate(item.code, 'costMaterial', val ?? 0)}
+                                                />
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>{t('labor')} ({item.uom})</Text>
+                                                <InputNumber
+                                                    size="middle"
+                                                    value={item.costLabor}
+                                                    min={0}
+                                                    style={{ width: '100%' }}
+                                                    formatter={val => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                                                    parser={val => val?.replace(/\$\s?|(,*)/g, '') as unknown as number}
+                                                    onChange={(val) => onUpdate(item.code, 'costLabor', val ?? 0)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
                             <Table
                                 dataSource={items}
                                 columns={columns}
