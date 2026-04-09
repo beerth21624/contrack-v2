@@ -3,7 +3,7 @@ import { Table, InputNumber, Typography, Card, Input, Collapse, Space, Tag, Butt
 import { SearchOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { type PriceItem } from '@/types';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { exportPriceListToExcel, parsePriceListExcel, type PriceImportResult } from '@/lib/excel-io';
 import { ExcelImportModal, type DiffRow } from '@/components/ExcelImportModal';
 
@@ -20,6 +20,7 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
     const [importOpen, setImportOpen] = useState(false);
     const screens = Grid.useBreakpoint();
     const isMobile = screens.md === false;
+    const locale = useLocale();
 
     const t = useTranslations('priceList');
     const tCat = useTranslations('categories');
@@ -106,7 +107,11 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
             title: t('itemName'),
             dataIndex: 'name',
             key: 'name',
-            render: (text) => <Text style={{ fontSize: 13 }}>{text}</Text>
+            render: (_text: string, record: PriceItem) => (
+                <Text style={{ fontSize: 13 }}>
+                    {locale === 'en' && record.nameEn ? record.nameEn : record.name}
+                </Text>
+            )
         },
         {
             title: t('unit'),
@@ -114,7 +119,11 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
             key: 'uom',
             width: 80,
             align: 'center',
-            render: (text) => <Text style={{ fontSize: 13 }}>{text}</Text>
+            render: (_text: string, record: PriceItem) => (
+                <Text style={{ fontSize: 13 }}>
+                    {locale === 'en' && record.uomEn ? record.uomEn : record.uom}
+                </Text>
+            )
         },
         {
             title: t('material'),
@@ -248,10 +257,14 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                 {items.map(item => (
                                     <div key={item.code} style={{ border: '1px solid #f0f0f0', borderRadius: 8, padding: 12, background: '#fafafa' }}>
-                                        <Text strong style={{ fontSize: 14, display: 'block', marginBottom: 12 }}>{item.name}</Text>
+                                        <Text strong style={{ fontSize: 14, display: 'block', marginBottom: 12 }}>
+                                            {locale === 'en' && item.nameEn ? item.nameEn : item.name}
+                                        </Text>
                                         <div style={{ display: 'flex', gap: 12 }}>
                                             <div style={{ flex: 1 }}>
-                                                <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>{t('material')} ({item.uom})</Text>
+                                                <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>
+                                                    {t('material')} ({locale === 'en' && item.uomEn ? item.uomEn : item.uom})
+                                                </Text>
                                                 <InputNumber
                                                     size="middle"
                                                     value={item.costMaterial}
@@ -263,7 +276,9 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
                                                 />
                                             </div>
                                             <div style={{ flex: 1 }}>
-                                                <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>{t('labor')} ({item.uom})</Text>
+                                                <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>
+                                                    {t('labor')} ({locale === 'en' && item.uomEn ? item.uomEn : item.uom})
+                                                </Text>
                                                 <InputNumber
                                                     size="middle"
                                                     value={item.costLabor}

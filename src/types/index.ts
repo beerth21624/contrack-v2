@@ -48,7 +48,9 @@ export type UOM =
 export interface PriceItem {
   code: string;
   name: string;
+  nameEn?: string;
   uom: UOM;
+  uomEn?: string;
   costMaterial: number;
   costLabor: number;
   category: string;
@@ -57,8 +59,10 @@ export interface PriceItem {
 export interface BOQItem {
   itemCode: string;
   itemName: string;
+  itemNameEn?: string;
   quantity: number;
   uom: UOM;
+  uomEn?: string;
   unitCostMaterial: number;
   unitCostLabor: number;
   totalCostMaterial: number;
