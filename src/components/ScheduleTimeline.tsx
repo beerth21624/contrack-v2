@@ -32,15 +32,26 @@ const GanttBar: React.FC<{
     isCritical: boolean;
     hasData: boolean;
     t: (key: string, values?: Record<string, string | number | Date>) => string;
-}> = ({ item, totalDays, isCritical, hasData, t }) => {
+    startDate: Dayjs;
+}> = ({ item, totalDays, isCritical, hasData, t, startDate }) => {
     const left = ((item.startDay - 1) / totalDays) * 100;
     const width = (item.days / totalDays) * 100;
     const baseColor = TEAM_COLORS[item.team] ?? '#888';
 
+    const startFormatted = startDate.add(item.startDay - 1, 'day').format('DD MMM YYYY');
+    const endFormatted = startDate.add(item.endDay - 1, 'day').format('DD MMM YYYY');
+
     // If no data, show ghost bar
     if (!hasData) {
         return (
-            <Tooltip title={<span>{item.title} — {t('noBoqData')}</span>}>
+            <Tooltip
+                title={
+                    <div style={{ fontSize: 12, lineHeight: 1.6 }}>
+                        <div style={{ fontWeight: 700, marginBottom: 2 }}>{item.title} — {t('noBoqData')}</div>
+                        <div>{startFormatted} - {endFormatted} ({item.days} วัน)</div>
+                    </div>
+                }
+            >
                 <div
                     style={{
                         position: 'absolute',
@@ -62,6 +73,7 @@ const GanttBar: React.FC<{
             title={
                 <div style={{ fontSize: 12, lineHeight: 1.6 }}>
                     <div style={{ fontWeight: 700, marginBottom: 2 }}>{item.title} ({item.titleEn})</div>
+                    <div>{startFormatted} - {endFormatted}</div>
                     <div>{t('dayRange', { start: item.startDay, end: item.endDay, days: item.days })}</div>
                     <div>{t('teamCount', { crews: item.crews, crewSetup: item.crewSetup })}</div>
                     <div>{t('teamLabel', { team: item.team })}</div>
@@ -132,14 +144,8 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
     const endDate = startDate.add(schedule.totalDays - 1, 'day');
 
     const { actualCrewDays, actualTotalDays } = useMemo(() => {
-        const active = schedule.items.filter(it => it.hasBoqData);
-        const cDays = active.reduce((sum, it) => sum + (it.days * it.crews), 0);
-        const activeDaysSet = new Set<number>();
-        active.forEach(it => {
-            for (let d = it.startDay; d <= it.endDay; d++) activeDaysSet.add(d);
-        });
-        return { actualCrewDays: cDays, actualTotalDays: activeDaysSet.size };
-    }, [schedule.items]);
+        return { actualCrewDays: schedule.totalCrewDays, actualTotalDays: schedule.totalDays };
+    }, [schedule.totalCrewDays, schedule.totalDays]);
 
     const displayMonths = Math.round(actualTotalDays / 30 * 10) / 10;
 
@@ -344,42 +350,44 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                     key: 'config',
                     label: <span><ClockCircleOutlined /> {t('settingsTitle')}</span>,
                     children: (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
-                            <div>
-                                <Text style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>{t('weatherBuffer')}</Text>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px 16px', alignItems: 'flex-start' }}>
+                            <div style={{ flex: '1 1 250px' }}>
+                                <Text style={{ fontSize: 13, display: 'block', marginBottom: 8, fontWeight: 500 }}>{t('weatherBuffer')}</Text>
                                 <InputNumber
                                     value={config.weatherBufferPercent * 100}
                                     min={0} max={100} step={5}
                                     formatter={(v) => `${v}%`}
                                     parser={(v) => Number(v?.toString().replace('%', '') ?? 0)}
                                     onChange={(v) => setConfig(p => ({ ...p, weatherBufferPercent: (v ?? 0) / 100 }))}
-                                    style={{ width: 120 }}
-                                    size="small"
+                                    style={{ width: '100%', maxWidth: '300px' }}
+                                    size="large"
                                 />
-                                <div style={{ fontSize: 11, color: '#8c8c8c', marginTop: 4, maxWidth: 200 }}>
+                                <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>
                                     {t('weatherHint')}
                                 </div>
                             </div>
-                            <div>
-                                <Text style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>ระยะเวลาบ่มคอนกรีต (Curing Days)</Text>
-                                <InputNumber
-                                    value={config.globalCuringDays ?? 7}
-                                    step={1}
-                                    onChange={(v) => {
-                                        let val = v ?? 7;
-                                        if (val > 28) {
-                                            messageApi.warning('ระยะเวลาบ่มคอนกรีตไม่ควรเกิน 28 วัน');
-                                            val = 28;
-                                        } else if (val < 0) {
-                                            val = 0;
-                                        }
-                                        setConfig(p => ({ ...p, globalCuringDays: val }));
-                                    }}
-                                    style={{ width: 120 }}
-                                    size="small"
-                                />
-                                <span style={{ fontSize: 13, marginLeft: 8 }}>วัน</span>
-                                <div style={{ fontSize: 11, color: '#8c8c8c', marginTop: 4, maxWidth: 220 }}>
+                            <div style={{ flex: '1 1 250px' }}>
+                                <Text style={{ fontSize: 13, display: 'block', marginBottom: 8, fontWeight: 500 }}>ระยะเวลาบ่มคอนกรีต (Curing Days)</Text>
+                                <Space.Compact style={{ width: '100%', maxWidth: '300px' }}>
+                                    <InputNumber
+                                        value={config.globalCuringDays ?? 7}
+                                        step={1}
+                                        onChange={(v) => {
+                                            let val = v ?? 7;
+                                            if (val > 28) {
+                                                messageApi.warning('ระยะเวลาบ่มคอนกรีตไม่ควรเกิน 28 วัน');
+                                                val = 28;
+                                            } else if (val < 0) {
+                                                val = 0;
+                                            }
+                                            setConfig(p => ({ ...p, globalCuringDays: val }));
+                                        }}
+                                        style={{ width: '100%' }}
+                                        size="large"
+                                    />
+                                    <Button disabled size="large" style={{ color: '#595959', background: '#f5f5f5', border: '1px solid #d9d9d9' }}>วัน</Button>
+                                </Space.Compact>
+                                <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 8 }}>
                                     จำนวนวันพักหลังจากเทคอนกรีต ก่อนเริ่มงานโครงสร้างส่วนถัดไป
                                 </div>
                             </div>
@@ -577,6 +585,7 @@ export const ScheduleTimeline: React.FC<ScheduleTimelineProps> = ({ stepSaves, s
                                                         isCritical={criticalSet.has(item.stepId)}
                                                         hasData={hasData}
                                                         t={t}
+                                                        startDate={startDate}
                                                     />
                                                 </div>
                                             </div>

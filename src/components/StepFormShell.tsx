@@ -81,26 +81,44 @@ export const StepFormShell: React.FC<StepFormShellProps> = ({
         <div style={{ width: '100%', margin: '0 auto' }}>
 
             {/* ── Header ── */}
-            <div style={{
-                display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24,
-                background: '#fff', border: '1px solid #e8e8e8',
-                borderLeft: '3px solid transparent',
-                borderImage: 'linear-gradient(to bottom, #fa8c16, #ffa940) 1',
-                borderImageSlice: 1,
-                borderRadius: 0, padding: '16px 20px',
-                boxShadow: '0 2px 8px rgba(0,0,0,.06)',
-                flexWrap: 'wrap',
-            }}>
-                <Button icon={<ArrowLeftOutlined />} onClick={onBack} size="middle" style={{ borderRadius: 6 }} />
-                <div style={{ lineHeight: 1.3, minWidth: 0, flex: 1 }}>
-                    <span style={{
-                        fontSize: 12, fontWeight: 700, letterSpacing: 1,
-                        color: '#fa8c16', textTransform: 'uppercase',
-                    }}>
+            <div className="relative flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mb-4 sm:mb-6 
+                            bg-transparent sm:bg-white border-0 sm:border sm:border-gray-200 
+                            p-0 sm:p-5 shadow-none sm:shadow-sm overflow-hidden sm:rounded-lg">
+                
+                {/* Gradient left border accent - DESKTOP ONLY */}
+                <div className="hidden sm:block absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-orange-500 to-orange-400" />
+                
+                <div className="flex items-center gap-2 sm:gap-4">
+                    {/* Mobile: Subtle Back Button & Step Badge */}
+                    <div className="sm:hidden flex items-center gap-2 py-1">
+                        <Button 
+                            type="text" 
+                            icon={<ArrowLeftOutlined className="text-gray-600" />} 
+                            onClick={onBack} 
+                            style={{ padding: '0 4px', height: 'auto', background: 'transparent' }} 
+                        />
+                        <span className="text-[10px] font-bold tracking-widest text-[#fa8c16] uppercase mt-0.5">
+                            {t('stepLabel')} {String(stepId).padStart(2, '0')}
+                        </span>
+                    </div>
+
+                    {/* Desktop: Standard Back Button */}
+                    <div className="hidden sm:block">
+                        <Button icon={<ArrowLeftOutlined />} onClick={onBack} size="middle" className="rounded-md" />
+                    </div>
+                </div>
+
+                <div className="flex-1 min-w-0" style={{ lineHeight: 1.25 }}>
+                    {/* Desktop step label */}
+                    <span className="hidden sm:block text-xs font-bold tracking-widest text-[#fa8c16] uppercase mb-1">
                         {t('stepLabel')} {String(stepId).padStart(2, '0')}
                     </span>
-                    <Title level={4} style={{ margin: 0, color: '#1f1f1f' }}>{mainTitle}</Title>
-                    <Text type="secondary" style={{ fontSize: 13 }}>{subTitle}</Text>
+                    <Title level={4} style={{ margin: 0, color: '#1f1f1f' }} className="text-lg sm:text-xl font-bold">
+                        {mainTitle}
+                    </Title>
+                    <Text type="secondary" className="text-[13px] sm:text-sm">
+                        {subTitle}
+                    </Text>
                 </div>
             </div>
 

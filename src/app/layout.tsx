@@ -26,6 +26,15 @@ export const metadata: Metadata = {
   description: "ระบบประมาณราคาก่อสร้างและบริหารงานก่อสร้าง",
 };
 
+import type { Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

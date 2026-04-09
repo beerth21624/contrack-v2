@@ -26,6 +26,8 @@ export interface StepSchedule {
     dependsOn: number[];
     /** Delay in days before dependent steps can start (e.g. for concrete curing) */
     curingDays?: number;
+    /** Allows starting this step when dependency is X% complete (0.0 to 1.0). Key = depId */
+    leadPercent?: Record<number, number>;
 }
 
 export const SCHEDULE_DATA: StepSchedule[] = [
@@ -187,7 +189,7 @@ export const SCHEDULE_DATA: StepSchedule[] = [
         team: 'ทีมช่างไฟ',
         productivity: 'ตามปริมาณงาน',
         productivityRate: null, productivityUnit: '',
-        parallelWith: [27.1, 28.1], dependsOn: [17],
+        parallelWith: [27.1, 28.1], dependsOn: [17], leadPercent: { 17: 0.5 },
     },
     {
         stepId: 27.1, title: 'เดินท่อประปาฝังผนัง (Rough-in)', titleEn: 'Sanitary Rough-in',
@@ -195,7 +197,7 @@ export const SCHEDULE_DATA: StepSchedule[] = [
         team: 'ทีมช่างประปา',
         productivity: 'ตามปริมาณงาน',
         productivityRate: null, productivityUnit: '',
-        parallelWith: [26.1, 28.1], dependsOn: [17],
+        parallelWith: [26.1, 28.1], dependsOn: [17], leadPercent: { 17: 0.5 },
     },
     {
         stepId: 28.1, title: 'วางท่อสุขาภิบาล (Rough-in)', titleEn: 'Ext Sanitary Rough-in',
@@ -203,7 +205,7 @@ export const SCHEDULE_DATA: StepSchedule[] = [
         team: 'ทีมช่างประปา',
         productivity: 'ตามปริมาณงาน',
         productivityRate: null, productivityUnit: '',
-        parallelWith: [26.1, 27.1], dependsOn: [17],
+        parallelWith: [26.1, 27.1], dependsOn: [17], leadPercent: { 17: 0.5 },
     },
     // ───────────────────────────────────────────────
     {
@@ -220,7 +222,7 @@ export const SCHEDULE_DATA: StepSchedule[] = [
         team: 'ทีมช่างปูน',
         productivity: '~30 ตร.ม./วัน/ทีม',
         productivityRate: 30, productivityUnit: 'ตร.ม./วัน/ทีม',
-        parallelWith: [20, 21, 22], dependsOn: [18],
+        parallelWith: [20, 21, 22], dependsOn: [18], leadPercent: { 18: 0.5 },
     },
     {
         stepId: 20, title: 'ปูกระเบื้องพื้น', titleEn: 'Floor Tiling',
@@ -228,7 +230,7 @@ export const SCHEDULE_DATA: StepSchedule[] = [
         team: 'ทีมปูกระเบื้อง',
         productivity: '~12 ตร.ม./วัน/ทีม',
         productivityRate: 12, productivityUnit: 'ตร.ม./วัน/ทีม',
-        parallelWith: [19, 21, 22], dependsOn: [18],
+        parallelWith: [19, 21, 22], dependsOn: [18], leadPercent: { 18: 0.5 },
     },
     {
         stepId: 21, title: 'ปูกระเบื้องห้องน้ำ', titleEn: 'Bathroom Tiling',
@@ -236,7 +238,7 @@ export const SCHEDULE_DATA: StepSchedule[] = [
         team: 'ทีมปูกระเบื้อง',
         productivity: '~10 ตร.ม./วัน/ทีม',
         productivityRate: 10, productivityUnit: 'ตร.ม./วัน/ทีม',
-        parallelWith: [19, 20, 22], dependsOn: [18],
+        parallelWith: [19, 20, 22], dependsOn: [18], leadPercent: { 18: 0.5 },
     },
     {
         stepId: 22, title: 'ตกแต่งผนังภายนอก', titleEn: 'Exterior Finish',
@@ -252,7 +254,7 @@ export const SCHEDULE_DATA: StepSchedule[] = [
         team: 'ทีมช่างสี',
         productivity: '~240 ตร.ม./วัน/ทีม',
         productivityRate: 240, productivityUnit: 'ตร.ม./วัน/ทีม',
-        parallelWith: [], dependsOn: [19, 20, 21, 22],
+        parallelWith: [], dependsOn: [19, 20, 21, 22], leadPercent: { 19: 0.5, 20: 0.5, 21: 0.5 },
     },
     {
         stepId: 24, title: 'ประตู-หน้าต่างอลูมิเนียม', titleEn: 'Aluminium',
@@ -324,7 +326,7 @@ export const SCHEDULE_DATA: StepSchedule[] = [
         team: 'ทีมช่างสี',
         productivity: '~160 ตร.ม./วัน/ทีม',
         productivityRate: 160, productivityUnit: 'ตร.ม./วัน/ทีม',
-        parallelWith: [], dependsOn: [30, 31],
+        parallelWith: [], dependsOn: [30, 31], leadPercent: { 30: 0.5, 31: 0.5 },
     },
     {
         stepId: 33, title: 'ตรวจ Defect', titleEn: 'Defect Inspection',

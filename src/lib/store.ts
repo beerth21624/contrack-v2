@@ -25,7 +25,7 @@ export interface FinancialConfig {
 
 export const INITIAL_FINANCIAL_CONFIG: FinancialConfig = {
     overheadPercent: 5,
-    fixedMonthlyOverhead: 15000,
+    fixedMonthlyOverhead: 0,
     profitPercent: 15,
     taxPercent: 7,
     contingencyPercent: 5,

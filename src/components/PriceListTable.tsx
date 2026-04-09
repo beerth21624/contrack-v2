@@ -22,10 +22,15 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
     const tCat = useTranslations('categories');
     const { message: messageApi } = App.useApp();
 
-    const handleExport = useCallback(() => {
-        exportPriceListToExcel(prices);
-        messageApi.success('Export สำเร็จ — Price_List.xlsx');
-    }, [prices, messageApi]);
+    const handleExport = useCallback(async () => {
+        try {
+            await exportPriceListToExcel(prices, (cat) => (tCat.has(cat) ? tCat(cat as never) : cat));
+            messageApi.success('Export สำเร็จ — Price_List.xlsx');
+        } catch (error) {
+            messageApi.error('เกิดข้อผิดพลาดในการ Export Excel');
+            console.error(error);
+        }
+    }, [prices, messageApi, tCat]);
 
     const handleImportConfirm = useCallback((result: PriceImportResult) => {
         for (const row of result.valid) {

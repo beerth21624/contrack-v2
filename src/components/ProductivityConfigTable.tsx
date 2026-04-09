@@ -28,9 +28,14 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
         setMounted(true);
     }, []);
 
-    const handleExport = useCallback(() => {
-        exportScheduleToExcel(scheduleData);
-        messageApi.success('Export สำเร็จ — Productivity_Config.xlsx');
+    const handleExport = useCallback(async () => {
+        try {
+            await exportScheduleToExcel(scheduleData);
+            messageApi.success('Export สำเร็จ — Productivity_Config.xlsx');
+        } catch (error) {
+            messageApi.error('เกิดข้อผิดพลาดในการ Export Excel');
+            console.error(error);
+        }
     }, [scheduleData, messageApi]);
 
     const handleImportConfirm = useCallback((result: ScheduleImportResult) => {

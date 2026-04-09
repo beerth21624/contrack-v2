@@ -216,7 +216,17 @@ export function buildSchedule(
             const curingLag = depSched?.curingDays !== undefined 
                 ? (config.globalCuringDays ?? depSched.curingDays) 
                 : 0;
-            startDay = Math.max(startDay, depEnd + curingLag + 1);
+            
+            let thisDepStart = depEnd + curingLag + 1;
+
+            if (sched.leadPercent?.[depId] !== undefined) {
+                const depItem = items.find(it => it.stepId === depId);
+                const depDays = depItem?.days ?? 1;
+                const leadDays = Math.floor(depDays * sched.leadPercent[depId]);
+                thisDepStart = Math.min(depEnd, depEnd - leadDays + 1);
+            }
+
+            startDay = Math.max(startDay, thisDepStart);
         }
 
         // If in a parallel group, all items in the group start together

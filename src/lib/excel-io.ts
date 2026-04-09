@@ -85,13 +85,27 @@ function saveWorkbook(wb: ExcelJS.Workbook, filename: string) {
    EXPORT: Schedule (Productivity Config)
    ═══════════════════════════════════════════════════ */
 
-export function exportScheduleToExcel(data: StepSchedule[], filename = 'Productivity_Config.xlsx') {
+export async function exportScheduleToExcel(data: StepSchedule[], filename = 'Productivity_Config.xlsx') {
     const wb = new ExcelJS.Workbook();
     wb.creator = 'Contrack BOQ System';
     wb.created = new Date();
     const ws = wb.addWorksheet('Productivity', {
         views: [{ state: 'frozen', ySplit: 2 }],
     });
+
+    // Column widths
+    ws.columns = [
+        { width: 10 },  // Step ID
+        { width: 28 },  // ชื่อ
+        { width: 24 },  // EN
+        { width: 16 },  // วัน
+        { width: 16 },  // Crews
+        { width: 22 },  // Setup
+        { width: 18 },  // Rate
+        { width: 14 },  // Unit
+        { width: 32 },  // รายละเอียด
+        { width: 20 },  // ทีม
+    ];
 
     // Title row
     ws.mergeCells('A1:J1');
@@ -144,25 +158,32 @@ export function exportScheduleToExcel(data: StepSchedule[], filename = 'Producti
             if (colNumber === 4 || colNumber === 7) {
                 cell.numFmt = NUM_FMT;
             }
+            // Protection unlock and highlight
+            if (colNumber === 4 || colNumber === 5 || colNumber === 7) {
+                cell.protection = { locked: false };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFBE6' } }; // Light yellow
+                cell.font = { ...NORMAL_FONT, color: { argb: 'FF000000' } };
+            }
         });
     });
 
-    // Column widths
-    ws.columns = [
-        { width: 10 },  // Step ID
-        { width: 28 },  // ชื่อ
-        { width: 24 },  // EN
-        { width: 16 },  // วัน
-        { width: 16 },  // Crews
-        { width: 22 },  // Setup
-        { width: 18 },  // Rate
-        { width: 14 },  // Unit
-        { width: 32 },  // รายละเอียด
-        { width: 20 },  // ทีม
-    ];
-
-    // Auto filter
     ws.autoFilter = { from: 'A2', to: 'J2' };
+
+    await ws.protect('contrack', {
+        selectLockedCells: true,
+        selectUnlockedCells: true,
+        formatCells: true,
+        formatColumns: true,
+        formatRows: true,
+        insertColumns: false,
+        insertRows: false,
+        insertHyperlinks: false,
+        deleteColumns: false,
+        deleteRows: false,
+        sort: true,
+        autoFilter: true,
+        pivotTables: false
+    });
 
     saveWorkbook(wb, filename);
 }
@@ -171,7 +192,11 @@ export function exportScheduleToExcel(data: StepSchedule[], filename = 'Producti
    EXPORT: Price List
    ═══════════════════════════════════════════════════ */
 
-export function exportPriceListToExcel(data: PriceItem[], filename = 'Price_List.xlsx') {
+export async function exportPriceListToExcel(
+    data: PriceItem[],
+    translateCategory: (cat: string) => string = (cat) => cat,
+    filename = 'Price_List.xlsx'
+) {
     const wb = new ExcelJS.Workbook();
     wb.creator = 'Contrack BOQ System';
     wb.created = new Date();
@@ -179,8 +204,14 @@ export function exportPriceListToExcel(data: PriceItem[], filename = 'Price_List
         views: [{ state: 'frozen', ySplit: 2 }],
     });
 
+    // Column widths
+    ws.columns = [
+        { width: 18 }, { width: 44 }, { width: 14 },
+        { width: 18 }, { width: 18 },
+    ];
+
     // Title
-    ws.mergeCells('A1:G1');
+    ws.mergeCells('A1:E1');
     const titleCell = ws.getCell('A1');
     titleCell.value = 'ราคากลางวัสดุและค่าแรง — Contrack BOQ System';
     titleCell.font = { ...WHITE_FONT, size: 13 };
@@ -189,7 +220,7 @@ export function exportPriceListToExcel(data: PriceItem[], filename = 'Price_List
     ws.getRow(1).height = 32;
 
     // Headers
-    const headers = ['รหัส (Code)', 'รายการ (Name)', 'หน่วย (Unit)', 'หมวด (Category)', 'ค่าวัสดุ (Material)', 'ค่าแรง (Labor)', 'รวม (Total)'];
+    const headers = ['รหัส (Code)', 'รายการ (Name)', 'หน่วย (Unit)', 'ค่าวัสดุ (Material)', 'ค่าแรง (Labor)'];
     const headerRow = ws.addRow(headers);
     headerRow.eachCell((cell) => {
         cell.font = HEADER_FONT;
@@ -199,48 +230,71 @@ export function exportPriceListToExcel(data: PriceItem[], filename = 'Price_List
     });
     headerRow.height = 28;
 
-    // Data
-    data.forEach((p, idx) => {
-        const row = ws.addRow([
-            p.code, p.name, p.uom, p.category,
-            p.costMaterial, p.costLabor, p.costMaterial + p.costLabor,
-        ]);
-        const isEven = idx % 2 === 0;
-        row.eachCell((cell, colNumber) => {
-            cell.font = NORMAL_FONT;
-            cell.border = THIN_BORDER;
-            if (isEven) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFAFAFA' } };
-            if (colNumber >= 5) {
-                cell.numFmt = NUM_FMT;
-                cell.alignment = { horizontal: 'right' };
-            }
-            if (colNumber === 7) {
-                cell.font = { ...BOLD_FONT };
-            }
+    // Group by category
+    const groupedData: Record<string, PriceItem[]> = {};
+    data.forEach(p => {
+        const list = groupedData[p.category] ?? [];
+        list.push(p);
+        groupedData[p.category] = list;
+    });
+
+    let rowIndex = 3; // 1 is Title, 2 is Headers
+
+    Object.entries(groupedData).forEach(([category, items]) => {
+        // Category Header Row
+        const catRow = ws.addRow([translateCategory(category), '', '', '', '']);
+        ws.mergeCells(`A${rowIndex}:E${rowIndex}`);
+        const catCell = catRow.getCell(1);
+        catCell.font = { ...BOLD_FONT, size: 12 };
+        catCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8EEF7' } }; // Light blue/gray
+        catCell.alignment = { vertical: 'middle' };
+        catCell.border = THIN_BORDER;
+        catRow.height = 26;
+        rowIndex++;
+
+        // Item Rows
+        items.forEach((p, idx) => {
+            const row = ws.addRow([
+                p.code, p.name, p.uom,
+                p.costMaterial, p.costLabor,
+            ]);
+            rowIndex++;
+            
+            const isEven = idx % 2 === 0;
+            row.eachCell((cell, colNumber) => {
+                cell.font = NORMAL_FONT;
+                cell.border = THIN_BORDER;
+                if (isEven) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFAFAFA' } };
+                if (colNumber >= 4) {
+                    cell.numFmt = NUM_FMT;
+                    cell.alignment = { horizontal: 'right' };
+                }
+                if (colNumber === 4 || colNumber === 5) {
+                    cell.protection = { locked: false };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFBE6' } }; // Light yellow
+                    cell.font = { ...NORMAL_FONT, color: { argb: 'FF000000' } };
+                }
+            });
         });
     });
 
-    // Grand Total row
-    const totalRow = ws.addRow(['', '', '', 'รวมทั้งหมด', 
-        data.reduce((s, p) => s + p.costMaterial, 0),
-        data.reduce((s, p) => s + p.costLabor, 0),
-        data.reduce((s, p) => s + p.costMaterial + p.costLabor, 0),
-    ]);
-    totalRow.eachCell((cell, colNumber) => {
-        cell.font = { ...WHITE_FONT };
-        cell.fill = DARK_BG;
-        cell.border = THIN_BORDER;
-        if (colNumber >= 5) cell.numFmt = NUM_FMT;
-        if (colNumber === 4) cell.alignment = { horizontal: 'right' };
+    ws.autoFilter = { from: 'A2', to: 'E2' };
+
+    await ws.protect('contrack', {
+        selectLockedCells: true,
+        selectUnlockedCells: true,
+        formatCells: true,
+        formatColumns: true,
+        formatRows: true,
+        insertColumns: false,
+        insertRows: false,
+        insertHyperlinks: false,
+        deleteColumns: false,
+        deleteRows: false,
+        sort: true,
+        autoFilter: true,
+        pivotTables: false
     });
-
-    // Column widths
-    ws.columns = [
-        { width: 18 }, { width: 38 }, { width: 12 }, { width: 18 },
-        { width: 16 }, { width: 16 }, { width: 16 },
-    ];
-
-    ws.autoFilter = { from: 'A2', to: 'G2' };
 
     saveWorkbook(wb, filename);
 }

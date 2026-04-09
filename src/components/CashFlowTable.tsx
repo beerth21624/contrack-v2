@@ -213,7 +213,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceLi
                     </div>
                 );
                 return (
-                    <Popover title={<span style={{ fontSize: 13 }}>{t('cfTtOutDetail') || 'รายละเอียดรายจ่าย'}</span>} content={content} trigger="hover" placement="left">
+                    <Popover title={<span style={{ fontSize: 13 }}>{t('cfTtOutDetail') || 'รายละเอียดรายจ่าย'}</span>} content={content} trigger="hover" placement="bottomRight" styles={{ root: { maxWidth: 320 } }}>
                         <Text style={{ color: '#ff4d4f', cursor: 'pointer', borderBottom: '1px dashed #ff4d4f' }}>-฿{fmt(v)}</Text>
                     </Popover>
                 );
@@ -402,7 +402,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceLi
                                                     <Input
                                                         value={inst.label}
                                                         size="small"
-                                                        style={{ width: '100%', fontSize: 12 }}
+                                                        style={{ width: '100%', fontSize: 13, height: 30 }}
                                                         onChange={(e) => updateInstallment(i, 'label', e.target.value)}
                                                     />
                                                 </td>
@@ -410,7 +410,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceLi
                                                     <InputNumber
                                                         value={inst.percent * 100}
                                                         min={0} max={100} step={5} size="small"
-                                                        style={{ width: 70 }}
+                                                        style={{ width: 70, fontSize: 13, height: 30 }}
                                                         formatter={(v) => `${v}%`}
                                                         parser={(v) => Number(v?.replace('%', '') ?? 0)}
                                                         onChange={(v) => updateInstallment(i, 'percent', (v ?? 0) / 100)}
@@ -420,7 +420,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceLi
                                                     <InputNumber
                                                         value={inst.triggerWeek}
                                                         min={1} max={52} size="small"
-                                                        style={{ width: 60 }}
+                                                        style={{ width: 60, fontSize: 13, height: 30 }}
                                                         onChange={(v) => updateInstallment(i, 'triggerWeek', v ?? 1)}
                                                     />
                                                 </td>
@@ -600,6 +600,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceLi
                                         return (
                                             <Tooltip
                                                 key={`tt-${w.weekNumber}`}
+                                                styles={{ root: { maxWidth: 280 } }}
                                                 title={
                                                     <div style={{ fontSize: 11, minWidth: 150 }}>
                                                         <div style={{ fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 4, marginBottom: 4 }}>{w.weekLabel}</div>
@@ -679,7 +680,8 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ stepSaves, priceLi
                                             <Popover
                                                 title={<span style={{ fontSize: 13 }}>{t('cfPopDetailWeek', { week: w.weekNumber })}</span>}
                                                 trigger="click"
-                                                placement="left"
+                                                placement="bottomRight"
+                                                styles={{ root: { maxWidth: 300 } }}
                                                 content={
                                                     <div style={{ fontSize: 12 }}>
                                                         {w.stepBreakdown.map((s, idx) => (
