@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button, Typography, Tag, Progress, Modal, Timeline } from 'antd';
+import { Button, Typography, Tag, Progress, Modal, Timeline, Skeleton, Card } from 'antd';
 import {
     CheckCircleFilled,
     ClockCircleOutlined,
@@ -12,6 +12,7 @@ import {
 import { type StepSaveMap, type StepId } from '@/types';
 import { useTranslations } from 'next-intl';
 import { useAppLocale } from '@/i18n/LocaleProvider';
+import { useAppStore } from '@/lib/store';
 
 const { Text, Title } = Typography;
 
@@ -371,6 +372,54 @@ export const ProjectTimeline: React.FC<ProjectTimelineProps> = ({ onSelectStep, 
 
         return { ...step, status };
     });
+
+    const _hasHydrated = useAppStore(state => state._hasHydrated);
+
+    if (!isMounted || !_hasHydrated) {
+        return (
+            <div style={{ width: '100%', padding: '0 8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 40, flexWrap: 'wrap', gap: 24 }}>
+                    <div style={{ flex: 1 }}>
+                        <Skeleton.Input active style={{ width: 240, height: 32, marginBottom: 8 }} />
+                        <br />
+                        <Skeleton.Input active style={{ width: 180, height: 20 }} />
+                    </div>
+                    <div className="hidden sm:block">
+                        <Skeleton.Button active style={{ width: 300, height: 60, borderRadius: 16 }} />
+                    </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                    {[1, 2, 3].map(phase => (
+                        <div key={phase}>
+                            <div style={{ marginBottom: 16, paddingLeft: 12, borderLeft: '4px solid #f0f0f0' }}>
+                                <Skeleton.Input active style={{ width: 250, height: 24, marginBottom: 8 }} />
+                                <br />
+                                <Skeleton.Input active style={{ width: 350, height: 18 }} />
+                            </div>
+                            <div className="hidden sm:grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                                {[1, 2, 3, 4].map(card => (
+                                    <Card key={card} style={{ borderRadius: 12, border: '1px solid #f0f0f0' }} styles={{ body: { padding: 20 } }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                                            <Skeleton.Input active style={{ width: 60, height: 16 }} />
+                                            <Skeleton.Avatar active shape="circle" size="small" />
+                                        </div>
+                                        <Skeleton active title={{ width: '80%' }} paragraph={{ rows: 1, width: '40%' }} />
+                                        <div style={{ marginTop: 24 }}>
+                                            <Skeleton.Button active block style={{ borderRadius: 8 }} />
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                            <div className="block sm:hidden mt-4 pl-1">
+                                <Skeleton active avatar paragraph={{ rows: 2 }} />
+                                <Skeleton active avatar paragraph={{ rows: 2 }} className="mt-4" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     const totalCount = computedSteps.length;
     const finishCount = computedSteps.filter(s => s.status === 'finish').length;
