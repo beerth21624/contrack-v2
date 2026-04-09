@@ -9,6 +9,8 @@ import { TEAM_COLORS, SCHEDULE_DATA as INITIAL_SCHEDULE_DATA } from '@/data/sche
 import { exportScheduleToExcel, parseScheduleExcel, type ScheduleImportResult } from '@/lib/excel-io';
 import { ExcelImportModal, type DiffRow } from '@/components/ExcelImportModal';
 
+import { useTranslations, useLocale } from 'next-intl';
+
 const { Text } = Typography;
 
 interface ProductivityConfigTableProps {
@@ -25,6 +27,8 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
     const { message: messageApi } = App.useApp();
     const screens = Grid.useBreakpoint();
     const isMobile = screens.md === false;
+    const t = useTranslations('schedule');
+    const locale = useLocale();
 
     React.useEffect(() => {
         setMounted(true);
@@ -73,9 +77,16 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
     }, [scheduleData]);
 
     const teams = useMemo(() => {
-        const uniqueTeams = Array.from(new Set(scheduleData.map(s => s.team)));
-        return uniqueTeams.map(t => ({ label: t, value: t }));
-    }, [scheduleData]);
+        // Collect unique team keys and grab their localized name from the active dataset
+        const teamMap = new Map<string, string>();
+        scheduleData.forEach(s => {
+            const teamLabel = locale === 'en' && s.teamEn ? s.teamEn : s.team;
+            if (!teamMap.has(s.team)) {
+                teamMap.set(s.team, teamLabel);
+            }
+        });
+        return Array.from(teamMap.entries()).map(([k, label]) => ({ label, value: k }));
+    }, [scheduleData, locale]);
 
     const filteredData = useMemo(() => {
         return scheduleData.filter(s => {
@@ -130,21 +141,27 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
             render: (v: number) => <Text type="secondary" style={{ fontSize: 12 }}>{String(v).padStart(2, '0')}</Text>,
         },
         {
-            title: 'รายการงาน (Task)',
+            title: t('prodTask'),
             key: 'title',
             width: 200,
             fixed: 'left',
             render: (_: unknown, r: StepSchedule) => (
                 <div>
-                    <Text strong style={{ fontSize: 13 }}>{r.title}</Text>
-                    <br />
-                    <Text type="secondary" style={{ fontSize: 11 }}>{r.titleEn}</Text>
+                    <Text strong style={{ fontSize: 13 }}>
+                        {locale === 'en' && r.titleEn ? r.titleEn : r.title}
+                    </Text>
+                    {locale !== 'en' && (
+                        <>
+                            <br />
+                            <Text type="secondary" style={{ fontSize: 11 }}>{r.titleEn}</Text>
+                        </>
+                    )}
                 </div>
             ),
         },
         // Removed Team column since it's now grouped by team
         {
-            title: 'ระยะเวลา (วัน)',
+            title: t('prodDuration'),
             dataIndex: 'defaultDays',
             key: 'defaultDays',
             width: 120,
@@ -161,7 +178,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
             ),
         },
         {
-            title: 'จำนวนทีม (Crews)',
+            title: t('prodCrews'),
             dataIndex: 'crews',
             key: 'crews',
             width: 110,
@@ -177,14 +194,18 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
             ),
         },
         {
-            title: 'ทีมประกอบด้วย',
+            title: t('prodCrewSetup'),
             dataIndex: 'crewSetup',
             key: 'crewSetup',
             width: 160,
-            render: (v: string, record: StepSchedule) => <Text type="secondary" style={{ fontSize: 12 }}>{v || INITIAL_SCHEDULE_DATA.find(s => s.stepId === record.stepId)?.crewSetup}</Text>,
+            render: (v: string, record: StepSchedule) => {
+                const initial = INITIAL_SCHEDULE_DATA.find(s => s.stepId === record.stepId);
+                const setup = locale === 'en' && record.crewSetupEn ? record.crewSetupEn : (v || initial?.crewSetup);
+                return <Text type="secondary" style={{ fontSize: 12 }}>{setup}</Text>;
+            },
         },
         {
-            title: 'Productivity Rate',
+            title: t('prodRate'),
             dataIndex: 'productivityRate',
             key: 'productivityRate',
             width: 140,
@@ -205,25 +226,31 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
             ),
         },
         {
-            title: 'หน่วย (Unit)',
+            title: t('prodUnit'),
             dataIndex: 'productivityUnit',
             key: 'productivityUnit',
             width: 100,
-            render: (v: string) => v ? <Text style={{ fontSize: 12 }}>{v}</Text> : <Text type="secondary">—</Text>,
+            render: (v: string, record: StepSchedule) => {
+                const unit = locale === 'en' && record.productivityUnitEn ? record.productivityUnitEn : v;
+                return unit ? <Text style={{ fontSize: 12 }}>{unit}</Text> : <Text type="secondary">—</Text>;
+            },
         },
         {
-            title: 'Productivity (รายละเอียด)',
+            title: t('prodDetails'),
             dataIndex: 'productivity',
             key: 'productivity',
             width: 180,
-            render: (v: string) => <Text type="secondary" style={{ fontSize: 11 }}>{v}</Text>,
+            render: (v: string, record: StepSchedule) => {
+                const desc = locale === 'en' && record.productivityEn ? record.productivityEn : v;
+                return <Text type="secondary" style={{ fontSize: 11 }}>{desc}</Text>;
+            },
         },
     ];
 
     const desktopExtra = !isMobile && (
         <Space size="middle">
             <Input
-                placeholder="ค้นหารายการงาน..."
+                placeholder={t('prodSearch')}
                 prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
                 value={searchText}
                 onChange={e => setSearchText(e.target.value)}
@@ -231,7 +258,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                 style={{ width: 200 }}
             />
             <Select
-                placeholder={<><FilterOutlined /> ทุกทีม (All Teams)</>}
+                placeholder={<><FilterOutlined /> {t('prodAllTeams')}</>}
                 options={teams}
                 value={selectedTeam}
                 onChange={setSelectedTeam}
@@ -245,7 +272,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                 style={{ fontSize: 12, borderColor: '#217346', color: '#217346' }}
                 size="small"
             >
-                Export Excel
+                {t('prodExport')}
             </Button>
             <Button
                 icon={<UploadOutlined />}
@@ -254,7 +281,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                 size="small"
                 type="dashed"
             >
-                Import Excel
+                {t('prodImport')}
             </Button>
         </Space>
     );
@@ -262,7 +289,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
     const mobileHeaderActions = isMobile && (
         <div style={{ paddingBottom: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Input
-                placeholder="ค้นหารายการงาน..."
+                placeholder={t('prodSearch')}
                 prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
                 value={searchText}
                 onChange={e => setSearchText(e.target.value)}
@@ -271,7 +298,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                 style={{ width: '100%', borderRadius: 8 }}
             />
             <Select
-                placeholder={<><FilterOutlined /> ทุกทีม (All Teams)</>}
+                placeholder={<><FilterOutlined /> {t('prodAllTeams')}</>}
                 options={teams}
                 value={selectedTeam}
                 onChange={setSelectedTeam}
@@ -286,7 +313,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                     onClick={handleExport}
                     style={{ flex: 1, borderColor: '#217346', color: '#217346', fontWeight: 500, borderRadius: 8 }}
                 >
-                    Export
+                    {t('prodExport')}
                 </Button>
                 <Button
                     icon={<UploadOutlined />}
@@ -294,7 +321,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                     type="dashed"
                     style={{ flex: 1, fontWeight: 500, borderRadius: 8 }}
                 >
-                    Import
+                    {t('prodImport')}
                 </Button>
             </div>
         </div>
@@ -306,8 +333,8 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
         <Card
             title={
                 <Space>
-                    ตั้งค่า Productivity Rate
-                    <Tag color="cyan">{scheduleData.length} รายการงาน</Tag>
+                    {t('prodTitle')}
+                    <Tag color="cyan">{t('prodItems', { count: scheduleData.length })}</Tag>
                 </Space>
             }
             extra={desktopExtra}
@@ -316,7 +343,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
         >
             {mobileHeaderActions}
             <div style={{ marginBottom: 16, fontSize: 12, color: '#8c8c8c', background: '#fff', padding: '8px 12px', border: '1px solid #f0f0f0', borderRadius: 6 }}>
-                ปรับระยะเวลา, จำนวนคนงาน, และ Productivity Rate สำหรับแต่ละรายการ — ข้อมูลเริ่มต้นอ้างอิงจาก คู่มือ 4 (บ้าน คสล. 1 ชั้น 128 ตร.ม.)
+                {t('prodInfoBox')}
             </div>
             <Collapse 
                 activeKey={activeKeys} 
@@ -324,14 +351,16 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                 style={{ background: '#fff' }}
                 items={Object.entries(grouped)
                     .filter(([_, items]) => !(searchText && items.length === 0))
-                    .map(([team, items]) => ({
+                    .map(([team, items]) => {
+                        const teamLabel = locale === 'en' && items[0]?.teamEn ? items[0].teamEn : team;
+                        return {
                         key: team,
                         label: (
                             <Space>
                                 <Tag color={TEAM_COLORS[team] ?? '#888'} style={{ border: 'none', margin: 0, fontSize: 12 }}>
-                                    {team}
+                                    {teamLabel}
                                 </Tag>
-                                <Text type="secondary" style={{ fontSize: 12 }}>({items.length} รายการ)</Text>
+                                <Text type="secondary" style={{ fontSize: 12 }}>({t('prodItems', { count: items.length })})</Text>
                             </Space>
                         ),
                         children: (
@@ -345,13 +374,15 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                                                     {String(item.stepId).padStart(2, '0')}
                                                 </div>
                                                 <div style={{ flex: 1 }}>
-                                                    <Text strong style={{ fontSize: 13 }}>{item.title}</Text>
-                                                    <div style={{ fontSize: 11, color: '#8c8c8c' }}>{item.titleEn}</div>
+                                                    <Text strong style={{ fontSize: 13 }}>
+                                                        {locale === 'en' && item.titleEn ? item.titleEn : item.title}
+                                                    </Text>
+                                                    {locale !== 'en' && <div style={{ fontSize: 11, color: '#8c8c8c' }}>{item.titleEn}</div>}
                                                 </div>
                                             </div>
                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 16px', background: '#fafbfc', padding: 10, borderRadius: 6, marginBottom: 8 }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <Text type="secondary" style={{ fontSize: 10, marginBottom: 4 }}>ระยะเวลา</Text>
+                                                    <Text type="secondary" style={{ fontSize: 10, marginBottom: 4 }}>{t('prodDurationShort')}</Text>
                                                     <InputNumber 
                                                         size="small" 
                                                         value={item.defaultDays} 
@@ -361,7 +392,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                                                     />
                                                 </div>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <Text type="secondary" style={{ fontSize: 10, marginBottom: 4 }}>จำนวนทีม</Text>
+                                                    <Text type="secondary" style={{ fontSize: 10, marginBottom: 4 }}>{t('prodCrewsShort')}</Text>
                                                     <InputNumber 
                                                         size="small" 
                                                         value={item.crews} 
@@ -371,7 +402,7 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                                                     />
                                                 </div>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <Text type="secondary" style={{ fontSize: 10, marginBottom: 4 }}>Prod. Rate</Text>
+                                                    <Text type="secondary" style={{ fontSize: 10, marginBottom: 4 }}>{t('prodRateShort')}</Text>
                                                     {item.productivityRate !== null ? (
                                                         <InputNumber 
                                                             size="small" 
@@ -384,8 +415,12 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                                                 </div>
                                             </div>
                                             <div style={{ fontSize: 11, color: '#595959', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                <Tag style={{ margin: 0, fontSize: 10, padding: '0 4px', border: 'none', background: '#f0f0f0' }}>Details</Tag>
-                                                {item.productivity} {item.productivityUnit ? `(${item.productivityUnit})` : ''}
+                                                <Tag style={{ margin: 0, fontSize: 10, padding: '0 4px', border: 'none', background: '#f0f0f0' }}>{t('prodDetailsTag')}</Tag>
+                                                {locale === 'en' && item.productivityEn ? item.productivityEn : item.productivity} {
+                                                    (locale === 'en' && item.productivityUnitEn) 
+                                                        ? `(${item.productivityUnitEn})` 
+                                                        : (item.productivityUnit ? `(${item.productivityUnit})` : '')
+                                                }
                                             </div>
                                         </div>
                                     ))}
@@ -404,7 +439,8 @@ export const ProductivityConfigTable: React.FC<ProductivityConfigTableProps> = (
                                 </div>
                             </>
                         )
-                    }))}
+                    };
+                })}
             />
 
             <ExcelImportModal<ScheduleImportResult>
