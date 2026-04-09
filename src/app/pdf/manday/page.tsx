@@ -9,6 +9,7 @@ interface ManDayRow {
     title: string;
     titleEn: string;
     team: string;
+    teamEn?: string;
     skilled: number;
     laborers: number;
     days: number;
@@ -126,6 +127,7 @@ export default function ManDayPdfPage() {
                                     if (activeItems.length === 0) return null;
                                     const teamManDays = activeItems.reduce((s, r) => s + r.manDays, 0);
                                     const baseColor = TEAM_COLORS[team] ?? '#888';
+                                    const teamLabel = locale === 'en' && activeItems[0]?.teamEn ? activeItems[0].teamEn : team;
 
                                     return (
                                         <Fragment key={team}>
@@ -133,7 +135,7 @@ export default function ManDayPdfPage() {
                                             <tr style={{ background: '#f5f5f5', borderTop: '2px solid #d9d9d9', borderBottom: '1px solid #d9d9d9' }}>
                                                 <td colSpan={2} style={{ padding: '8px 10px', fontWeight: 700, color: '#262626' }}>
                                                     <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: baseColor, marginRight: 8 }} />
-                                                    {team}
+                                                    {teamLabel}
                                                 </td>
                                                 <td colSpan={3} style={{ textAlign: 'right', padding: '8px 10px', fontSize: 9, color: '#8c8c8c' }}>
                                                     {activeItems.length} {locale === 'en' ? 'Tasks' : 'รายการ'}

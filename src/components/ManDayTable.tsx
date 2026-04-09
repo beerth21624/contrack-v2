@@ -23,6 +23,7 @@ interface ManDayRow {
     title: string;
     titleEn: string;
     team: string;
+    teamEn?: string;
     skilled: number;       // ช่าง
     laborers: number;      // คนงาน
     days: number;
@@ -65,6 +66,7 @@ export const ManDayTable: React.FC<ManDayTableProps> = ({ scheduleData, stepSave
                 title: sched.title,
                 titleEn: sched.titleEn,
                 team: sched.team,
+                teamEn: sched.teamEn,
                 skilled,
                 laborers,
                 days,
@@ -167,9 +169,15 @@ export const ManDayTable: React.FC<ManDayTableProps> = ({ scheduleData, stepSave
             fixed: 'left',
             render: (_: unknown, r: ManDayRow) => (
                 <div style={{ opacity: r.hasData ? 1 : 0.45 }}>
-                    <Text strong style={{ fontSize: 13 }}>{r.title}</Text>
-                    <br />
-                    <Text type="secondary" style={{ fontSize: 11 }}>{r.titleEn}</Text>
+                    <Text strong style={{ fontSize: 13 }}>
+                        {locale === 'en' && r.titleEn ? r.titleEn : r.title}
+                    </Text>
+                    {locale !== 'en' && (
+                        <>
+                            <br />
+                            <Text type="secondary" style={{ fontSize: 11 }}>{r.titleEn}</Text>
+                        </>
+                    )}
                 </div>
             ),
         },
@@ -255,13 +263,14 @@ export const ManDayTable: React.FC<ManDayTableProps> = ({ scheduleData, stepSave
                         .filter(([_, items]) => items.length > 0)
                         .map(([team, items]) => {
                             const teamManDays = items.reduce((s, r) => s + r.manDays, 0);
+                            const teamLabel = locale === 'en' && items[0]?.teamEn ? items[0].teamEn : team;
                             return {
                                 key: team,
                                 label: (
                                     <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 8, paddingRight: 8 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                             <Tag color={TEAM_COLORS[team] ?? '#888'} style={{ border: 'none', margin: 0, fontSize: 13, padding: '2px 8px', whiteSpace: 'nowrap' }}>
-                                                {team}
+                                                {teamLabel}
                                             </Tag>
                                             <Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{t('mdItemsCount', { count: items.length })}</Text>
                                         </div>
@@ -288,8 +297,10 @@ export const ManDayTable: React.FC<ManDayTableProps> = ({ scheduleData, stepSave
                                                             {String(r.stepId).padStart(2, '0')}
                                                         </div>
                                                         <div>
-                                                            <div style={{ fontWeight: 600, fontSize: 13, color: '#262626' }}>{r.title}</div>
-                                                            <div style={{ fontSize: 11, color: '#8c8c8c' }}>{r.titleEn}</div>
+                                                            <div style={{ fontWeight: 600, fontSize: 13, color: '#262626' }}>
+                                                                {locale === 'en' && r.titleEn ? r.titleEn : r.title}
+                                                            </div>
+                                                            {locale !== 'en' && <div style={{ fontSize: 11, color: '#8c8c8c' }}>{r.titleEn}</div>}
                                                         </div>
                                                     </div>
                                                     
