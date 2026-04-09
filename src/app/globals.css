@@ -104,6 +104,14 @@ input.ant-input, .ant-select-selector {
         padding: 0 12px !important;
     }
 
+    /* Toast Messages mapping to bottom */
+    .ant-message {
+        top: auto !important;
+        bottom: 24px !important;
+        display: flex;
+        flex-direction: column-reverse;
+    }
+
     /* Tables */
     .ant-table {
         font-size: 12px;
