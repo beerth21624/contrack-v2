@@ -154,15 +154,15 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
         },
     ];
 
-    const titleExtra = (
-        <Space size="middle" wrap>
+    const desktopExtra = !isMobile && (
+        <Space size="middle">
             <Input
                 placeholder={t('searchPlaceholder')}
                 prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
                 value={searchText}
                 onChange={e => setSearchText(e.target.value)}
                 allowClear
-                style={{ width: isMobile ? '100%' : 250 }}
+                style={{ width: 250 }}
             />
             <Button
                 icon={<DownloadOutlined />}
@@ -184,6 +184,37 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
         </Space>
     );
 
+    const mobileHeaderActions = isMobile && (
+        <div style={{ paddingBottom: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Input
+                placeholder={t('searchPlaceholder')}
+                prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                value={searchText}
+                onChange={e => setSearchText(e.target.value)}
+                allowClear
+                size="large"
+                style={{ width: '100%', borderRadius: 8 }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+                <Button
+                    icon={<DownloadOutlined />}
+                    onClick={handleExport}
+                    style={{ flex: 1, borderColor: '#217346', color: '#217346', fontWeight: 500, borderRadius: 8 }}
+                >
+                    Export
+                </Button>
+                <Button
+                    icon={<UploadOutlined />}
+                    onClick={() => setImportOpen(true)}
+                    type="dashed"
+                    style={{ flex: 1, fontWeight: 500, borderRadius: 8 }}
+                >
+                    Import
+                </Button>
+            </div>
+        </div>
+    );
+
     return (
         <Card title={
             <Space>
@@ -191,10 +222,11 @@ export const PriceListTable: React.FC<PriceListTableProps> = ({ prices, onUpdate
                 <Tag color="blue">{t('itemCount', { count: prices.length })}</Tag>
             </Space>
         } 
-              extra={titleExtra}
+              extra={desktopExtra}
               style={{ borderRadius: 10, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}
               styles={{ body: { padding: 12, backgroundColor: '#f5f5f5' } }}
         >
+            {mobileHeaderActions}
             <Collapse 
                 activeKey={activeKeys} 
                 onChange={(keys) => setActiveKeys(keys)}
