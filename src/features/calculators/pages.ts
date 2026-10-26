@@ -29,4 +29,13 @@ export const CALCULATOR_PAGES: Record<string, LazyExoticComponent<ComponentType>
     'wall-finishing': lazy(() => import('./wall-finishing/WallFinishingPage')),
     'paint': lazy(() => import('./paint/PaintPage')),
     'structure-summary': lazy(() => import('./structure-summary/StructureSummaryPage')),
+    'waste-pipe': lazy(() => import('./waste-pipe/WastePipePage')),
+    'water-pipe': lazy(() => import('./water-pipe/WaterPipePage')),
+    'electrical-pipe': lazy(() => import('./electrical-pipe/ElectricalPipePage')),
+    'electrical-cable': lazy(() => import('./electrical-cable/ElectricalCablePage')),
+    'load-center': lazy(() => import('./load-center/LoadCenterPage')),
+    'electrical-equipment': lazy(() => import('./electrical-equipment/ElectricalEquipmentPage')),
+    'sanitary-system': lazy(() => import('./sanitary-system/SanitarySystemPage')),
+    'misc': lazy(() => import('./misc/MiscPage')),
+    'sanitary-ware': lazy(() => import('./sanitary-ware/SanitaryWarePage')),
 };

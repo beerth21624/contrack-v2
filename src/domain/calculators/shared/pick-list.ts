@@ -138,11 +138,15 @@ export function computePickList(rows: PickRow[], catalogue: Catalogue): Record<s
 /**
  * Choosing an item in รายการ. A catalogue item brings its unit and drops typed prices (so the BOQ gets the
  * new item's price, not the old one's — the Excel BOQ keeps the old price, spec 05 §0.3). Free text
- * (renaming a custom item) keeps the row's own unit and prices.
+ * (renaming a custom item) keeps the row's own unit and prices; renaming a catalogue item into free text
+ * (e.g. adding "ชั้น 2" to the railing) keeps the price it showed, typed into the row, instead of dropping to 0.
  */
 export function selectItem(row: PickRow, item: string, catalogue: Catalogue): PickRow {
     const c = catalogueItem(catalogue, item);
-    return c ? { ...row, item, unit: c.unit, mat: null, lab: null } : { ...row, item };
+    if (c) return { ...row, item, unit: c.unit, mat: null, lab: null };
+    const prev = catalogueItem(catalogue, row.item);
+    if (!prev || matchKey(item) === '') return { ...row, item };
+    return { ...row, item, unit: row.unit.trim() || prev.unit, mat: row.mat ?? prev.mat, lab: row.lab ?? prev.lab };
 }
 
 /** A list row priced from the catalogue. */

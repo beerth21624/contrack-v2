@@ -2,11 +2,12 @@
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { Button, Popconfirm, Tag, Typography } from 'antd';
+import { Button, Collapse, Popconfirm, Tag, Typography } from 'antd';
 import { ArrowLeftOutlined, UndoOutlined } from '@ant-design/icons';
 import type { CalculatorDef } from '@/domain/calculators/types';
 import type { ProjectResult } from '@/domain/project';
 import { formatNumber, SHEET_COLORS } from '@/components/sheet/NumberCell';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
 
 const { Title, Text } = Typography;
 
@@ -72,6 +73,30 @@ export function CalculatorShell({ def, result, isDefault, onReset, children, asi
     aside?: ReactNode;
 }) {
     const highlight = new Set(def.boqLinks.map(l => l.line));
+    const inJourney = useJourneyMode();
+    const preview = <BoqPreview result={result} sections={def.sections} highlight={highlight} highlightPrefix={`${def.id}:`} />;
+    if (inJourney) {
+        // The level page shows title, plan hint and navigation; here only the inputs, with the BOQ detail folded.
+        return (
+            <div className="flex flex-col gap-4">
+                {children}
+                {aside}
+                <Collapse
+                    size="small"
+                    items={[{
+                        key: 'boq',
+                        label: <span className="text-[13px] text-gray-600">ดูรายการที่ส่งเข้า BOQ (สำหรับตรวจสอบ)</span>,
+                        children: preview,
+                        extra: isDefault ? undefined : (
+                            <Popconfirm title="ล้างข้อมูลด่านนี้กลับเป็นค่าเริ่มต้น?" okText="ล้าง" cancelText="ยกเลิก" onConfirm={onReset}>
+                                <Button size="small" type="text" icon={<UndoOutlined />} onClick={e => e.stopPropagation()}>ค่าเริ่มต้น</Button>
+                            </Popconfirm>
+                        ),
+                    }]}
+                />
+            </div>
+        );
+    }
     return (
         <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-3 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
@@ -98,7 +123,7 @@ export function CalculatorShell({ def, result, isDefault, onReset, children, asi
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
                 <div className="xl:col-span-7 flex flex-col gap-4 min-w-0">{children}</div>
                 <div className="xl:col-span-5 flex flex-col gap-4 min-w-0 xl:sticky xl:top-4">
-                    <BoqPreview result={result} sections={def.sections} highlight={highlight} highlightPrefix={`${def.id}:`} />
+                    {preview}
                     {aside}
                 </div>
             </div>

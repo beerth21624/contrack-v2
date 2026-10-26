@@ -27,6 +27,15 @@ import { toiletTile } from './toilet-tile';
 import { wallFinishing } from './wall-finishing';
 import { paint } from './paint';
 import { structureSummary } from './structure-summary';
+import { wastePipe } from './waste-pipe';
+import { waterPipe } from './water-pipe';
+import { electricalPipe } from './electrical-pipe';
+import { electricalCable } from './electrical-cable';
+import { loadCenter } from './load-center';
+import { electricalEquipment } from './electrical-equipment';
+import { sanitarySystem } from './sanitary-system';
+import { misc } from './misc';
+import { sanitaryWare } from './sanitary-ware';
 
 export const CALCULATORS: CalculatorDef[] = [
     landInspection,
@@ -56,6 +65,15 @@ export const CALCULATORS: CalculatorDef[] = [
     wallFinishing,
     paint,
     structureSummary,
+    wastePipe,
+    waterPipe,
+    electricalPipe,
+    electricalCable,
+    loadCenter,
+    electricalEquipment,
+    sanitarySystem,
+    misc,
+    sanitaryWare,
 ];
 
 export function getCalculator(id: string): CalculatorDef | undefined {

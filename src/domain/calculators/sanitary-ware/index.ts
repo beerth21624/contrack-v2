@@ -1,0 +1,70 @@
+// Sheet "สุขภัณฑ์_Sanitary" (Excel v5 sheet 21) → BOQ (Home) section 29 งานสุขภัณฑ์, slot `items` (Excel rows 282–291).
+// Shared core: ../shared/pick-list. Spec: docs/excel-spec/05-mep-sanitary-misc.md §9.
+import { defineCalculator } from '../types';
+import {
+    computePickList, pickListSlotRows, pickRow, type Catalogue, type PickListInput,
+} from '../shared/pick-list';
+
+export type SanitaryWareInput = PickListInput;
+
+/** B5:B19 dropdown, verbatim, Excel list order (trailing spaces of ตะแกรงกันกลิ่น / ที่ใส่กระดาษชำระ / ราวแขวนผ้า / อ่างล้างหน้า kept). */
+export const SANITARY_WARE_ITEMS = [
+    'กระจกเงา',
+    'ก๊อกเดี่ยวอ่างล้างหน้า',
+    'ชักโครกนั่งราบ',
+    'ตะแกรงกันกลิ่น ',
+    'ที่ใส่กระดาษชำระ ',
+    'ที่ใส่สบู่',
+    'ฝักบัวอาบน้ำ',
+    'ราวแขวนผ้า ',
+    'สายชำระ',
+    'อ่างล้างหน้า ',
+] as const;
+
+/** D5:D19 dropdown (the only option). */
+export const SANITARY_WARE_UNITS = ['ชุด'] as const;
+
+const [MIRROR, BASIN_TAP, TOILET, FLOOR_DRAIN, PAPER_HOLDER, SOAP_DISH, SHOWER, TOWEL_RAIL, BIDET_SPRAY, BASIN] =
+    SANITARY_WARE_ITEMS;
+const SET = 'ชุด';
+
+/** Excel BOQ rows 282–291 (F ชุด, I, K; no notes). Every dropdown option is priced. */
+export const SANITARY_WARE_CATALOGUE: Catalogue = {
+    [TOILET]: { unit: SET, mat: 5000, lab: 800 },        // R282
+    [BIDET_SPRAY]: { unit: SET, mat: 500, lab: 100 },    // R283
+    [BASIN]: { unit: SET, mat: 3500, lab: 500 },         // R284
+    [BASIN_TAP]: { unit: SET, mat: 800, lab: 70 },       // R285
+    [MIRROR]: { unit: SET, mat: 1000, lab: 100 },        // R286
+    [PAPER_HOLDER]: { unit: SET, mat: 350, lab: 70 },    // R287
+    [TOWEL_RAIL]: { unit: SET, mat: 800, lab: 70 },      // R288
+    [FLOOR_DRAIN]: { unit: SET, mat: 300, lab: 100 },    // R289
+    [SOAP_DISH]: { unit: SET, mat: 500, lab: 100 },      // R290
+    [SHOWER]: { unit: SET, mat: 1000, lab: 100 },        // R291
+};
+
+export const sanitaryWare = defineCalculator<SanitaryWareInput>({
+    id: 'sanitary-ware',
+    sheetName: 'สุขภัณฑ์_Sanitary',
+    title: 'โปรแกรมถอดแบบ – งานสุขภัณฑ์ Sanitary',
+    titleEn: 'Sanitary',
+    sections: [29],
+    deps: [],
+    // Excel rows 5–14, verbatim (rows 15–19 blank; rows can be added, D5).
+    defaults: () => ({
+        items: [
+            pickRow(TOILET, 2, SET),
+            pickRow(BIDET_SPRAY, 2, SET),
+            pickRow(BASIN, 2, SET),
+            pickRow(BASIN_TAP, 2, SET),
+            pickRow(MIRROR, 2, SET),
+            pickRow(PAPER_HOLDER, 2, SET),
+            pickRow(TOWEL_RAIL, 2, SET),
+            pickRow(FLOOR_DRAIN, 3, SET),
+            pickRow(SOAP_DISH, 2, SET),
+            pickRow(SHOWER, 2, SET),
+        ],
+    }),
+    compute: input => computePickList(input.items, SANITARY_WARE_CATALOGUE),
+    boqLinks: [],
+    boqSlots: input => ({ items: pickListSlotRows(input.items, SANITARY_WARE_CATALOGUE) }),
+});

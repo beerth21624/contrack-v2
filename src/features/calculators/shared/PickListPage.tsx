@@ -63,8 +63,10 @@ export function PickListPage({ def, catalogue, options, units = [], allowFreeTex
                             kind: 'label', key: 'unit', title: 'หน่วย', width: 110,
                             get: (r, i) => (
                                 <div style={{ background: SHEET_COLORS.input, borderRadius: 3 }}>
+                                    {/* value = the row's own unit only (placeholder = the catalogue unit), so the
+                                        cell can be cleared and retyped without snapping back to the catalogue unit. */}
                                     <AutoComplete size="small" variant="borderless" style={{ width: '100%' }}
-                                        value={r.unit || pickRowCalc(r, catalogue).unit}
+                                        value={r.unit} placeholder={pickRowCalc(r, catalogue).unit}
                                         options={units.map(u => ({ value: u }))}
                                         onChange={v => setRow(i, { ...r, unit: v })} />
                                 </div>

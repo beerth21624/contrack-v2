@@ -33,6 +33,11 @@ export interface CalculatorDef<I = unknown> {
     // can share one registry array.
     /** Excel v5 sample input — used as the initial value and in golden tests. */
     defaults(): I;
+    /**
+     * Input for a project started from scratch: everything read off the plan (sizes, lengths, counts, rows)
+     * empty, while prices, waste and spec choices keep the Excel values. Without it a blank project uses `defaults()`.
+     */
+    blank?(): I;
     /** Pure: same input → same outputs. Outputs are plain numbers keyed by name. */
     compute(input: I, ctx: CalcContext): Record<string, number>;
     boqLinks: BoqLink[];

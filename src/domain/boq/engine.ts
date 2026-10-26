@@ -102,7 +102,8 @@ export function computeBoq({ sections: rawSections, overrides = {}, linked = {},
             if (g === 'none') v = null;
             else if (g === 'std') v = net(key) * (1 + waste(key));
             else if (g === 'ceilInt') v = roundUp(net(key) * (1 + waste(key)));
-            else if (g === 'concrete') v = Math.max(1, ceilingTo(net(key) * (1 + waste(key)), 0.25));
+            // Excel MAX(1, CEILING(x, 0.25)) orders 1 m³ even when there is no concrete; no quantity stays 0 (D1).
+            else if (g === 'concrete') v = net(key) <= 0 ? 0 : Math.max(1, ceilingTo(net(key) * (1 + waste(key)), 0.25));
             else v = g.refs.reduce((s, r) => s + (gross(r) ?? net(r)), 0) * g.ratio;
             m.gross = v;
             return v;
