@@ -255,7 +255,7 @@ function CreateWorkspaceModal({ open, onClose }: { open: boolean; onClose: () =>
         const { name } = await form.validateFields();
         try {
             await create.mutateAsync(name.trim());
-            void message.success('สร้างพื้นที่ทำงานแล้ว — เชิญทีมได้เลย');
+            void message.success('สร้างพื้นที่ทำงานแล้ว — เชิญสมาชิกเข้าร่วมได้');
             form.resetFields();
             onClose();
             router.push('/workspace/members');

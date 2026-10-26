@@ -113,7 +113,7 @@ export default function DoorWindowJourney() {
                 );
             })}
             <ul className="list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
-                <li>&quot;อยู่ที่ผนัง&quot; และ &quot;ผนังชนิด&quot; ใช้หักพื้นที่ประตู-หน้าต่างออกจากผนังในด่านก่ออิฐ — เลือกให้ตรงกับผนังที่ติดตั้ง</li>
+                <li>&quot;อยู่ที่ผนัง&quot; และ &quot;ผนังชนิด&quot; ใช้หักพื้นที่ประตู-หน้าต่างออกจากผนังในขั้นตอนก่ออิฐ — เลือกให้ตรงกับผนังที่ติดตั้ง</li>
                 <li>ราคาตั้งต้น: อลูมิเนียมคิดตามพื้นที่บาน ({formatNumber(ALUMINIUM_RATES.sliding, 0)}–{formatNumber(ALUMINIUM_RATES.awning, 0)} บาท/ตร.ม.), ไม้ {formatNumber(WOOD_DEFAULT_PRICE.mat, 0)} + ค่าแรง {formatNumber(WOOD_DEFAULT_PRICE.lab, 0)} บาท/ชุด — แก้ได้ในส่วนราคาด้านล่าง</li>
             </ul>
 
@@ -136,7 +136,7 @@ export default function DoorWindowJourney() {
                     { label: 'หน้าต่าง', value: count(input.windows), unit: 'บาน', digits: 0 },
                     { label: 'พื้นที่ช่องเปิดรวม', value: outputs['opening.total'], unit: 'ตร.ม.' },
                 ]}
-                note="พื้นที่ช่องเปิดจะถูกหักออกจากผนังในด่านก่ออิฐให้อัตโนมัติ" />
+                note="พื้นที่ช่องเปิดจะถูกหักออกจากผนังในขั้นตอนก่ออิฐให้อัตโนมัติ" />
         </CalculatorShell>
     );
 }

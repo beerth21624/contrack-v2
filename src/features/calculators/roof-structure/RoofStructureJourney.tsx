@@ -90,7 +90,7 @@ export default function RoofStructureJourney() {
             <NumberCell value={outputs[`${key}.area`] ?? 0} tone={m.area === null ? 'calc' : 'input'} edited={m.area !== null}
                 ariaLabel={`พื้นที่หลังคาที่ใช้คิด${name} (ตร.ม.)`}
                 onCommit={v => set(key, { area: v ?? null })} />
-            <span className="text-[12px] text-gray-500">ตร.ม. {m.area === null ? '(จากด่านวัสดุมุงหลังคา)' : '(พิมพ์เอง — ลบค่าเพื่อกลับไปใช้ค่าจากหลังคา)'}</span>
+            <span className="text-[12px] text-gray-500">ตร.ม. {m.area === null ? '(จากขั้นตอนวัสดุมุงหลังคา)' : '(พิมพ์เอง — ลบค่าเพื่อกลับไปใช้ค่าจากหลังคา)'}</span>
         </div>
     );
 
@@ -99,7 +99,7 @@ export default function RoofStructureJourney() {
             <FromLevel levelId="roofing">
                 {linked > 0
                     ? <>พื้นที่หลังคาตามแนวลาด <b>{formatNumber(linked)} ตร.ม.</b> — จันทัน แป และค่าแรงโครงหลังคาคิดจากพื้นที่นี้ให้เอง ไม่ต้องกรอกซ้ำ</>
-                    : <>ยังไม่มีพื้นที่หลังคา — กรอกขนาดหลังคาในด่านวัสดุมุงหลังคาก่อน แล้วจันทันและแปจะคิดให้เอง</>}
+                    : <>ยังไม่มีพื้นที่หลังคา — กรอกขนาดหลังคาในขั้นตอนวัสดุมุงหลังคาก่อน แล้วระบบจะคิดจันทันและแปให้อัตโนมัติ</>}
             </FromLevel>
 
             <SheetCard title="อะเสและอกไก่">

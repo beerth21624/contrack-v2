@@ -107,7 +107,7 @@ export function BoqLevelInputs({ sections }: { sections: number[] }) {
             </AdvancedSection>
 
             <ResultSummary
-                items={total > 0 ? [{ label: 'รวมด่านนี้', value: total, unit: 'บาท', digits: 0 }] : []}
+                items={total > 0 ? [{ label: 'รวมขั้นตอนนี้', value: total, unit: 'บาท', digits: 0 }] : []}
                 empty="ใส่จำนวนจากแบบ ระบบจะคิดค่าวัสดุและค่าแรงให้" />
         </div>
     );

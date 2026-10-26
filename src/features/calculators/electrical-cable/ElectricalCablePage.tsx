@@ -154,7 +154,7 @@ function JourneyCable({ calc }: { calc: Calc }) {
     if (rows.length === 0) {
         return (
             <SheetCard>
-                <EmptyState text="ยังไม่มีวงจร" note="วงจรและระยะสายมาจากด่านท่อร้อยสายไฟ — เพิ่มวงจรที่ด่านนั้นก่อน"
+                <EmptyState text="ยังไม่มีวงจร" note="วงจรและระยะสายมาจากขั้นตอนท่อร้อยสายไฟ — เพิ่มวงจรในขั้นตอนนั้นก่อน"
                     goToLevel="electrical-pipe" />
             </SheetCard>
         );
@@ -163,7 +163,7 @@ function JourneyCable({ calc }: { calc: Calc }) {
     return (
         <>
             <FromLevel levelId="electrical-pipe">
-                วงจร {formatNumber(rows.length, 0)} วงจร และระยะสายของแต่ละวงจร — แก้ชื่อหรือเพิ่มวงจรที่ด่านนั้น
+                วงจร {formatNumber(rows.length, 0)} วงจร และระยะสายของแต่ละวงจร — แก้ชื่อหรือเพิ่มวงจรได้ในขั้นตอนนั้น
             </FromLevel>
 
             <SheetCard title="ขนาดสายไฟแต่ละวงจร">

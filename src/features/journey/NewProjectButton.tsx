@@ -11,11 +11,11 @@ import { JOURNEY_LEVELS } from '@/domain/journey';
 const CHOICES: { start: ProjectStart; icon: React.ReactNode; title: string; text: string }[] = [
     {
         start: 'blank', icon: <FileAddOutlined />, title: 'เริ่มจากแบบแปลนของฉัน',
-        text: 'ทุกด่านเริ่มว่าง กรอกขนาดและจำนวนตามแบบ ราคาวัสดุ/ค่าแรงตั้งต้นจาก Excel v5 (แก้ได้)',
+        text: 'ทุกขั้นตอนเริ่มจากค่าว่าง กรอกขนาดและจำนวนตามแบบ ราคาวัสดุ/ค่าแรงตั้งต้นจาก Excel v5 (แก้ไขได้)',
     },
     {
-        start: 'sample', icon: <HomeOutlined />, title: 'ลองกับบ้านตัวอย่าง',
-        text: 'บ้านชั้นเดียวจาก Excel Training Edition v5 กรอกไว้ครบ เหมาะสำหรับลองเล่นและเทียบกับ Excel',
+        start: 'sample', icon: <HomeOutlined />, title: 'ทดลองกับบ้านตัวอย่าง',
+        text: 'บ้านชั้นเดียวจาก Excel Training Edition v5 กรอกข้อมูลไว้ครบ เหมาะสำหรับทดลองใช้งานและเปรียบเทียบกับ Excel',
     },
 ];
 

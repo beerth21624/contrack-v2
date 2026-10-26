@@ -43,7 +43,7 @@ export function LevelPage({ levelId }: { levelId: string }) {
         return () => observer.disconnect();
     }, []);
 
-    if (!level) return <Result status="404" title="ไม่พบด่านนี้" extra={<Link href="/journey"><Button>กลับแผนที่ด่าน</Button></Link>} />;
+    if (!level) return <Result status="404" title="ไม่พบขั้นตอนนี้" extra={<Link href="/journey"><Button>กลับไปภาพรวมขั้นตอน</Button></Link>} />;
 
     const progress = project.journey ?? {};
     const index = JOURNEY_LEVELS.indexOf(level);
@@ -57,10 +57,10 @@ export function LevelPage({ levelId }: { levelId: string }) {
         return (
             <Result
                 icon={<LockOutlined className="!text-gray-400" />}
-                title={`ด่าน "${level.title}" ยังล็อกอยู่`}
-                subTitle="ผ่านด่านก่อนหน้าให้ครบก่อน ด่านนี้จะปลดล็อกเอง"
+                title={`ขั้นตอน "${level.title}" รอขั้นตอนก่อนหน้า`}
+                subTitle="กรุณาทำขั้นตอนก่อนหน้าให้เสร็จก่อน จึงจะเริ่มขั้นตอนนี้ได้"
                 extra={current && (
-                    <Link href={`/journey/${current.id}`}><Button type="primary">ไปด่านที่ต้องทำ: {current.title}</Button></Link>
+                    <Link href={`/journey/${current.id}`}><Button type="primary">ทำต่อ: {current.title}</Button></Link>
                 )}
             />
         );
@@ -70,7 +70,7 @@ export function LevelPage({ levelId }: { levelId: string }) {
     const goNext = () => router.push(next ? `/journey/${next.id}` : '/journey');
     const pass = () => { setLevelMark(level.id, 'done'); goNext(); };
     const skip = () => {
-        // "ไม่มีงานนี้": the level's calculator goes back to empty so nothing of it stays in the BOQ.
+        // "ไม่มีในโครงการนี้": the level's calculator goes back to empty so nothing of it stays in the BOQ.
         setLevelMark(level.id, 'skipped');
         goNext();
     };
@@ -82,8 +82,8 @@ export function LevelPage({ levelId }: { levelId: string }) {
     return (
         <div className="flex flex-col gap-4 max-w-6xl mx-auto w-full" style={{ paddingBottom: barHeight + 24 }}>
             <div className="flex items-center gap-3">
-                <Link href="/journey"><Button icon={<AppstoreOutlined />}>แผนที่ด่าน</Button></Link>
-                <Text type="secondary" className="text-[13px] whitespace-nowrap">{phase?.title} · ด่าน {index + 1}/{JOURNEY_LEVELS.length}</Text>
+                <Link href="/journey"><Button icon={<AppstoreOutlined />}>ภาพรวมขั้นตอน</Button></Link>
+                <Text type="secondary" className="text-[13px] whitespace-nowrap">{phase?.title} · ขั้นตอน {index + 1} จาก {JOURNEY_LEVELS.length}</Text>
                 <Progress percent={Math.round(((index + 1) / JOURNEY_LEVELS.length) * 100)} showInfo={false}
                     strokeColor="#fa8c16" className="flex-1 !mb-0" />
             </div>
@@ -93,8 +93,8 @@ export function LevelPage({ levelId }: { levelId: string }) {
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                 <div className="flex flex-wrap items-center gap-2">
                     <Title level={3} style={{ margin: 0 }}>{level.title}</Title>
-                    {mark === 'done' && <Tag color="green" icon={<CheckOutlined />}>ผ่านแล้ว</Tag>}
-                    {mark === 'skipped' && <Tag icon={<StepForwardOutlined />}>ไม่มีงานนี้</Tag>}
+                    {mark === 'done' && <Tag color="green" icon={<CheckOutlined />}>เสร็จแล้ว</Tag>}
+                    {mark === 'skipped' && <Tag icon={<StepForwardOutlined />}>ไม่มีในโครงการนี้</Tag>}
                 </div>
                 <div className="mt-3 flex gap-3 rounded-lg bg-blue-50 border border-blue-100 px-4 py-3">
                     <FileSearchOutlined className="text-blue-500 text-[20px] mt-0.5" />
@@ -111,9 +111,9 @@ export function LevelPage({ levelId }: { levelId: string }) {
             {mark === 'skipped'
                 ? (
                     <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-500">
-                        ด่านนี้ถูกกำหนดว่า &quot;ไม่มีงานนี้&quot; ในโครงการ — ไม่คิดเงินในส่วนนี้
+                        ขั้นตอนนี้ระบุว่า &quot;ไม่มีในโครงการนี้&quot; — ไม่นำมาคิดมูลค่า
                         <div className="mt-3">
-                            <Button icon={<UndoOutlined />} onClick={() => setLevelMark(level.id, undefined)}>มีงานนี้ กลับมากรอก</Button>
+                            <Button icon={<UndoOutlined />} onClick={() => setLevelMark(level.id, undefined)}>มีงานส่วนนี้ กลับไปกรอกข้อมูล</Button>
                         </div>
                     </div>
                 )
@@ -131,11 +131,11 @@ export function LevelPage({ levelId }: { levelId: string }) {
                 {/* On a phone the buttons wrap under the total instead of squeezing it. */}
                 <div className="max-w-6xl mx-auto px-3 py-2.5 sm:py-3 flex flex-wrap items-center gap-x-3 gap-y-2">
                     {prev
-                        ? <Link href={`/journey/${prev.id}`}><Button icon={<ArrowLeftOutlined />} aria-label="ด่านก่อนหน้า" /></Link>
-                        : <Button icon={<ArrowLeftOutlined />} disabled aria-label="ด่านก่อนหน้า" />}
+                        ? <Link href={`/journey/${prev.id}`}><Button icon={<ArrowLeftOutlined />} aria-label="ขั้นตอนก่อนหน้า" /></Link>
+                        : <Button icon={<ArrowLeftOutlined />} disabled aria-label="ขั้นตอนก่อนหน้า" />}
                     {level.kind.type !== 'meta' && (
                         <div className="min-w-[140px] flex-1 sm:flex-none sm:min-w-0">
-                            <div className="text-[11px] text-gray-500 leading-tight">ด่านนี้คิดเป็น</div>
+                            <div className="text-[11px] text-gray-500 leading-tight">มูลค่าขั้นตอนนี้</div>
                             <div className="text-[18px] font-bold tabular-nums leading-tight">{formatNumber(mark === 'skipped' ? 0 : total, 0)} บาท</div>
                             {outsideConstruction && (
                                 <div className="text-[11px] text-gray-500 leading-tight">ค่าใช้จ่ายก่อนเริ่มงาน ไม่รวมในราคาค่าก่อสร้าง</div>
@@ -143,24 +143,24 @@ export function LevelPage({ levelId }: { levelId: string }) {
                         </div>
                     )}
                     <div className="hidden sm:block min-w-0 pl-3 border-l border-gray-200">
-                        <div className="text-[11px] text-gray-500 leading-tight">รวมทั้งหลังตอนนี้</div>
+                        <div className="text-[11px] text-gray-500 leading-tight">มูลค่ารวมโครงการ</div>
                         <div className="text-[15px] font-semibold tabular-nums leading-tight text-gray-700">
                             {formatNumber(result.boq.constructionTotal, 0)} บาท
                         </div>
                     </div>
                     <div className="ml-auto flex flex-wrap justify-end items-center gap-2">
                         {level.optional && mark === undefined && (
-                            <Popconfirm title="โครงการนี้ไม่มีงานนี้?" description="ระบบจะไม่คิดเงินในด่านนี้ (กลับมาแก้ได้)"
-                                okText="ไม่มีงานนี้" cancelText="ยกเลิก" onConfirm={skip}>
-                                <Button icon={<StepForwardOutlined />}>ไม่มีงานนี้</Button>
+                            <Popconfirm title="ยืนยันว่าไม่มีงานส่วนนี้ในโครงการ?" description="ระบบจะไม่นำขั้นตอนนี้มาคิดมูลค่า (แก้ไขภายหลังได้)"
+                                okText="ยืนยัน" cancelText="ยกเลิก" onConfirm={skip}>
+                                <Button icon={<StepForwardOutlined />}>ไม่มีในโครงการนี้</Button>
                             </Popconfirm>
                         )}
                         {mark === undefined
                             ? <Button type="primary" size="large" icon={<CheckOutlined />} onClick={pass}>
-                                {next ? 'ผ่านด่านนี้' : 'ผ่านด่านสุดท้าย'}
+                                {next ? 'ยืนยันและไปขั้นตอนถัดไป' : 'ยืนยันและเสร็จสิ้น'}
                             </Button>
                             : <Button type="primary" size="large" onClick={goNext}>
-                                {next ? <>ด่านถัดไป <ArrowRightOutlined /></> : 'กลับแผนที่ด่าน'}
+                                {next ? <>ขั้นตอนถัดไป <ArrowRightOutlined /></> : 'กลับไปภาพรวมขั้นตอน'}
                             </Button>}
                     </div>
                 </div>

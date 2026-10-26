@@ -39,7 +39,7 @@ export function ResultSummary({ items, minor, note, empty }: {
 }) {
     return (
         <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-            <div className="text-[12px] font-semibold text-green-800 mb-2">ผลลัพธ์ของด่านนี้</div>
+            <div className="text-[12px] font-semibold text-green-800 mb-2">สรุปผลขั้นตอนนี้</div>
             {items.length === 0 && empty !== undefined
                 ? <div className="text-[13px] text-gray-600">{empty}</div>
                 : (

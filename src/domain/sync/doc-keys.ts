@@ -1,7 +1,7 @@
 // ─── Document keys: how a Project is split for storage and collaboration ───
 // One document per thing a user edits on its own, so two people on different levels never overwrite each other:
 //   meta                      the BOQ header (project name, site, owner, …)
-//   journey                   which levels are passed / marked "ไม่มีงานนี้"
+//   journey                   which levels are passed / marked "ไม่มีในโครงการนี้"
 //   calc:<calculatorId>       one calculator sheet's input
 //   boq:<lineKey>             one BOQ (Home) line edited on the BOQ page
 //   planning:<sheet>          Man-Day / S-Curve / CashFlow input

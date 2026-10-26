@@ -79,7 +79,7 @@ export function CalculatorShell({ def, result, isDefault, onReset, children, asi
     const inJourney = useJourneyMode();
     const preview = (
         <BoqPreview result={result} sections={def.sections} highlight={highlight} highlightPrefix={`${def.id}:`}
-            title={inJourney ? 'รายการใน BOQ ของหมวดนี้ (แถวสีเขียวมาจากด่านนี้)' : undefined} />
+            title={inJourney ? 'รายการใน BOQ ของหมวดนี้ (แถวสีเขียวมาจากขั้นตอนนี้)' : undefined} />
     );
     if (inJourney) {
         // The level page shows title, plan hint and navigation; here only the inputs, with the BOQ detail folded.
@@ -98,7 +98,7 @@ export function CalculatorShell({ def, result, isDefault, onReset, children, asi
                         label: <span className="text-[13px] text-gray-600">ดูรายการที่ส่งเข้า BOQ (สำหรับตรวจสอบ)</span>,
                         children: preview,
                         extra: isDefault ? undefined : (
-                            <Popconfirm title="ล้างข้อมูลด่านนี้กลับเป็นค่าเริ่มต้น?" okText="ล้าง" cancelText="ยกเลิก" onConfirm={onReset}>
+                            <Popconfirm title="ล้างข้อมูลขั้นตอนนี้กลับเป็นค่าเริ่มต้น?" okText="ล้าง" cancelText="ยกเลิก" onConfirm={onReset}>
                                 <Button size="small" type="text" icon={<UndoOutlined />} onClick={e => e.stopPropagation()}>ค่าเริ่มต้น</Button>
                             </Popconfirm>
                         ),

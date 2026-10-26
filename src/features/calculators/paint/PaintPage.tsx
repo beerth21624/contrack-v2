@@ -56,18 +56,18 @@ const JOURNEY_SOURCE: Partial<Record<PaintLineKey, { level: string; what: string
     skim: { level: 'plaster', what: 'ผนังฉาบภายนอก + ภายใน' },
 };
 
-/** "ใช้ค่าจากด่าน …" in journey mode: a primary button while the source offers another number. */
+/** "ใช้ค่าจากขั้นตอน …" in journey mode: a primary button while the source offers another number. */
 function UseFromLevel({ level, value, current, unit, onUse }: {
     level: string; value: number | undefined; current: number; unit: string; onUse: (v: number) => void;
 }) {
     const title = levelTitle(level);
-    if (value === undefined) return <span className="text-[12px] text-gray-400">ด่าน{title}ยังไม่มีค่านี้</span>;
+    if (value === undefined) return <span className="text-[12px] text-gray-400">ขั้นตอน{title}ยังไม่มีค่านี้</span>;
     if (Math.abs(value - current) < 1e-9) {
-        return <span className="text-[12px] text-green-700"><CheckOutlined /> ตรงกับด่าน{title}</span>;
+        return <span className="text-[12px] text-green-700"><CheckOutlined /> ตรงกับขั้นตอน{title}</span>;
     }
     return (
         <Button type="primary" size="small" onClick={() => onUse(value)}>
-            ใช้ค่าจากด่าน{title}: {formatNumber(value)} {unit}
+            ใช้ค่าจากขั้นตอน{title}: {formatNumber(value)} {unit}
         </Button>
     );
 }
@@ -84,14 +84,14 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
         ...p, mouldings: p.mouldings.map((m, j) => (j === i ? { ...m, ...patch } : m)),
     }));
     const sum = (keys: PaintLineKey[]) => keys.reduce((s, k) => s + (outputs[k] ?? 0), 0);
-    // The wall-finishing level was marked "ไม่มีงานนี้" and nothing was typed here: no slat or moulding paint.
+    // The wall-finishing level was marked "ไม่มีในโครงการนี้" and nothing was typed here: no slat or moulding paint.
     const finishingSkipped = useProjectStore(s => s.project.journey?.['wall-finishing'] === 'skipped');
     const noFinishing = finishingSkipped && input.slatWallArea === 0 && input.mouldings.every(m => m.length === 0);
 
     return (
         <>
-            <SheetCard title="พื้นที่ทาสีมาจากด่านก่อนหน้า">
-                <p className="text-[12px] text-gray-500 mb-2">ไม่ต้องกรอก — ตรวจดูว่าครบ ถ้ารายการไหนยังไม่มีแต่แบบมี ให้กลับไปกรอกด่านนั้น</p>
+            <SheetCard title="พื้นที่ทาสีจากขั้นตอนก่อนหน้า">
+                <p className="text-[12px] text-gray-500 mb-2">ไม่ต้องกรอก — ตรวจสอบว่าครบถ้วน หากรายการใดยังไม่มีแต่แบบมี ให้กลับไปกรอกในขั้นตอนนั้น</p>
                 <div className="divide-y divide-gray-100">
                     {fromLevels.map(l => {
                         const src = JOURNEY_SOURCE[l.key];
@@ -106,11 +106,11 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                                 <span className="text-[12px] text-gray-500">
                                     {isLinked(l.key)
                                         ? <>จาก <LevelLink levelId={src.level} /> ({src.what})</>
-                                        : <>ค่าตัวอย่าง (ยังไม่มีด่าน{levelTitle(src.level)})</>}
+                                        : <>ค่าตัวอย่าง (ยังไม่มีข้อมูลจากขั้นตอน{levelTitle(src.level)})</>}
                                 </span>
                                 {area === 0 && (
                                     <LevelLink levelId={src.level} className="text-[12px] text-orange-600">
-                                        ถ้าแบบมี กรอกที่ด่าน{levelTitle(src.level)}
+                                        หากแบบมี กรอกที่ขั้นตอน{levelTitle(src.level)}
                                     </LevelLink>
                                 )}
                             </div>
@@ -122,9 +122,9 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
             <SheetCard title="พื้นที่ที่ต้องยืนยัน">
                 {pending > 0 && (
                     <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-orange-200 bg-orange-50 px-3 py-2">
-                        <span className="text-[13px] text-gray-800">ด่านก่อนหน้ามีค่าให้ใช้ {pending} รายการ</span>
+                        <span className="text-[13px] text-gray-800">ขั้นตอนก่อนหน้ามีค่าให้ใช้ {pending} รายการ</span>
                         <Button type="primary" onClick={() => update(p => applyPaintSuggestions(p, suggest))}>
-                            ใช้ค่าจากด่านก่อนหน้าทั้งหมด
+                            ใช้ค่าจากขั้นตอนก่อนหน้าทั้งหมด
                         </Button>
                     </div>
                 )}
@@ -132,7 +132,7 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                 <div className="flex flex-col gap-3">
                     {noFinishing ? (
                         <div className="text-[13px] text-gray-600">
-                            ทาสีผนังไม้ระแนงและบัวผนัง: ไม่มี (<LevelLink levelId="wall-finishing" /> กด &quot;ไม่มีงานนี้&quot;)
+                            ทาสีผนังไม้ระแนงและบัวผนัง: ไม่มี (<LevelLink levelId="wall-finishing" /> ระบุว่า &quot;ไม่มีในโครงการนี้&quot;)
                         </div>
                     ) : (<>
                     <div>

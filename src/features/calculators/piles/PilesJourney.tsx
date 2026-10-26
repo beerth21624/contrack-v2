@@ -50,7 +50,7 @@ export function PilesJourney({ input, update }: { input: PilesInput; update: (pa
                 { label: 'รวม', value: count * price, unit: 'บาท', digits: 0 },
             ]} note={<>
                 {spec ? <>รายการใน BOQ: {spec}</> : 'ยังไม่ได้เลือกชนิดและหน้าตัดเสาเข็ม'}
-                {count > 0 && <> · ค่าตัดหัวเสาเข็ม {formatNumber(count, 0)} ต้น คิดให้เองในด่านฐานราก</>}
+                {count > 0 && <> · ค่าตัดหัวเสาเข็ม {formatNumber(count, 0)} ต้น คิดให้อัตโนมัติในขั้นตอนฐานราก</>}
             </>} />
         </div>
     );

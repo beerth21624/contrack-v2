@@ -20,7 +20,7 @@ export function EmptyState({ text, note, addLabel, onAdd, actions = [], goToLeve
     addLabel?: string;
     onAdd?: () => void;
     actions?: EmptyAction[];
-    /** Journey level id: a "ไปด่าน…" button to that level. */
+    /** Journey level id: a "ไปที่ขั้นตอน…" button to that level. */
     goToLevel?: string;
     children?: ReactNode;
 }) {
@@ -40,7 +40,7 @@ export function EmptyState({ text, note, addLabel, onAdd, actions = [], goToLeve
                     {goToLevel !== undefined && (
                         <Link href={levelHref(goToLevel)}>
                             <Button type={buttons.length === 0 ? 'primary' : 'default'} size="large" icon={<ArrowLeftOutlined />}>
-                                ไปด่าน{levelTitle(goToLevel)}
+                                ไปที่ขั้นตอน{levelTitle(goToLevel)}
                             </Button>
                         </Link>
                     )}

@@ -81,7 +81,7 @@ export function GroundBeamJourney({ beams, onChange }: { beams: GroundBeamRow[];
                 { label: 'เหล็กเสริม', value: totalKg(groundBeamRebar({ beams })), unit: 'กก.' },
                 { label: 'ไม้แบบ', value: t.formwork, unit: 'ตร.ม.' },
                 { label: 'คอนกรีตหยาบ', value: t.lean, unit: 'ลบ.ม.' },
-            ]} note="ดินถมกลับของหมวดนี้มาจากด่านฐานรากและเสาตอม่อ" />
+            ]} note="ดินถมกลับของหมวดนี้มาจากขั้นตอนฐานรากและเสาตอม่อ" />
         </div>
     );
 }

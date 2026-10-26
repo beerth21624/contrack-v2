@@ -32,7 +32,7 @@ export function hasGuestData(p: Project): boolean {
 }
 
 const START_CHOICES: { start: ProjectStart; icon: React.ReactNode; title: string; text: string }[] = [
-    { start: 'blank', icon: <FileAddOutlined />, title: 'เริ่มจากแบบแปลนของฉัน', text: 'ทุกด่านเริ่มว่าง กรอกขนาดและจำนวนตามแบบ' },
+    { start: 'blank', icon: <FileAddOutlined />, title: 'เริ่มจากแบบแปลนของฉัน', text: 'ทุกขั้นตอนเริ่มจากค่าว่าง กรอกขนาดและจำนวนตามแบบ' },
     { start: 'sample', icon: <HomeOutlined />, title: 'ลองกับบ้านตัวอย่าง', text: 'บ้านชั้นเดียวจาก Excel v5 กรอกไว้ครบ' },
 ];
 
@@ -95,7 +95,7 @@ function ProjectsContent() {
     const confirmDelete = (p: ProjectDto) => {
         modal.confirm({
             title: `ลบโครงการ "${p.name}" ถาวร?`,
-            content: 'ข้อมูลทุกด่านและทุก Revision ของโครงการนี้จะหายไป กู้คืนไม่ได้ (ถ้าแค่ไม่ใช้แล้ว ให้ "เก็บถาวร" แทน)',
+            content: 'ข้อมูลทุกขั้นตอนและทุก Revision ของโครงการนี้จะหายไป กู้คืนไม่ได้ (ถ้าแค่ไม่ใช้แล้ว ให้ "เก็บถาวร" แทน)',
             okText: 'ลบถาวร', okButtonProps: { danger: true }, cancelText: 'ยกเลิก',
             onOk: async () => {
                 if (p.id === openId) await closeCloudProject();
@@ -154,7 +154,7 @@ function ProjectsContent() {
                 <div className="flex-1 min-w-0">
                     <div className="font-semibold">โครงการในเครื่องนี้: {guest.meta.projectName === '' ? 'โครงการของฉัน' : guest.meta.projectName}</div>
                     <div className="text-[12px] text-gray-500 tabular-nums">
-                        {guestDone}/{JOURNEY_LEVELS.length} ด่าน · {formatNumber(guestTotal, 0)} บาท · เก็บในเบราว์เซอร์นี้เท่านั้น
+                        {guestDone}/{JOURNEY_LEVELS.length} ขั้นตอน · {formatNumber(guestTotal, 0)} บาท · เก็บในเบราว์เซอร์นี้เท่านั้น
                     </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -233,7 +233,7 @@ function ProjectsContent() {
                                 <div className="flex items-center gap-2">
                                     <Progress percent={p.summary.levelsTotal === 0 ? 0 : Math.round((p.summary.levelsDone / p.summary.levelsTotal) * 100)}
                                         showInfo={false} strokeColor="#fa8c16" className="flex-1 !mb-0" size="small" />
-                                    <span className="text-[12px] text-gray-600 whitespace-nowrap tabular-nums">{p.summary.levelsDone}/{p.summary.levelsTotal} ด่าน</span>
+                                    <span className="text-[12px] text-gray-600 whitespace-nowrap tabular-nums">{p.summary.levelsDone}/{p.summary.levelsTotal} ขั้นตอน</span>
                                 </div>
                                 <Button type={p.id === openId ? 'default' : 'primary'} block icon={<FolderOpenOutlined />}
                                     loading={opening} disabled={!canOpen} onClick={own(activate)}>
@@ -299,7 +299,7 @@ function CreateProjectModal({ open, workspaceId, upload, onClose, onCreated }: {
             confirmLoading={create.isPending} onOk={() => { void submit().catch(() => undefined); }}>
             {upload && (
                 <p className="text-[13px] text-gray-600 mb-3">
-                    ทุกด่านที่กรอกไว้ในเครื่องนี้จะถูกคัดลอกขึ้น cloud — โครงการในเครื่องยังอยู่ ไม่ถูกลบ
+                    ข้อมูลทุกขั้นตอนที่กรอกไว้ในเครื่องนี้จะถูกคัดลอกขึ้น cloud — โครงการในเครื่องยังอยู่ ไม่ถูกลบ
                 </p>
             )}
             <Form form={form} layout="vertical" requiredMark={false} initialValues={{ name: defaultName }}>

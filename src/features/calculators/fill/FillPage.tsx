@@ -78,7 +78,7 @@ function JourneyView({ calc }: { calc: UseCalculator<FillInput> }) {
                     label: 'ดินที่ต้องสั่ง', value: volume, unit: 'คิว',
                     detail: `พื้นที่ ${formatNumber(area)} ตร.ม. × สูง ${formatNumber(input.height)} ม. + เผื่อยุบตัว ${formatNumber(input.settlementPct, 0)}%`,
                 }] : []}
-                empty={<>กรอกความกว้าง ความยาว และความสูงถม ระบบจะคิดปริมาณดินให้ — ถ้าไม่ต้องถมดิน กด &quot;ไม่มีงานนี้&quot; ด้านล่าง</>} />
+                empty={<>กรอกความกว้าง ความยาว และความสูงถม ระบบจะคิดปริมาณดินให้ — หากไม่ต้องถมดิน กด &quot;ไม่มีในโครงการนี้&quot; ด้านล่าง</>} />
         </>
     );
 }

@@ -51,7 +51,7 @@ export interface Project {
      * Excel v5 training house). Missing = 'sample', so projects saved before this field keep their numbers.
      */
     start?: ProjectStart;
-    /** Levels of the guided journey passed or marked "ไม่มีงานนี้". Missing = none yet. */
+    /** Levels of the guided journey passed or marked "ไม่มีในโครงการนี้". Missing = none yet. */
     journey?: JourneyProgress;
 }
 
@@ -95,7 +95,7 @@ export function projectPlanningInput(project: Project): PlanningInput {
     return resolvePlanningInput(project.planning, project.start === 'blank' ? blankPlanningInput() : undefined);
 }
 
-/** Journey levels marked "ไม่มีงานนี้": their calculators and extra lines put nothing into the BOQ. */
+/** Journey levels marked "ไม่มีในโครงการนี้": their calculators and extra lines put nothing into the BOQ. */
 function skippedWork(project: Project): { calcs: Set<string>; lines: Set<BoqLineKey> } {
     const progress = project.journey ?? {};
     const levels = JOURNEY_LEVELS.filter(l => progress[l.id] === 'skipped');
@@ -142,14 +142,14 @@ export function computeProject(project: Project, calculators?: CalculatorDef[]):
     const slotRow = new Map<string, number>();
     for (const s of BOQ_TEMPLATE_V5) for (const l of s.lines) if (l.type === 'slot') slotRow.set(`${l.calc}.${l.slot}`, l.excelRow);
     const skipped = skippedWork(project);
-    // Lines forced to quantity 0 by "ไม่มีงานนี้" (a quantity typed on the BOQ page must not bring them back).
+    // Lines forced to quantity 0 by "ไม่มีในโครงการนี้" (a quantity typed on the BOQ page must not bring them back).
     const zeroed = new Set(skipped.lines);
 
     for (const def of calculatorsInOrder(calculators)) {
         const input = calculatorInput(project, def);
         const ctx = { outputs: (id: string) => calcOutputs[id] };
         if (skipped.calcs.has(def.id)) {
-            // "ไม่มีงานนี้": every output 0, every BOQ line it fills gets quantity 0, its slots stay empty.
+            // "ไม่มีในโครงการนี้": every output 0, every BOQ line it fills gets quantity 0, its slots stay empty.
             calcOutputs[def.id] = Object.fromEntries(Object.keys(def.compute(input, ctx)).map(k => [k, 0]));
             for (const link of def.boqLinks) zeroed.add(link.line);
             for (const slot of Object.keys(def.boqSlots?.(input, ctx) ?? {})) slots[`${def.id}.${slot}`] = [];

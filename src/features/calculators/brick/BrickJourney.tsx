@@ -118,7 +118,7 @@ export default function BrickJourney() {
                                         </div>
                                     );
                                 })}
-                                <div className="text-gray-500">เพิ่มผนังชนิดนี้ หรือแก้ผนังของประตู-หน้าต่างในด่านก่อนหน้าให้ตรงกัน</div>
+                                <div className="text-gray-500">เพิ่มผนังชนิดนี้ หรือแก้ผนังของประตู-หน้าต่างในขั้นตอนก่อนหน้าให้ตรงกัน</div>
                             </div>
                         )} />
                 )}
@@ -134,7 +134,7 @@ export default function BrickJourney() {
                     ...byType.filter(b => b.value !== 0),
                     { label: 'พื้นที่ก่ออิฐรวม', value: total, unit: 'ตร.ม.' },
                 ]}
-                note="พื้นที่ก่อ (หักประตู-หน้าต่างแล้ว) ใช้ต่อในด่านฉาบปูนให้อัตโนมัติ" />
+                note="พื้นที่ก่อ (หักประตู-หน้าต่างแล้ว) ใช้ต่อในขั้นตอนฉาบปูนให้อัตโนมัติ" />
         </CalculatorShell>
     );
 }

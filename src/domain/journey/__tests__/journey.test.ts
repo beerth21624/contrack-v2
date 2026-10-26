@@ -125,7 +125,7 @@ describe('level money', () => {
 });
 
 describe('review fixes', () => {
-    it('a quantity typed on the BOQ page does not survive "ไม่มีงานนี้"', () => {
+    it('a quantity typed on the BOQ page does not survive "ไม่มีในโครงการนี้"', () => {
         const base = createProject();
         const level = getLevel('precast-slab');
         if (!level) throw new Error('level missing');

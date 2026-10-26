@@ -10,11 +10,11 @@ export const levelTitle = (levelId: string): string => getLevel(levelId)?.title 
 /** Page of a journey level. */
 export const levelHref = (levelId: string): string => `/journey/${levelId}`;
 
-/** Inline link to a journey level: "ด่านฐานราก" (or the given text). */
+/** Inline link to a journey level: "ขั้นตอนฐานราก" (or the given text). */
 export function LevelLink({ levelId, className, children }: { levelId: string; className?: string; children?: ReactNode }) {
     return (
         <Link href={levelHref(levelId)} className={className ?? 'text-blue-600 hover:underline'}>
-            {children ?? <>ด่าน{levelTitle(levelId)}</>}
+            {children ?? <>ขั้นตอน{levelTitle(levelId)}</>}
         </Link>
     );
 }

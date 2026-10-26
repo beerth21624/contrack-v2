@@ -49,21 +49,21 @@ export function JourneyMapPage() {
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center gap-4">
                 <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                        <Text className="text-[11px] font-bold tracking-widest text-orange-500 uppercase whitespace-nowrap">ทำ BOQ ทีละด่าน</Text>
+                        <Text className="text-[11px] font-bold tracking-widest text-orange-500 uppercase whitespace-nowrap">จัดทำ BOQ</Text>
                         {project.start !== 'blank' && <Tag className="!text-[11px]">บ้านตัวอย่าง Excel v5</Tag>}
                         <span className="ml-auto"><NewProjectButton /></span>
                     </div>
                     <Title level={3} style={{ margin: '2px 0 4px', overflowWrap: 'anywhere' }}>{title}</Title>
                     <Text type="secondary" className="text-[13px]">
-                        เปิดแบบแปลนไว้ข้างตัว แล้วกรอกตามที่แต่ละด่านถาม ผ่านครบทุกด่านได้ BOQ ทั้งหลังทันที
+                        เปิดแบบแปลนประกอบ แล้วกรอกข้อมูลตามแต่ละขั้นตอน เมื่อครบทุกขั้นตอนจะได้สรุป BOQ ทั้งโครงการทันที
                     </Text>
                     <div className="mt-3 flex items-center gap-3">
                         <Progress percent={Math.round(journeyRatio(progress) * 100)} strokeColor="#fa8c16" className="flex-1 !mb-0" />
-                        <Text className="whitespace-nowrap text-[13px] text-gray-600">{passed}/{JOURNEY_LEVELS.length} ด่าน</Text>
+                        <Text className="whitespace-nowrap text-[13px] text-gray-600">{passed}/{JOURNEY_LEVELS.length} ขั้นตอน</Text>
                     </div>
                 </div>
                 <div className="md:text-right md:pl-6 md:border-l border-gray-100">
-                    <Text type="secondary" className="text-[12px]">ราคาค่าก่อสร้างตอนนี้</Text>
+                    <Text type="secondary" className="text-[12px]">ราคาค่าก่อสร้างปัจจุบัน</Text>
                     <div className="text-[26px] font-bold tabular-nums text-gray-900 leading-tight">
                         {formatNumber(result.boq.constructionTotal, 0)} <span className="text-[14px] font-normal text-gray-500">บาท</span>
                     </div>
@@ -71,13 +71,13 @@ export function JourneyMapPage() {
                         ? (
                             <Link href={`/journey/${next.id}`} className="inline-flex max-w-full">
                                 <Button type="primary" size="large" icon={<CaretRightFilled />} className="mt-2 max-w-full">
-                                    <span className="truncate min-w-0">{passed === 0 ? 'เริ่มด่านแรก' : 'ทำด่านต่อไป'}: {next.title}</span>
+                                    <span className="truncate min-w-0">{passed === 0 ? 'เริ่มขั้นตอนแรก' : 'ทำต่อ'}: {next.title}</span>
                                 </Button>
                             </Link>
                         )
                         : (
                             <Link href="/boq">
-                                <Button type="primary" size="large" icon={<TableOutlined />} className="mt-2">ดู BOQ ทั้งหลัง</Button>
+                                <Button type="primary" size="large" icon={<TableOutlined />} className="mt-2">ดูสรุป BOQ ทั้งโครงการ</Button>
                             </Link>
                         )}
                 </div>
@@ -91,7 +91,7 @@ export function JourneyMapPage() {
                         <div className="flex items-center gap-3 mb-3">
                             <Title level={5} style={{ margin: 0 }}>{phase.title}</Title>
                             <Text type="secondary" className="text-[12px]">{done}/{phase.levels.length}</Text>
-                            {done === phase.levels.length && <span className="text-[12px] text-green-600 font-semibold">ผ่านครบแล้ว</span>}
+                            {done === phase.levels.length && <span className="text-[12px] text-green-600 font-semibold">ครบทุกขั้นตอน</span>}
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                             {phase.levels.map(level => {
@@ -108,17 +108,17 @@ export function JourneyMapPage() {
                                         <div className="min-w-0 flex-1">
                                             <div className={`text-[14px] font-semibold leading-tight ${state === 'locked' ? 'text-gray-400' : 'text-gray-800'}`}>{level.title}</div>
                                             <div className="text-[12px] text-gray-500 tabular-nums">
-                                                {state === 'skipped' ? 'ไม่มีงานนี้'
+                                                {state === 'skipped' ? 'ไม่มีในโครงการนี้'
                                                     : state === 'done'
-                                                        ? (level.kind.type === 'meta' ? 'ผ่านแล้ว' : `${formatNumber(levelTotal(level, result), 0)} บาท`)
-                                                        : state === 'current' ? 'ด่านถัดไป' : 'ยังล็อกอยู่'}
+                                                        ? (level.kind.type === 'meta' ? 'เสร็จแล้ว' : `${formatNumber(levelTotal(level, result), 0)} บาท`)
+                                                        : state === 'current' ? 'ขั้นตอนปัจจุบัน' : 'รอขั้นตอนก่อนหน้า'}
                                             </div>
                                         </div>
                                         <LevelPresenceAvatars info={team} levelId={level.id} />
                                     </div>
                                 );
                                 const node = state === 'locked'
-                                    ? <div title="ผ่านด่านก่อนหน้าก่อน" className="flex flex-1">{body}</div>
+                                    ? <div title="ทำขั้นตอนก่อนหน้าให้เสร็จก่อน" className="flex flex-1">{body}</div>
                                     : <Link href={`/journey/${level.id}`} className="flex flex-1">{body}</Link>;
                                 if (!team.enabled) return <div key={level.id} className="flex">{node}</div>;
                                 return (
@@ -136,9 +136,9 @@ export function JourneyMapPage() {
             <section className={`rounded-xl p-5 border-2 border-dashed flex flex-wrap items-center gap-4 ${complete ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
                 <FlagFilled className={`text-[28px] ${complete ? 'text-green-500' : 'text-gray-300'}`} />
                 <div className="flex-1 min-w-[200px]">
-                    <div className="font-semibold text-[15px]">{complete ? 'ครบทุกด่านแล้ว — ได้ BOQ ทั้งหลัง' : 'เส้นชัย: BOQ ทั้งหลัง'}</div>
+                    <div className="font-semibold text-[15px]">{complete ? 'ครบทุกขั้นตอนแล้ว — สรุป BOQ ทั้งโครงการพร้อมใช้งาน' : 'สรุป BOQ ทั้งโครงการ'}</div>
                     <Text type="secondary" className="text-[13px]">
-                        {complete ? 'ตรวจทาน ปรับราคา และพิมพ์/ส่งออก BOQ ได้เลย' : 'ผ่านทุกด่าน (หรือกด "ไม่มีงานนี้") เพื่อปลดล็อก'}
+                        {complete ? 'ตรวจทาน ปรับราคา และพิมพ์หรือส่งออก BOQ ได้' : 'พร้อมใช้งานเมื่อทำครบทุกขั้นตอน (หรือระบุว่า "ไม่มีในโครงการนี้")'}
                     </Text>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 justify-end">

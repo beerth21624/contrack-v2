@@ -100,7 +100,7 @@ export function FootingJourney({ rows, onChange, backfillTotal }: {
                 { label: 'ดินขุด', value: t.excavation, unit: 'ลบ.ม.' },
                 { label: 'ทรายหยาบ', value: t.sand, unit: 'ลบ.ม.' },
                 { label: 'คอนกรีตหยาบ', value: t.lean, unit: 'ลบ.ม.' },
-            ]} note={`ดินถมกลับ ${formatNumber(backfillTotal)} ลบ.ม. — หักคอนกรีตเสาตอม่อให้เองเมื่อกรอกด่านเสาตอม่อ`} />
+            ]} note={`ดินถมกลับ ${formatNumber(backfillTotal)} ลบ.ม. — หักคอนกรีตเสาตอม่อให้อัตโนมัติเมื่อกรอกขั้นตอนเสาตอม่อ`} />
         </div>
     );
 }

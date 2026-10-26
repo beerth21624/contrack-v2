@@ -21,7 +21,7 @@ export default function LoadCenterPage() {
             journeyNotes={(
                 <ul className="mt-1 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
                     <li>เบรกเกอร์ย่อย 1 ตัวต่อ 1 วงจร (ชนิดกันดูด ELCB สำหรับวงจรห้องน้ำ เครื่องทำน้ำอุ่น และภายนอก)</li>
-                    {circuits.length > 0 && <li>ด่านท่อร้อยสายไฟมี {circuits.length} วงจร{breakers === '' ? '' : `: ${breakers}`}</li>}
+                    {circuits.length > 0 && <li>ขั้นตอนท่อร้อยสายไฟมี {circuits.length} วงจร{breakers === '' ? '' : `: ${breakers}`}</li>}
                     <li>สายเมนไฟฟ้า: ระยะจากมิเตอร์ไฟฟ้าถึงตู้ควบคุม · สายกราวด์: จากตู้ถึงแท่งกราวด์</li>
                 </ul>
             )} />

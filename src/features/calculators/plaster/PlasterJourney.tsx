@@ -39,8 +39,8 @@ export default function PlasterJourney() {
                 {noWalls
                     ? (
                         <>
-                            ยังไม่มีผนังก่ออิฐ — พื้นที่ฉาบมาจากผนังในด่านก่ออิฐ (หักประตู-หน้าต่างแล้ว)
-                            กรอกผนังในด่านก่ออิฐก่อน แล้วด่านนี้จะคิดพื้นที่ฉาบให้เอง
+                            ยังไม่มีผนังก่ออิฐ — พื้นที่ฉาบมาจากผนังในขั้นตอนก่ออิฐ (หักประตู-หน้าต่างแล้ว)
+                            กรอกผนังในขั้นตอนก่ออิฐก่อน แล้วระบบจะคิดพื้นที่ฉาบให้อัตโนมัติ
                         </>
                     )
                     : (
@@ -63,7 +63,7 @@ export default function PlasterJourney() {
                             get: r => (isStructural(r)
                                 ? <LabelWithHint label="ผนังโครงสร้าง (เสา-คาน)" hint="ผิวเสา-คานคอนกรีตที่ต้องฉาบนอกเหนือจากผนังอิฐ" />
                                 : <LabelWithHint label={r.wallPart.trim() === '' ? '-' : r.wallPart}
-                                    hint={!noWalls && r.wallPart.trim() !== '' && brickNet(r.wallPart) === 0 ? 'ไม่มีผนังนี้ในด่านก่ออิฐ' : undefined} />) },
+                                    hint={!noWalls && r.wallPart.trim() !== '' && brickNet(r.wallPart) === 0 ? 'ไม่มีผนังนี้ในขั้นตอนก่ออิฐ' : undefined} />) },
                         { kind: 'label', key: 'kind', title: 'ฉาบ', width: 100, get: r => <span className="px-1">{kindLabel(r.kind)}</span> },
                         { kind: 'label', key: 'area', title: 'พื้นที่ผนังต่อด้าน (ตร.ม.)', width: 150,
                             get: (r, i) => (isStructural(r)
@@ -97,7 +97,7 @@ export default function PlasterJourney() {
                     { label: 'ฉาบผนังด้านใน', value: outputs.interior, unit: 'ตร.ม.' },
                     { label: 'พื้นที่ฉาบรวม', value: outputs.total, unit: 'ตร.ม.' },
                 ]}
-                note="พื้นที่ฉาบด้านนอก/ด้านในใช้ต่อในด่านทาสีให้อัตโนมัติ" />
+                note="พื้นที่ฉาบด้านนอก/ด้านในใช้ต่อในขั้นตอนทาสีให้อัตโนมัติ" />
         </CalculatorShell>
     );
 }

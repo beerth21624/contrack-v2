@@ -36,7 +36,7 @@ function WallFinishingJourney({ input, onChange, outputs }: {
         return (
             <SheetCard>
                 <EmptyState text="ยังไม่มีงานตกแต่งผนัง — ดูรูปด้านว่ามีบัวผนัง หรือผนังกรุไม้ระแนงไหม"
-                    note={<>ถ้าแบบไม่มีงานนี้ กด &quot;ไม่มีงานนี้&quot; ที่แถบด้านล่าง</>}
+                    note={<>หากแบบไม่มีงานส่วนนี้ กด &quot;ไม่มีในโครงการนี้&quot; ที่แถบด้านล่าง</>}
                     addLabel="เพิ่มบัวผนัง" onAdd={addMoulding}
                     actions={[{ label: 'เพิ่มผนังไม้ระแนง', onClick: addSlat }]} />
             </SheetCard>
@@ -120,7 +120,7 @@ function WallFinishingJourney({ input, onChange, outputs }: {
                     { label: 'บัวเล็ก 0.10', value: outputs.R219, unit: 'ม.' },
                     { label: 'ผนังไม้ระแนง', value: outputs.R220, unit: 'ตร.ม.' },
                 ]}
-                note="ความยาวบัวและพื้นที่ระแนงนำไปใช้ต่อในด่านทาสีได้" />
+                note="ความยาวบัวและพื้นที่ระแนงนำไปใช้ต่อในขั้นตอนทาสีได้" />
         </>
     );
 }

@@ -47,14 +47,14 @@ function syncEventHandler(queryClient: QueryClient, projectId: string) {
             case 'conflict':
                 emitNotice({
                     level: 'warning', key: `conflict:${e.docKey}`,
-                    text: `มีคนอื่นแก้${docLabel(e.docKey)}ไปก่อนแล้ว — ตอนนี้แสดงข้อมูลล่าสุดของเขา ตรวจดูแล้วแก้ต่อได้เลย`,
+                    text: `สมาชิกอีกคนแก้ไข ${docLabel(e.docKey)} ไปก่อนแล้ว — ระบบแสดงข้อมูลล่าสุดให้แล้ว กรุณาตรวจสอบก่อนแก้ไขต่อ`,
                 });
                 return;
             case 'rejected': {
                 const label = docLabel(e.docKey);
                 const text = isApiError(e.error) && e.error.status === 422
-                    ? `${label}มีค่าที่ระบบคำนวณไม่ได้ จึงไม่ได้บันทึก — กลับไปใช้ค่าที่บันทึกไว้ล่าสุด`
-                    : `${thaiErrorMessage(e.error)} — ${label}กลับไปใช้ค่าที่บันทึกไว้ล่าสุด`;
+                    ? `${label} มีค่าที่ระบบคำนวณไม่ได้ จึงไม่ได้บันทึก — กลับไปใช้ค่าที่บันทึกไว้ล่าสุด`
+                    : `${thaiErrorMessage(e.error)} — ${label} กลับไปใช้ค่าที่บันทึกไว้ล่าสุด`;
                 emitNotice({ level: 'error', key: `rejected:${e.docKey}`, text });
                 return;
             }

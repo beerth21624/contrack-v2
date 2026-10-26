@@ -22,7 +22,7 @@ export default function ElectricalEquipmentPage() {
                     <li>นับสัญลักษณ์ในแปลนไฟฟ้า: โคมแต่ละชนิด เต้ารับ (ชนิดกันน้ำสำหรับภายนอก/จุดเปียก) และสวิตช์</li>
                     {switches + sockets > 0 && (
                         <li>
-                            ตรวจกับด่านท่อร้อยสายไฟ: นับสวิตช์ไว้ {formatNumber(switches, 0)} จุด, เต้ารับ {formatNumber(sockets, 0)} จุด
+                            ตรวจสอบกับขั้นตอนท่อร้อยสายไฟ: นับสวิตช์ไว้ {formatNumber(switches, 0)} จุด, เต้ารับ {formatNumber(sockets, 0)} จุด
                         </li>
                     )}
                 </ul>

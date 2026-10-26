@@ -57,7 +57,7 @@ export function LevelPresenceAvatars({ info, levelId }: { info: CloudLevelInfo; 
     const others = info.othersOn(levelId);
     if (others.length === 0) return null;
     return (
-        <Tooltip title={`${namesOf(others)} กำลังกรอกด่านนี้`}>
+        <Tooltip title={`${namesOf(others)} กำลังแก้ไขขั้นตอนนี้`}>
             <span className="ml-auto shrink-0">
                 <Avatar.Group size="small" max={{ count: 2 }}>
                     {others.map(p => (
@@ -98,7 +98,7 @@ export function LevelAssignee({ info, levelId }: { info: CloudLevelInfo; levelId
     return (
         <Dropdown menu={{ items, onClick, selectable: true, selectedKeys: current ? [current.assignment.userId] : [] }} trigger={['click']}>
             <Button type="text" size="small" className="!px-1 !h-6 !justify-start max-w-full" loading={assign.isPending}
-                icon={<UserSwitchOutlined className="text-gray-400" />} aria-label="มอบหมายด่านนี้">
+                icon={<UserSwitchOutlined className="text-gray-400" />} aria-label="มอบหมายผู้รับผิดชอบ">
                 {label}
             </Button>
         </Dropdown>
@@ -116,12 +116,12 @@ export function LevelSoftLock({ levelId }: { levelId: string }) {
     if (others.length === 0 && !assignedToOther) return null;
     if (others.length === 0 && assignee !== undefined) {
         return (
-            <Alert type="info" showIcon title={`ด่านนี้มอบหมายให้คุณ${assignee.member?.displayName ?? 'สมาชิกอีกคน'}`}
-                description="กรอกได้ตามปกติ แต่ควรบอกผู้รับผิดชอบก่อน จะได้ไม่ทำซ้ำกัน" />
+            <Alert type="info" showIcon title={`ขั้นตอนนี้มอบหมายให้คุณ${assignee.member?.displayName ?? 'สมาชิกอีกคน'}`}
+                description="แก้ไขได้ตามปกติ แต่ควรแจ้งผู้รับผิดชอบก่อน เพื่อไม่ให้ทำงานซ้ำกัน" />
         );
     }
     return (
-        <Alert type="warning" showIcon title={`${namesOf(others)} กำลังกรอกด่านนี้อยู่`}
-            description="ถ้ากรอกพร้อมกัน ข้อมูลอาจทับกัน — ตกลงกันก่อนว่าใครกรอก หรือไปทำด่านอื่นก่อนแล้วค่อยกลับมา" />
+        <Alert type="warning" showIcon title={`${namesOf(others)} กำลังแก้ไขขั้นตอนนี้อยู่`}
+            description="หากแก้ไขพร้อมกัน ข้อมูลอาจบันทึกทับกัน — กรุณาตกลงผู้แก้ไขก่อน หรือทำขั้นตอนอื่นไปก่อนแล้วค่อยกลับมา" />
     );
 }

@@ -20,7 +20,7 @@ export function PedestalJourney({ rows, onChange, footings, footingSkipped, foot
     onChange: (rows: PedestalRow[]) => void;
     /** Footing types of the footing level (pedestal rows refer to them by index). */
     footings: FootingRow[];
-    /** The footing level is marked "ไม่มีงานนี้". */
+    /** The footing level is marked "ไม่มีในโครงการนี้". */
     footingSkipped: boolean;
     footingOutputs: Record<string, number> | undefined;
     backfill: number | undefined;
@@ -32,8 +32,8 @@ export function PedestalJourney({ rows, onChange, footings, footingSkipped, foot
     if (footings.length === 0 || footingSkipped) {
         return (
             <EmptyState text={<>
-                {footingSkipped ? 'ด่านฐานรากถูกกำหนดว่า "ไม่มีงานนี้"' : 'ยังไม่มีฐานราก'} — เสาตอม่อตั้งอยู่บนฐานราก
-                กรอกฐานรากแต่ละแบบในด่านฐานรากก่อน แล้วกลับมาที่ด่านนี้
+                {footingSkipped ? 'ขั้นตอนฐานรากระบุว่า "ไม่มีในโครงการนี้"' : 'ยังไม่มีฐานราก'} — เสาตอม่อตั้งอยู่บนฐานราก
+                กรอกฐานรากแต่ละแบบในขั้นตอนฐานรากก่อน แล้วกลับมาที่ขั้นตอนนี้
             </>} goToLevel="footing">
                 {rows.length > 0 && (
                     <div className="mt-1 text-[12px] text-orange-600">

@@ -80,7 +80,7 @@ function CeilingJourney({ input, onChange, outputs }: {
                                 <li>ห้องที่เป็นรูปตัว L ให้แบ่งเป็น 2 แถว เช่น ห้องนอน 1 (1) และ ห้องนอน 1 (2)</li>
                                 <li>ฝ้าเรียบเว้นช่องลาดเอียงว่างไว้ · ฝ้าใต้หลังคาลาด (เช่น เฉลียง) ใส่องศาหลังคา เช่น {SLOPED_CEILING_DEG}</li>
                                 <li>ชายคาภายนอก: กว้าง = ระยะยื่นชายคา, ยาว = ความยาวรอบชายคา</li>
-                                <li>ทาสีฝ้าเลือกให้ตามชนิดฝ้าแล้ว เปลี่ยนได้ — พื้นที่นี้ส่งต่อไปด่านทาสี</li>
+                                <li>ทาสีฝ้าเลือกให้ตามชนิดฝ้าแล้ว เปลี่ยนได้ — พื้นที่นี้ส่งต่อไปขั้นตอนทาสี</li>
                             </ul>
                         </>
                     )}
@@ -92,9 +92,9 @@ function CeilingJourney({ input, onChange, outputs }: {
                     { label: 'พื้นที่ฝ้ารวม', value: outputs.total, unit: 'ตร.ม.' },
                 ]}
                 note={CEILING_PAINT_GROUPS.some(g => (outputs[paintKey(g)] ?? 0) !== 0)
-                    ? <>ส่งต่อด่านทาสี: {CEILING_PAINT_GROUPS.filter(g => (outputs[paintKey(g)] ?? 0) !== 0)
+                    ? <>ส่งต่อขั้นตอนทาสี: {CEILING_PAINT_GROUPS.filter(g => (outputs[paintKey(g)] ?? 0) !== 0)
                         .map(g => `${PLAIN_PAINT[g]} ${formatNumber(outputs[paintKey(g)])} ตร.ม.`).join(' · ')}</>
-                    : 'พื้นที่ฝ้าที่ทาสีจะส่งต่อไปด่านทาสีให้อัตโนมัติ'} />
+                    : 'พื้นที่ฝ้าที่ทาสีจะส่งต่อไปขั้นตอนทาสีให้อัตโนมัติ'} />
         </>
     );
 }

@@ -20,7 +20,7 @@ export interface JourneyLevel {
     kind: LevelKind;
     /** BOQ (Home) sections the level feeds, for the level's money total. */
     sections: number[];
-    /** The work may not exist in every project (e.g. no demolition); the level can be marked "ไม่มีงานนี้". */
+    /** The work may not exist in every project (e.g. no demolition); the level can be marked "ไม่มีในโครงการนี้". */
     optional?: boolean;
     /** BOQ lines that belong to the level although its calculator does not fill them (typed lump sums). */
     extraRows?: string[];
@@ -47,7 +47,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'demolition', title: 'รื้อถอน', kind: calc('demolition'), sections: [1], optional: true,
-                planHint: 'มีสิ่งปลูกสร้างเดิม ต้นไม้ หรือเศษวัสดุที่ต้องรื้อ/ขนทิ้งไหม ถ้าไม่มีกด "ไม่มีงานนี้"',
+                planHint: 'มีสิ่งปลูกสร้างเดิม ต้นไม้ หรือเศษวัสดุที่ต้องรื้อ/ขนทิ้งหรือไม่ หากไม่มี กด "ไม่มีในโครงการนี้"',
             },
             {
                 id: 'fill', title: 'ถมดิน', kind: calc('fill'), sections: [1], optional: true,
@@ -95,7 +95,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'precast-slab', title: 'พื้นสำเร็จรูป', kind: calc('precast-slab'), sections: [10], optional: true,
-                planHint: 'ดูแปลนพื้น (PS): ขนาดพื้นสำเร็จรูปแต่ละช่วง ถ้าแบบไม่มีพื้นสำเร็จรูปกด "ไม่มีงานนี้"',
+                planHint: 'ดูแปลนพื้น (PS): ขนาดพื้นสำเร็จรูปแต่ละช่วง หากแบบไม่มีพื้นสำเร็จรูป กด "ไม่มีในโครงการนี้"',
             },
             {
                 id: 'column', title: 'เสาชั้น 1', kind: calc('column'), sections: [11],
@@ -107,11 +107,11 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'roof-slab', title: 'พื้นดาดฟ้า', kind: calc('roof-slab'), sections: [12], optional: true,
-                planHint: 'ดูแปลนพื้นดาดฟ้า (RS): ขนาด ความหนา และเหล็กเสริม ถ้าไม่มีดาดฟ้ากด "ไม่มีงานนี้"',
+                planHint: 'ดูแปลนพื้นดาดฟ้า (RS): ขนาด ความหนา และเหล็กเสริม หากไม่มีดาดฟ้า กด "ไม่มีในโครงการนี้"',
             },
             {
                 id: 'stair', title: 'บันได', kind: calc('stair'), sections: [13], optional: true,
-                planHint: 'ดูรูปขยายบันได: ความกว้าง จำนวนขั้น ลูกตั้ง ลูกนอน ความหนาท้องบันได และเหล็กเสริม ถ้าไม่มีบันไดกด "ไม่มีงานนี้"',
+                planHint: 'ดูรูปขยายบันได: ความกว้าง จำนวนขั้น ลูกตั้ง ลูกนอน ความหนาท้องบันได และเหล็กเสริม หากไม่มีบันได กด "ไม่มีในโครงการนี้"',
             },
             {
                 id: 'column-plates', title: 'เพลทหัวเสา', kind: { type: 'boq', sections: [14] }, sections: [14],
@@ -155,7 +155,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'electrical-cable', title: 'สายไฟ', kind: calc('electrical-cable'), sections: [18],
-                planHint: 'ดูแปลนไฟฟ้า/ไดอะแกรม: ขนาดสายแต่ละวงจร (ระยะท่อนำมาจากด่านท่อร้อยสาย)',
+                planHint: 'ดูแปลนไฟฟ้า/ไดอะแกรม: ขนาดสายแต่ละวงจร (ระยะท่อนำมาจากขั้นตอนท่อร้อยสาย)',
             },
             {
                 id: 'load-center', title: 'ตู้ควบคุมไฟฟ้า', kind: calc('load-center'), sections: [26],
@@ -199,7 +199,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'wall-finishing', title: 'ตกแต่งผนัง', kind: calc('wall-finishing'), sections: [22], optional: true,
-                planHint: 'ดูรูปด้าน: บัวผนัง ผนังระแนง และงานตกแต่งพิเศษ ถ้าไม่มีกด "ไม่มีงานนี้"',
+                planHint: 'ดูรูปด้าน: บัวผนัง ผนังระแนง และงานตกแต่งพิเศษ หากไม่มี กด "ไม่มีในโครงการนี้"',
             },
             {
                 id: 'paint', title: 'ทาสี', kind: calc('paint'), sections: [23, 25, 31],
@@ -207,7 +207,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'misc', title: 'งานเบ็ดเตล็ด', kind: calc('misc'), sections: [28],
-                planHint: 'งานอื่น ๆ ที่ยังไม่อยู่ในด่านใด เช่น ราวกันตก กันสาด ป้ายบ้านเลขที่',
+                planHint: 'งานอื่น ๆ ที่ยังไม่อยู่ในขั้นตอนใด เช่น ราวกันตก กันสาด ป้ายบ้านเลขที่',
             },
         ],
     },
