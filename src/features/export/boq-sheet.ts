@@ -1,12 +1,14 @@
 // ─── BOQ (Home) → spreadsheet model (pure) ───────────────────────────────────
-// Lays the computed BOQ out exactly like the Excel v5 sheet "BOQ (Home)":
-//   row 1 title, rows 2–4 header block (B/D and K/M), row 6 column groups (I6:J6 ค่าวัสดุ, K6:L6 ค่าแรงงาน),
-//   row 7 column headers, then per section: header row (B no., C title, fill across B:N), item rows,
-//   `รวม >> ` sub-total row (J/L/M = SUM of the section), and after a blank row the grand total
-//   (L `รวมต้นทุนก่อสร้างทั้งหมด`, M, N `บาท`). Column A (the Excel navigation bar) is kept narrow and empty so every
-//   cell keeps its Excel address. Section 0 is outside the construction total (decision D2) and is shown on its own
-//   line under the grand total.
-// The xlsx writer (`xlsx.ts`) only maps this model onto ExcelJS; everything testable lives here.
+// Lays the computed BOQ out exactly like the Excel v5 sheet "BOQ (Home)" from row 6 down:
+//   row 6 column groups (I6:J6 ค่าวัสดุ, K6:L6 ค่าแรงงาน), row 7 column headers, then per section: header row
+//   (B no., C title, fill across B:N), item rows, `รวม >> ` sub-total row (J/L/M = SUM of the section), and after a
+//   blank row the grand total (L `รวมต้นทุนก่อสร้างทั้งหมด`, M, N `บาท`). Column A (the Excel navigation bar) is kept
+//   narrow, empty and outside the print area so every cell keeps its Excel address. Section 0 is outside the
+//   construction total (decision D2) and is shown on its own line under the grand total.
+// Rows 1–5 are the header block, in the wording of the Thai estimate forms (v5 cells kept: D2 project, D3 site,
+//   D4 owner, M2 revision, M3 date, M4 prepared by; row 5 adds แบบเลขที่ to fill in).
+// Print: A4 landscape, fit to one page wide, rows 6–7 repeated, "แผ่นที่ n/N" in the page header.
+// The xlsx writer (`xlsx.ts`) only maps sheet models onto ExcelJS; everything testable lives here.
 
 import type { BoqItemRow, BoqResult, BoqSectionResult } from '@/domain/boq/types';
 import type { ProjectMeta } from '@/domain/project';
@@ -32,14 +34,23 @@ export const NUM_FMT = {
     integer: '0',
 } as const;
 
-/** Colours of BOQ (Home) in v5 (ARGB). */
+/** Colours of BOQ (Home) in v5 (ARGB), and the greys of the summary sheet. */
 export const SHEET_FILL = {
     header: 'FFE3EBF9',   // rows 6–7 and section header rows
     input: 'FFFFF2CC',    // yellow input cells
     grandTotal: 'FFF3F3F3',
+    grey: 'FFE6E6E6',     // summary sheet: column headers, total
+    lightGrey: 'FFF2F2F2',
 } as const;
 
-export const SHEET_FONT = { name: 'Cordia New', size: 16 } as const;
+/** The font of Thai official documents (v5 used Cordia New 16, which has the same metrics class). */
+export const SHEET_FONT = { name: 'TH Sarabun New', size: 16 } as const;
+
+/** Excel page-header font code for SHEET_FONT. */
+const HEADER_FONT = `&"${SHEET_FONT.name},Regular"&14`;
+
+/** Page margins in inches (about 2 cm; header/footer 0.8 cm). */
+export const PRINT_MARGINS = { left: 0.79, right: 0.79, top: 0.79, bottom: 0.79, header: 0.31, footer: 0.31 } as const;
 
 export interface SheetCellStyle {
     bold?: boolean;
@@ -50,8 +61,10 @@ export interface SheetCellStyle {
     /** Fill, ARGB. */
     fill?: string;
     align?: 'left' | 'center' | 'right';
+    valign?: 'top' | 'middle' | 'bottom';
     wrap?: boolean;
-    border?: 'all' | 'bottom';
+    /** 'dotted' = a dotted bottom line to write on (header fields). */
+    border?: 'all' | 'bottom' | 'dotted';
     numFmt?: string;
 }
 
@@ -65,7 +78,8 @@ export interface SheetCell {
 
 export type SheetRowKind =
     | 'title' | 'meta' | 'spacer' | 'groupHeader' | 'columnHeader'
-    | 'section' | 'heading' | 'item' | 'subtotal' | 'grandTotal' | 'preConstruction';
+    | 'section' | 'heading' | 'item' | 'subtotal' | 'grandTotal' | 'preConstruction'
+    | 'words' | 'factorF' | 'band' | 'signature';
 
 export interface SheetRow {
     /** 1-based Excel row number. */
@@ -75,16 +89,35 @@ export interface SheetRow {
     cells: SheetCell[];
 }
 
-export interface BoqSheetModel {
+export interface SheetPrintSetup {
+    orientation: 'portrait' | 'landscape';
+    /** Printed range, e.g. 'B1:N311' (column A stays off the paper). */
+    printArea: string;
+    /** Rows repeated at the top of every printed page, e.g. '6:7'. */
+    printTitlesRow: string;
+    /** Excel page header (codes: &P page, &N pages, &R right section). */
+    header: string;
+}
+
+/** One worksheet, ready for the xlsx writer. */
+export interface SheetModel {
     sheetName: string;
+    columnWidths: Partial<Record<SheetCol, number>>;
     rows: SheetRow[];
     merges: string[];
-    /** Rows above this one stay frozen (Excel: ySplit 7). */
+    /** Rows above this one stay frozen. */
     freezeRows: number;
+    autoFilter?: string;
+    print: SheetPrintSetup;
+}
+
+export interface BoqSheetModel extends SheetModel {
     /** Auto-filter range (Excel: B7:N<last body row>). */
     autoFilter: string;
     /** Row of the grand total. */
     grandTotalRow: number;
+    /** Sub-total row of each section, by section number (the summary sheet links to J/L/M there). */
+    subtotalRows: Record<number, number>;
 }
 
 export const SHEET_NAME = 'BOQ (Home)';
@@ -92,19 +125,21 @@ export const HEADER_ROW = 7;
 export const FIRST_BODY_ROW = 8;
 
 export const SHEET_TEXT = {
-    title: '  โปรแกรมประมาณราคางานก่อสร้าง (BOQ)',
-    projectName: '  📂 โครงการ',
-    siteAddress: '  📍 สถานที่ก่อสร้าง',
-    ownerName: '  👤 เจ้าของบ้าน',
-    revision: '📝 Revision',
-    documentDate: '📅 Date',
-    preparedBy: '👤 Prepared By',
+    title: 'แบบแสดงรายการ ปริมาณงาน และราคา',
+    projectName: 'ชื่อโครงการ',
+    siteAddress: 'สถานที่ก่อสร้าง',
+    ownerName: 'เจ้าของ/หน่วยงาน',
+    drawingNo: 'แบบเลขที่',
+    revision: 'ฉบับแก้ไขที่',
+    documentDate: 'เมื่อวันที่',
+    preparedBy: 'ประมาณราคาโดย',
     groupMat: 'ค่าวัสดุ',
     groupLab: 'ค่าแรงงาน',
     subtotal: 'รวม >> ',
     constructionTotal: 'รวมต้นทุนก่อสร้างทั้งหมด',
     preConstruction: 'ค่าใช้จ่ายก่อนก่อสร้าง (ไม่รวมในต้นทุนก่อสร้าง)',
     baht: 'บาท',
+    pageOf: 'แผ่นที่',
 } as const;
 
 /** Row 7 headers, verbatim from v5 (H has a line break in Excel). */
@@ -119,8 +154,19 @@ const BODY_COLS: SheetCol[] = ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K',
 const money = (fill?: string): SheetCellStyle => ({ numFmt: NUM_FMT.accounting, align: 'right', border: 'all', fill });
 
 /** A finite number, or 0 (the engine never returns NaN, but a corrupt input must not break the file). */
-function finite(v: number): number {
+export function finite(v: number): number {
     return Number.isFinite(v) ? v : 0;
+}
+
+/** Text for an Excel header/footer section ("&" is a code there). */
+export function headerText(s: string): string {
+    return s.replace(/&/g, '&&');
+}
+
+/** "&R<font>[label   ]แผ่นที่ &P/&N" */
+export function pageHeader(formLabel: string): string {
+    const label = formLabel === '' ? '' : `${headerText(formLabel)}   `;
+    return `&R${HEADER_FONT}${label}${SHEET_TEXT.pageOf} &P/&N`;
 }
 
 function itemCells(row: BoqItemRow): SheetCell[] {
@@ -189,36 +235,35 @@ function sectionRows(s: BoqSectionResult, startRow: number): { rows: SheetRow[];
     return { rows, subtotalRow };
 }
 
-function metaRow(r: number, left: [string, string], right: [string, string], border: 'bottom'): SheetRow {
-    return {
-        r, kind: 'meta', height: 24.75,
-        cells: [
-            { col: 'B', value: left[0], style: { bold: true, border } },
-            { col: 'C', value: null, style: { border } },
-            { col: 'D', value: left[1], style: { border } },
-            { col: 'K', value: right[0], style: { bold: true, border } },
-            { col: 'L', value: null, style: { border } },
-            { col: 'M', value: right[1], style: { align: 'left', border } },
-        ],
-    };
+/** Header row: B label, D value on a dotted line; K label, M:N value on a dotted line (right pair optional). */
+function metaRow(r: number, left: [string, string], right?: [string, string]): SheetRow {
+    const label: SheetCellStyle = { bold: true, align: 'left' };
+    const value: SheetCellStyle = { align: 'left', border: 'dotted' };
+    const cells: SheetCell[] = [
+        { col: 'B', value: left[0], style: label },
+        { col: 'D', value: left[1].trim(), style: value },
+    ];
+    if (right !== undefined) {
+        cells.push(
+            { col: 'K', value: right[0], style: label },
+            { col: 'M', value: right[1].trim(), style: value },
+            { col: 'N', value: null, style: value },
+        );
+    }
+    return { r, kind: 'meta', height: 24.75, cells };
 }
 
 /** The whole BOQ (Home) sheet for a computed BOQ and the project header fields. */
 export function buildBoqSheet(boq: BoqResult, meta: ProjectMeta): BoqSheetModel {
     const rows: SheetRow[] = [];
-    const projectName = meta.projectName.trim();
     rows.push({
-        r: 1, kind: 'title', height: 58.5,
-        cells: [{
-            col: 'B',
-            value: projectName === '' ? SHEET_TEXT.title : `${SHEET_TEXT.title}\n  ${projectName}`,
-            style: { bold: true, size: 23, wrap: true },
-        }],
+        r: 1, kind: 'title', height: 36,
+        cells: [{ col: 'B', value: SHEET_TEXT.title, style: { bold: true, size: 22, align: 'center' } }],
     });
-    rows.push(metaRow(2, [SHEET_TEXT.projectName, meta.projectName], [SHEET_TEXT.revision, meta.revision], 'bottom'));
-    rows.push(metaRow(3, [SHEET_TEXT.siteAddress, meta.siteAddress], [SHEET_TEXT.documentDate, meta.documentDate], 'bottom'));
-    rows.push(metaRow(4, [SHEET_TEXT.ownerName, meta.ownerName], [SHEET_TEXT.preparedBy, meta.preparedBy], 'bottom'));
-    rows.push({ r: 5, kind: 'spacer', cells: [] });
+    rows.push(metaRow(2, [SHEET_TEXT.projectName, meta.projectName], [SHEET_TEXT.revision, meta.revision]));
+    rows.push(metaRow(3, [SHEET_TEXT.siteAddress, meta.siteAddress], [SHEET_TEXT.documentDate, meta.documentDate]));
+    rows.push(metaRow(4, [SHEET_TEXT.ownerName, meta.ownerName], [SHEET_TEXT.preparedBy, meta.preparedBy]));
+    rows.push(metaRow(5, [SHEET_TEXT.drawingNo, '']));
 
     const headerStyle: SheetCellStyle = { fill: SHEET_FILL.header, bold: true, align: 'center', border: 'all', wrap: true };
     rows.push({
@@ -237,10 +282,12 @@ export function buildBoqSheet(boq: BoqResult, meta: ProjectMeta): BoqSheetModel 
     let r = FIRST_BODY_ROW;
     const constructionRefs: string[] = [];
     const preRefs: string[] = [];
+    const subtotalRows: Record<number, number> = {};
     for (const s of boq.sections) {
         const out = sectionRows(s, r);
         rows.push(...out.rows);
         (s.inConstructionTotal ? constructionRefs : preRefs).push(`M${out.subtotalRow}`);
+        subtotalRows[s.no] = out.subtotalRow;
         r += out.rows.length;
     }
     const lastBodyRow = r - 1;
@@ -273,11 +320,19 @@ export function buildBoqSheet(boq: BoqResult, meta: ProjectMeta): BoqSheetModel 
 
     return {
         sheetName: SHEET_NAME,
+        columnWidths: SHEET_COLUMN_WIDTHS,
         rows,
-        merges: ['I6:J6', 'K6:L6'],
+        merges: ['B1:N1', 'I6:J6', 'K6:L6'],
         freezeRows: HEADER_ROW,
         autoFilter: `B${HEADER_ROW}:N${lastBodyRow}`,
+        print: {
+            orientation: 'landscape',
+            printArea: `B1:N${grandTotalRow + 1}`,
+            printTitlesRow: `6:${HEADER_ROW}`,
+            header: pageHeader(''),
+        },
         grandTotalRow,
+        subtotalRows,
     };
 }
 

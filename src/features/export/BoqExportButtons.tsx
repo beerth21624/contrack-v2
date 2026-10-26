@@ -2,23 +2,36 @@
 
 // "ดาวน์โหลด Excel" + "พิมพ์ / PDF" for the current project. Reused by the BOQ (Home) page and the journey finish card.
 // PDF = the browser's print dialog ("Save as PDF") on a print-only document, so Thai uses the app's Sarabun font.
+// The arrow next to the print button prints one form only (summary ปร.5 or detail ปร.4).
 
 import { useState } from 'react';
 import { createPortal, flushSync } from 'react-dom';
-import { Button, message, Space } from 'antd';
-import { FileExcelOutlined, PrinterOutlined } from '@ant-design/icons';
+import { Button, Dropdown, message, Space, type MenuProps } from 'antd';
+import { DownOutlined, FileExcelOutlined, PrinterOutlined } from '@ant-design/icons';
 import { useProjectStore } from '@/store/project-store';
 import { computeProject, type Project } from '@/domain/project';
 import { boqFileBaseName } from './boq-sheet';
-import { buildBoqPrintModel, type BoqPrintModel } from './boq-print-model';
-import { BoqPrintDocument } from './BoqPrintDocument';
+import { buildBoqPrintModel, type BoqPrintModel, type PrintPart } from './boq-print-model';
+import { BoqPrintDocument, PRINT_FONT_VAR } from './BoqPrintDocument';
 import { downloadBoqXlsx } from './xlsx';
 
 export const EXPORT_TEXT = {
     excel: 'ดาวน์โหลด Excel',
     print: 'พิมพ์ / PDF',
+    printChoose: 'เลือกแบบที่จะพิมพ์',
+    printAll: 'ทั้งชุด (แบบสรุป ปร.5 + รายการ ปร.4)',
+    printSummary: 'เฉพาะแบบสรุป (ปร.5)',
+    printDetail: 'เฉพาะรายการ ปริมาณงานและราคา (ปร.4)',
     excelFailed: 'สร้างไฟล์ Excel ไม่สำเร็จ',
 } as const;
+
+const PRINT_MENU: NonNullable<MenuProps['items']> = [
+    { key: 'all', label: EXPORT_TEXT.printAll },
+    { key: 'summary', label: EXPORT_TEXT.printSummary },
+    { key: 'detail', label: EXPORT_TEXT.printDetail },
+];
+
+const isPrintPart = (k: string): k is PrintPart => k === 'all' || k === 'summary' || k === 'detail';
 
 export interface BoqExportButtonsProps {
     /** Project to export (default: the saved project in the store). */
@@ -34,7 +47,7 @@ export function BoqExportButtons({ project: projectProp, size = 'middle', primar
     const project = projectProp ?? stored;
     const ready = projectProp !== undefined || hasHydrated;
     const [busy, setBusy] = useState(false);
-    const [printModel, setPrintModel] = useState<BoqPrintModel | null>(null);
+    const [printJob, setPrintJob] = useState<{ model: BoqPrintModel; part: PrintPart } | null>(null);
     const [msg, msgHolder] = message.useMessage();
 
     const onExcel = async () => {
@@ -49,19 +62,24 @@ export function BoqExportButtons({ project: projectProp, size = 'middle', primar
         }
     };
 
-    const onPrint = () => {
+    const onPrint = (part: PrintPart) => {
         const model = buildBoqPrintModel(computeProject(project).boq, project.meta);
         const prevTitle = document.title;
+        const root = document.documentElement;
         let done = false;
         const finish = () => {
             if (done) return;
             done = true;
             window.removeEventListener('afterprint', finish);
             document.title = prevTitle;
-            setPrintModel(null);
+            root.style.removeProperty(PRINT_FONT_VAR);
+            setPrintJob(null);
         };
+        // The page-number margin box only inherits from <html>; hand it the Sarabun family that body has.
+        const font = getComputedStyle(document.body).getPropertyValue('--font-sarabun').trim();
+        if (font !== '') root.style.setProperty(PRINT_FONT_VAR, font);
         // Mount the print document synchronously, so the dialog sees it.
-        flushSync(() => setPrintModel(model));
+        flushSync(() => setPrintJob({ model, part }));
         document.title = boqFileBaseName(project.meta);   // the browser's default PDF file name
         window.addEventListener('afterprint', finish);
         window.print();
@@ -69,6 +87,7 @@ export function BoqExportButtons({ project: projectProp, size = 'middle', primar
         if (!('onafterprint' in window)) finish();
     };
 
+    const printType = primary ? 'primary' : 'default';
     return (
         <>
             {msgHolder}
@@ -77,12 +96,19 @@ export function BoqExportButtons({ project: projectProp, size = 'middle', primar
                     onClick={() => { void onExcel(); }}>
                     {EXPORT_TEXT.excel}
                 </Button>
-                <Button size={size} type={primary ? 'primary' : 'default'} icon={<PrinterOutlined />} disabled={!ready}
-                    onClick={onPrint}>
-                    {EXPORT_TEXT.print}
-                </Button>
+                <Space.Compact>
+                    <Button size={size} type={printType} icon={<PrinterOutlined />} disabled={!ready}
+                        onClick={() => onPrint('all')}>
+                        {EXPORT_TEXT.print}
+                    </Button>
+                    <Dropdown disabled={!ready} trigger={['click']}
+                        menu={{ items: PRINT_MENU, onClick: ({ key }) => { if (isPrintPart(key)) onPrint(key); } }}>
+                        <Button size={size} type={printType} icon={<DownOutlined />} disabled={!ready}
+                            aria-label={EXPORT_TEXT.printChoose} title={EXPORT_TEXT.printChoose} />
+                    </Dropdown>
+                </Space.Compact>
             </Space>
-            {printModel !== null && createPortal(<BoqPrintDocument model={printModel} />, document.body)}
+            {printJob !== null && createPortal(<BoqPrintDocument model={printJob.model} part={printJob.part} />, document.body)}
         </>
     );
 }
