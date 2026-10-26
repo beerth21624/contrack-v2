@@ -3,8 +3,9 @@
 // ─── Header: "เข้าสู่ระบบ" for guests; for signed-in users a menu (workspace, projects, members, sign out) ───
 import { useRouter } from 'next/navigation';
 import { Avatar, Button, Dropdown, type MenuProps } from 'antd';
-import { CheckOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, TeamOutlined } from '@ant-design/icons';
+import { CheckOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, TeamOutlined, ToolOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
+import { useWorkforceEnabled } from '../api/workforce';
 import { initials, useSession } from '../auth/session';
 import { signOut } from '../auth/actions';
 import { useCurrentWorkspace } from '../query/hooks';
@@ -16,6 +17,7 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
     const status = useSession(s => s.status);
     const user = useSession(s => s.user);
     const { workspace, workspaces, select } = useCurrentWorkspace();
+    const workforceOn = useWorkforceEnabled();
 
     if (status === 'unknown') return null;
 
@@ -56,6 +58,8 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
         { type: 'divider' },
         { key: 'projects', icon: <FolderOpenOutlined />, label: 'โครงการทั้งหมด' },
         { key: 'members', icon: <TeamOutlined />, label: 'สมาชิก' },
+        // Business module: the entry exists only while the platform offers it.
+        ...(workforceOn ? [{ key: 'crews', icon: <ToolOutlined />, label: 'ทีมช่างและบุคลากร' }] : []),
         { type: 'divider' },
         { key: 'logout', icon: <LogoutOutlined />, label: 'ออกจากระบบ', danger: true },
     ];
@@ -68,6 +72,8 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
             router.push('/projects');
         } else if (key === 'members') {
             router.push('/workspace/members');
+        } else if (key === 'crews') {
+            router.push('/workspace/crews');
         } else if (key === 'logout') {
             void signOut(qc).then(() => { router.push('/journey'); });
         }
