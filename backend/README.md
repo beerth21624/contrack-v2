@@ -13,9 +13,13 @@ cloud projects with live collaboration (presence, soft lock, level assignment).
 cp .env.example .env            # set JWT_ACCESS_SECRET
 npm install
 docker compose up -d            # PostgreSQL 16 (contrack + contrack_test)
+#   …or, without Docker / admin rights: npm run db:local   (same port, user and databases; keep it running)
 npm run db:migrate              # apply ./drizzle migrations
+npm run db:seed                 # demo accounts + projects (see SEED.md); -- --reset to start over
 npm run start:dev               # http://localhost:4000 (health: GET /health)
 ```
+
+The database must be UTF8 (Thai text); the API refuses to start otherwise.
 
 Try without a database: set `PERSISTENCE=memory` in `.env` (data is lost on restart).
 
