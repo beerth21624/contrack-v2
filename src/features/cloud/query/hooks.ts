@@ -41,9 +41,11 @@ export function useCurrentWorkspace(): {
     const select = useCloud(s => s.selectWorkspace);
     const openWorkspace = useProjectStore(s => (s.binding.kind === 'cloud' ? s.binding.workspaceId : null));
     const workspaces = q.data ?? [];
-    // The user's last explicit choice when it is still valid, else the open project's workspace, else the first.
+    // The user's last explicit choice when it is still valid, else the open project's workspace, else their company
+    // (a team member signing in for the first time lands on the team's projects), else the first.
     const workspace = workspaces.find(w => w.id === selected)
         ?? workspaces.find(w => w.id === openWorkspace)
+        ?? workspaces.find(w => w.kind === 'company')
         ?? workspaces[0];
     return { workspace, workspaces, isLoading: q.isLoading, select };
 }

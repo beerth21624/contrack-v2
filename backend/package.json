@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json",
     "start": "node dist/backend/src/main.js",
-    "start:dev": "tsx watch --tsconfig tsconfig.json src/main.ts",
+    "start:dev": "nest start --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\"",
     "test": "jest",
@@ -16,7 +16,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/shared/infrastructure/database/migrate.ts",
     "db:studio": "drizzle-kit studio",
-    "db:local": "node scripts/local-postgres.mjs"
+    "db:local": "node scripts/local-postgres.mjs",
+    "db:seed": "npm run build && node dist/backend/src/cli/seed-demo.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.8",
@@ -35,6 +36,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@nestjs/cli": "^11.0.24",
     "@nestjs/testing": "^11.2.8",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
