@@ -6,6 +6,7 @@ export interface Step17Input {
   total_wall_area_m2: number;          // พื้นที่ผนังรวมทั้งหมด
   doors_windows_area_m2: number;       // พื้นที่เจาะช่องเปิด (ประตู/หน้าต่าง)
   brick_type: 'clay' | 'aac';          // ชนิดอิฐ: มอญ (Clay) หรือ มวลเบา (AAC)
+  aac_thickness_cm?: number;           // ความหนาอิฐมวลเบา (7.5/10/12.5/15/17.5/20 ซม.)
   waste_percent: number;               // เผื่อเสียหาย (ปกติอิฐมอญ 10-15%, มวลเบา 5-10%)
   // optional
   lintel_length_m?: number;            // ความยาวเสาเอ็น-ทับหลัง (ถ้ามี)
@@ -27,21 +28,39 @@ export function calcStep17(inp: Step17Input): StepResult {
   let factor = 144;
   let label = 'อิฐมอญ';
   if (brick_type === 'aac') {
+    // AAC เลือกความหนา → โค้ดราคาเฉพาะขนาด
+    const thick = inp.aac_thickness_cm;
     factor = 8.78;
-    label = 'อิฐมวลเบา AAC';
+    label = thick ? `มวลเบา AAC ${thick} ซม.` : 'มวลเบา AAC';
   }
 
   const rawQty = net_area * factor;
   const qtyWithWaste = Math.ceil(rawQty * wf);
 
-  quantities.bricks_required = { 
-    qty: qtyWithWaste, 
-    uom: 'pcs', 
-    label: `${label} (พื้นที่ ${r2(net_area)} ม²)` 
-  };
+  // Output aac thickness-specific quantity key
+  if (brick_type === 'aac' && inp.aac_thickness_cm) {
+    const th = inp.aac_thickness_cm;
+    const key = `aac_${String(th).replace('.', '')}`; // e.g. 'aac_10', 'aac_125'
+    quantities[key] = {
+      qty: r2(net_area * wf),
+      uom: 'm²',
+      label: `พื้นที่ก่อ AAC ${th} ซม. (สุทธิ ${r2(net_area)} ม²)`
+    };
+    // ปูนก่อ AAC
+    quantities.aac_mortar = {
+      qty: r2(net_area * wf),
+      uom: 'm²',
+      label: `ปูนก่อ AAC สำหรับมวลเบา ${th} ซม.`
+    };
+  } else {
+    quantities.bricks_required = {
+      qty: qtyWithWaste,
+      uom: 'pcs',
+      label: `${label} (พื้นที่ ${r2(net_area)} ม²)`
+    };
+  }
 
-  // 2. ปูนก่อ (Mortar)
-  // คำนวณเป็นตร.ม. เพื่อไปใช้ราคากลางต่อตร.ม.
+  // ปูนก่อ (Mortar) — ใช้พื้นที่ก่อจริง
   quantities.net_wall_area = {
     qty: r2(net_area * wf),
     uom: 'm²',

@@ -82,23 +82,113 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   { code: 'LAYOUT-CREW',  name: 'ค่าแรงช่างสำรวจวางผัง', nameEn: 'Layout Survey Crew',            uom: 'คน-วัน', uomEn: 'man-day', costMaterial: 0,    costLabor: 800,  category: 'Layout' },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // Step 5 : Piling Works
+  // Step 5 : Piling Works (ราคากลาง 2568 — ครบสมบูรณ์ 100%)
   // ═══════════════════════════════════════════════════════════════════════════
-  { code: 'PILE-I15',      name: 'เสาเข็มตอก I-15', nameEn: 'I-15 Driven Pile',               uom: 'm', uomEn: 'm',   costMaterial: 150,  costLabor: 100,  category: 'Piling' },
-  { code: 'PILE-I18',      name: 'เสาเข็มตอก I-18', nameEn: 'I-18 Driven Pile',               uom: 'm', uomEn: 'm',   costMaterial: 180,  costLabor: 100,  category: 'Piling' },
-  { code: 'PILE-I22',      name: 'เสาเข็มตอก I-22', nameEn: 'I-22 Driven Pile',               uom: 'm', uomEn: 'm',   costMaterial: 220,  costLabor: 120,  category: 'Piling' },
-  { code: 'PILE-I26',      name: 'เสาเข็มตอก I-26', nameEn: 'I-26 Driven Pile',               uom: 'm', uomEn: 'm',   costMaterial: 280,  costLabor: 120,  category: 'Piling' },
-  { code: 'PILE-I30',      name: 'เสาเข็มตอก I-30', nameEn: 'I-30 Driven Pile',               uom: 'm', uomEn: 'm',   costMaterial: 350,  costLabor: 150,  category: 'Piling' },
-  { code: 'PILE-I35',      name: 'เสาเข็มตอก I-35', nameEn: 'I-35 Driven Pile',               uom: 'm', uomEn: 'm',   costMaterial: 450,  costLabor: 180,  category: 'Piling' },
-  { code: 'PILE-I40',      name: 'เสาเข็มตอก I-40', nameEn: 'I-40 Driven Pile',               uom: 'm', uomEn: 'm',   costMaterial: 550,  costLabor: 200,  category: 'Piling' },
-  { code: 'PILE-BRD-CON',  name: 'คอนกรีตเสาเข็มเจาะ', nameEn: 'Bored Pile Concrete',              uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2200, costLabor: 800,  category: 'Piling' },
+  // ── เสาเข็มตอก สี่เหลี่ยม HTT (ราคาต่อ ม.) ──
+  { code: 'PILE-I15',      name: 'เสาเข็มตอก I-15 (0.15×0.15)', nameEn: 'I-15 Driven Pile',   uom: 'm', uomEn: 'm',   costMaterial: 127,  costLabor: 100,  category: 'Piling' },
+  { code: 'PILE-I18',      name: 'เสาเข็มตอก I-18 (0.18×0.18)', nameEn: 'I-18 Driven Pile',   uom: 'm', uomEn: 'm',   costMaterial: 183,  costLabor: 100,  category: 'Piling' },
+  { code: 'PILE-I20',      name: 'เสาเข็มตอก I-20 (0.20×0.20)', nameEn: 'I-20 Driven Pile',   uom: 'm', uomEn: 'm',   costMaterial: 200,  costLabor: 110,  category: 'Piling' },
+  { code: 'PILE-I22',      name: 'เสาเข็มตอก I-22 (0.22×0.22)', nameEn: 'I-22 Driven Pile',   uom: 'm', uomEn: 'm',   costMaterial: 225,  costLabor: 120,  category: 'Piling' },
+  { code: 'PILE-I26',      name: 'เสาเข็มตอก I-26 (0.26×0.26)', nameEn: 'I-26 Driven Pile',   uom: 'm', uomEn: 'm',   costMaterial: 277,  costLabor: 120,  category: 'Piling' },
+  { code: 'PILE-I30',      name: 'เสาเข็มตอก I-30 (0.30×0.30)', nameEn: 'I-30 Driven Pile',   uom: 'm', uomEn: 'm',   costMaterial: 401,  costLabor: 150,  category: 'Piling' },
+  { code: 'PILE-I35',      name: 'เสาเข็มตอก I-35 (0.35×0.35)', nameEn: 'I-35 Driven Pile',   uom: 'm', uomEn: 'm',   costMaterial: 525,  costLabor: 180,  category: 'Piling' },
+  { code: 'PILE-I40',      name: 'เสาเข็มตอก I-40 (0.40×0.40)', nameEn: 'I-40 Driven Pile',   uom: 'm', uomEn: 'm',   costMaterial: 654,  costLabor: 200,  category: 'Piling' },
+  { code: 'PILE-I45',      name: 'เสาเข็มตอก I-45 (0.45×0.45)', nameEn: 'I-45 Driven Pile',   uom: 'm', uomEn: 'm',   costMaterial: 890,  costLabor: 220,  category: 'Piling' },
+  { code: 'PILE-I525',     name: 'เสาเข็มตอก I-52.5 (0.525×0.525)', nameEn: 'I-52.5 Driven Pile', uom: 'm', uomEn: 'm', costMaterial: 1398, costLabor: 250, category: 'Piling' },
+  // ── เสาเข็มกลม (Spun Pile) — ราคาต่อต้น @21ม. ──
+  { code: 'PILE-SP25',     name: 'เสาเข็ม Spun ศก.25 ซม.', nameEn: 'Spun Pile Ø25cm',       uom: 'ต้น', uomEn: 'pcs', costMaterial: 5889, costLabor: 1500,  category: 'Piling' },
+  { code: 'PILE-SP30',     name: 'เสาเข็ม Spun ศก.30 ซม.', nameEn: 'Spun Pile Ø30cm',       uom: 'ต้น', uomEn: 'pcs', costMaterial: 7979, costLabor: 1800,  category: 'Piling' },
+  { code: 'PILE-SP35',     name: 'เสาเข็ม Spun ศก.35 ซม.', nameEn: 'Spun Pile Ø35cm',       uom: 'ต้น', uomEn: 'pcs', costMaterial: 9765, costLabor: 2000,  category: 'Piling' },
+  { code: 'PILE-SP40',     name: 'เสาเข็ม Spun ศก.40 ซม.', nameEn: 'Spun Pile Ø40cm',       uom: 'ต้น', uomEn: 'pcs', costMaterial: 12840, costLabor: 2500, category: 'Piling' },
+  { code: 'PILE-SP45',     name: 'เสาเข็ม Spun ศก.45 ซม.', nameEn: 'Spun Pile Ø45cm',       uom: 'ต้น', uomEn: 'pcs', costMaterial: 12930, costLabor: 2500, category: 'Piling' },
+  { code: 'PILE-SP50',     name: 'เสาเข็ม Spun ศก.50 ซม.', nameEn: 'Spun Pile Ø50cm',       uom: 'ต้น', uomEn: 'pcs', costMaterial: 18988, costLabor: 3000, category: 'Piling' },
+  { code: 'PILE-SP60',     name: 'เสาเข็ม Spun ศก.60 ซม.', nameEn: 'Spun Pile Ø60cm',       uom: 'ต้น', uomEn: 'pcs', costMaterial: 25612, costLabor: 3500, category: 'Piling' },
+  { code: 'PILE-SP80',     name: 'เสาเข็ม Spun ศก.80 ซม.', nameEn: 'Spun Pile Ø80cm',       uom: 'ต้น', uomEn: 'pcs', costMaterial: 41435, costLabor: 5000, category: 'Piling' },
+  // ── เสาเข็มสั้น (Mini Pile) 15 ซม. — ราคาต่อต้น ──
+  { code: 'PILE-MINI-2M',  name: 'เสาเข็มสั้น 15ซม. ยาว 2ม.', nameEn: 'Mini Pile 15cm × 2m',   uom: 'ต้น', uomEn: 'pcs', costMaterial: 151, costLabor: 80,  category: 'Piling' },
+  { code: 'PILE-MINI-3M',  name: 'เสาเข็มสั้น 15ซม. ยาว 3ม.', nameEn: 'Mini Pile 15cm × 3m',   uom: 'ต้น', uomEn: 'pcs', costMaterial: 235, costLabor: 100, category: 'Piling' },
+  { code: 'PILE-MINI-4M',  name: 'เสาเข็มสั้น 15ซม. ยาว 4ม.', nameEn: 'Mini Pile 15cm × 4m',   uom: 'ต้น', uomEn: 'pcs', costMaterial: 315, costLabor: 120, category: 'Piling' },
+  { code: 'PILE-MINI-5M',  name: 'เสาเข็มสั้น 15ซม. ยาว 5ม.', nameEn: 'Mini Pile 15cm × 5m',   uom: 'ต้น', uomEn: 'pcs', costMaterial: 401, costLabor: 140, category: 'Piling' },
+  { code: 'PILE-MINI-6M',  name: 'เสาเข็มสั้น 15ซม. ยาว 6ม.', nameEn: 'Mini Pile 15cm × 6m',   uom: 'ต้น', uomEn: 'pcs', costMaterial: 533, costLabor: 160, category: 'Piling' },
+  // ── เสาเข็มสั้น CPAC 10×12 ซม. — ราคาต่อท่อน ──
+  { code: 'PILE-CPAC-2M',  name: 'เข็มสั้น CPAC 10×12ซม. ยาว 2ม.', nameEn: 'CPAC Mini 10×12cm × 2m', uom: 'ท่อน', uomEn: 'pcs', costMaterial: 110, costLabor: 60,  category: 'Piling' },
+  { code: 'PILE-CPAC-3M',  name: 'เข็มสั้น CPAC 10×12ซม. ยาว 3ม.', nameEn: 'CPAC Mini 10×12cm × 3m', uom: 'ท่อน', uomEn: 'pcs', costMaterial: 166, costLabor: 80,  category: 'Piling' },
+  { code: 'PILE-CPAC-4M',  name: 'เข็มสั้น CPAC 10×12ซม. ยาว 4ม.', nameEn: 'CPAC Mini 10×12cm × 4m', uom: 'ท่อน', uomEn: 'pcs', costMaterial: 244, costLabor: 100, category: 'Piling' },
+  { code: 'PILE-CPAC-5M',  name: 'เข็มสั้น CPAC 10×12ซม. ยาว 5ม.', nameEn: 'CPAC Mini 10×12cm × 5m', uom: 'ท่อน', uomEn: 'pcs', costMaterial: 322, costLabor: 120, category: 'Piling' },
+  // ── เสาเข็มไม้ยูคาลิปตัส — ราคาต่อต้น ──
+  { code: 'PILE-WOOD-3x3', name: 'เข็มไม้ยูคาฯ Ø3" ยาว 3ม.', nameEn: 'Eucalyptus Pile Ø3" × 3m',   uom: 'ต้น', uomEn: 'pcs', costMaterial: 31,  costLabor: 30,  category: 'Piling' },
+  { code: 'PILE-WOOD-4x4', name: 'เข็มไม้ยูคาฯ Ø4" ยาว 4ม.', nameEn: 'Eucalyptus Pile Ø4" × 4m',   uom: 'ต้น', uomEn: 'pcs', costMaterial: 65,  costLabor: 40,  category: 'Piling' },
+  { code: 'PILE-WOOD-5x5', name: 'เข็มไม้ยูคาฯ Ø5" ยาว 5ม.', nameEn: 'Eucalyptus Pile Ø5" × 5m',   uom: 'ต้น', uomEn: 'pcs', costMaterial: 105, costLabor: 50,  category: 'Piling' },
+  { code: 'PILE-WOOD-6x6', name: 'เข็มไม้ยูคาฯ Ø6" ยาว 6ม.', nameEn: 'Eucalyptus Pile Ø6" × 6m',   uom: 'ต้น', uomEn: 'pcs', costMaterial: 230, costLabor: 60,  category: 'Piling' },
+  { code: 'PILE-WOOD-8x6', name: 'เข็มไม้ยูคาฯ Ø8" ยาว 6ม.', nameEn: 'Eucalyptus Pile Ø8" × 6m',   uom: 'ต้น', uomEn: 'pcs', costMaterial: 320, costLabor: 80,  category: 'Piling' },
+  // ── เสาเข็มเจาะ + อุปกรณ์ ──
+  { code: 'PILE-BRD-CON',  name: 'คอนกรีตเสาเข็มเจาะ', nameEn: 'Bored Pile Concrete',              uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2458, costLabor: 800,  category: 'Piling' },
+  // ── บริการและอุปกรณ์เสริม ──
   { code: 'PILE-MACHINE',  name: 'ค่าเช่าเครื่องตอก/เจาะ', nameEn: 'Piling Rig Rental',           uom: 'วัน', uomEn: 'day',  costMaterial: 0,    costLabor: 12000, category: 'Piling' },
   { code: 'PILE-TRANSPORT', name: 'ค่าขนส่งเสาเข็ม', nameEn: 'Pile Transportation',                 uom: 'เที่ยว', uomEn: 'trip', costMaterial: 0,   costLabor: 3500, category: 'Piling' },
-  { code: 'PILE-CUT',      name: 'ตัดหัวเข็ม', nameEn: 'Pile Head Cutting',                       uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 250,  category: 'Piling' },
-  { code: 'PILE-CAGE',     name: 'เหล็กเสริม Cage (เข็มเจาะ)', nameEn: 'Rebar Cage (Bored Pile)',       uom: 'kg', uomEn: 'kg',  costMaterial: 23,   costLabor: 6,    category: 'Piling' },
+  // ── ค่าสกัดหัวเสาเข็ม และเหล็กหนวดกุ้ง (Dowel Bar) ──
+  { code: 'PILE-CUT-D15',  name: 'สกัดหัวเข็มตอก I-15', nameEn: 'Cut Head I-15',                 uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 120,  category: 'Piling' },
+  { code: 'PILE-CUT-D18',  name: 'สกัดหัวเข็มตอก I-18', nameEn: 'Cut Head I-18',                 uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 150,  category: 'Piling' },
+  { code: 'PILE-CUT-D20',  name: 'สกัดหัวเข็มตอก I-20', nameEn: 'Cut Head I-20',                 uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 165,  category: 'Piling' },
+  { code: 'PILE-CUT-D22',  name: 'สกัดหัวเข็มตอก I-22', nameEn: 'Cut Head I-22',                 uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 180,  category: 'Piling' },
+  { code: 'PILE-CUT-D26',  name: 'สกัดหัวเข็มตอก I-26', nameEn: 'Cut Head I-26',                 uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 230,  category: 'Piling' },
+  { code: 'PILE-CUT-D30',  name: 'สกัดหัวเข็มตอก I-30', nameEn: 'Cut Head I-30',                 uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 250,  category: 'Piling' },
+  { code: 'PILE-CUT-D35',  name: 'สกัดหัวเข็มตอก I-35', nameEn: 'Cut Head I-35',                 uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 280,  category: 'Piling' },
+  { code: 'PILE-CUT-D40',  name: 'สกัดหัวเข็มตอก I-40', nameEn: 'Cut Head I-40',                 uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 300,  category: 'Piling' },
+  { code: 'PILE-CUT-B30',  name: 'สกัดหัวเข็มเจาะ Ø0.30', nameEn: 'Cut Head Bored Ø0.30',        uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 300,  category: 'Piling' },
+  { code: 'PILE-CUT-B35',  name: 'สกัดหัวเข็มเจาะ Ø0.35', nameEn: 'Cut Head Bored Ø0.35',        uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 350,  category: 'Piling' },
+  { code: 'PILE-CUT-B40',  name: 'สกัดหัวเข็มเจาะ Ø0.40', nameEn: 'Cut Head Bored Ø0.40',        uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 400,  category: 'Piling' },
+  { code: 'PILE-CUT-B50',  name: 'สกัดหัวเข็มเจาะ Ø0.50', nameEn: 'Cut Head Bored Ø0.50',        uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 500,  category: 'Piling' },
+  { code: 'PILE-CUT-B60',  name: 'สกัดหัวเข็มเจาะ Ø0.60', nameEn: 'Cut Head Bored Ø0.60',        uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 600,  category: 'Piling' },
+  { code: 'PILE-CUT-MINI', name: 'สกัดหัวเข็มสั้น (Mini Pile)', nameEn: 'Cut Head Mini Pile',          uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 100,  category: 'Piling' },
+  { code: 'PILE-DOWEL',    name: 'เพิ่มเหล็กหนวดกุ้ง (Dowel Bar)', nameEn: 'Dowel Bar Installation',           uom: 'ต้น', uomEn: 'pcs',  costMaterial: 15,   costLabor: 20,   category: 'Piling' },
+  // ── ส่วนเพิ่มค่าแรงโครงการขนาดเล็ก (Low-Volume Surcharge) ──
+  { code: 'PILE-LABOR-SURCHARGE', name: 'ค่าแรงตอกเพิ่ม (โครงการขนาดเล็ก < 50 ต้น)', nameEn: 'Low Volume Labor Surcharge', uom: 'm', uomEn: 'm', costMaterial: 0, costLabor: 22, category: 'Piling' },
+  { code: 'PILE-WELD',     name: 'เชื่อมต่อเสาเข็ม (Splice)', nameEn: 'Pile Welding Joint',       uom: 'จุด', uomEn: 'joint', costMaterial: 200, costLabor: 350,  category: 'Piling' },
+  { code: 'PILE-CAGE',     name: 'เหล็กเสริม Cage (เข็มเจาะ)', nameEn: 'Rebar Cage (Bored Pile)',       uom: 'kg', uomEn: 'kg',  costMaterial: 21,   costLabor: 6,    category: 'Piling' },
   { code: 'PILE-BENTO',    name: 'น้ำ Bentonite (Slurry)', nameEn: 'Bentonite Slurry',           uom: 'm3', uomEn: 'cu.m.',  costMaterial: 800,  costLabor: 0,    category: 'Piling' },
-  { code: 'PILE-LOADTEST', name: 'Load Test (Dynamic/Static)', nameEn: 'Dynamic/Static Load Test',       uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 35000, category: 'Piling' },
-  { code: 'PILE-SEISMIC',  name: 'Seismic Integrity Test', nameEn: 'Seismic Integrity Test',           uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 1500,  category: 'Piling' },
+  { code: 'PILE-CASING',   name: 'ค่าเช่าปลอก Casing ชั่วคราว', nameEn: 'Temp. Casing Rental',   uom: 'm', uomEn: 'm',    costMaterial: 0,    costLabor: 150,  category: 'Piling' },
+  { code: 'PILE-LOADTEST', name: 'Load Test (Dynamic)', nameEn: 'Dynamic Load Test',             uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 28500, category: 'Piling' },
+  { code: 'PILE-LOADTEST-STATIC', name: 'Load Test (Static)', nameEn: 'Static Load Test',        uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 45000, category: 'Piling' },
+  { code: 'PILE-SEISMIC',  name: 'Seismic Integrity Test', nameEn: 'Seismic Integrity Test',           uom: 'ต้น', uomEn: 'pcs',  costMaterial: 0,    costLabor: 200,   category: 'Piling' },
+  { code: 'PILE-SOIL',     name: 'ค่าเจาะสำรวจดิน (Soil Boring)', nameEn: 'Soil Boring Test',     uom: 'หลุม', uomEn: 'hole', costMaterial: 0,   costLabor: 15000, category: 'Piling' },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STRUCTURAL CORE SYSTEM (อ้างอิงราคากลาง หมวด 2 โครงสร้าง)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 1. Concrete Materials
+  { code: 'CON-LEAN', name: 'คอนกรีตหยาบ 1:3:5', nameEn: 'Lean Concrete',             uom: 'm3', uomEn: 'cu.m.',  costMaterial: 1600, costLabor: 0, category: 'Structural Concrete' },
+  { code: 'CON-180',  name: 'คอนกรีตผสมเสร็จ 180 ksc', nameEn: 'Ready Mix Conc. 180 ksc', uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2150, costLabor: 0, category: 'Structural Concrete' },
+  { code: 'CON-210',  name: 'คอนกรีตผสมเสร็จ 210 ksc', nameEn: 'Ready Mix Conc. 210 ksc', uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2250, costLabor: 0, category: 'Structural Concrete' },
+  { code: 'CON-240',  name: 'คอนกรีตผสมเสร็จ 240 ksc', nameEn: 'Ready Mix Conc. 240 ksc', uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2458, costLabor: 0, category: 'Structural Concrete' },
+  { code: 'CON-280',  name: 'คอนกรีตผสมเสร็จ 280 ksc', nameEn: 'Ready Mix Conc. 280 ksc', uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2550, costLabor: 0, category: 'Structural Concrete' },
+  { code: 'CON-300',  name: 'คอนกรีตผสมเสร็จ 300 ksc', nameEn: 'Ready Mix Conc. 300 ksc', uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2600, costLabor: 0, category: 'Structural Concrete' },
+  { code: 'CON-320',  name: 'คอนกรีตผสมเสร็จ 320 ksc', nameEn: 'Ready Mix Conc. 320 ksc', uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2700, costLabor: 0, category: 'Structural Concrete' },
+  { code: 'CON-350',  name: 'คอนกรีตผสมเสร็จ 350 ksc', nameEn: 'Ready Mix Conc. 350 ksc', uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2850, costLabor: 0, category: 'Structural Concrete' },
+  // Manual Mix Ingredients (1:2:4)
+  { code: 'CON-MIX-CEMENT', name: 'ปูนซีเมนต์ปอร์ตแลนด์ ประเภท 1', nameEn: 'Portland Cement Type 1', uom: 'ถุง', uomEn: 'bag', costMaterial: 150, costLabor: 0, category: 'Structural Concrete' },
+  { code: 'CON-MIX-SAND',   name: 'ทรายหยาบผสมคอนกรีต', nameEn: 'Coarse Sand for Concrete', uom: 'm3', uomEn: 'cu.m.', costMaterial: 450, costLabor: 0, category: 'Structural Concrete' },
+  { code: 'CON-MIX-STONE',  name: 'หินย่อย/หินผสมคอนกรีต', nameEn: 'Crushed Stone for Concrete', uom: 'm3', uomEn: 'cu.m.', costMaterial: 550, costLabor: 0, category: 'Structural Concrete' },
+  // Additives
+  { code: 'CON-ADMIX-WP', name: 'น้ำยากันซึมผสมคอนกรีต', nameEn: 'Waterproofing Admixture',   uom: 'm3', uomEn: 'cu.m.',  costMaterial: 50,  costLabor: 0, category: 'Structural Concrete' },
+  { code: 'CON-BOND',     name: 'น้ำยาประสานคอนกรีต', nameEn: 'Concrete Bonding Agent',        uom: 'm2', uomEn: 'sq.m.',  costMaterial: 28,  costLabor: 8, category: 'Structural Concrete' },
+  
+  // 2. Concrete Pouring Labor (ค่าแรงเทคอนกรีต)
+  { code: 'LAB-POUR-GRND', name: 'ค่าแรงเทคอนกรีต งานระดับดิน (ถนน/ฐานราก)', nameEn: 'Concrete Pouring (Ground)', uom: 'm3', uomEn: 'cu.m.', costMaterial: 0, costLabor: 398, category: 'Structural Labor' },
+  { code: 'LAB-POUR-1FL',  name: 'ค่าแรงเทคอนกรีต โครงสร้างชั้นเดียว', nameEn: 'Concrete Pouring (1-Story)', uom: 'm3', uomEn: 'cu.m.', costMaterial: 0, costLabor: 436, category: 'Structural Labor' },
+  { code: 'LAB-POUR-2FL',  name: 'ค่าแรงเทคอนกรีต โครงสร้าง 2 ชั้นขึ้นไป', nameEn: 'Concrete Pouring (Multi-Story)', uom: 'm3', uomEn: 'cu.m.', costMaterial: 0, costLabor: 519, category: 'Structural Labor' },
+  { code: 'LAB-MIX-CONC',  name: 'ค่าแรงโม่/ผสมคอนกรีตด้วยเครื่องมือ', nameEn: 'Manual Mix Concrete Labor', uom: 'm3', uomEn: 'cu.m.', costMaterial: 0, costLabor: 450, category: 'Structural Labor' },
+
+  // 3. Formwork (ไม้แบบ)
+  { code: 'FW-GRND',    name: 'แบบหล่อคอนกรีต งานถนน/ลาน/บ่อพัก', nameEn: 'Formwork (Ground)', uom: 'm2', uomEn: 'sq.m.', costMaterial: 80,  costLabor: 121, category: 'Structural Formwork' },
+  { code: 'FW-BLDG',    name: 'แบบหล่อคอนกรีต อาคารไม่เกิน 5 ชั้น', nameEn: 'Formwork (Bldg < 5F)', uom: 'm2', uomEn: 'sq.m.', costMaterial: 160, costLabor: 121, category: 'Structural Formwork' },
+  { code: 'FW-BLDG-H',  name: 'แบบหล่อคอนกรีต อาคารเกิน 5 ชั้น', nameEn: 'Formwork (Bldg > 5F)',  uom: 'm2', uomEn: 'sq.m.', costMaterial: 160, costLabor: 139, category: 'Structural Formwork' },
+  { code: 'FW-PRECAST', name: 'แบบหล่อชิ้นส่วนสำเร็จรูป (Precast)', nameEn: 'Formwork (Precast)',    uom: 'm2', uomEn: 'sq.m.', costMaterial: 50,  costLabor: 121, category: 'Structural Formwork' },
+
+  // 4. Rebar Standard Extras
+  { code: 'RB-WIRE',    name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire for Rebar',         uom: 'kg', uomEn: 'kg', costMaterial: 26, costLabor: 0, category: 'Structural Rebar' },
+  { code: 'RB-SPACER',  name: 'ลูกปูนรองกั้นเหล็กเทซ멘ต์ (Spacer)', nameEn: 'Concrete Spacer', uom: 'pcs', uomEn: 'pcs', costMaterial: 5, costLabor: 0, category: 'Structural Rebar' },
+
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 6 : Footing / Foundation
@@ -106,9 +196,9 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   { code: 'FTG-EXC',      name: 'งานขุดดินฐานราก (เครื่องจักร)', nameEn: 'Footing Earth Excavation',    uom: 'm3', uomEn: 'cu.m.',  costMaterial: 0,    costLabor: 125,  category: 'Footing' },
   { code: 'FTG-SAND',     name: 'ทรายหยาบบดอัดแน่นใต้ฐาน', nameEn: 'Compacted Sand Base',         uom: 'm3', uomEn: 'cu.m.',  costMaterial: 450,  costLabor: 50,   category: 'Footing' },
   { code: 'FTG-LEAN',     name: 'คอนกรีตหยาบ 1:3:5 ใต้ฐาน', nameEn: 'Lean Concrete 1:3:5',        uom: 'm3', uomEn: 'cu.m.',  costMaterial: 1600, costLabor: 150,  category: 'Footing' },
-  { code: 'FTG-CON',      name: 'คอนกรีตโครงสร้างฐานราก 240 ksc', nameEn: 'Footing Concrete (240 ksc)',  uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2100, costLabor: 300,  category: 'Footing' },
-  { code: 'FTG-REBAR',    name: 'เหล็กเสริมฐานราก', nameEn: 'Footing Rebar',                 uom: 'kg', uomEn: 'kg',  costMaterial: 23,   costLabor: 4,    category: 'Footing' },
-  { code: 'FTG-WIRE',     name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire',                     uom: 'kg', uomEn: 'kg',  costMaterial: 35,   costLabor: 0,    category: 'Footing' },
+  { code: 'FTG-CON',      name: 'คอนกรีตโครงสร้างฐานราก 240 ksc', nameEn: 'Footing Concrete (240 ksc)',  uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2458, costLabor: 300,  category: 'Footing' },
+  { code: 'FTG-REBAR',    name: 'เหล็กเสริมฐานราก', nameEn: 'Footing Rebar',                 uom: 'kg', uomEn: 'kg',  costMaterial: 21,   costLabor: 4,    category: 'Footing' },
+  { code: 'FTG-WIRE',     name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire',                     uom: 'kg', uomEn: 'kg',  costMaterial: 26,   costLabor: 0,    category: 'Footing' },
   { code: 'FTG-SPACER',   name: 'ลูกปูน Spacer', nameEn: 'Concrete Spacer',                   uom: 'pcs', uomEn: 'pcs', costMaterial: 5,    costLabor: 0,    category: 'Footing' },
   { code: 'FTG-FORM',     name: 'ไม้แบบฐานราก', nameEn: 'Footing Formwork',                     uom: 'm2', uomEn: 'sq.m.',  costMaterial: 250,  costLabor: 150,  category: 'Footing' },
   { code: 'FTG-FILL',     name: 'ดินถมกลับ (ฐานราก)', nameEn: 'Footing Soil Backfill',               uom: 'm3', uomEn: 'cu.m.',  costMaterial: 80,   costLabor: 100,  category: 'Footing' },
@@ -120,9 +210,9 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 7 : Pedestal / Column Stump
   // ═══════════════════════════════════════════════════════════════════════════
-  { code: 'PDS-CON',      name: 'คอนกรีตเสาตอม่อ 240 ksc', nameEn: 'Pedestal Concrete (240 ksc)',          uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2100, costLabor: 350,  category: 'Pedestal' },
-  { code: 'PDS-REBAR',    name: 'เหล็กเสริมเสาตอม่อ', nameEn: 'Pedestal Rebar',                uom: 'kg', uomEn: 'kg',  costMaterial: 23,   costLabor: 5,    category: 'Pedestal' },
-  { code: 'PDS-WIRE',     name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire',                      uom: 'kg', uomEn: 'kg',  costMaterial: 35,   costLabor: 0,    category: 'Pedestal' },
+  { code: 'PDS-CON',      name: 'คอนกรีตเสาตอม่อ 240 ksc', nameEn: 'Pedestal Concrete (240 ksc)',          uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2458, costLabor: 350,  category: 'Pedestal' },
+  { code: 'PDS-REBAR',    name: 'เหล็กเสริมเสาตอม่อ', nameEn: 'Pedestal Rebar',                uom: 'kg', uomEn: 'kg',  costMaterial: 21,   costLabor: 5,    category: 'Pedestal' },
+  { code: 'PDS-WIRE',     name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire',                      uom: 'kg', uomEn: 'kg',  costMaterial: 26,   costLabor: 0,    category: 'Pedestal' },
   { code: 'PDS-SPACER',   name: 'ลูกปูน Spacer', nameEn: 'Concrete Spacer',                    uom: 'pcs', uomEn: 'pcs', costMaterial: 5,    costLabor: 0,    category: 'Pedestal' },
   { code: 'PDS-FORM',     name: 'ไม้แบบเสาตอม่อ', nameEn: 'Pedestal Formwork',                   uom: 'm2', uomEn: 'sq.m.',  costMaterial: 250,  costLabor: 150,  category: 'Pedestal' },
   { code: 'PDS-DOWEL',    name: 'Dowel Bar ยื่นรอเสาชั้น 1', nameEn: 'Dowel Bar',         uom: 'm', uomEn: 'm',   costMaterial: 23,   costLabor: 5,    category: 'Pedestal' },
@@ -137,9 +227,9 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   { code: 'GBM-EXC',      name: 'ขุดดินคานคอดิน (เครื่องจักร)', nameEn: 'Ground Beam Excavation',     uom: 'm3', uomEn: 'cu.m.',  costMaterial: 0,    costLabor: 125,  category: 'Ground Beam' },
   { code: 'GBM-SAND',     name: 'ทรายรองใต้ลีน', nameEn: 'Compacted Sand Base',                   uom: 'm3', uomEn: 'cu.m.',  costMaterial: 450,  costLabor: 50,   category: 'Ground Beam' },
   { code: 'GBM-LEAN',     name: 'คอนกรีตหยาบ 1:3:5 ใต้คาน', nameEn: 'Lean Concrete 1:3:5',       uom: 'm3', uomEn: 'cu.m.',  costMaterial: 1600, costLabor: 150,  category: 'Ground Beam' },
-  { code: 'GBM-CON',      name: 'คอนกรีตคานคอดิน 240 ksc', nameEn: 'Ground Beam Conc. (240 ksc)',         uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2100, costLabor: 300,  category: 'Ground Beam' },
-  { code: 'GBM-REBAR',    name: 'เหล็กเสริมคานคอดิน', nameEn: 'Ground Beam Rebar',               uom: 'kg', uomEn: 'kg',  costMaterial: 23,   costLabor: 5,    category: 'Ground Beam' },
-  { code: 'GBM-WIRE',     name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire',                     uom: 'kg', uomEn: 'kg',  costMaterial: 35,   costLabor: 0,    category: 'Ground Beam' },
+  { code: 'GBM-CON',      name: 'คอนกรีตคานคอดิน 240 ksc', nameEn: 'Ground Beam Conc. (240 ksc)',         uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2458, costLabor: 300,  category: 'Ground Beam' },
+  { code: 'GBM-REBAR',    name: 'เหล็กเสริมคานคอดิน', nameEn: 'Ground Beam Rebar',               uom: 'kg', uomEn: 'kg',  costMaterial: 21,   costLabor: 5,    category: 'Ground Beam' },
+  { code: 'GBM-WIRE',     name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire',                     uom: 'kg', uomEn: 'kg',  costMaterial: 26,   costLabor: 0,    category: 'Ground Beam' },
   { code: 'GBM-SPACER',   name: 'ลูกปูน Spacer', nameEn: 'Concrete Spacer',                   uom: 'pcs', uomEn: 'pcs', costMaterial: 5,    costLabor: 0,    category: 'Ground Beam' },
   { code: 'GBM-FORM',     name: 'ไม้แบบคานคอดิน', nameEn: 'Ground Beam Formwork',                  uom: 'm2', uomEn: 'sq.m.',  costMaterial: 250,  costLabor: 150,  category: 'Ground Beam' },
   { code: 'GBM-FILL',     name: 'ดินถมกลับ (คานคอดิน)', nameEn: 'Soil Backfill',             uom: 'm3', uomEn: 'cu.m.',  costMaterial: 80,   costLabor: 100,  category: 'Ground Beam' },
@@ -155,8 +245,8 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   { code: 'SOG-SAND',     name: 'ทรายปรับระดับใต้พื้น', nameEn: 'Sand Leveling Course',             uom: 'm3', uomEn: 'cu.m.',  costMaterial: 450,  costLabor: 50,   category: 'Slab on Grade' },
   { code: 'SOG-PLASTIC',  name: 'พลาสติกกันชื้น', nameEn: 'Moisture Barrier Plastic',                   uom: 'm2', uomEn: 'sq.m.',  costMaterial: 8,    costLabor: 5,    category: 'Slab on Grade' },
   { code: 'SOG-MESH',     name: 'ไวร์เมชพื้น', nameEn: 'Wire Mesh',                      uom: 'kg', uomEn: 'kg',  costMaterial: 30,   costLabor: 5,    category: 'Slab on Grade' },
-  { code: 'SOG-REBAR',    name: 'เหล็กเส้นเสริมพื้น', nameEn: 'Slab Rebar',                uom: 'kg', uomEn: 'kg',  costMaterial: 23,   costLabor: 4,    category: 'Slab on Grade' },
-  { code: 'SOG-CON',      name: 'คอนกรีตพื้น 240 ksc', nameEn: 'Slab Concrete (240 ksc)',              uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2100, costLabor: 300,  category: 'Slab on Grade' },
+  { code: 'SOG-REBAR',    name: 'เหล็กเส้นเสริมพื้น', nameEn: 'Slab Rebar',                uom: 'kg', uomEn: 'kg',  costMaterial: 21,   costLabor: 4,    category: 'Slab on Grade' },
+  { code: 'SOG-CON',      name: 'คอนกรีตพื้น 240 ksc', nameEn: 'Slab Concrete (240 ksc)',              uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2458, costLabor: 300,  category: 'Slab on Grade' },
   { code: 'SOG-FORM-EDG', name: 'ไม้แบบขอบพื้น', nameEn: 'Edge Formwork',                    uom: 'm', uomEn: 'm',   costMaterial: 80,   costLabor: 40,   category: 'Slab on Grade' },
   { code: 'SOG-CJOINT',   name: 'ร่องตัด Control Joint', nameEn: 'Control Joint Cutter',            uom: 'm', uomEn: 'm',   costMaterial: 10,   costLabor: 25,   category: 'Slab on Grade' },
   { code: 'SOG-EJOINT',   name: 'Expansion Joint (วัสดุยาแนว)', nameEn: 'Expansion Joint Sealant',      uom: 'm', uomEn: 'm',   costMaterial: 50,   costLabor: 30,   category: 'Slab on Grade' },
@@ -170,7 +260,10 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 10 : Precast Slab / พื้นสำเร็จรูป
   // ═══════════════════════════════════════════════════════════════════════════
-  { code: 'PCS-PANEL',    name: 'แผ่นพื้นสำเร็จรูป (LL 250 กก./ม²)', nameEn: 'Precast Slab (LL 250 kg/m²)',  uom: 'm2', uomEn: 'sq.m.',   costMaterial: 280,  costLabor: 50,   category: 'Precast Slab' },
+  { code: 'PCS-PANEL',    name: 'แผ่นพื้นสำเร็จรูป หนา 15 ซม. 4 ลวด', nameEn: 'Precast Slab 15cm 4-wire',  uom: 'm2', uomEn: 'sq.m.',   costMaterial: 431,  costLabor: 50,   category: 'Precast Slab' },
+  { code: 'PCS-PANEL-5W', name: 'แผ่นพื้นสำเร็จรูป หนา 15 ซม. 5 ลวด', nameEn: 'Precast Slab 15cm 5-wire',  uom: 'm2', uomEn: 'sq.m.',   costMaterial: 443,  costLabor: 50,   category: 'Precast Slab' },
+  { code: 'PCS-PANEL-20', name: 'แผ่นพื้นสำเร็จรูป หนา 20 ซม. 4 ลวด', nameEn: 'Precast Slab 20cm 4-wire',  uom: 'm2', uomEn: 'sq.m.',   costMaterial: 491,  costLabor: 55,   category: 'Precast Slab' },
+  { code: 'PCS-PANEL-25', name: 'แผ่นพื้นสำเร็จรูป หนา 25 ซม. 4 ลวด', nameEn: 'Precast Slab 25cm 4-wire',  uom: 'm2', uomEn: 'sq.m.',   costMaterial: 574,  costLabor: 60,   category: 'Precast Slab' },
   { code: 'PCS-MESH',     name: 'ไวร์เมชทับหน้า', nameEn: 'Topping Wire Mesh',                     uom: 'kg', uomEn: 'kg',   costMaterial: 30,   costLabor: 5,    category: 'Precast Slab' },
   { code: 'PCS-TOP-CON',  name: 'คอนกรีตทับหน้า 240 ksc', nameEn: 'Topping Concrete 240 ksc',             uom: 'm3', uomEn: 'cu.m.',   costMaterial: 2100, costLabor: 300,  category: 'Precast Slab' },
   { code: 'PCS-SHORE',    name: 'ค้ำยันท้องพื้น (Shoring)', nameEn: 'Slab Shoring',            uom: 'm', uomEn: 'm',    costMaterial: 50,   costLabor: 30,   category: 'Precast Slab' },
@@ -186,9 +279,9 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 11 : Column Floor 1 / เสาชั้น 1
   // ═══════════════════════════════════════════════════════════════════════════
-  { code: 'COL-CON',      name: 'คอนกรีตเสาชั้น 1 (240 ksc)', nameEn: 'L1 Column Conc. (240 ksc)',         uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2000, costLabor: 1000, category: 'Column' },
-  { code: 'COL-REBAR',    name: 'เหล็กเสริมเสาชั้น 1', nameEn: 'Column Rebar',                uom: 'kg', uomEn: 'kg',  costMaterial: 23,   costLabor: 5,    category: 'Column' },
-  { code: 'COL-WIRE',     name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire',                       uom: 'kg', uomEn: 'kg',  costMaterial: 35,   costLabor: 0,    category: 'Column' },
+  { code: 'COL-CON',      name: 'คอนกรีตเสาชั้น 1 (240 ksc)', nameEn: 'L1 Column Conc. (240 ksc)',         uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2458, costLabor: 1000, category: 'Column' },
+  { code: 'COL-REBAR',    name: 'เหล็กเสริมเสาชั้น 1', nameEn: 'Column Rebar',                uom: 'kg', uomEn: 'kg',  costMaterial: 21,   costLabor: 5,    category: 'Column' },
+  { code: 'COL-WIRE',     name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire',                       uom: 'kg', uomEn: 'kg',  costMaterial: 26,   costLabor: 0,    category: 'Column' },
   { code: 'COL-SPACER',   name: 'ลูกปูน Spacer', nameEn: 'Concrete Spacer',                     uom: 'pcs', uomEn: 'pcs', costMaterial: 5,    costLabor: 0,    category: 'Column' },
   { code: 'COL-FORM',     name: 'ไม้แบบเสาชั้น 1 (รวมไม้คร่าว+ตะปู)', nameEn: 'Column Formwork', uom: 'm2', uomEn: 'sq.m.',  costMaterial: 337,  costLabor: 150,  category: 'Column' },
   { code: 'COL-PUMP',     name: 'ปั๊มคอนกรีต', nameEn: 'Concrete Pump',                       uom: 'วัน', uomEn: 'day',  costMaterial: 0,    costLabor: 8000, category: 'Column' },
@@ -199,11 +292,11 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 12 : Beam + Roof Deck / คาน + พื้นดาดฟ้า
   // ═══════════════════════════════════════════════════════════════════════════
-  { code: 'BMS-CON',      name: 'คอนกรีตคานดาดฟ้า 240 ksc', nameEn: 'Roof Beam Conc. (240 ksc)',         uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2100, costLabor: 500,  category: 'Beam-Slab' },
-  { code: 'BMS-SLAB-CON', name: 'คอนกรีตพื้นดาดฟ้า 240 ksc', nameEn: 'Roof Deck Conc. (240 ksc)',        uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2100, costLabor: 400,  category: 'Beam-Slab' },
-  { code: 'BMS-SLOPE',    name: 'คอนกรีตเทปรับสโลปดาดฟ้า', nameEn: 'Slope Adjustment Concrete',          uom: 'm3', uomEn: 'cu.m.',  costMaterial: 1800, costLabor: 300,  category: 'Beam-Slab' },
-  { code: 'BMS-REBAR',    name: 'เหล็กเสริมคาน+พื้น', nameEn: 'Beam/Slab Rebar',               uom: 'kg', uomEn: 'kg',  costMaterial: 23,   costLabor: 5,    category: 'Beam-Slab' },
-  { code: 'BMS-WIRE',     name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire',                     uom: 'kg', uomEn: 'kg',  costMaterial: 35,   costLabor: 0,    category: 'Beam-Slab' },
+  { code: 'BMS-CON',      name: 'คอนกรีตคานดาดฟ้า 240 ksc', nameEn: 'Roof Beam Conc. (240 ksc)',         uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2458, costLabor: 500,  category: 'Beam-Slab' },
+  { code: 'BMS-SLAB-CON', name: 'คอนกรีตพื้นดาดฟ้า 240 ksc', nameEn: 'Roof Deck Conc. (240 ksc)',        uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2458, costLabor: 400,  category: 'Beam-Slab' },
+  { code: 'BMS-SLOPE',    name: 'คอนกรีตเทปรับสโลปดาดฟ้า', nameEn: 'Slope Adjustment Concrete',          uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2437, costLabor: 300,  category: 'Beam-Slab' },
+  { code: 'BMS-REBAR',    name: 'เหล็กเสริมคาน+พื้น', nameEn: 'Beam/Slab Rebar',               uom: 'kg', uomEn: 'kg',  costMaterial: 21,   costLabor: 5,    category: 'Beam-Slab' },
+  { code: 'BMS-WIRE',     name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire',                     uom: 'kg', uomEn: 'kg',  costMaterial: 26,   costLabor: 0,    category: 'Beam-Slab' },
   { code: 'BMS-SPACER',   name: 'ลูกปูน Spacer (คาน+พื้น)', nameEn: 'Concrete Spacer',          uom: 'pcs', uomEn: 'pcs', costMaterial: 5,    costLabor: 0,    category: 'Beam-Slab' },
   { code: 'BMS-FORM',     name: 'ไม้แบบคาน+พื้นดาดฟ้า', nameEn: 'Roof Beam/Deck Formwork',             uom: 'm2', uomEn: 'sq.m.',  costMaterial: 337,  costLabor: 150,  category: 'Beam-Slab' },
   { code: 'BMS-SHORE',    name: 'ไม้ค้ำยันท้องคาน+พื้น', nameEn: 'Beam/Deck Shoring',              uom: 'pcs', uomEn: 'pcs', costMaterial: 150,  costLabor: 50,   category: 'Beam-Slab' },
@@ -218,9 +311,9 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 13 : Staircase / โครงสร้างบันได
   // ═══════════════════════════════════════════════════════════════════════════
-  { code: 'STR-CON',      name: 'คอนกรีตโครงสร้างบันได (240 ksc)', nameEn: 'Stair Concrete (240 ksc)',     uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2000, costLabor: 500,  category: 'Staircase' },
-  { code: 'STR-REBAR',    name: 'เหล็กเสริมบันได', nameEn: 'Stair Rebar',                    uom: 'kg', uomEn: 'kg',  costMaterial: 23,   costLabor: 5,    category: 'Staircase' },
-  { code: 'STR-WIRE',     name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire',                       uom: 'kg', uomEn: 'kg',  costMaterial: 35,   costLabor: 0,    category: 'Staircase' },
+  { code: 'STR-CON',      name: 'คอนกรีตโครงสร้างบันได (240 ksc)', nameEn: 'Stair Concrete (240 ksc)',     uom: 'm3', uomEn: 'cu.m.',  costMaterial: 2458, costLabor: 500,  category: 'Staircase' },
+  { code: 'STR-REBAR',    name: 'เหล็กเสริมบันได', nameEn: 'Stair Rebar',                    uom: 'kg', uomEn: 'kg',  costMaterial: 21,   costLabor: 5,    category: 'Staircase' },
+  { code: 'STR-WIRE',     name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire',                       uom: 'kg', uomEn: 'kg',  costMaterial: 26,   costLabor: 0,    category: 'Staircase' },
   { code: 'STR-SPACER',   name: 'ลูกปูน Spacer ท้องบันได', nameEn: 'Concrete Spacer',            uom: 'pcs', uomEn: 'pcs', costMaterial: 5,    costLabor: 0,    category: 'Staircase' },
   { code: 'STR-FORM',     name: 'ไม้แบบบันได (ท้อง+ข้าง+ลูกตั้ง)', nameEn: 'Stair Formwork',      uom: 'm2', uomEn: 'sq.m.',  costMaterial: 337,  costLabor: 150,  category: 'Staircase' },
   { code: 'STR-SHORE',    name: 'ไม้ค้ำยันท้องบันได+ชานพัก', nameEn: 'Stair Shoring',            uom: 'pcs', uomEn: 'pcs', costMaterial: 150,  costLabor: 50,   category: 'Staircase' },
@@ -271,10 +364,17 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   { code: 'ROF-BIRD',     name: 'แผ่น/หวีปิดกันนก', nameEn: 'Bird Guard/Comb',                  uom: 'm', uomEn: 'm',   costMaterial: 35,   costLabor: 15,  category: 'Roofing' },
 
 
-  // --- Step 17 : Brickwork ---
-  { code: 'BRK-CLAY',     name: 'อิฐมอญ (144 ก้อน/ม²)', nameEn: 'Clay Brick',                uom: 'pcs', uomEn: 'pcs', costMaterial: 1.20, costLabor: 0,   category: 'Brickwork' },
-  { code: 'BRK-AAC',      name: 'อิฐมวลเบา AAC (8.78 ก้อน/ม²)', nameEn: 'AAC Block',       uom: 'pcs', uomEn: 'pcs', costMaterial: 25,   costLabor: 0,   category: 'Brickwork' },
+  // --- Step 17 : Brickwork (ราคากลาง 2568) ---
+  { code: 'BRK-CLAY',     name: 'อิฐมอญ 7×16×3.5 ซม. (144 ก้อน/ม²)', nameEn: 'Clay Brick 7×16×3.5cm',  uom: 'pcs', uomEn: 'pcs', costMaterial: 1.47, costLabor: 0,   category: 'Brickwork' },
+  { code: 'BRK-CLAY-4R',  name: 'อิฐมอญ 4 รู 6.5×11×25 ซม.', nameEn: 'Clay Brick 4-hole',      uom: 'pcs', uomEn: 'pcs', costMaterial: 13,   costLabor: 0,   category: 'Brickwork' },
+  { code: 'BRK-AAC',      name: 'อิฐมวลเบา AAC 7.5 ซม.', nameEn: 'AAC Block 7.5cm',            uom: 'm2', uomEn: 'sq.m.', costMaterial: 204,  costLabor: 80,  category: 'Brickwork' },
+  { code: 'BRK-AAC-10',   name: 'อิฐมวลเบา AAC 10 ซม.', nameEn: 'AAC Block 10cm',              uom: 'm2', uomEn: 'sq.m.', costMaterial: 295,  costLabor: 85,  category: 'Brickwork' },
+  { code: 'BRK-AAC-12',   name: 'อิฐมวลเบา AAC 12.5 ซม.', nameEn: 'AAC Block 12.5cm',          uom: 'm2', uomEn: 'sq.m.', costMaterial: 378,  costLabor: 90,  category: 'Brickwork' },
+  { code: 'BRK-AAC-15',   name: 'อิฐมวลเบา AAC 15 ซม.', nameEn: 'AAC Block 15cm',              uom: 'm2', uomEn: 'sq.m.', costMaterial: 442,  costLabor: 95,  category: 'Brickwork' },
+  { code: 'BRK-AAC-17',   name: 'อิฐมวลเบา AAC 17.5 ซม.', nameEn: 'AAC Block 17.5cm',          uom: 'm2', uomEn: 'sq.m.', costMaterial: 527,  costLabor: 100, category: 'Brickwork' },
+  { code: 'BRK-AAC-20',   name: 'อิฐมวลเบา AAC 20 ซม.', nameEn: 'AAC Block 20cm',              uom: 'm2', uomEn: 'sq.m.', costMaterial: 595,  costLabor: 110, category: 'Brickwork' },
   { code: 'BRK-MORTAR',   name: 'ปูนก่อ', nameEn: 'Masonry Mortar',                             uom: 'm2', uomEn: 'sq.m.', costMaterial: 50,   costLabor: 80,  category: 'Brickwork' },
+  { code: 'BRK-MORTAR-AAC', name: 'ปูนก่อสำเร็จรูปมวลเบา', nameEn: 'AAC Masonry Mortar',       uom: 'kg', uomEn: 'kg',   costMaterial: 2.43, costLabor: 0,   category: 'Brickwork' },
   { code: 'BRK-LINTEL',   name: 'เสาเอ็น-ทับหลัง (รวมคอนกรีต+เหล็ก)', nameEn: 'Lintel/Edge beam',  uom: 'm', uomEn: 'm',  costMaterial: 250,  costLabor: 150, category: 'Brickwork' },
 
   // --- Step 18 : Plastering ---
@@ -282,8 +382,16 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   { code: 'PLS-INT',      name: 'ฉาบผนังภายใน', nameEn: 'Interior Plastering',                       uom: 'm2', uomEn: 'sq.m.', costMaterial: 45,   costLabor: 132, category: 'Plastering' },
   { code: 'PLS-SKIM',     name: 'สกิมโค้ท (Skim Coat)', nameEn: 'Skim Coat',               uom: 'm2', uomEn: 'sq.m.', costMaterial: 30,   costLabor: 28.57, category: 'Plastering' },
 
-  // --- Step 19 : Ceiling ---
-  { code: 'CLG-PANEL',    name: 'แผ่นฝ้าเพดาน', nameEn: 'Ceiling Board',                       uom: 'm2', uomEn: 'sq.m.', costMaterial: 90,   costLabor: 80,  category: 'Ceiling' },
+  // --- Step 19 : Ceiling (ราคากลาง 2568) ---
+  // ยิปซั่มบอร์ด
+  { code: 'CLG-PANEL',         name: 'แผ่นฝ้ายิปซั่ม 9 มม.', nameEn: 'Gypsum Board 9mm',                       uom: 'm2', uomEn: 'sq.m.', costMaterial: 90,   costLabor: 80,  category: 'Ceiling' },
+  { code: 'CLG-PANEL-MOIST',   name: 'แผ่นฝ้ายิปซั่มกันชื้น 9 มม.', nameEn: 'Moisture-Resist Gypsum 9mm',    uom: 'm2', uomEn: 'sq.m.', costMaterial: 120,  costLabor: 80,  category: 'Ceiling' },
+  { code: 'CLG-PANEL-FIRE',    name: 'แผ่นฝ้ายิปซั่มกันไฟ 12 มม.', nameEn: 'Fire-Resist Gypsum 12mm',         uom: 'm2', uomEn: 'sq.m.', costMaterial: 165,  costLabor: 90,  category: 'Ceiling' },
+  // ไฟเบอร์ซีเมนต์
+  { code: 'CLG-FIBER',         name: 'แผ่นฝ้าไฟเบอร์ซีเมนต์ 4 มม.', nameEn: 'Fiber Cement Board 4mm',          uom: 'm2', uomEn: 'sq.m.', costMaterial: 95,   costLabor: 80,  category: 'Ceiling' },
+  { code: 'CLG-FIBER-6',       name: 'แผ่นฝ้าไฟเบอร์ซีเมนต์ 6 มม.', nameEn: 'Fiber Cement Board 6mm',          uom: 'm2', uomEn: 'sq.m.', costMaterial: 115,  costLabor: 80,  category: 'Ceiling' },
+  { code: 'CLG-CALCIUM',       name: 'แผ่นฝ้าแคลเซียมซิลิเกต 6 มม.', nameEn: 'Calcium Silicate Board 6mm',    uom: 'm2', uomEn: 'sq.m.', costMaterial: 140,  costLabor: 85,  category: 'Ceiling' },
+  // โครงคร่าว
   { code: 'CLG-FRAME',    name: 'โครงคร่าว C-line', nameEn: 'Concealed C-line Frame',                   uom: 'm', uomEn: 'm',  costMaterial: 25,   costLabor: 0,   category: 'Ceiling' },
   { code: 'CLG-CORNICE',  name: 'บัวฝ้าเพดาน', nameEn: 'Ceiling Cornice',                        uom: 'm', uomEn: 'm',  costMaterial: 40,   costLabor: 20,  category: 'Ceiling' },
 
@@ -308,13 +416,17 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   { code: 'PRM-ROLLER',   name: 'ลูกกลิ้ง+ถาดรอง+ด้าม', nameEn: 'Paint Roller Kit',              uom: 'set', uomEn: 'set', costMaterial: 120, costLabor: 0,   category: 'Primer' },
   { code: 'PRM-BRUSH',    name: 'พู่กันตัดเส้นขอบ 2-3"', nameEn: 'Paint Brush 2-3"',              uom: 'pcs', uomEn: 'pcs', costMaterial: 35,  costLabor: 0,   category: 'Primer' },
 
-  // --- Step 24 : Aluminium Doors & Windows ---
+  // --- Step 24 : Doors & Windows (ราคากลาง 2568) ---
   { code: 'ALU-DOOR',     name: 'ประตูอลูมิเนียม (ชุด)', nameEn: 'Aluminium Door (Set)',              uom: 'set', uomEn: 'set', costMaterial: 5500, costLabor: 800, category: 'Aluminium' },
   { code: 'ALU-DOOR-A',   name: 'พื้นที่ประตูอลูมิเนียม', nameEn: 'Alu Door Area',              uom: 'm2', uomEn: 'sq.m.',  costMaterial: 0,    costLabor: 0,   category: 'Aluminium' },
   { code: 'ALU-SLIDE',    name: 'ประตูบานเลื่อนอลูมิเนียม (ชุด)', nameEn: 'Alu Sliding Door',     uom: 'set', uomEn: 'set', costMaterial: 8500, costLabor: 1200, category: 'Aluminium' },
   { code: 'ALU-WINDOW',   name: 'หน้าต่างอลูมิเนียม (ชุด)', nameEn: 'Aluminium Window (Set)',           uom: 'set', uomEn: 'set', costMaterial: 3500, costLabor: 500, category: 'Aluminium' },
   { code: 'ALU-WIN-A',    name: 'พื้นที่หน้าต่างอลูมิเนียม', nameEn: 'Alu Window Area',           uom: 'm2', uomEn: 'sq.m.',  costMaterial: 0,    costLabor: 0,   category: 'Aluminium' },
   { code: 'ALU-SEAL',     name: 'ซีลยาแนว PU Sealant', nameEn: 'PU Sealant',              uom: 'm', uomEn: 'm',   costMaterial: 35,   costLabor: 15,  category: 'Aluminium' },
+  // UPVC (ราคากลาง 2568)
+  { code: 'UPVC-WINDOW',  name: 'หน้าต่าง UPVC บานเลื่อน+มุ้ง', nameEn: 'UPVC Sliding Window+Screen', uom: 'set', uomEn: 'set', costMaterial: 1785, costLabor: 500, category: 'Aluminium' },
+  { code: 'UPVC-DOOR-INT', name: 'ประตู UPVC ภายใน 70×200 ซม.', nameEn: 'UPVC Interior Door 70×200',  uom: 'set', uomEn: 'set', costMaterial: 1299, costLabor: 500, category: 'Aluminium' },
+  { code: 'UPVC-DOOR-EXT', name: 'ประตู UPVC ภายนอก 80×200 ซม.', nameEn: 'UPVC Exterior Door 80×200', uom: 'set', uomEn: 'set', costMaterial: 2622, costLabor: 600, category: 'Aluminium' },
 
   // --- Step 25 : Paint Coat 1 ---
   { code: 'PNT-INT',      name: 'สีทับหน้าภายใน (แกลลอน)', nameEn: 'Interior Top Coat',           uom: 'pcs', uomEn: 'gal', costMaterial: 1200, costLabor: 105, category: 'Paint' },
@@ -387,10 +499,14 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   { code: 'SFX-SILI',     name: 'ซิลิโคนยาแนวสุขภัณฑ์', nameEn: 'Sanitary Silicone',               uom: 'pcs', uomEn: 'pcs', costMaterial: 85,    costLabor: 0,    category: 'Sanitary Fix' },
   { code: 'SFX-PTFE',     name: 'เทปพันเกลียว PTFE', nameEn: 'PTFE Thread Tape',                  uom: 'pcs', uomEn: 'pcs', costMaterial: 15,    costLabor: 0,    category: 'Sanitary Fix' },
 
-  // --- Step 31 : Wooden Doors ---
-  { code: 'WDR-DOOR',     name: 'บานประตูไม้ + วงกบ', nameEn: 'Wood Door & Frame',                uom: 'set', uomEn: 'set', costMaterial: 3800,  costLabor: 600,  category: 'Wood Door' },
+  // --- Step 31 : Doors (ราคากลาง 2568) ---
+  { code: 'WDR-DOOR',     name: 'บานประตูไม้เนื้อแข็ง + วงกบ', nameEn: 'Hardwood Door & Frame',       uom: 'set', uomEn: 'set', costMaterial: 3800,  costLabor: 600,  category: 'Wood Door' },
+  { code: 'WDR-DOOR-TEAK', name: 'บานประตูไม้สัก + วงกบ 80×200', nameEn: 'Teak Door & Frame 80×200', uom: 'set', uomEn: 'set', costMaterial: 13000, costLabor: 800, category: 'Wood Door' },
+  { code: 'WDR-DOOR-HDF', name: 'บานประตู HDF ภายใน 80×200', nameEn: 'HDF Interior Door 80×200',   uom: 'set', uomEn: 'set', costMaterial: 522,   costLabor: 400,  category: 'Wood Door' },
+  { code: 'WDR-FRAME',    name: 'วงกบประตูไม้แคมปัส 80×200', nameEn: 'Campas Wood Frame 80×200',  uom: 'วง', uomEn: 'set', costMaterial: 813,  costLabor: 200,  category: 'Wood Door' },
   { code: 'WDR-WINDOW',   name: 'หน้าต่างไม้ + วงกบ', nameEn: 'Wood Window & Frame',                uom: 'set', uomEn: 'set', costMaterial: 2800,  costLabor: 400,  category: 'Wood Door' },
-  { code: 'WDR-HARDWARE', name: 'อุปกรณ์ลูกบิด/บานพับ', nameEn: 'Knob & Hinge Hardware',              uom: 'set', uomEn: 'set', costMaterial: 350,   costLabor: 50,   category: 'Wood Door' },
+  { code: 'WDR-HARDWARE', name: 'ชุดมือจับ Mortise Lock สแตนเลส', nameEn: 'Mortise Lock Set SS', uom: 'set', uomEn: 'set', costMaterial: 1082, costLabor: 50, category: 'Wood Door' },
+  { code: 'WDR-HINGE',    name: 'บานพับลูกปืน 4×3"', nameEn: 'Ball Bearing Hinge 4×3"',      uom: 'ชุด', uomEn: 'set', costMaterial: 279,  costLabor: 30,   category: 'Wood Door' },
   { code: 'WDR-SEAL',     name: 'ซิลิโคน/PU ยาแนวรอบวงกบ', nameEn: 'PU/Silicone Frame Sealant',          uom: 'pcs', uomEn: 'pcs', costMaterial: 85,    costLabor: 20,   category: 'Wood Door' },
   { code: 'WDR-FINISH',   name: 'สีย้อมไม้/แลกเกอร์ (แกลลอน)', nameEn: 'Wood Stain Finish',       uom: 'pcs', uomEn: 'gal', costMaterial: 800,   costLabor: 80,   category: 'Wood Door' },
 
@@ -436,9 +552,9 @@ export type ConcreteGrade = '180' | '210' | '240' | '280' | '320';
  * Labor cost stays the same regardless of grade.
  */
 export const CONCRETE_GRADE_COST: Record<ConcreteGrade, number> = {
-    '180': 1800,
-    '210': 1950,
-    '240': 2100,
-    '280': 2350,
-    '320': 2600,
+    '180': 2437,   // ราคากลาง CPAC 2568
+    '210': 2422,   // ราคากลาง CPAC 2568
+    '240': 2458,   // ราคากลาง CPAC 2568
+    '280': 2495,   // ราคากลาง CPAC 2568
+    '320': 2567,   // ราคากลาง CPAC 2568
 };

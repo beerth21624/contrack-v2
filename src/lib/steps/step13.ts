@@ -1,6 +1,9 @@
 import { type StepResult } from '@/types';
 import { r2 } from './helpers';
-import { type ConcreteGrade } from '@/data/price-list';
+import { 
+    computeStructuralQuantities, 
+    StructuralSpecParams 
+} from '@/lib/engines/structural-engine';
 
 // ─── Step 13 Contract ────────────────────────────────────────────────────────
 /** โครงสร้างบันได (Staircase Structure) — input fields */
@@ -12,6 +15,7 @@ export interface Step13Input {
   steps_per_flight: number;              // จำนวนขั้นบันไดต่อช่วง
   rebar_kg_per_m3: number;               // เหล็กต่อ ม³ default 100–150
   waste_percent: number;                 // default 5
+  structural_spec?: StructuralSpecParams; // Core specs 
   // optional — basic
   landing_area_m2?: number;              // พื้นที่ชานพัก (landing) รวม ม²
   // ─── cost-related (ใหม่) ────────────────────────────────
@@ -26,7 +30,6 @@ export interface Step13Input {
   vibrator_days?: number;                // เครื่องจี้
   curing_method?: 'water' | 'plastic' | 'compound';
   direct_rebar_kg?: number;              // น้ำหนักเหล็กตรงจาก Bar Schedule (bypass ratio)
-  concrete_grade?: ConcreteGrade;        // default '240'
 }
 
 // ─── STEP 13 — โครงสร้างบันได ───────────────────────────────────────────────
@@ -51,20 +54,52 @@ export function calcStep13(inp: Step13Input): StepResult {
   const landingThick = inp.landing_thickness_m ?? 0.15;
   const landingVol = landingArea * landingThick;
 
-  const totalConcVol = r2((n * flightVol + landingVol) * wf);
-
-  const quantities: StepResult['quantities'] = {
-    concrete_volume: { qty: totalConcVol, uom: 'm³', label: `คอนกรีตบันได ${inp.concrete_grade ?? '240'} ksc (รวมชานพัก, waste ${waste_percent}%)` },
-  };
+  const totalConcVolNet = n * flightVol + landingVol;
 
   // ─── ไม้แบบ ──────────────────────────────────────────────
   // ไม้แบบ = ท้องบันได + ท้องชานพัก + ลูกตั้ง + ข้างบันได
-  const fwBottom = (n * flightLen * w) + landingArea; // ท้องบันได + ชานพัก
-  const fwRiser = n * (s * r * w); // ไม้แบบลูกตั้ง
-  const fwSides = n * 2 * ((flightLen * waist) + (0.5 * g * r * s)); // ข้างบันได (2 ด้าน)
-  const fwTotal = r2((fwBottom + fwRiser + fwSides) * wf);
-  
-  quantities.formwork_area = { qty: fwTotal, uom: 'm²', label: 'ไม้แบบบันได (ท้อง + ลูกตั้ง + ข้าง)' };
+  const fwBottomNet = (n * flightLen * w) + landingArea; // ท้องบันได + ชานพัก
+  const fwRiserNet = n * (s * r * w); // ไม้แบบลูกตั้ง
+  const fwSidesNet = n * 2 * ((flightLen * waist) + (0.5 * g * r * s)); // ข้างบันได (2 ด้าน)
+  const fwTotalNet = fwBottomNet + fwRiserNet + fwSidesNet;
+
+  // ─── เหล็กเสริม ─────────────────────────────────────────
+  const rebarKgPer = inp.rebar_kg_per_m3;
+  const rebarTotalNet = inp.direct_rebar_kg
+    ? r2(inp.direct_rebar_kg)
+    : r2(totalConcVolNet * rebarKgPer);
+
+  // ─── Structural Engine ──────────────
+  const specParams: StructuralSpecParams = inp.structural_spec ?? {
+    ksc: 240,
+    waterproof: false,
+    workLevel: '1FL',
+    formworkType: 'BLDG',
+  };
+  specParams.concrete_waste_percent = waste_percent;
+  specParams.formworkType = 'BLDG';
+
+  const strRes = computeStructuralQuantities({
+    concrete_volume_m3: totalConcVolNet,
+    formwork_area_m2: fwTotalNet,
+    rebar_weight_kg: rebarTotalNet,
+  }, specParams);
+
+  const quantities: StepResult['quantities'] = {
+    concrete_volume: { qty: r2(strRes.conc_gross_m3), uom: 'm³', label: `คอนกรีตบันได ${specParams.ksc} ksc (รวมชานพัก)`, sku: strRes.conc_sku },
+    pour_labor: { qty: r2(strRes.pour_labor_m3), uom: 'm³', label: `ค่าแรงเทคอนกรีตบันได`, sku: strRes.pour_labor_sku },
+    formwork_area: { qty: r2(strRes.fw_area_m2), uom: 'm²', label: 'ไม้แบบบันได (ท้อง + ลูกตั้ง + ข้าง)', sku: strRes.fw_sku },
+    rebar_kg: {
+      qty: r2(strRes.rb_gross_kg),
+      uom: 'kg',
+      label: inp.direct_rebar_kg ? 'เหล็กเสริมบันได (จาก Bar Schedule)' : `เหล็กเสริมบันได (${rebarKgPer} kg/m³)`
+    },
+    tie_wire: { qty: r2(strRes.rb_wire_kg), uom: 'kg', label: `ลวดผูกเหล็ก`, sku: 'RB-WIRE' },
+  };
+
+  if (strRes.conc_admix_wp_m3) {
+      quantities.waterproof_admix = { qty: r2(strRes.conc_admix_wp_m3), uom: 'm³', label: `น้ำยากันซึม`, sku: 'CON-ADMIX-WP' };
+  }
 
   // ─── นั่งร้านค้ำยัน ────────────────────────────────────────
   // ค้ำยันใช้ใต้ท้องบันไดและชานพัก
@@ -72,24 +107,9 @@ export function calcStep13(inp: Step13Input): StepResult {
   const shoreArea = (n * flatFlightLen * w) + landingArea; // พื้นที่ฉายราบ
   quantities.shoring = { qty: Math.ceil(shoreArea * 1.5 * (h / 3.0)), uom: 'pcs', label: `ไม้ค้ำยันท้องบันได (สูงเฉลี่ย ${r2(h / 2)} ม.)` };
 
-  // ─── เหล็กเสริม ─────────────────────────────────────────
-  const rebarKgPer = inp.rebar_kg_per_m3;
-  const rebarTotal = inp.direct_rebar_kg
-    ? r2(inp.direct_rebar_kg)
-    : r2(totalConcVol * rebarKgPer);
-  quantities.rebar_kg = {
-    qty: rebarTotal,
-    uom: 'kg',
-    label: inp.direct_rebar_kg ? 'เหล็กเสริมบันได (จาก Bar Schedule)' : `เหล็กเสริมบันได (${rebarKgPer} kg/m³)`,
-  };
-
-  // ─── ลวดผูกเหล็ก ────────────────────────────────────────
-  const tieWire = inp.tie_wire_factor ?? 1.5;
-  quantities.tie_wire = { qty: r2(rebarTotal * tieWire / 100), uom: 'kg', label: `ลวดผูกเหล็ก (${tieWire}%)` };
-
   // ─── Spacer ──────────────────────────────────────────────
   const spacerPerM2 = inp.spacer_per_m2 ?? 4;
-  quantities.spacer = { qty: Math.ceil(fwBottom * spacerPerM2), uom: 'pcs', label: `Spacer ท้องบันได (~${spacerPerM2}/ม²)` };
+  quantities.spacer = { qty: Math.ceil(fwBottomNet * spacerPerM2), uom: 'pcs', label: `Spacer ท้องบันได (~${spacerPerM2}/ม²)`, sku: 'RB-SPACER' };
 
   // ─── จมูกบันไดกันลื่น (Nosing) ──────────────────────────
   if (inp.nosing_required == false) {
@@ -100,17 +120,17 @@ export function calcStep13(inp: Step13Input): StepResult {
 
   // ─── ปั๊มคอนกรีต ────────────────────────────────────────
   if (inp.concrete_pump_required) {
-    quantities.concrete_pump = { qty: Math.max(1, Math.ceil(totalConcVol / 30)), uom: 'วัน', label: 'ปั๊มคอนกรีต' };
+    quantities.concrete_pump = { qty: Math.max(1, Math.ceil(strRes.conc_gross_m3 / 30)), uom: 'วัน', label: 'ปั๊มคอนกรีต', sku: 'COL-PUMP' };
   }
 
   // ─── เครื่องจี้ ──────────────────────────────────────────
   const vibDays = inp.vibrator_days ?? 1;
-  quantities.vibrator = { qty: vibDays, uom: 'วัน', label: 'เครื่องจี้คอนกรีต' };
+  quantities.vibrator = { qty: vibDays, uom: 'วัน', label: 'เครื่องจี้คอนกรีต', sku: 'COL-VIBRATOR' };
 
   // ─── บ่ม ──────────────────────────────────────────────────
   const curing = inp.curing_method ?? 'water';
   if (curing === 'plastic' || curing === 'compound') {
-    quantities.curing = { qty: r2(fwBottom * 1.1), uom: 'm²', label: 'บ่มคอนกรีตบันได' };
+    quantities.curing = { qty: r2(fwBottomNet * 1.1), uom: 'm²', label: 'บ่มคอนกรีตบันได', sku: 'COL-CURING' };
   }
 
   // ─── Warnings ─────────────────────────────────────────────
@@ -126,7 +146,7 @@ export function calcStep13(inp: Step13Input): StepResult {
 
     if (inp.rebar_kg_per_m3 < 120) warnings.push('ปริมาณเหล็กเสริมน้อยกว่า 120 kg/m³ บันไดถือเป็นโครงสร้างที่รับแรงกระทำแบบไดนามิก (แรงกระแทกจากการเดินลงน้ำหนัก) ถ้าระบุเหล็กน้อยเกินไป บันไดจะสูญเสียเสถียรภาพและเกิดการแอ่นตัว');
 
-    if (totalConcVol > 5 && inp.concrete_pump_required) warnings.push('ปริมาณคอนกรีตเกิน 5 ม³ การให้คนงานหิ้วถังเทบันไดจะสูญเสียวัสดุ และคอนกรีตอาจถอดรอยต่อเย็น (Cold Joint) (Cold Joint) ควรพิจารณาใช้ปั๊มเทจากบนลงล่าง');
+    if (totalConcVolNet * wf > 5 && inp.concrete_pump_required) warnings.push('ปริมาณคอนกรีตเกิน 5 ม³ การให้คนงานหิ้วถังเทบันไดจะสูญเสียวัสดุ และคอนกรีตอาจถอดรอยต่อเย็น (Cold Joint) ควรพิจารณาใช้ปั๊มเทจากบนลงล่าง');
 
     if (waste_percent < 10) warnings.push('งานเทบันได คอนกรีตมักจะหกล้นออกทางลูกตั้งและร่วงลงพื้นล่าง แนะนำให้เผื่อ Waste อย่างน้อย 10%');
   }

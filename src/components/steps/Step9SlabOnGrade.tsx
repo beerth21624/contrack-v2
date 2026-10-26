@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useMemo, useCallback } from "react";
-import { Form, InputNumber, Select, Switch, Typography, Card } from 'antd';
+import { Form, InputNumber, Select, Switch, Typography, Card, Collapse } from 'antd';
 import { StepFormShell } from '../StepFormShell';
+import { StructuralSpecForm } from '../shared/StructuralSpecForm';
 import { type Step9Input, type StepResult } from '@/types';
 import { calcStep9 } from '@/lib/steps';
 import { useTranslations } from 'next-intl';
@@ -56,30 +57,43 @@ export const Step9SlabOnGrade: React.FC<Props> = ({ onBack, onSave, initialData 
                 </div>
             </Card>
 
-            <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('globalParams')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-                    <Form.Item required layout="vertical" 
-                        label={<Text style={{ fontSize: 13 }}>{t('sandThick')}</Text>} 
-                        tooltip={t('sandThickTooltip')} 
-                        style={{ margin: 0 }}
-                    >
-                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.01} precision={3}
-                            value={inp.sand_fill_thickness_m} onChange={v => update({ sand_fill_thickness_m: v ?? 0 })} />
-                    </Form.Item>
-                    <Form.Item required layout="vertical" 
-                        label={<Text style={{ fontSize: 13 }}>{t('plasticFactor')}</Text>} 
-                        tooltip={t('plasticFactorTooltip')} 
-                        style={{ margin: 0 }}
-                    >
-                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={1.5} step={0.01} precision={2}
-                            value={inp.plastic_sheet_area_factor} onChange={v => update({ plastic_sheet_area_factor: v ?? 1.10 })} />
-                    </Form.Item>
-                    <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wasteConc')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
-                            value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
-                    </Form.Item>
-                </div>
-            </Card>
+            <Collapse size="small" defaultActiveKey={[]} items={[{
+                key: 'advanced', label: <span className="text-gray-500 font-medium">⚙️ ตั้งค่าขั้นสูง (สเปคคอนกรีต / เผื่อสูญเสีย)</span>, children: (
+                    <div className="flex flex-col gap-4">
+                        <StructuralSpecForm 
+                            spec={inp.structural_spec ?? { ksc: 240, waterproof: false, workLevel: 'GRND' }}
+                            onChange={patch => update({ structural_spec: { ...inp.structural_spec, ...patch } as any })}
+                            fixedWorkLevel="GRND"
+                            hideWaterproof={false}
+                        />
+
+                        <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('globalParams')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                                <Form.Item required layout="vertical" 
+                                    label={<Text style={{ fontSize: 13 }}>{t('sandThick')}</Text>} 
+                                    tooltip={t('sandThickTooltip')} 
+                                    style={{ margin: 0 }}
+                                >
+                                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.01} precision={3}
+                                        value={inp.sand_fill_thickness_m} onChange={v => update({ sand_fill_thickness_m: v ?? 0 })} />
+                                </Form.Item>
+                                <Form.Item required layout="vertical" 
+                                    label={<Text style={{ fontSize: 13 }}>{t('plasticFactor')}</Text>} 
+                                    tooltip={t('plasticFactorTooltip')} 
+                                    style={{ margin: 0 }}
+                                >
+                                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={1.5} step={0.01} precision={2}
+                                        value={inp.plastic_sheet_area_factor} onChange={v => update({ plastic_sheet_area_factor: v ?? 1.10 })} />
+                                </Form.Item>
+                                <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wasteConc')}</Text>} style={{ margin: 0 }}>
+                                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
+                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
+                                </Form.Item>
+                            </div>
+                        </Card>
+                    </div>
+                )
+            }]} />
         </div>
     );
 

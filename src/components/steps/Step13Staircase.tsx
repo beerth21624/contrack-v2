@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useMemo, useCallback } from "react";
-import { Form, InputNumber, Select, Switch, Typography, Card } from 'antd';
+import { Form, InputNumber, Select, Switch, Typography, Card, Collapse } from 'antd';
 import { StepFormShell } from '../StepFormShell';
 import { type Step13Input, type StepResult } from '@/types';
 import { calcStep13 } from '@/lib/steps';
+import { StructuralSpecForm } from '../shared/StructuralSpecForm';
 import { useTranslations } from 'next-intl';
 
 const { Text } = Typography;
@@ -84,26 +85,38 @@ export default function Step13Staircase({ initialData, onBack, onSave }: Props) 
                 </Form.Item>
             </Card>
 
-            <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('landingMaterial')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
-                <Form.Item required layout="vertical" 
-                    label={<Text style={{ fontSize: 13 }}>{t('landingArea')}</Text>} 
-                    tooltip={t('landingAreaTooltip')} 
-                    style={{ margin: 0, marginBottom: 12 }}
-                >
-                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.5} precision={2}
-                        value={inp.landing_area_m2} onChange={v => update({ landing_area_m2: v ?? 0 })} />
-                </Form.Item>
-                <div className="grid grid-cols-2 gap-2">
-                    <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('rebarDensity')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={250} step={10}
-                            value={inp.rebar_kg_per_m3} onChange={v => update({ rebar_kg_per_m3: v ?? 120 })} />
-                    </Form.Item>
-                    <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
-                            value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
-                    </Form.Item>
-                </div>
-            </Card>
+            <Collapse size="small" defaultActiveKey={[]} items={[{
+                key: 'advanced', label: <span className="text-gray-500 font-medium">⚙️ ตั้งค่าขั้นสูง (สเปคคอนกรีต / ชานพัก)</span>, children: (
+                    <div className="flex flex-col gap-4">
+                        <StructuralSpecForm 
+                            spec={inp.structural_spec ?? { ksc: 240, waterproof: false, workLevel: '1FL' }}
+                            onChange={patch => update({ structural_spec: { ...inp.structural_spec, ...patch } as any })}
+                            fixedWorkLevel="1FL"
+                        />
+
+                        <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('landingMaterial')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
+                            <Form.Item required layout="vertical" 
+                                label={<Text style={{ fontSize: 13 }}>{t('landingArea')}</Text>} 
+                                tooltip={t('landingAreaTooltip')} 
+                                style={{ margin: 0, marginBottom: 12 }}
+                            >
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} step={0.5} precision={2}
+                                    value={inp.landing_area_m2} onChange={v => update({ landing_area_m2: v ?? 0 })} />
+                            </Form.Item>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('rebarDensity')}</Text>} style={{ margin: 0 }}>
+                                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={250} step={10}
+                                        value={inp.rebar_kg_per_m3} onChange={v => update({ rebar_kg_per_m3: v ?? 120 })} />
+                                </Form.Item>
+                                <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
+                                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
+                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
+                                </Form.Item>
+                            </div>
+                        </Card>
+                    </div>
+                )
+            }]} />
         </div>
     );
 

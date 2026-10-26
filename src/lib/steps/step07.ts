@@ -1,6 +1,10 @@
 import { type StepResult } from '@/types';
 import { r2 } from './helpers';
 import { type ConcreteGrade } from '@/data/price-list';
+import { 
+    computeStructuralQuantities, 
+    StructuralSpecParams 
+} from '@/lib/engines/structural-engine';
 
 // ─── Step 7 Contract ─────────────────────────────────────────────────────────
 /** เสาตอม่อแต่ละ Type (เช่น P1, P2 จากแบบขยาย) */
@@ -16,6 +20,7 @@ export interface PedestalEntry {
 export interface Step7Input {
   pedestals: PedestalEntry[];          // รายการตอม่อแต่ละ Type
   waste_percent: number;               // default 5
+  structural_spec?: StructuralSpecParams; // Core specs
   // optional
   rebar_weight_kg_per_m3?: number;     // 100–180
   formwork_factor?: number;            // m²/ต้น (override)
@@ -28,13 +33,12 @@ export interface Step7Input {
   curing_method?: 'water' | 'plastic' | 'compound';
   formwork_reuse_times?: number;       // default 3
   direct_rebar_kg?: number;            // น้ำหนักเหล็กตรงจาก Bar Schedule (bypass ratio)
-  concrete_grade?: ConcreteGrade;      // default '240'
+  concrete_grade?: ConcreteGrade;      // @deprecated Legacy
 }
 
 // ─── STEP 7 — เสาตอม่อ ───────────────────────────────────────────────────────
 export function calcStep7(inp: Step7Input): StepResult {
   const { pedestals, waste_percent } = inp;
-  const wf = 1 + waste_percent / 100;
   const reuse = Math.max(1, inp.formwork_reuse_times ?? 3);
 
   let totalN = 0;
@@ -56,50 +60,84 @@ export function calcStep7(inp: Step7Input): StepResult {
     totalSurfaceArea += n * (2 * (W + L) * H + W * L); // ข้าง + หน้า
   }
 
-  const concrete_volume = r2(totalConcreteVol * wf);
+  // ─── Structural Engine Hook ────────────────────────────────
+  const kscMapping: Record<string, number> = { '180': 180, '210': 210, '240': 240, '280': 280, '300': 300, '320': 320, '350': 350 };
+  const legacyKsc = inp.concrete_grade ? (kscMapping[inp.concrete_grade] ?? 240) : 240;
+  
+  const specParams: StructuralSpecParams = inp.structural_spec ?? {
+    ksc: legacyKsc,
+    waterproof: false,
+    workLevel: '1FL',
+    formworkType: 'BLDG',
+  };
+
+  // Set explicit overrides for Stump
+  specParams.workLevel = '1FL'; // ตอม่อถือเป็นงานเทระดับชั้นล่างเริ่มคิดราคาอาคาร
+  specParams.formworkType = 'BLDG'; 
+  specParams.concrete_waste_percent = waste_percent;
+
+  // Rebar computation
+  let totalRebarKg = 0;
+  if (inp.direct_rebar_kg) {
+    totalRebarKg = inp.direct_rebar_kg;
+  } else if (inp.rebar_weight_kg_per_m3) {
+    totalRebarKg = totalConcreteVol * inp.rebar_weight_kg_per_m3;
+  }
+
+  const strRes = computeStructuralQuantities({
+    concrete_volume_m3: totalConcreteVol,
+    formwork_area_m2: totalFormwork,
+    rebar_weight_kg: totalRebarKg,
+  }, specParams);
 
   const typeSummary = pedestals.map(p => `${p.label} ${p.count} ต้น`).join(', ');
 
   const quantities: StepResult['quantities'] = {
-    concrete_volume: { qty: concrete_volume, uom: 'm³', label: `คอนกรีต ${inp.concrete_grade ?? '240'} ksc (${typeSummary})` },
-    formwork_m2: { qty: r2(totalFormwork), uom: 'm²', label: `ไม้แบบ (ใช้ซ้ำ ${reuse} ครั้ง)` },
+    // Core engine mapped
+    concrete_volume: { qty: r2(strRes.conc_gross_m3), uom: 'm³', label: `คอนกรีตเสาตอม่อ ${specParams.ksc} ksc (${typeSummary})`, sku: strRes.conc_sku },
+    pour_labor:      { qty: r2(strRes.pour_labor_m3), uom: 'm³', label: `ค่าแรงเทคอนกรีต เสาตอม่อ`, sku: strRes.pour_labor_sku },
+    formwork_m2:     { qty: r2(strRes.fw_area_m2),    uom: 'm²', label: `ไม้แบบตอม่อ (ใช้ซ้ำ ${reuse} ครั้ง)`, sku: strRes.fw_sku },
   };
 
-  // ─── เหล็กเสริม ─────────────────────────────────────────
-  let totalRebarKg = 0;
-  if (inp.direct_rebar_kg) {
-    totalRebarKg = inp.direct_rebar_kg;
-    quantities.rebar_kg = { qty: r2(totalRebarKg), uom: 'kg', label: 'เหล็กเสริมรวม (จาก Bar Schedule)' };
-  } else if (inp.rebar_weight_kg_per_m3) {
-    totalRebarKg = totalConcreteVol * inp.rebar_weight_kg_per_m3;
-    quantities.rebar_kg = { qty: r2(totalRebarKg), uom: 'kg', label: `เหล็กเสริมรวม (${inp.rebar_weight_kg_per_m3} kg/m³)` };
+  if (strRes.conc_admix_wp_m3) {
+    quantities.waterproof_admix = { qty: r2(strRes.conc_admix_wp_m3), uom: 'm³', label: `น้ำยากันซึมผสมคอนกรีต`, sku: 'CON-ADMIX-WP' };
   }
 
   // Dowel bar
   if (inp.main_bar_count) {
     const dowel_len = inp.dowel_bar_length_m ?? 0.60;
-    quantities.dowel_bar = { qty: r2(totalN * inp.main_bar_count * dowel_len), uom: 'm', label: `Dowel bar ยื่นรอเสาชั้น 1 (${inp.main_bar_count} เส้น × ${dowel_len} ม.)` };
+    quantities.dowel_bar = { qty: r2(totalN * inp.main_bar_count * dowel_len), uom: 'm', label: `Dowel bar ยื่นรอเสาชั้น 1 (${inp.main_bar_count} เส้น × ${dowel_len} ม.)`, sku: 'PDS-DOWEL' };
   }
 
-  // ─── ลวดผูก ──────────────────────────────────────────────
+  // ─── เหล็กเสริม ─────────────────────────────────────────
   if (totalRebarKg > 0) {
-    const tieWireFactor = inp.tie_wire_factor ?? 1.5;
-    quantities.tie_wire = { qty: r2(totalRebarKg * tieWireFactor / 100), uom: 'kg', label: `ลวดผูกเหล็ก (${tieWireFactor}%)` };
+    quantities.rebar_kg = { qty: r2(strRes.rb_gross_kg), uom: 'kg', label: `เหล็กเสริมเสาตอม่อ ${inp.direct_rebar_kg ? '(ตาม BS)' : `(${inp.rebar_weight_kg_per_m3} kg/m³)`}`, sku: 'PDS-REBAR' };
+    
+    // Tie Wire
+    if (inp.tie_wire_factor !== undefined) {
+        const tieWire = r2(strRes.rb_gross_kg * inp.tie_wire_factor / 100);
+        quantities.tie_wire = { qty: tieWire, uom: 'kg', label: `ลวดผูกเหล็ก (${inp.tie_wire_factor}%)`, sku: 'RB-WIRE' };
+    } else {
+        quantities.tie_wire = { qty: r2(strRes.rb_wire_kg), uom: 'kg', label: `ลวดผูกเหล็ก ทั่วไป`, sku: 'RB-WIRE' };
+    }
   }
 
   // ─── Spacer ──────────────────────────────────────────────
-  const spacerCount = inp.spacer_per_pedestal ?? 4;
-  quantities.spacer = { qty: totalN * spacerCount, uom: 'pcs', label: `Spacer (${spacerCount}/ต้น)` };
+  if (inp.spacer_per_pedestal !== undefined) {
+      quantities.spacer = { qty: totalN * inp.spacer_per_pedestal, uom: 'pcs', label: `Spacer (${inp.spacer_per_pedestal}/ต้น)`, sku: 'RB-SPACER' };
+  } else if (totalSurfaceArea > 0) {
+      quantities.spacer = { qty: strRes.rb_spacer_pcs, uom: 'pcs', label: `Spacer ทั่วไป`, sku: 'RB-SPACER' };
+  }
 
   // ─── ปั๊ม / จี้ / บ่ม ─────────────────────────────────────
   if (inp.concrete_pump_required) {
-    quantities.concrete_pump = { qty: Math.max(1, Math.ceil(concrete_volume / 30)), uom: 'วัน', label: 'ปั๊มคอนกรีต' };
+    quantities.concrete_pump = { qty: Math.max(1, Math.ceil(strRes.conc_gross_m3 / 30)), uom: 'วัน', label: 'ปั๊มคอนกรีต', sku: 'PDS-PUMP' };
   }
-  quantities.vibrator = { qty: inp.vibrator_days ?? Math.max(1, Math.ceil(totalN / 15)), uom: 'วัน', label: 'เครื่องจี้คอนกรีต' };
+  quantities.vibrator = { qty: inp.vibrator_days ?? Math.max(1, Math.ceil(totalN / 15)), uom: 'วัน', label: 'เครื่องจี้คอนกรีต', sku: 'PDS-VIBRATOR' };
 
   const curing = inp.curing_method ?? 'water';
   if (curing === 'plastic' || curing === 'compound') {
-    quantities.curing = { qty: r2(totalSurfaceArea * 1.1), uom: 'm²', label: curing === 'plastic' ? 'พลาสติกปิดบ่ม' : 'น้ำยาบ่ม' };
+    quantities.curing = { qty: r2(totalSurfaceArea * 1.1), uom: 'm²', label: curing === 'plastic' ? 'พลาสติกปิดบ่ม' : 'น้ำยาบ่ม', sku: 'PDS-CURING' };
   }
 
   // ─── Warnings ─────────────────────────────────────────────

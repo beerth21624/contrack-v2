@@ -159,6 +159,7 @@
     "pileTypeTooltip": "Refer to structural engineering general notes",
     "typeDriven": "Driven Pile",
     "typeBored": "Bored Pile",
+    "typeMini": "Mini Pile (Short Pile)",
     "pileCount": "Total Pile Count",
     "pileCountTooltip": "Total count based on piling layout plan",
     "pileLength": "Pile Length/Depth (m)",
@@ -174,6 +175,11 @@
     "secI30": "I-Shape 30x30 cm (I-30)",
     "secI35": "I-Shape 35x35 cm (I-35)",
     "secI40": "I-Shape 40x40 cm (I-40)",
+    "pileShape": "Pile Shape",
+    "shapeSquare": "Square Pile (Prestressed)",
+    "shapeSpun": "Spun Pile (Round)",
+    "spunDia": "Spun Pile Diameter (cm)",
+    "spunDiaPh": "Select Diameter",
     "cutHead": "Pile Head Chipping",
     "cutHeadYes": "Required",
     "cutHeadNo": "Not Required",
@@ -205,7 +211,14 @@
     "testDynamic": "Dynamic PDA Load Test",
     "testStatic": "Static Load Test",
     "seismicTestCount": "Seismic Test Quantity",
-    "seismicTestCountPh": "Integrity Test Count"
+    "seismicTestCountPh": "Integrity Test Count",
+    "miniType": "Mini Pile Type",
+    "miniType15": "Square 15×15 cm",
+    "miniTypeCpac": "CPAC 10×12 cm",
+    "miniLength": "Pile Length (m)",
+    "soilBoring": "Soil Boring Test (holes)",
+    "soilBoringTooltip": "Soil investigation before piling. Recommended for all new construction to determine correct pile length.",
+    "soilBoringPh": "Standard: 1-2 holes per project"
   },
   "step6": {
     "footingFormula": "{count} ea. × {l}×{w}×{t} m = {vol} m³",
@@ -694,7 +707,9 @@
     "wasteTooltip": "Typically 10-15% for clay bricks and 5-10% for AAC blocks",
     "stiffenersLintels": "Stiffeners & Lintels",
     "lintelLength": "Total Lintel/Stiffener Length (m)",
-    "lintelTooltip": "Concrete perimeters for doors/windows and wide walls to prevent cracking"
+    "lintelTooltip": "Concrete perimeters for doors/windows and wide walls to prevent cracking",
+    "aacThickness": "AAC Block Thickness (cm)",
+    "aacThicknessTooltip": "Select thickness per structural specification. 7.5 cm for partitions, 10 cm for bathrooms, 15+ cm for exterior or load-bearing walls."
   },
   "step18": {
     "defaultRooms": {
@@ -750,8 +765,11 @@
     "optionsWaste": "Options & Waste",
     "ceilingType": "Ceiling Board Type",
     "typeGypsum": "Gypsum Board 9mm",
-    "typeFiber": "Fiber Cement 4mm",
-    "typeCalcium": "Calcium Silicate 6mm",
+    "typeGypsumMoist": "Moisture-Resist Gypsum 9mm",
+    "typeGypsumFire": "Fire-Resist Gypsum 12mm",
+    "typeFiber": "Fiber Cement Board 4mm",
+    "typeFiber6": "Fiber Cement Board 6mm",
+    "typeCalcium": "Calcium Silicate Board 6mm",
     "waste": "Ceiling Board Waste (%)",
     "cornice": "Cornice Length (m)",
     "corniceTooltip": "If left blank, auto-calculated from perimeter of all rooms"

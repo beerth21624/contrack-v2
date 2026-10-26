@@ -93,6 +93,35 @@ export function makeRowGrade(
     };
 }
 
+/**
+ * Helper to dynamically map concrete quantities.
+ * If the SKU is 'CON-MANUAL', it explodes into 4 constituent raw materials (Cement, Sand, Stone, Mix Labor).
+ * Normal SKUs return the standard single row.
+ */
+function explodeConcreteRows(
+    priceList: PriceItem[],
+    qtyObj: { sku?: string; qty?: number } | undefined,
+    defaultSku: string,
+    baseWbs: string
+): (SectionRow | null)[] {
+    if (!qtyObj || (qtyObj.qty ?? 0) <= 0) return [];
+    
+    const sku = qtyObj.sku ?? defaultSku;
+    const vol = qtyObj.qty ?? 0;
+    
+    if (sku === 'CON-MANUAL') {
+        // Manual mix 1:2:4 ratio per 1 cubic meter
+        return [
+            makeRow(priceList, 'CON-MIX-CEMENT', vol * 7,    `${baseWbs}.1`),
+            makeRow(priceList, 'CON-MIX-SAND',   vol * 0.55, `${baseWbs}.2`),
+            makeRow(priceList, 'CON-MIX-STONE',  vol * 1.05, `${baseWbs}.3`),
+            makeRow(priceList, 'LAB-MIX-CONC',   vol,        `${baseWbs}.4`),
+        ];
+    }
+    
+    return [makeRow(priceList, sku, vol, baseWbs)];
+}
+
 export function buildBOQSections(
     stepSaves: Record<number, { inp?: unknown; res: StepResult } | undefined>,
     priceList: PriceItem[]
@@ -185,158 +214,220 @@ const build = (
             build(5, 'งานเสาเข็ม', 'Piling Works', () => {
                 const q = stepSaves[5]?.res.quantities;
                 return q ? [
+                    // ── I-Shape Square Piles (by meter) ──
                     makeRow(priceList, 'PILE-I15',       q.pile_i15?.qty ?? 0,                 '5.1.1'),
                     makeRow(priceList, 'PILE-I18',       q.pile_i18?.qty ?? 0,                 '5.1.2'),
-                    makeRow(priceList, 'PILE-I22',       q.pile_i22?.qty ?? 0,                 '5.1.3'),
-                    makeRow(priceList, 'PILE-I26',       q.pile_i26?.qty ?? 0,                 '5.1.4'),
-                    makeRow(priceList, 'PILE-I30',       q.pile_i30?.qty ?? 0,                 '5.1.5'),
-                    makeRow(priceList, 'PILE-I35',       q.pile_i35?.qty ?? 0,                 '5.1.6'),
-                    makeRow(priceList, 'PILE-I40',       q.pile_i40?.qty ?? 0,                 '5.1.7'),
-                    makeRow(priceList, 'PILE-BRD-CON',   q.total_volume?.qty ?? 0,             '5.2'),
-                    makeRow(priceList, 'PILE-MACHINE',   q.machine_days?.qty ?? 0,       '5.3'),
-                    makeRow(priceList, 'PILE-TRANSPORT',  q.transport_trips?.qty ?? 0,    '5.4'),
-                    makeRow(priceList, 'PILE-CUT',       q.pile_head_cut?.qty ?? 0,      '5.5'),
-                    makeRow(priceList, 'PILE-CAGE',      q.rebar_cage?.qty ?? 0,         '5.6'),
-                    makeRow(priceList, 'PILE-BENTO',     q.bentonite?.qty ?? 0,          '5.7'),
-                    makeRow(priceList, 'PILE-LOADTEST',  q.load_test?.qty ?? 0,          '5.8'),
-                    makeRow(priceList, 'PILE-SEISMIC',   q.seismic_test?.qty ?? 0,       '5.9'),
+                    makeRow(priceList, 'PILE-I20',       q.pile_i20?.qty ?? 0,                 '5.1.3'),
+                    makeRow(priceList, 'PILE-I22',       q.pile_i22?.qty ?? 0,                 '5.1.4'),
+                    makeRow(priceList, 'PILE-I26',       q.pile_i26?.qty ?? 0,                 '5.1.5'),
+                    makeRow(priceList, 'PILE-I30',       q.pile_i30?.qty ?? 0,                 '5.1.6'),
+                    makeRow(priceList, 'PILE-I35',       q.pile_i35?.qty ?? 0,                 '5.1.7'),
+                    makeRow(priceList, 'PILE-I40',       q.pile_i40?.qty ?? 0,                 '5.1.8'),
+                    makeRow(priceList, 'PILE-I45',       q.pile_i45?.qty ?? 0,                 '5.1.9'),
+                    makeRow(priceList, 'PILE-I525',      q.pile_i525?.qty ?? 0,                '5.1.10'),
+                    // ── Spun Piles (by piece) ──
+                    makeRow(priceList, 'PILE-SP25',      q.pile_sp25?.qty ?? 0,                '5.2.1'),
+                    makeRow(priceList, 'PILE-SP30',      q.pile_sp30?.qty ?? 0,                '5.2.2'),
+                    makeRow(priceList, 'PILE-SP35',      q.pile_sp35?.qty ?? 0,                '5.2.3'),
+                    makeRow(priceList, 'PILE-SP40',      q.pile_sp40?.qty ?? 0,                '5.2.4'),
+                    makeRow(priceList, 'PILE-SP45',      q.pile_sp45?.qty ?? 0,                '5.2.5'),
+                    makeRow(priceList, 'PILE-SP50',      q.pile_sp50?.qty ?? 0,                '5.2.6'),
+                    makeRow(priceList, 'PILE-SP60',      q.pile_sp60?.qty ?? 0,                '5.2.7'),
+                    makeRow(priceList, 'PILE-SP80',      q.pile_sp80?.qty ?? 0,                '5.2.8'),
+                    // ── Mini Pile 15cm (by piece) ──
+                    makeRow(priceList, 'PILE-MINI-2M',   q.pile_mini_2m?.qty ?? 0,             '5.3.1'),
+                    makeRow(priceList, 'PILE-MINI-3M',   q.pile_mini_3m?.qty ?? 0,             '5.3.2'),
+                    makeRow(priceList, 'PILE-MINI-4M',   q.pile_mini_4m?.qty ?? 0,             '5.3.3'),
+                    makeRow(priceList, 'PILE-MINI-5M',   q.pile_mini_5m?.qty ?? 0,             '5.3.4'),
+                    makeRow(priceList, 'PILE-MINI-6M',   q.pile_mini_6m?.qty ?? 0,             '5.3.5'),
+                    // ── CPAC Mini Pile 10×12 (by piece) ──
+                    makeRow(priceList, 'PILE-CPAC-2M',   q.pile_cpac_2m?.qty ?? 0,             '5.3.6'),
+                    makeRow(priceList, 'PILE-CPAC-3M',   q.pile_cpac_3m?.qty ?? 0,             '5.3.7'),
+                    makeRow(priceList, 'PILE-CPAC-4M',   q.pile_cpac_4m?.qty ?? 0,             '5.3.8'),
+                    makeRow(priceList, 'PILE-CPAC-5M',   q.pile_cpac_5m?.qty ?? 0,             '5.3.9'),
+                    // ── Bored Pile ──
+                    makeRow(priceList, 'PILE-BRD-CON',   q.total_volume?.qty ?? 0,             '5.4'),
+                    // ── Labor Surcharge (Low Volume) ──
+                    makeRow(priceList, 'PILE-LABOR-SURCHARGE', q.labor_surcharge?.qty ?? 0,    '5.5'),
+                    
+                    // ── Services & Testing ──
+                    makeRow(priceList, 'PILE-MACHINE',   q.machine_days?.qty ?? 0,       '5.6.1'),
+                    makeRow(priceList, 'PILE-TRANSPORT',  q.transport_trips?.qty ?? 0,    '5.6.2'),
+                    
+                    // Pile Head Cutting (Mapped dynamically by size)
+                    makeRow(priceList, 'PILE-CUT-D15',   q.pile_cut_d15?.qty ?? 0,       '5.6.3a'),
+                    makeRow(priceList, 'PILE-CUT-D18',   q.pile_cut_d18?.qty ?? 0,       '5.6.3b'),
+                    makeRow(priceList, 'PILE-CUT-D20',   q.pile_cut_d20?.qty ?? 0,       '5.6.3c'),
+                    makeRow(priceList, 'PILE-CUT-D22',   q.pile_cut_d22?.qty ?? 0,       '5.6.3d'),
+                    makeRow(priceList, 'PILE-CUT-D26',   q.pile_cut_d26?.qty ?? 0,       '5.6.3e'),
+                    makeRow(priceList, 'PILE-CUT-D30',   q.pile_cut_d30?.qty ?? 0,       '5.6.3f'),
+                    makeRow(priceList, 'PILE-CUT-D35',   q.pile_cut_d35?.qty ?? 0,       '5.6.3g'),
+                    makeRow(priceList, 'PILE-CUT-D40',   q.pile_cut_d40?.qty ?? 0,       '5.6.3h'),
+                    makeRow(priceList, 'PILE-CUT-B30',   q.pile_cut_b30?.qty ?? 0,       '5.6.3i'),
+                    makeRow(priceList, 'PILE-CUT-B35',   q.pile_cut_b35?.qty ?? 0,       '5.6.3j'),
+                    makeRow(priceList, 'PILE-CUT-B40',   q.pile_cut_b40?.qty ?? 0,       '5.6.3k'),
+                    makeRow(priceList, 'PILE-CUT-B50',   q.pile_cut_b50?.qty ?? 0,       '5.6.3l'),
+                    makeRow(priceList, 'PILE-CUT-B60',   q.pile_cut_b60?.qty ?? 0,       '5.6.3m'),
+                    makeRow(priceList, 'PILE-CUT-MINI',  q.pile_cut_mini?.qty ?? 0,      '5.6.3n'),
+                    
+                    makeRow(priceList, 'PILE-DOWEL',     q.pile_dowel?.qty ?? 0,         '5.6.4'),
+                    makeRow(priceList, 'PILE-WELD',      q.welding_joint?.qty ?? 0,      '5.6.5'),
+                    makeRow(priceList, 'PILE-CAGE',      q.rebar_cage?.qty ?? 0,         '5.6.6'),
+                    makeRow(priceList, 'PILE-BENTO',     q.bentonite?.qty ?? 0,          '5.6.7'),
+                    makeRow(priceList, 'PILE-CASING',    q.casing?.qty ?? 0,             '5.6.8'),
+                    // Assuming step saves type text for load test, but since we separated 
+                    makeRow(priceList, 'PILE-LOADTEST',  (stepSaves[5]?.inp as { load_test_type?: string })?.load_test_type === 'dynamic' ? (q.load_test?.qty ?? 0) : 0, '5.6.9'),
+                    makeRow(priceList, 'PILE-LOADTEST-STATIC', (stepSaves[5]?.inp as { load_test_type?: string })?.load_test_type === 'static' ? (q.load_test?.qty ?? 0) : 0, '5.6.10'),
+                    makeRow(priceList, 'PILE-SEISMIC',   q.seismic_test?.qty ?? 0,       '5.6.11'),
+                    makeRow(priceList, 'PILE-SOIL',      q.soil_boring?.qty ?? 0,        '5.6.12'),
                 ] : [];
             }),
             build(6, 'งานฐานราก', 'Foundation Footing', () => {
                 const q = stepSaves[6]?.res.quantities;
-                const g = (stepSaves[6]?.inp as { concrete_grade?: ConcreteGrade } | undefined)?.concrete_grade;
                 return q ? [
-                    makeRow(priceList, 'FTG-EXC',      q.excavation_volume?.qty ?? 0,    '6.1'),
-                    makeRow(priceList, 'FTG-SAND',     q.sand_volume?.qty ?? 0,          '6.2'),
-                    makeRow(priceList, 'FTG-LEAN',     q.lean_volume?.qty ?? 0,          '6.3'),
-                    makeRowGrade(priceList, 'FTG-CON',  q.concrete_volume?.qty ?? 0,     '6.4', g),
-                    makeRow(priceList, 'FTG-REBAR',    q.rebar_kg?.qty ?? 0,             '6.5'),
-                    makeRow(priceList, 'FTG-WIRE',     q.tie_wire?.qty ?? 0,             '6.6'),
-                    makeRow(priceList, 'FTG-SPACER',   q.spacer?.qty ?? 0,               '6.7'),
-                    makeRow(priceList, 'FTG-FORM',     q.formwork_m2?.qty ?? 0,          '6.8'),
-                    makeRow(priceList, 'FTG-FILL',     q.backfill_volume?.qty ?? 0,      '6.9'),
-                    makeRow(priceList, 'FTG-PUMP',     q.concrete_pump?.qty ?? 0,        '6.10'),
-                    makeRow(priceList, 'FTG-DEWATER',  q.dewatering?.qty ?? 0,           '6.11'),
-                    makeRow(priceList, 'FTG-VIBRATOR', q.vibrator?.qty ?? 0,             '6.12'),
-                    makeRow(priceList, 'FTG-CURING',   q.curing?.qty ?? 0,               '6.13'),
+                    makeRow(priceList, q.excavation_volume?.sku ?? 'FTG-EXC',    q.excavation_volume?.qty ?? 0,    '6.1'),
+                    makeRow(priceList, q.sand_volume?.sku ?? 'FTG-SAND',         q.sand_volume?.qty ?? 0,          '6.2'),
+                    makeRow(priceList, q.lean_volume?.sku ?? 'FTG-LEAN',         q.lean_volume?.qty ?? 0,          '6.3'),
+                    ...explodeConcreteRows(priceList, q.concrete_volume, 'FTG-CON', '6.4.1'),
+                    makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP',q.waterproof_admix?.qty ?? 0,    '6.4.2'),
+                    makeRow(priceList, q.pour_labor?.sku ?? 'LAB-POUR-GRND',     q.pour_labor?.qty ?? 0,          '6.4.3'),
+                    makeRow(priceList, q.rebar_kg?.sku ?? 'FTG-REBAR',           q.rebar_kg?.qty ?? 0,             '6.5'),
+                    makeRow(priceList, q.tie_wire?.sku ?? 'FTG-WIRE',            q.tie_wire?.qty ?? 0,             '6.6'),
+                    makeRow(priceList, q.spacer?.sku ?? 'FTG-SPACER',            q.spacer?.qty ?? 0,               '6.7'),
+                    makeRow(priceList, q.formwork_m2?.sku ?? 'FTG-FORM',         q.formwork_m2?.qty ?? 0,          '6.8'),
+                    makeRow(priceList, q.backfill_volume?.sku ?? 'FTG-FILL',     q.backfill_volume?.qty ?? 0,      '6.9'),
+                    makeRow(priceList, q.concrete_pump?.sku ?? 'FTG-PUMP',       q.concrete_pump?.qty ?? 0,        '6.10'),
+                    makeRow(priceList, q.dewatering?.sku ?? 'FTG-DEWATER',       q.dewatering?.qty ?? 0,           '6.11'),
+                    makeRow(priceList, q.vibrator?.sku ?? 'FTG-VIBRATOR',        q.vibrator?.qty ?? 0,             '6.12'),
+                    makeRow(priceList, q.curing?.sku ?? 'FTG-CURING',            q.curing?.qty ?? 0,               '6.13'),
                 ] : [];
             }),
             build(7, 'งานเสาตอม่อ', 'Pedestal / Column Stump', () => {
                 const q = stepSaves[7]?.res.quantities;
-                const g = (stepSaves[7]?.inp as { concrete_grade?: ConcreteGrade } | undefined)?.concrete_grade;
                 return q ? [
-                    makeRowGrade(priceList, 'PDS-CON',  q.concrete_volume?.qty ?? 0,   '7.1', g),
-                    makeRow(priceList, 'PDS-REBAR',    q.rebar_kg?.qty ?? 0,          '7.2'),
-                    makeRow(priceList, 'PDS-WIRE',     q.tie_wire?.qty ?? 0,          '7.3'),
-                    makeRow(priceList, 'PDS-SPACER',   q.spacer?.qty ?? 0,            '7.4'),
-                    makeRow(priceList, 'PDS-FORM',     q.formwork_m2?.qty ?? 0,       '7.5'),
-                    makeRow(priceList, 'PDS-DOWEL',    q.dowel_bar?.qty ?? 0,         '7.6'),
-                    makeRow(priceList, 'PDS-PUMP',     q.concrete_pump?.qty ?? 0,     '7.7'),
-                    makeRow(priceList, 'PDS-VIBRATOR', q.vibrator?.qty ?? 0,          '7.8'),
-                    makeRow(priceList, 'PDS-CURING',   q.curing?.qty ?? 0,            '7.9'),
+                    ...explodeConcreteRows(priceList, q.concrete_volume, 'PDS-CON', '7.1.1'),
+                    makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP',q.waterproof_admix?.qty ?? 0,  '7.1.2'),
+                    makeRow(priceList, q.pour_labor?.sku ?? 'LAB-POUR-1FL',      q.pour_labor?.qty ?? 0,        '7.1.3'),
+                    makeRow(priceList, q.rebar_kg?.sku ?? 'PDS-REBAR',           q.rebar_kg?.qty ?? 0,          '7.2'),
+                    makeRow(priceList, q.tie_wire?.sku ?? 'RB-WIRE',             q.tie_wire?.qty ?? 0,          '7.3'),
+                    makeRow(priceList, q.spacer?.sku ?? 'RB-SPACER',             q.spacer?.qty ?? 0,            '7.4'),
+                    makeRow(priceList, q.formwork_m2?.sku ?? 'PDS-FORM',         q.formwork_m2?.qty ?? 0,       '7.5'),
+                    makeRow(priceList, q.dowel_bar?.sku ?? 'PDS-DOWEL',          q.dowel_bar?.qty ?? 0,         '7.6'),
+                    makeRow(priceList, q.concrete_pump?.sku ?? 'PDS-PUMP',       q.concrete_pump?.qty ?? 0,     '7.7'),
+                    makeRow(priceList, q.vibrator?.sku ?? 'PDS-VIBRATOR',        q.vibrator?.qty ?? 0,          '7.8'),
+                    makeRow(priceList, q.curing?.sku ?? 'PDS-CURING',            q.curing?.qty ?? 0,            '7.9'),
                 ] : [];
             }),
             build(8, 'งานคานคอดิน', 'Ground Beam', () => {
                 const q = stepSaves[8]?.res.quantities;
-                const g = (stepSaves[8]?.inp as { concrete_grade?: ConcreteGrade } | undefined)?.concrete_grade;
                 return q ? [
-                    makeRow(priceList, 'GBM-EXC',      q.excavation_volume?.qty ?? 0,   '8.1'),
-                    makeRow(priceList, 'GBM-SAND',     q.sand_volume?.qty ?? 0,         '8.2'),
-                    makeRow(priceList, 'GBM-LEAN',     q.lean_volume?.qty ?? 0,         '8.3'),
-                    makeRowGrade(priceList, 'GBM-CON',  q.concrete_volume?.qty ?? 0,    '8.4', g),
-                    makeRow(priceList, 'GBM-REBAR',    q.rebar_kg?.qty ?? 0,            '8.5'),
-                    makeRow(priceList, 'GBM-WIRE',     q.tie_wire?.qty ?? 0,            '8.6'),
-                    makeRow(priceList, 'GBM-SPACER',   q.spacer?.qty ?? 0,              '8.7'),
-                    makeRow(priceList, 'GBM-FORM',     q.formwork_m2?.qty ?? 0,         '8.8'),
-                    makeRow(priceList, 'GBM-FILL',     q.backfill_volume?.qty ?? 0,     '8.9'),
-                    makeRow(priceList, 'GBM-PUMP',     q.concrete_pump?.qty ?? 0,       '8.10'),
-                    makeRow(priceList, 'GBM-VIBRATOR', q.vibrator?.qty ?? 0,            '8.11'),
-                    makeRow(priceList, 'GBM-CURING',   q.curing?.qty ?? 0,              '8.12'),
-                    makeRow(priceList, 'GBM-TERMITE',  q.termite_pipe?.qty ?? 0,        '8.13'),
+                    makeRow(priceList, q.excavation_volume?.sku ?? 'GBM-EXC',    q.excavation_volume?.qty ?? 0,   '8.1'),
+                    makeRow(priceList, q.sand_volume?.sku ?? 'GBM-SAND',         q.sand_volume?.qty ?? 0,         '8.2'),
+                    makeRow(priceList, q.lean_volume?.sku ?? 'GBM-LEAN',         q.lean_volume?.qty ?? 0,         '8.3'),
+                    ...explodeConcreteRows(priceList, q.concrete_volume, 'GBM-CON', '8.4.1'),
+                    makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP',q.waterproof_admix?.qty ?? 0,    '8.4.2'),
+                    makeRow(priceList, q.pour_labor?.sku ?? 'LAB-POUR-1FL',      q.pour_labor?.qty ?? 0,          '8.4.3'),
+                    makeRow(priceList, q.rebar_kg?.sku ?? 'GBM-REBAR',           q.rebar_kg?.qty ?? 0,            '8.5'),
+                    makeRow(priceList, q.tie_wire?.sku ?? 'RB-WIRE',             q.tie_wire?.qty ?? 0,            '8.6'),
+                    makeRow(priceList, q.spacer?.sku ?? 'RB-SPACER',             q.spacer?.qty ?? 0,              '8.7'),
+                    makeRow(priceList, q.formwork_m2?.sku ?? 'GBM-FORM',         q.formwork_m2?.qty ?? 0,         '8.8'),
+                    makeRow(priceList, q.backfill_volume?.sku ?? 'GBM-FILL',     q.backfill_volume?.qty ?? 0,     '8.9'),
+                    makeRow(priceList, q.dowel_length?.sku ?? 'GBM-DOWEL',       q.dowel_length?.qty ?? 0,        '8.10'),
+                    makeRow(priceList, q.concrete_pump?.sku ?? 'GBM-PUMP',       q.concrete_pump?.qty ?? 0,       '8.11'),
+                    makeRow(priceList, q.vibrator?.sku ?? 'GBM-VIBRATOR',        q.vibrator?.qty ?? 0,            '8.12'),
+                    makeRow(priceList, q.curing?.sku ?? 'GBM-CURING',            q.curing?.qty ?? 0,              '8.13'),
+                    makeRow(priceList, q.termite_pipe?.sku ?? 'GBM-TERMITE',     q.termite_pipe?.qty ?? 0,        '8.14'),
                 ] : [];
             }),
             build(9, 'งานพื้นหล่อในที่', 'Slab on Grade', () => {
                 const q = stepSaves[9]?.res.quantities;
-                const g = (stepSaves[9]?.inp as { concrete_grade?: ConcreteGrade } | undefined)?.concrete_grade;
                 return q ? [
-                    makeRow(priceList, 'SOG-SAND',     q.sand_volume?.qty ?? 0,          '9.1'),
-                    makeRow(priceList, 'SOG-PLASTIC',  q.plastic_area?.qty ?? 0,         '9.2'),
-                    makeRow(priceList, 'SOG-MESH',     q.wiremesh_kg?.qty ?? 0,          '9.3'),
-                    makeRow(priceList, 'SOG-REBAR',    q.rebar_kg?.qty ?? 0,             '9.4'),
-                    makeRowGrade(priceList, 'SOG-CON',  q.concrete_volume?.qty ?? 0,     '9.5', g),
-                    makeRow(priceList, 'SOG-FORM-EDG', q.edge_formwork_m?.qty ?? 0,      '9.6'),
-                    makeRow(priceList, 'SOG-CJOINT',   q.control_joint?.qty ?? 0,        '9.7'),
-                    makeRow(priceList, 'SOG-EJOINT',   q.expansion_joint?.qty ?? 0,      '9.8'),
-                    makeRow(priceList, 'SOG-PUMP',     q.concrete_pump?.qty ?? 0,        '9.9'),
-                    makeRow(priceList, 'SOG-VIBRATOR', q.vibrator?.qty ?? 0,             '9.10'),
-                    makeRow(priceList, 'SOG-CURING',   q.curing?.qty ?? 0,               '9.11'),
-                    makeRow(priceList, 'SOG-HARDENER', q.hardener?.qty ?? 0,             '9.12'),
-                    makeRow(priceList, 'SOG-SLEEVE',   q.sleeve?.qty ?? 0,               '9.13'),
+                    makeRow(priceList, q.sand_volume?.sku ?? 'SOG-SAND',         q.sand_volume?.qty ?? 0,          '9.1'),
+                    makeRow(priceList, q.plastic_area?.sku ?? 'SOG-PLASTIC',     q.plastic_area?.qty ?? 0,         '9.2'),
+                    makeRow(priceList, q.wiremesh_kg?.sku ?? 'SOG-MESH',         q.wiremesh_kg?.qty ?? 0,          '9.3.1'),
+                    makeRow(priceList, q.rebar_kg?.sku ?? 'SOG-REBAR',           q.rebar_kg?.qty ?? 0,             '9.3.2'),
+                    makeRow(priceList, q.tie_wire?.sku ?? 'RB-WIRE',             q.tie_wire?.qty ?? 0,             '9.3.3'),
+                    ...explodeConcreteRows(priceList, q.concrete_volume, 'SOG-CON', '9.4.1'),
+                    makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP',q.waterproof_admix?.qty ?? 0,     '9.4.2'),
+                    makeRow(priceList, q.pour_labor?.sku ?? 'LAB-POUR-GRND',     q.pour_labor?.qty ?? 0,           '9.4.3'),
+                    makeRow(priceList, q.edge_formwork_m?.sku ?? 'SOG-FORM-EDG', q.edge_formwork_m?.qty ?? 0,      '9.5'),
+                    makeRow(priceList, q.control_joint?.sku ?? 'SOG-CJOINT',     q.control_joint?.qty ?? 0,        '9.6'),
+                    makeRow(priceList, q.expansion_joint?.sku ?? 'SOG-EJOINT',   q.expansion_joint?.qty ?? 0,      '9.7'),
+                    makeRow(priceList, q.concrete_pump?.sku ?? 'SOG-PUMP',       q.concrete_pump?.qty ?? 0,        '9.8'),
+                    makeRow(priceList, q.vibrator?.sku ?? 'SOG-VIBRATOR',        q.vibrator?.qty ?? 0,             '9.9'),
+                    makeRow(priceList, q.curing?.sku ?? 'SOG-CURING',            q.curing?.qty ?? 0,               '9.10'),
+                    makeRow(priceList, q.hardener?.sku ?? 'SOG-HARDENER',        q.hardener?.qty ?? 0,             '9.11'),
+                    makeRow(priceList, q.sleeve?.sku ?? 'SOG-SLEEVE',            q.sleeve?.qty ?? 0,               '9.12'),
                 ] : [];
             }),
             build(10, 'งานพื้นสำเร็จรูป', 'Precast Slab', () => {
                 const q = stepSaves[10]?.res.quantities;
                 return q ? [
-                    makeRow(priceList, 'PCS-PANEL',    q.panel_area?.qty ?? 0,       '10.1'),
-                    makeRow(priceList, 'PCS-MESH',     q.wiremesh_kg?.qty ?? 0,      '10.2'),
-                    makeRow(priceList, 'PCS-TOP-CON',  q.topping_volume?.qty ?? 0,   '10.3'),
-                    makeRow(priceList, 'PCS-SHORE',    q.shoring_length?.qty ?? 0,   '10.4'),
-                    makeRow(priceList, 'PCS-GROUT',    q.grout?.qty ?? 0,            '10.5'),
-                    makeRow(priceList, 'PCS-CRANE',    q.crane?.qty ?? 0,            '10.6'),
-                    makeRow(priceList, 'PCS-PUMP',     q.concrete_pump?.qty ?? 0,    '10.7'),
-                    makeRow(priceList, 'PCS-VIBRATOR', q.vibrator?.qty ?? 0,         '10.8'),
-                    makeRow(priceList, 'PCS-CURING',   q.curing?.qty ?? 0,           '10.9'),
-                    makeRow(priceList, 'PCS-TERMITE',  q.termite_pipe?.qty ?? 0,     '10.10'),
-                    makeRow(priceList, 'PCS-DELIVER',  q.delivery?.qty ?? 0,         '10.11'),
+                    makeRow(priceList, q.panel_area?.sku ?? 'PCS-PANEL',       q.panel_area?.qty ?? 0,       '10.1'),
+                    makeRow(priceList, q.wiremesh_kg?.sku ?? 'PCS-MESH',       q.wiremesh_kg?.qty ?? 0,      '10.2'),
+                    ...explodeConcreteRows(priceList, q.topping_volume, 'PCS-TOP-CON', '10.3.1'),
+                    makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP', q.waterproof_admix?.qty ?? 0, '10.3.2'),
+                    makeRow(priceList, q.pour_labor?.sku ?? 'LAB-POUR-1FL',    q.pour_labor?.qty ?? 0,       '10.3.3'),
+                    makeRow(priceList, q.shoring_length?.sku ?? 'PCS-SHORE',   q.shoring_length?.qty ?? 0,   '10.4'),
+                    makeRow(priceList, q.grout?.sku ?? 'PCS-GROUT',            q.grout?.qty ?? 0,            '10.5'),
+                    makeRow(priceList, q.crane?.sku ?? 'PCS-CRANE',            q.crane?.qty ?? 0,            '10.6'),
+                    makeRow(priceList, q.concrete_pump?.sku ?? 'PCS-PUMP',     q.concrete_pump?.qty ?? 0,    '10.7'),
+                    makeRow(priceList, q.vibrator?.sku ?? 'PCS-VIBRATOR',      q.vibrator?.qty ?? 0,         '10.8'),
+                    makeRow(priceList, q.curing?.sku ?? 'PCS-CURING',          q.curing?.qty ?? 0,           '10.9'),
+                    makeRow(priceList, q.termite_pipe?.sku ?? 'PCS-TERMITE',   q.termite_pipe?.qty ?? 0,     '10.10'),
+                    makeRow(priceList, q.delivery?.sku ?? 'PCS-DELIVERY',      q.delivery?.qty ?? 0,         '10.11'),
                 ] : [];
             }),
             build(11, 'งานเสาชั้น 1', 'Column Floor 1', () => {
                 const q = stepSaves[11]?.res.quantities;
-                const g = (stepSaves[11]?.inp as { concrete_grade?: ConcreteGrade } | undefined)?.concrete_grade;
                 return q ? [
-                    makeRowGrade(priceList, 'COL-CON',  q.concrete_volume?.qty ?? 0,  '11.1', g),
-                    makeRow(priceList, 'COL-REBAR',    q.rebar_kg?.qty ?? 0,         '11.2'),
-                    makeRow(priceList, 'COL-WIRE',     q.tie_wire?.qty ?? 0,         '11.3'),
-                    makeRow(priceList, 'COL-SPACER',   q.spacer?.qty ?? 0,           '11.4'),
-                    makeRow(priceList, 'COL-FORM',     q.formwork_area?.qty ?? 0,    '11.5'),
-                    makeRow(priceList, 'COL-PUMP',     q.concrete_pump?.qty ?? 0,    '11.6'),
-                    makeRow(priceList, 'COL-VIBRATOR', q.vibrator?.qty ?? 0,         '11.7'),
-                    makeRow(priceList, 'COL-CURING',   q.curing?.qty ?? 0,           '11.8'),
+                    ...explodeConcreteRows(priceList, q.concrete_volume, 'COL-CON', '11.1.1'),
+                    makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP',   q.waterproof_admix?.qty ?? 0, '11.1.2'),
+                    makeRow(priceList, q.pour_labor?.sku ?? 'LAB-POUR-1FL',         q.pour_labor?.qty ?? 0,       '11.1.3'),
+                    makeRow(priceList, q.rebar_kg?.sku ?? 'COL-REBAR',              q.rebar_kg?.qty ?? 0,         '11.2.1'),
+                    makeRow(priceList, q.tie_wire?.sku ?? 'RB-WIRE',                q.tie_wire?.qty ?? 0,         '11.2.2'),
+                    makeRow(priceList, q.spacer?.sku ?? 'RB-SPACER',                q.spacer?.qty ?? 0,           '11.2.3'),
+                    makeRow(priceList, q.formwork_area?.sku ?? 'COL-FORM',          q.formwork_area?.qty ?? 0,    '11.3'),
+                    makeRow(priceList, q.concrete_pump?.sku ?? 'COL-PUMP',          q.concrete_pump?.qty ?? 0,    '11.4'),
+                    makeRow(priceList, q.vibrator?.sku ?? 'COL-VIBRATOR',           q.vibrator?.qty ?? 0,         '11.5'),
+                    makeRow(priceList, q.curing?.sku ?? 'COL-CURING',               q.curing?.qty ?? 0,           '11.6'),
                 ] : [];
             }),
             build(12, 'งานคาน + พื้นดาดฟ้า', 'Beam + Roof Deck', () => {
                 const q = stepSaves[12]?.res.quantities;
-                const g = (stepSaves[12]?.inp as { concrete_grade?: ConcreteGrade } | undefined)?.concrete_grade;
                 return q ? [
-                    makeRowGrade(priceList, 'BMS-CON',      q.beam_concrete?.qty ?? 0,    '12.1', g),
-                    makeRowGrade(priceList, 'BMS-SLAB-CON', q.slab_concrete?.qty ?? 0,    '12.2', g),
-                    makeRow(priceList, 'BMS-SLOPE',    q.slope_concrete?.qty ?? 0,   '12.3'),
-                    makeRow(priceList, 'BMS-REBAR',    q.rebar_kg?.qty ?? 0,         '12.4'),
-                    makeRow(priceList, 'BMS-WIRE',     q.tie_wire?.qty ?? 0,         '12.5'),
-                    makeRow(priceList, 'BMS-SPACER',   q.spacer?.qty ?? 0,           '12.6'),
-                    makeRow(priceList, 'BMS-FORM',     q.formwork_area?.qty ?? 0,    '12.7'),
-                    makeRow(priceList, 'BMS-SHORE',    q.shoring?.qty ?? 0,          '12.8'),
-                    makeRow(priceList, 'BMS-WP',       q.waterproofing?.qty ?? 0,    '12.9'),
-                    makeRow(priceList, 'BMS-DRAIN',    q.roof_drain?.qty ?? 0,       '12.10'),
-                    makeRow(priceList, 'BMS-PUMP',     q.concrete_pump?.qty ?? 0,    '12.11'),
-                    makeRow(priceList, 'BMS-VIBRATOR', q.vibrator?.qty ?? 0,         '12.12'),
-                    makeRow(priceList, 'BMS-CURING',   q.curing?.qty ?? 0,           '12.13'),
+                    ...explodeConcreteRows(priceList, q.beam_concrete, 'BMS-CON', '12.1.1'),
+                    ...explodeConcreteRows(priceList, q.slab_concrete, 'BMS-SLAB-CON', '12.1.2'),
+                    ...explodeConcreteRows(priceList, q.slope_concrete, 'BMS-CON', '12.1.3'),
+                    makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP',q.waterproof_admix?.qty ?? 0, '12.1.4'),
+                    makeRow(priceList, q.pour_labor?.sku ?? 'LAB-POUR-2FL',      q.pour_labor?.qty ?? 0,       '12.1.5'),
+                    makeRow(priceList, q.rebar_kg?.sku ?? 'BMS-REBAR',           q.rebar_kg?.qty ?? 0,         '12.2.1'),
+                    makeRow(priceList, q.tie_wire?.sku ?? 'RB-WIRE',             q.tie_wire?.qty ?? 0,         '12.2.2'),
+                    makeRow(priceList, q.spacer?.sku ?? 'RB-SPACER',             q.spacer?.qty ?? 0,           '12.2.3'),
+                    makeRow(priceList, q.formwork_area?.sku ?? 'BMS-FORM',       q.formwork_area?.qty ?? 0,    '12.3'),
+                    makeRow(priceList, q.shoring?.sku ?? 'BMS-SHORE',            q.shoring?.qty ?? 0,          '12.4'),
+                    makeRow(priceList, q.waterproofing?.sku ?? 'BMS-WP',         q.waterproofing?.qty ?? 0,    '12.5'),
+                    makeRow(priceList, q.roof_drain?.sku ?? 'BMS-DRAIN',         q.roof_drain?.qty ?? 0,       '12.6'),
+                    makeRow(priceList, q.concrete_pump?.sku ?? 'BMS-PUMP',       q.concrete_pump?.qty ?? 0,    '12.7'),
+                    makeRow(priceList, q.vibrator?.sku ?? 'BMS-VIBRATOR',        q.vibrator?.qty ?? 0,         '12.8'),
+                    makeRow(priceList, q.curing?.sku ?? 'BMS-CURING',            q.curing?.qty ?? 0,           '12.9'),
                 ] : [];
             }),
             build(13, 'งานโครงสร้างบันได', 'Staircase', () => {
                 const q = stepSaves[13]?.res.quantities;
-                const g = (stepSaves[13]?.inp as { concrete_grade?: ConcreteGrade } | undefined)?.concrete_grade;
                 return q ? [
-                    makeRowGrade(priceList, 'STR-CON',  q.concrete_volume?.qty ?? 0,  '13.1', g),
-                    makeRow(priceList, 'STR-REBAR',    q.rebar_kg?.qty ?? 0,         '13.2'),
-                    makeRow(priceList, 'STR-WIRE',     q.tie_wire?.qty ?? 0,         '13.3'),
-                    makeRow(priceList, 'STR-SPACER',   q.spacer?.qty ?? 0,           '13.4'),
-                    makeRow(priceList, 'STR-FORM',     q.formwork_area?.qty ?? 0,    '13.5'),
-                    makeRow(priceList, 'STR-SHORE',    q.shoring?.qty ?? 0,          '13.6'),
-                    makeRow(priceList, 'STR-NOSING',   q.nosing?.qty ?? 0,           '13.7'),
-                    makeRow(priceList, 'STR-PUMP',     q.concrete_pump?.qty ?? 0,    '13.8'),
-                    makeRow(priceList, 'STR-VIBRATOR', q.vibrator?.qty ?? 0,         '13.9'),
-                    makeRow(priceList, 'STR-CURING',   q.curing?.qty ?? 0,           '13.10'),
+                    ...explodeConcreteRows(priceList, q.concrete_volume, 'STR-CON', '13.1.1'),
+                    makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP',   q.waterproof_admix?.qty ?? 0, '13.1.2'),
+                    makeRow(priceList, q.pour_labor?.sku ?? 'LAB-POUR-1FL',         q.pour_labor?.qty ?? 0,       '13.1.3'),
+                    makeRow(priceList, q.rebar_kg?.sku ?? 'STR-REBAR',              q.rebar_kg?.qty ?? 0,         '13.2.1'),
+                    makeRow(priceList, q.tie_wire?.sku ?? 'RB-WIRE',                q.tie_wire?.qty ?? 0,         '13.2.2'),
+                    makeRow(priceList, q.spacer?.sku ?? 'RB-SPACER',                q.spacer?.qty ?? 0,           '13.2.3'),
+                    makeRow(priceList, q.formwork_area?.sku ?? 'STR-FORM',          q.formwork_area?.qty ?? 0,    '13.3'),
+                    makeRow(priceList, q.shoring?.sku ?? 'STR-SHORE',               q.shoring?.qty ?? 0,          '13.4'),
+                    makeRow(priceList, q.nosing?.sku ?? 'STR-NOSING',               q.nosing?.qty ?? 0,           '13.5'),
+                    makeRow(priceList, q.concrete_pump?.sku ?? 'STR-PUMP',          q.concrete_pump?.qty ?? 0,    '13.6'),
+                    makeRow(priceList, q.vibrator?.sku ?? 'STR-VIBRATOR',           q.vibrator?.qty ?? 0,         '13.7'),
+                    makeRow(priceList, q.curing?.sku ?? 'STR-CURING',               q.curing?.qty ?? 0,           '13.8'),
                 ] : [];
             }),
             build(14, 'งานเพลทหัวเสา', 'Column Cap Plate', () => {

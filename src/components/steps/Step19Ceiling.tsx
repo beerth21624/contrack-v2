@@ -121,7 +121,10 @@ export default function Step19Ceiling({ initialData, onBack, onSave }: Props) {
                         <Select value={inp.ceiling_type} onChange={v => update({ ceiling_type: v })}
                             options={[
                                 { value: 'gypsum', label: t('typeGypsum') },
+                                { value: 'gypsum_moisture', label: t('typeGypsumMoist') },
+                                { value: 'gypsum_fire', label: t('typeGypsumFire') },
                                 { value: 'fiber_cement', label: t('typeFiber') },
+                                { value: 'fiber_cement_6', label: t('typeFiber6') },
                                 { value: 'calcium_silicate', label: t('typeCalcium') },
                             ]} />
                     </Form.Item>

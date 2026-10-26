@@ -1,6 +1,9 @@
 import { type StepResult } from '@/types';
 import { r2 } from './helpers';
-import { type ConcreteGrade } from '@/data/price-list';
+import { 
+    computeStructuralQuantities, 
+    StructuralSpecParams 
+} from '@/lib/engines/structural-engine';
 
 // ─── Step 11 Contract ────────────────────────────────────────────────────────
 /** เสาแต่ละ Type (เช่น C1, C2 จาก Column Schedule) */
@@ -17,6 +20,7 @@ export interface Step11Input {
   columns: ColumnEntry[];              // รายการเสาแต่ละ Type
   rebar_kg_per_m3: number;             // เหล็กต่อ ม³ (default 120–200)
   waste_percent: number;               // default 5
+  structural_spec?: StructuralSpecParams; // Core specs 
   // optional
   formwork_reuse_times?: number;       // default 3
   spacer_per_column?: number;          // default 4
@@ -25,13 +29,11 @@ export interface Step11Input {
   vibrator_days?: number;
   curing_method?: 'water' | 'plastic' | 'compound';
   direct_rebar_kg?: number;            // น้ำหนักเหล็กตรงจาก Bar Schedule (bypass ratio)
-  concrete_grade?: ConcreteGrade;      // default '240'
 }
 
 // ─── STEP 11 — ทำเสาชั้น 1 ──────────────────────────────────────────────────
 export function calcStep11(inp: Step11Input): StepResult {
   const { columns, rebar_kg_per_m3, waste_percent } = inp;
-  const wf = 1 + waste_percent / 100;
   const reuse = Math.max(1, inp.formwork_reuse_times ?? 3);
 
   let totalN = 0;
@@ -49,41 +51,53 @@ export function calcStep11(inp: Step11Input): StepResult {
     totalSurface += n * perimeter * h;
   }
 
-  const concreteVol = r2(totalVol * wf);
   const typeSummary = columns.map(c => `${c.label} ${c.count} ต้น`).join(', ');
 
-  const quantities: StepResult['quantities'] = {
-    concrete_volume: { qty: concreteVol, uom: 'm³', label: `คอนกรีตเสา ${inp.concrete_grade ?? '240'} ksc (${typeSummary})` },
-    formwork_area: { qty: r2(totalFormwork), uom: 'm²', label: `แบบหล่อเสา (ใช้ซ้ำ ${reuse} ครั้ง)` },
-  };
-
-  // ─── เหล็กเสริม ─────────────────────────────────────────
   const totalRebarKg = inp.direct_rebar_kg
     ? r2(inp.direct_rebar_kg)
     : r2(totalVol * rebar_kg_per_m3);
-  quantities.rebar_kg = {
-    qty: totalRebarKg,
-    uom: 'kg',
-    label: inp.direct_rebar_kg ? 'เหล็กเสริมเสา (จาก Bar Schedule)' : `เหล็กเสริมเสา (${rebar_kg_per_m3} kg/m³)`,
+
+  // ─── Structural Engine ──────────────
+  const specParams: StructuralSpecParams = inp.structural_spec ?? {
+    ksc: 240,
+    waterproof: false,
+    workLevel: '1FL',
+    formworkType: 'BLDG',
+  };
+  specParams.concrete_waste_percent = waste_percent;
+  specParams.formworkType = 'BLDG'; // เสาใช้แบบบิวดิ้งเสมอ
+
+  const strRes = computeStructuralQuantities({
+    concrete_volume_m3: totalVol,
+    formwork_area_m2: totalFormwork,
+    rebar_weight_kg: totalRebarKg,
+  }, specParams);
+
+  const quantities: StepResult['quantities'] = {
+    concrete_volume: { qty: r2(strRes.conc_gross_m3), uom: 'm³', label: `คอนกรีตเสา ${specParams.ksc} ksc (${typeSummary})`, sku: strRes.conc_sku },
+    formwork_area: { qty: r2(strRes.fw_area_m2), uom: 'm²', label: `แบบหล่อเสา (ใช้ซ้ำ ${reuse} ครั้ง)`, sku: strRes.fw_sku },
+    pour_labor: { qty: r2(strRes.pour_labor_m3), uom: 'm³', label: `ค่าแรงเทคอนกรีตเสา`, sku: strRes.pour_labor_sku },
+    rebar_kg: { qty: r2(strRes.rb_gross_kg), uom: 'kg', label: inp.direct_rebar_kg ? 'เหล็กเสริมเสา (จาก Bar)' : `เหล็กเสริมเสา (${rebar_kg_per_m3} kg/m³)` },
+    tie_wire: { qty: r2(strRes.rb_wire_kg), uom: 'kg', label: `ลวดผูกเหล็ก`, sku: 'RB-WIRE' },
   };
 
-  // ─── ลวดผูก ──────────────────────────────────────────────
-  const tieWireFactor = inp.tie_wire_factor ?? 1.5;
-  quantities.tie_wire = { qty: r2(totalRebarKg * tieWireFactor / 100), uom: 'kg', label: `ลวดผูกเหล็ก (${tieWireFactor}%)` };
+  if (strRes.conc_admix_wp_m3) {
+    quantities.waterproof_admix = { qty: r2(strRes.conc_admix_wp_m3), uom: 'm³', label: `น้ำยากันซึม`, sku: 'CON-ADMIX-WP' };
+  }
 
   // ─── Spacer ──────────────────────────────────────────────
   const spacerPer = inp.spacer_per_column ?? 4;
-  quantities.spacer = { qty: totalN * spacerPer, uom: 'pcs', label: `Spacer (${spacerPer}/ต้น)` };
+  quantities.spacer = { qty: totalN * spacerPer, uom: 'pcs', label: `Spacer (${spacerPer}/ต้น)`, sku: 'RB-SPACER' };
 
   // ─── ปั๊ม / จี้ / บ่ม ─────────────────────────────────────
   if (inp.concrete_pump_required) {
-    quantities.concrete_pump = { qty: Math.max(1, Math.ceil(concreteVol / 20)), uom: 'วัน', label: 'ปั๊มคอนกรีต' };
+    quantities.concrete_pump = { qty: Math.max(1, Math.ceil(strRes.conc_gross_m3 / 20)), uom: 'วัน', label: 'ปั๊มคอนกรีต', sku: 'COL-PUMP' };
   }
-  quantities.vibrator = { qty: inp.vibrator_days ?? Math.max(1, Math.ceil(totalN / 10)), uom: 'วัน', label: 'เครื่องจี้คอนกรีต' };
+  quantities.vibrator = { qty: inp.vibrator_days ?? Math.max(1, Math.ceil(totalN / 10)), uom: 'วัน', label: 'เครื่องจี้คอนกรีต', sku: 'COL-VIBRATOR' };
 
   const curing = inp.curing_method ?? 'water';
   if (curing === 'plastic' || curing === 'compound') {
-    quantities.curing = { qty: r2(totalSurface * 1.1), uom: 'm²', label: curing === 'plastic' ? 'พลาสติกปิดบ่ม' : 'น้ำยาบ่ม' };
+    quantities.curing = { qty: r2(totalSurface * 1.1), uom: 'm²', label: curing === 'plastic' ? 'พลาสติกปิดบ่ม' : 'น้ำยาบ่ม', sku: 'COL-CURING' };
   }
 
   // ─── Warnings ─────────────────────────────────────────────
@@ -98,8 +112,8 @@ export function calcStep11(inp: Step11Input): StepResult {
     if (c.width_m < 0.15 || c.depth_m < 0.15) warnings.push(`เสา ${c.label} หน้าตัดเล็กกว่า 15 ซม. หากเป็นเสาโครงสร้างหลักให้ระมัดระวังช่องเหล็กแคบจนคอนกรีตและหัวจี้ (Vibrator) ลงไม่ได้`);
   }
 
-  if (concreteVol > 10 && inp.concrete_pump_required) {
-    warnings.push(`ปริมาณคอนกรีตเสาเทรวมกันรอบเดียวสูงถึง ${r2(concreteVol)} ม³ หากใช้คนงานหิ้วถัง จะเหนื่อยล้าล่าช้า และทำให้เกิดรอยต่อปูน (Cold Joint) แนะนำให้ใช้ปั๊มคอนกรีตช่วยเท`);
+  if (totalVol > 10 && inp.concrete_pump_required) {
+    warnings.push(`ปริมาณคอนกรีตเสาเทรวมกันรอบเดียวสูงถึง ${r2(totalVol)} ม³ หากใช้คนงานหิ้วถัง จะเหนื่อยล้าล่าช้า และทำให้เกิดรอยต่อปูน (Cold Joint) แนะนำให้ใช้ปั๊มคอนกรีตช่วยเท`);
   }
 
   if (rebar_kg_per_m3 < 150) {

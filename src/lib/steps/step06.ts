@@ -1,6 +1,10 @@
 import { type StepResult } from '@/types';
 import { r2, EXCAVATION_MARGIN, SAND_WASTE_FACTOR } from './helpers';
 import { type ConcreteGrade } from '@/data/price-list';
+import { 
+    computeStructuralQuantities, 
+    StructuralSpecParams 
+} from '@/lib/engines/structural-engine';
 
 // ─── Step 6 Contract ─────────────────────────────────────────────────────────
 /** ฐานรากแต่ละ Type (เช่น F1, F2, F3 จาก Footing Schedule) */
@@ -18,7 +22,8 @@ export interface Step6Input {
   lean_concrete_thickness_m: number;   // default 0.05
   sand_bedding_thickness_m: number;    // default 0.05
   waste_percent: number;               // default 5
-  concrete_grade?: ConcreteGrade;      // default '240'
+  concrete_grade?: ConcreteGrade;      // @deprecated Legacy
+  structural_spec?: StructuralSpecParams; // Core specs
   // optional — basic
   excavation_extra_margin_m?: number;  // default 0.40
   excavation_depth_m?: number;
@@ -81,63 +86,101 @@ export function calcStep6(inp: Step6Input): StepResult {
   // ─── Build label summary ────────────────────────────────
   const typeSummary = footings.map(f => `${f.label} ${f.count} ตัว`).join(', ');
 
-  const grade = inp.concrete_grade ?? '240';
+  // ─── Structural Engine Hook ────────────────────────────────
+  // Fallback map legacy "240" to numeric 240
+  const kscMapping: Record<string, number> = { '180': 180, '210': 210, '240': 240, '280': 280, '300': 300, '320': 320, '350': 350 };
+  const legacyKsc = inp.concrete_grade ? (kscMapping[inp.concrete_grade] ?? 240) : 240;
+  
+  const specParams: StructuralSpecParams = inp.structural_spec ?? {
+    ksc: legacyKsc,
+    waterproof: false,
+    workLevel: 'GRND',
+    formworkType: 'GRND',
+  };
+  
+  // Set explicit overrides for Footing
+  specParams.workLevel = 'GRND';
+  specParams.formworkType = 'GRND';
+  specParams.concrete_waste_percent = waste_percent;
+  // Use user-defined tie wire/spacer overrides in the step if provided, else let engine calculate defaults
+  
+  // Rebar computation
+  let totalRebarKg = 0;
+  if (inp.direct_rebar_kg) {
+    totalRebarKg = inp.direct_rebar_kg;
+  } else if (inp.rebar_weight_kg_per_m3) {
+    totalRebarKg = totalConcreteVol * inp.rebar_weight_kg_per_m3;
+  }
 
+  const strRes = computeStructuralQuantities({
+    concrete_volume_m3: totalConcreteVol,
+    formwork_area_m2: totalFormwork,
+    rebar_weight_kg: totalRebarKg,
+  }, specParams);
+
+  // Re-apply Step specific UI quantity outputs 
   const quantities: StepResult['quantities'] = {
     footing_area:    { qty: r2(totalArea),   uom: 'm²', label: `พื้นที่ฐานรากรวม (${typeSummary})` },
-    concrete_volume: { qty: concrete_volume, uom: 'm³', label: `คอนกรีต ${grade} ksc (waste ${waste_percent}%)` },
-    lean_volume:     { qty: lean_volume,     uom: 'm³', label: `ลีน 1:3:5 ใต้ฐาน (หนา ${r2(Tlean * 100)} ซม.)` },
-    sand_volume:     { qty: sand_volume,     uom: 'm³', label: `ทรายรองใต้ฐาน (×${SAND_WASTE_FACTOR})` },
+    lean_volume:     { qty: lean_volume,     uom: 'm³', label: `ลีน 1:3:5 ใต้ฐาน (หนา ${r2(Tlean * 100)} ซม.)`, sku: 'CON-LEAN' },
+    sand_volume:     { qty: sand_volume,     uom: 'm³', label: `ทรายรองใต้ฐาน (×${SAND_WASTE_FACTOR})`, sku: 'FTG-SAND' },
+    
+    // Core engine mapped
+    concrete_volume: { qty: r2(strRes.conc_gross_m3), uom: 'm³', label: `คอนกรีตฐานราก ${specParams.ksc} ksc (waste ${waste_percent}%)`, sku: strRes.conc_sku },
+    pour_labor:      { qty: r2(strRes.pour_labor_m3), uom: 'm³', label: `ค่าแรงเทคอนกรีต ฐานราก (ระดับดิน)`, sku: strRes.pour_labor_sku },
+    formwork_m2:     { qty: r2(strRes.fw_area_m2),    uom: 'm²', label: 'ไม้แบบฐานราก', sku: strRes.fw_sku },
   };
+
+  if (strRes.conc_admix_wp_m3) {
+    quantities.waterproof_admix = { qty: r2(strRes.conc_admix_wp_m3), uom: 'm³', label: `น้ำยากันซึมผสมคอนกรีต`, sku: 'CON-ADMIX-WP' };
+  }
 
   // ─── ขุดดิน + ดินถมกลับ ─────────────────────────────────
   if (inp.excavation_depth_m) {
     const excVol = r2(totalExcVol);
-    quantities.excavation_volume = { qty: excVol, uom: 'm³', label: `ขุดดินฐานราก (ลึก ${inp.excavation_depth_m} ม.)` };
+    quantities.excavation_volume = { qty: excVol, uom: 'm³', label: `ขุดดินฐานราก (ลึก ${inp.excavation_depth_m} ม.)`, sku: 'FTG-EXC' };
     const pedestal = inp.pedestal_volume_m3 ?? 0;
-    const backfill = r2(Math.max(0, excVol - sand_volume - lean_volume - concrete_volume - pedestal));
-    quantities.backfill_volume = { qty: backfill, uom: 'm³', label: 'ดินถมกลับ' };
+    const concrete_core_vol = r2(strRes.conc_gross_m3);
+    const backfill = r2(Math.max(0, excVol - sand_volume - lean_volume - concrete_core_vol - pedestal));
+    quantities.backfill_volume = { qty: backfill, uom: 'm³', label: 'ดินถมกลับ', sku: 'FTG-FILL' };
   }
-
-  // ─── ไม้แบบ ──────────────────────────────────────────────
-  quantities.formwork_m2 = { qty: r2(totalFormwork), uom: 'm²', label: 'ไม้แบบฐานราก' };
 
   // ─── เหล็กเสริม ─────────────────────────────────────────
-  let totalRebarKg = 0;
-  if (inp.direct_rebar_kg) {
-    totalRebarKg = inp.direct_rebar_kg;
-    quantities.rebar_kg = { qty: r2(totalRebarKg), uom: 'kg', label: 'เหล็กเสริม (จาก Bar Schedule)' };
-  } else if (inp.rebar_weight_kg_per_m3) {
-    totalRebarKg = totalConcreteVol * inp.rebar_weight_kg_per_m3;
-    quantities.rebar_kg = { qty: r2(totalRebarKg), uom: 'kg', label: `เหล็กเสริม (${inp.rebar_weight_kg_per_m3} kg/m³)` };
-  }
-
-  // ─── ลวดผูกเหล็ก ────────────────────────────────────────
   if (totalRebarKg > 0) {
-    const tieWireFactor = inp.tie_wire_factor ?? 1.5;
-    const tieWire = r2(totalRebarKg * tieWireFactor / 100);
-    quantities.tie_wire = { qty: tieWire, uom: 'kg', label: `ลวดผูกเหล็ก (${tieWireFactor}% ของเหล็ก)` };
+    quantities.rebar_kg = { qty: r2(strRes.rb_gross_kg), uom: 'kg', label: `เหล็กเสริมฐานราก ${inp.direct_rebar_kg ? '(ตาม BS)' : `(${inp.rebar_weight_kg_per_m3} kg/m³)`} (รวม Waste)`, sku: 'FTG-REBAR' };
+    
+    // Tie Wire
+    if (inp.tie_wire_factor !== undefined) {
+        // User override
+        const tieWire = r2(strRes.rb_gross_kg * inp.tie_wire_factor / 100);
+        quantities.tie_wire = { qty: tieWire, uom: 'kg', label: `ลวดผูกเหล็ก (${inp.tie_wire_factor}% ของเหล็ก)`, sku: 'RB-WIRE' };
+    } else {
+        quantities.tie_wire = { qty: r2(strRes.rb_wire_kg), uom: 'kg', label: `ลวดผูกเหล็ก ทั่วไป`, sku: 'RB-WIRE' };
+    }
   }
 
   // ─── ลูกปูน Spacer ──────────────────────────────────────
-  const spacerCount = inp.spacer_per_footing ?? 4;
-  quantities.spacer = { qty: totalN * spacerCount, uom: 'pcs', label: `ลูกปูน Spacer (${spacerCount} ตัว/ฐาน)` };
+  if (inp.spacer_per_footing !== undefined) {
+      quantities.spacer = { qty: totalN * inp.spacer_per_footing, uom: 'pcs', label: `ลูกปูน Spacer (${inp.spacer_per_footing} ตัว/ฐาน)`, sku: 'RB-SPACER' };
+  } else if (totalArea > 0) {
+      // 4 pcs per floor contact area + sides
+      quantities.spacer = { qty: strRes.rb_spacer_pcs, uom: 'pcs', label: `ลูกปูน Spacer ทั่วไป`, sku: 'RB-SPACER' };
+  }
 
   // ─── ปั๊มคอนกรีต ────────────────────────────────────────
   if (inp.concrete_pump_required) {
-    const pumpDays = Math.max(1, Math.ceil(concrete_volume / 30));
-    quantities.concrete_pump = { qty: pumpDays, uom: 'วัน', label: `ปั๊มคอนกรีต (${concrete_volume} ม³)` };
+    const pumpDays = Math.max(1, Math.ceil(strRes.conc_gross_m3 / 30));
+    quantities.concrete_pump = { qty: pumpDays, uom: 'วัน', label: `ปั๊มคอนกรีต (${r2(strRes.conc_gross_m3)} ม³)`, sku: 'FTG-PUMP' };
   }
 
   // ─── สูบน้ำ Dewatering ──────────────────────────────────
   if (inp.dewatering_required) {
     const dewDays = inp.dewatering_days ?? Math.max(1, Math.ceil(totalN / 5));
-    quantities.dewatering = { qty: dewDays, uom: 'วัน', label: 'ค่าเช่าปั๊มสูบน้ำ + น้ำมัน' };
+    quantities.dewatering = { qty: dewDays, uom: 'วัน', label: 'ค่าเช่าปั๊มสูบน้ำ + น้ำมัน', sku: 'FTG-DEWATER' };
   }
 
   // ─── เครื่องจี้คอนกรีต ──────────────────────────────────
   const vibDays = inp.vibrator_days ?? Math.max(1, Math.ceil(totalN / 10));
-  quantities.vibrator = { qty: vibDays, uom: 'วัน', label: `เครื่องจี้คอนกรีต (Vibrator)` };
+  quantities.vibrator = { qty: vibDays, uom: 'วัน', label: `เครื่องจี้คอนกรีต (Vibrator)`, sku: 'FTG-VIBRATOR' };
 
   // ─── บ่มคอนกรีต ─────────────────────────────────────────
   const curing = inp.curing_method ?? 'water';

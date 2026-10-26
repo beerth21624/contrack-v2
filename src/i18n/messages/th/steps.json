@@ -159,6 +159,7 @@
     "pileTypeTooltip": "อ้างอิงจากรายการประกอบแบบวิศวกรรมโครงสร้าง",
     "typeDriven": "เสาเข็มตอก (Driven Pile)",
     "typeBored": "เสาเข็มเจาะ (Bored Pile)",
+    "typeMini": "เข็มสั้น (Mini Pile)",
     "pileCount": "จำนวนเสาเข็มรวม (Total Piles)",
     "pileCountTooltip": "นับจำนวนรวมทั้งหมดจากผังตอกเข็ม",
     "pileLength": "ความยาวเสาเข็ม/ความลึกเจาะ (Pile Length/Depth) ม.",
@@ -174,6 +175,11 @@
     "secI30": "ตัวไอ 30×30 ซม. (I-30)",
     "secI35": "ตัวไอ 35×35 ซม. (I-35)",
     "secI40": "ตัวไอ 40×40 ซม. (I-40)",
+    "pileShape": "รูปทรงเสาเข็ม (Pile Shape)",
+    "shapeSquare": "เสาเข็มตอกสี่เหลี่ยม (Square)",
+    "shapeSpun": "เสาเข็มกลม (Spun Pile)",
+    "spunDia": "เส้นผ่านศูนย์กลางเข็มกลม (ซม.)",
+    "spunDiaPh": "ระบุขนาดเส้นผ่านศูนย์กลาง",
     "cutHead": "งานสกัดหัวเสาเข็ม (Pile Head Chipping)",
     "cutHeadYes": "ดำเนินการ",
     "cutHeadNo": "ไม่ดำเนินการ",
@@ -205,7 +211,14 @@
     "testDynamic": "Dynamic PDA Load Test",
     "testStatic": "Static Load Test",
     "seismicTestCount": "จำนวนทดสอบ Seismic (ต้น)",
-    "seismicTestCountPh": "ทดสอบความสมบูรณ์เข็ม"
+    "seismicTestCountPh": "ทดสอบความสมบูรณ์เข็ม",
+    "miniType": "ชนิดเข็มสั้น",
+    "miniType15": "สี่เหลี่ยม 15×15 ซม.",
+    "miniTypeCpac": "CPAC 10×12 ซม.",
+    "miniLength": "ความยาวเข็ม (ม.)",
+    "soilBoring": "เจาะสำรวจดิน (หลุม)",
+    "soilBoringTooltip": "สำรวจชั้นดินก่อนตอกเข็ม แนะนำให้ทำทุกโครงการเพื่อกำหนดความยาวเข็มที่ถูกต้อง",
+    "soilBoringPh": "มาตรฐาน: 1-2 หลุม/โครงการ"
   },
   "step6": {
     "footingFormula": "{count} ฐาน × {l}×{w}×{t} ม. = {vol} ม³",
@@ -689,7 +702,9 @@
     "wasteTooltip": "มอญเผื่อ 10-15% มวลเบา 5-10%",
     "stiffenersLintels": "งานเอ็นคอนกรีต (Stiffeners & Lintels)",
     "lintelLength": "ความยาวเสาเอ็น/ทับหลังรวม (ม.)",
-    "lintelTooltip": "รอบกรอบประตู/หน้าต่าง และกำแพงกว้างเพื่อกันร้าว"
+    "lintelTooltip": "รอบกรอบประตู/หน้าต่าง และกำแพงกว้างเพื่อกันร้าว",
+    "aacThickness": "ความหนาอิฐมวลเบา (ซม.)",
+    "aacThicknessTooltip": "เลือกความหนาตามแบบ: 7.5 ซม. ผนังกั้นเบา, 10 ซม. ห้องน้ำ, 15+ซม. ผนังภายนอก"
   },
   "step18": {
     "defaultRooms": {
@@ -745,7 +760,10 @@
     "optionsWaste": "ตัวเลือกเพิ่มเติมและการเผื่อวัสดุ (Options & Waste)",
     "ceilingType": "ประเภทแผ่นฝ้า",
     "typeGypsum": "ยิปซั่มบอร์ด 9 มม.",
+    "typeGypsumMoist": "ยิปซั่มกันชื้น 9 มม. (สีเขียว)",
+    "typeGypsumFire": "ยิปซั่มกันไฟ 12 มม. (สีชมพู)",
     "typeFiber": "ไฟเบอร์ซีเมนต์ 4 มม.",
+    "typeFiber6": "ไฟเบอร์ซีเมนต์ 6 มม.",
     "typeCalcium": "แคลเซียมซิลิเกต 6 มม.",
     "waste": "Waste แผ่นฝ้า (%)",
     "cornice": "บัวฝ้า (Cornice) ม.",

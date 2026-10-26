@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useMemo, useCallback } from "react";
-import { Form, InputNumber, Select, Switch, Typography, Card, Button, Space } from 'antd';
+import { Form, InputNumber, Select, Switch, Typography, Card, Button, Space, Collapse } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { StepFormShell } from '../StepFormShell';
 import { type Step11Input, type ColumnEntry, calcStep11 } from '@/lib/steps/step11';
+import { StructuralSpecForm } from '../shared/StructuralSpecForm';
 import type { StepResult } from '@/types';
 import { useTranslations } from 'next-intl';
 
@@ -123,20 +124,31 @@ export default function Step11Column({ initialData, onBack, onSave }: Props) {
                 {t('totalSummary', { total: totalN, types: inp.columns.length })}
             </Text>
 
-            <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('globalParams')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
-                <div className="grid grid-cols-2 gap-2">
-                    <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('rebarDensity')}</Text>}
-                        validateStatus={result?.warningFields?.includes('rebar_kg_per_m3') ? 'warning' : ''}
-                        tooltip={t('rebarDensityTooltip')} style={{ margin: 0 }}>
-                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={300} step={10}
-                            value={inp.rebar_kg_per_m3} onChange={v => update({ rebar_kg_per_m3: v ?? 120 })} />
-                    </Form.Item>
-                    <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
-                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
-                            value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
-                    </Form.Item>
-                </div>
-            </Card>
+            <Collapse size="small" defaultActiveKey={[]} items={[{
+                key: 'advanced', label: <span className="text-gray-500 font-medium">⚙️ ตั้งค่าขั้นสูง (สเปคคอนกรีต / เผื่อสูญเสีย)</span>, children: (
+                    <div className="flex flex-col gap-4">
+                        <StructuralSpecForm 
+                            spec={inp.structural_spec ?? { ksc: 240, waterproof: false, workLevel: '1FL' }}
+                            onChange={patch => update({ structural_spec: { ...inp.structural_spec, ...patch } as any })}
+                        />
+
+                        <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('globalParams')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('rebarDensity')}</Text>}
+                                    validateStatus={result?.warningFields?.includes('rebar_kg_per_m3') ? 'warning' : ''}
+                                    tooltip={t('rebarDensityTooltip')} style={{ margin: 0 }}>
+                                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={300} step={10}
+                                        value={inp.rebar_kg_per_m3} onChange={v => update({ rebar_kg_per_m3: v ?? 120 })} />
+                                </Form.Item>
+                                <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
+                                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
+                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
+                                </Form.Item>
+                            </div>
+                        </Card>
+                    </div>
+                )
+            }]} />
         </div>
     );
 

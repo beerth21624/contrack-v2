@@ -14,7 +14,7 @@ export interface CeilingRoomEntry {
 /** ปิดฝ้าเพดาน (Ceiling Works) — input fields */
 export interface Step19Input {
   rooms: CeilingRoomEntry[];           // รายการห้อง
-  ceiling_type: 'gypsum' | 'fiber_cement' | 'calcium_silicate';
+  ceiling_type: 'gypsum' | 'gypsum_moisture' | 'gypsum_fire' | 'fiber_cement' | 'fiber_cement_6' | 'calcium_silicate';
   waste_percent: number;               // 10-15%
   // optional
   cornice_length_m?: number;           // บัวฝ้าเพดาน (auto = เส้นรอบรูปทุกห้อง)
@@ -40,12 +40,27 @@ export function calcStep19(inp: Step19Input): StepResult {
 
   const totalPanelArea = totalCeilingArea + totalDropArea;
   const typeLabel: Record<string, string> = {
-    gypsum: 'ยิปซั่มบอร์ด 9 มม.', fiber_cement: 'ไฟเบอร์ซีเมนต์ 4 มม.', calcium_silicate: 'แคลเซียมซิลิเกต 6 มม.',
+    gypsum: 'ยิปซั่มบอร์ด 9 มม.',
+    gypsum_moisture: 'ยิปซั่มกันชื้น 9 มม.',
+    gypsum_fire: 'ยิปซั่มกันไฟ 12 มม.',
+    fiber_cement: 'ไฟเบอร์ซีเมนต์ 4 มม.',
+    fiber_cement_6: 'ไฟเบอร์ซีเมนต์ 6 มม.',
+    calcium_silicate: 'แคลเซียมซิลิเกต 6 มม.',
   };
 
   const quantities: StepResult['quantities'] = {};
 
-  quantities.ceiling_area = {
+  // Type-specific quantity key for price-list mapping
+  const qtyKey: Record<string, string> = {
+    gypsum: 'ceiling_area',                // → CLG-PANEL
+    gypsum_moisture: 'ceiling_area_moist',  // → CLG-PANEL-MOIST
+    gypsum_fire: 'ceiling_area_fire',       // → CLG-PANEL-FIRE
+    fiber_cement: 'ceiling_area_fiber',      // → CLG-FIBER
+    fiber_cement_6: 'ceiling_area_fiber6',   // → CLG-FIBER-6
+    calcium_silicate: 'ceiling_area_calcium', // → CLG-CALCIUM
+  };
+
+  quantities[qtyKey[ceiling_type] ?? 'ceiling_area'] = {
     qty: r2(totalPanelArea * wf), uom: 'm²',
     label: `แผ่นฝ้า${typeLabel[ceiling_type] ?? ceiling_type} (${rooms.length} ห้อง, ${r2(totalCeilingArea)} ม²)`
   };

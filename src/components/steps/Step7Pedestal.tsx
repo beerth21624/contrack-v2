@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useMemo, useCallback } from "react";
-import { Form, InputNumber, Select, Switch, Typography, Card, Button, Space } from 'antd';
+import { Form, InputNumber, Select, Switch, Typography, Card, Button, Space, Collapse } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { StepFormShell } from '../StepFormShell';
+import { StructuralSpecForm } from '../shared/StructuralSpecForm';
 import { type Step7Input, type PedestalEntry, calcStep7 } from '@/lib/steps/step07';
 import type { StepResult } from '@/types';
 import { useTranslations } from 'next-intl';
@@ -120,12 +121,25 @@ export const Step7Pedestal: React.FC<Props> = ({ onBack, onSave, initialData }) 
                 {t('totalLabel', { total: totalN, types: inp.pedestals.length })}
             </Text>
 
-            <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('globalParams')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
-                <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wasteConc')}</Text>} style={{ margin: 0 }}>
-                    <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
-                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
-                </Form.Item>
-            </Card>
+            <Collapse size="small" defaultActiveKey={[]} items={[{
+                key: 'advanced', label: <span className="text-gray-500 font-medium">⚙️ ตั้งค่าขั้นสูง (สเปคคอนกรีต / เผื่อสูญเสีย)</span>, children: (
+                    <div className="flex flex-col gap-4">
+                        <StructuralSpecForm 
+                            spec={inp.structural_spec ?? { ksc: 240, waterproof: false, workLevel: '1FL' }}
+                            onChange={patch => update({ structural_spec: { ...inp.structural_spec, ...patch } as any })}
+                            fixedWorkLevel="1FL"
+                            hideWaterproof={false}
+                        />
+
+                        <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('globalParams')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
+                            <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wasteConc')}</Text>} style={{ margin: 0 }}>
+                                <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
+                                    value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
+                            </Form.Item>
+                        </Card>
+                    </div>
+                )
+            }]} />
         </>
     );
 

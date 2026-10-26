@@ -60,12 +60,31 @@ export default function Step17Brickwork({ initialData, onBack, onSave }: Props) 
                     label={<Text style={{ fontSize: 13 }}>{t('brickType')}</Text>} 
                     style={{ margin: 0 }}
                 >
-                    <Select value={inp.brick_type} onChange={v => update({ brick_type: v })} style={{ width: '100%' }}
+                    <Select value={inp.brick_type} onChange={v => update({ brick_type: v, aac_thickness_cm: v === 'aac' ? 10 : undefined })} style={{ width: '100%' }}
                         options={[
                             { value: 'clay', label: t('typeClay') },
                             { value: 'aac', label: t('typeAAC') },
                         ]} />
                 </Form.Item>
+                {inp.brick_type === 'aac' && (
+                    <Form.Item layout="vertical"
+                        label={<Text style={{ fontSize: 13 }}>{t('aacThickness')}</Text>}
+                        tooltip={t('aacThicknessTooltip')}
+                        style={{ margin: 0 }}
+                    >
+                        <Select value={inp.aac_thickness_cm ?? 10} onChange={(v: number) => update({ aac_thickness_cm: v })} style={{ width: '100%' }}
+                            options={[
+                                { value: 7.5, label: '7.5 cm (ผนังกั้นเบา)' },
+                                { value: 10, label: '10 cm (ผนังห้องน้ำ)' },
+                                { value: 12.5, label: '12.5 cm (ผนังมาตรฐาน)' },
+                                { value: 15, label: '15 cm (ผนังรับโครง)' },
+                                { value: 17.5, label: '17.5 cm (ผนังภายนอก)' },
+                                { value: 20, label: '20 cm (ผนังรั้ว)' },
+                            ]} />
+                    </Form.Item>
+                )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
                 <Form.Item required layout="vertical"
                     label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} 
                     tooltip={t('wasteTooltip')}

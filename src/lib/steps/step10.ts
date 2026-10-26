@@ -1,5 +1,9 @@
 import { type StepResult } from '@/types';
 import { r2 } from './helpers';
+import { 
+    computeStructuralQuantities, 
+    StructuralSpecParams 
+} from '@/lib/engines/structural-engine';
 
 // ─── Step 10 Contract ────────────────────────────────────────────────────────
 /** วางแผ่นพื้นสำเร็จ (Precast Slab) — input fields */
@@ -8,6 +12,7 @@ export interface Step10Input {
   topping_thickness_m: number;           // default 0.05
   waste_percent: number;                 // default 5
   shear_key_required: boolean;
+  structural_spec?: StructuralSpecParams; // Core specs for topping
   // optional — basic
   precast_type?: 'Hollow-core' | 'Plank' | 'Other';
   precast_panel_count?: number;
@@ -29,7 +34,6 @@ export interface Step10Input {
 // ─── STEP 10 — วางแผ่นพื้นสำเร็จ ───────────────────────────────────────────
 export function calcStep10(inp: Step10Input): StepResult {
   const { precast_area_m2: A, topping_thickness_m: tt, waste_percent } = inp;
-  const wf = 1 + waste_percent / 100;
   const pType = inp.precast_type ?? 'Hollow-core';
   const panelW = inp.panel_width_m ?? (pType === 'Plank' ? 0.35 : 1.20);
   const panelT = inp.panel_thickness_m ?? 0.12;
@@ -37,66 +41,87 @@ export function calcStep10(inp: Step10Input): StepResult {
 
   // ─── จำนวนแผ่น ──────────────────────────────────────────
   const panelCount = inp.precast_panel_count ?? Math.ceil(A / (panelW * span));
+  
+  // ─── Structural Engine for Topping Concrete ──────────────
+  const specParams: StructuralSpecParams = inp.structural_spec ?? {
+    ksc: 240,
+    waterproof: false,
+    workLevel: '1FL',
+    formworkType: 'BLDG',
+  };
+  specParams.concrete_waste_percent = waste_percent;
+
+  const toppingNetVol = A * tt;
+  
+  const strRes = computeStructuralQuantities({
+    concrete_volume_m3: toppingNetVol,
+    formwork_area_m2: 0,
+    rebar_weight_kg: 0,
+  }, specParams);
 
   const quantities: StepResult['quantities'] = {
-    panel_area:     { qty: r2(A), uom: 'm²', label: `แผ่นพื้น ${pType} (~${panelCount} แผ่น, ${panelW}×${span} ม.)` },
-    topping_volume: { qty: r2(A * tt * wf), uom: 'm³', label: `คอนกรีตทับหน้า ${r2(tt * 100)} ซม. (waste ${waste_percent}%)` },
+    panel_area:     { qty: r2(A), uom: 'm²', label: `แผ่นพื้น ${pType} (~${panelCount} แผ่น, ${panelW}×${span} ม.)`, sku: 'PCS-PANEL' },
+    topping_volume: { qty: r2(strRes.conc_gross_m3), uom: 'm³', label: `คอนกรีตทับหน้า ${specParams.ksc} ksc (หนา ${r2(tt * 100)} ซม. waste ${waste_percent}%)`, sku: strRes.conc_sku },
+    pour_labor:     { qty: r2(strRes.pour_labor_m3), uom: 'm³', label: `ค่าแรงเทคอนกรีตทับหน้า`, sku: strRes.pour_labor_sku },
   };
+
+  if (strRes.conc_admix_wp_m3) {
+    quantities.waterproof_admix = { qty: r2(strRes.conc_admix_wp_m3), uom: 'm³', label: `น้ำยากันซึมทับหน้า`, sku: 'CON-ADMIX-WP' };
+  }
 
   // ─── ไวร์เมชทับหน้า ─────────────────────────────────────
   if (inp.wiremesh_kg_per_m2) {
     // เผื่อทาบไวร์เมช 15%
-    quantities.wiremesh_kg = { qty: r2(A * 1.15 * inp.wiremesh_kg_per_m2), uom: 'kg', label: `ไวร์เมชทับหน้า (${inp.wiremesh_kg_per_m2} kg/m² รวมเผื่อทาบ 15%)` };
+    quantities.wiremesh_kg = { qty: r2(A * 1.15 * inp.wiremesh_kg_per_m2), uom: 'kg', label: `ไวร์เมชทับหน้า (${inp.wiremesh_kg_per_m2} kg/m² รวมเผื่อทาบ 15%)`, sku: 'PCS-MESH' };
   }
 
   // ─── ค้ำยัน (auto from span) ─────────────────────────────
   if (inp.shoring_line_length_m) {
-    quantities.shoring_length = { qty: inp.shoring_line_length_m, uom: 'm', label: 'ค้ำยัน Shoring (ระบุเอง)' };
+    quantities.shoring_length = { qty: inp.shoring_line_length_m, uom: 'm', label: 'ค้ำยัน Shoring (ระบุเอง)', sku: 'PCS-SHORE' };
   } else {
     // ค้ำยันทุก 1.5–2.0 ม. ตาม span → จำนวนเส้น = span / 1.5  × ความยาวแนว
     const shoringLines = Math.max(1, Math.ceil(span / 1.5) - 1); // กี่เส้นต่อช่วง
     const totalWidth = A / span; // ความกว้างรวม
     const shoringLen = r2(shoringLines * totalWidth);
-    quantities.shoring_length = { qty: shoringLen, uom: 'm', label: `ค้ำยัน auto (${shoringLines} เส้น × ${r2(totalWidth)} ม.)` };
+    quantities.shoring_length = { qty: shoringLen, uom: 'm', label: `ค้ำยัน auto (${shoringLines} เส้น × ${r2(totalWidth)} ม.)`, sku: 'PCS-SHORE' };
   }
 
   // ─── เกร้าท์ระหว่างแผ่น ─────────────────────────────────
   if (inp.grout_between_panels == false) {
     const jointLength = r2(panelCount * span); // ทุกแผ่นมีรอยต่อยาว = span
     const groutVol = r2(jointLength * 0.02 * panelT); // กว้าง ~2 ซม. × หนาแผ่น
-    quantities.grout = { qty: Math.max(r2(groutVol * 1000), 1), uom: 'kg', label: `เกร้าท์ระหว่างแผ่น (~${r2(jointLength)} ม.)` };
+    quantities.grout = { qty: Math.max(r2(groutVol * 1000), 1), uom: 'kg', label: `เกร้าท์ระหว่างแผ่น (~${r2(jointLength)} ม.)`, sku: 'PCS-GROUT' };
   }
 
   // ─── เครน ────────────────────────────────────────────────
   const craneDays = inp.crane_days ?? Math.max(1, Math.ceil(panelCount / 40));
-  quantities.crane = { qty: craneDays, uom: 'วัน', label: `เครนยกแผ่น (~${panelCount} แผ่น, ${Math.min(panelCount, 40)} แผ่น/วัน)` };
+  quantities.crane = { qty: craneDays, uom: 'วัน', label: `เครนยกแผ่น (~${panelCount} แผ่น, ${Math.min(panelCount, 40)} แผ่น/วัน)`, sku: 'PCS-CRANE' };
 
   // ─── ปั๊มคอนกรีต ────────────────────────────────────────
-  const toppingVol = A * tt * wf;
   if (inp.concrete_pump_required) {
-    quantities.concrete_pump = { qty: Math.max(1, Math.ceil(toppingVol / 30)), uom: 'วัน', label: 'ปั๊มคอนกรีตทับหน้า' };
+    quantities.concrete_pump = { qty: Math.max(1, Math.ceil(strRes.conc_gross_m3 / 30)), uom: 'วัน', label: 'ปั๊มคอนกรีตทับหน้า', sku: 'PCS-PUMP' };
   }
 
   // ─── เครื่องจี้ ──────────────────────────────────────────
   const vibDays = inp.vibrator_days ?? Math.max(1, Math.ceil(A / 120));
-  quantities.vibrator = { qty: vibDays, uom: 'วัน', label: 'เครื่องจี้ + ปาดคอนกรีต' };
+  quantities.vibrator = { qty: vibDays, uom: 'วัน', label: 'เครื่องจี้ + ปาดคอนกรีต', sku: 'PCS-VIBRATOR' };
 
   // ─── บ่ม ──────────────────────────────────────────────────
   const curing = inp.curing_method ?? 'water';
   if (curing === 'plastic' || curing === 'compound') {
-    quantities.curing = { qty: r2(A * 1.1), uom: 'm²', label: curing === 'plastic' ? 'พลาสติกปิดบ่ม (+10%)' : 'น้ำยาบ่ม Curing Compound' };
+    quantities.curing = { qty: r2(A * 1.1), uom: 'm²', label: curing === 'plastic' ? 'พลาสติกปิดบ่ม' : 'น้ำยาบ่ม Curing Compound', sku: 'PCS-CURING' };
   }
 
   // ─── ท่อยาปลวก ──────────────────────────────────────────
   if (inp.termite_pipe_length_m) {
-    quantities.termite_pipe = { qty: inp.termite_pipe_length_m, uom: 'm', label: 'ท่อยาปลวก (Termite Pipe)' };
+    quantities.termite_pipe = { qty: inp.termite_pipe_length_m, uom: 'm', label: 'ท่อยาปลวก (Termite Pipe)', sku: 'PCS-TERMITE' };
   }
 
   // ─── ขนส่งแผ่นพื้น ──────────────────────────────────────
   const trips = inp.delivery_trips ?? Math.max(1, Math.ceil(panelCount / 10));
-  quantities.delivery = { qty: trips, uom: 'เที่ยว', label: `ขนส่งแผ่นพื้น (~${panelCount} แผ่น, ~10 แผ่น/เที่ยว)` };
+  quantities.delivery = { qty: trips, uom: 'เที่ยว', label: `ขนส่งแผ่นพื้น (~${panelCount} แผ่น, ~10 แผ่น/เที่ยว)`, sku: 'PCS-DELIVERY' };
 
-  // ─── Warnings ─────────────────────────────────────────────
+  const toppingVol = strRes.conc_gross_m3;
   const warnings: string[] = [];
   if (tt < 0.05) warnings.push('คอนกรีตทับหน้า (Topping) บางกว่า 0.05 ม. (5 ซม.) เสี่ยงต่อการหลุดร่อนและกะเทาะแตกเมื่อรับน้ำหนัก แนะนำให้เทที่ 0.05 ม. เป็นมาตรฐาน');
   if (tt > 0.07) warnings.push('คอนกรีตทับหน้าหนาเกิน 0.07 ม. พึงระวังเรื่องน้ำหนักบรรทุกจร (Dead Load) ที่จะไปกดทับแผ่นพื้นมากเกินควรพิจารณา');
