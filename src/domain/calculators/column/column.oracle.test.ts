@@ -9,7 +9,7 @@ import {
 } from '../../../test-utils/oracle-boq-checks';
 import { expectClose, seededRandom } from '../../../test-utils/oracle-helpers';
 import {
-    COLUMN_TABLE, SHEETS, columnExcelInputs, randomColumnInput, randomColumnRow, tableRef,
+    COLUMN_TABLE, SHEETS, firstRow, columnExcelInputs, randomColumnInput, randomColumnRow, tableRef,
 } from '../../../test-utils/oracle-structure-inputs';
 import { REBAR_SIZES } from '../../boq/slots';
 import { computeProject, createProject, type ProjectResult } from '../../project';
@@ -41,7 +41,7 @@ function excelValueOf(key: string, o: ExcelOracle): number | undefined {
 const BLOCK: RebarBlock = { slot: 'column:rebar', rows: [51, 52], tieWire: 53 };
 
 // ─── Cases ──────────────────────────────────────────────────────────────────
-const sampleRow = column.defaults().columns[0] as ColumnRow;
+const sampleRow = firstRow(column.defaults().columns);
 const ZERO_ROW: ColumnRow = { name: '', count: 0, width: 0, depth: 0, height: 0, mainSize: '', mainCount: 0, stirrupSize: '', stirrupSpacing: 0 };
 const CASES: [string, ColumnInput][] = [
     ['Excel sample (F8 typed =0.55+3.5)', column.defaults()],

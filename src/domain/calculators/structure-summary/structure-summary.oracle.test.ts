@@ -6,11 +6,11 @@
 // own oracle tests vary them). Guide: docs/rebuild/ORACLE_TESTS.md.
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadV5Oracle, type ExcelOracle, type OracleInput } from '../../../test-utils/excel-oracle';
-import { expectClose } from '../../../test-utils/oracle-helpers';
+import { expectClose, seededRandom } from '../../../test-utils/oracle-helpers';
 import {
-    SHEETS, columnExcelInputs, footingExcelInputs, groundBeamExcelInputs, groundBeamShortRangeDelta, pedestalExcelInputs,
+    SHEETS, columnExcelInputs, firstRow, footingExcelInputs, groundBeamExcelInputs, groundBeamShortRangeDelta, pedestalExcelInputs,
     pedestalStirrupKgDelta, precastExcelInputs, randomColumnInput, randomFootingPedestal, randomGroundBeamInput,
-    randomPrecastInput, randomSlabInput, slabExcelInputs,
+    randomGroundBeamRow, randomPrecastInput, randomSlabInput, slabExcelInputs,
 } from '../../../test-utils/oracle-structure-inputs';
 import { REBAR_SIZES } from '../../boq/slots';
 import { computeProject, createProject } from '../../project';
@@ -82,6 +82,8 @@ function elementDelta(c: Case, calc: string, col: string, o: ExcelOracle): numbe
 }
 
 // ─── Cases ──────────────────────────────────────────────────────────────────
+const F1 = firstRow(footing.defaults().rows);
+const C1 = firstRow(pedestal.defaults().rows);
 const sample: Case = {
     footing: footing.defaults(), pedestal: pedestal.defaults(), groundBeam: groundBeam.defaults(),
     slab: slabOnGrade.defaults(), precast: precastSlab.defaults(), column: column.defaults(),
@@ -104,10 +106,16 @@ const CASES: [string, Case][] = [
     ['D1: pedestals with no footing pit (Excel Q6 −0.63)', { ...empty, pedestal: pedestal.defaults() }],
     ['D1: pedestal on another footing type (Excel $F$8 stirrups)', {
         ...sample,
-        footing: { rows: [...footing.defaults().rows, { ...(footing.defaults().rows[0] ?? empty.footing.rows[0]), name: 'F2', depth: 0.5, width: 1, length: 1.2 } as FootingInput['rows'][number]] },
-        pedestal: { rows: [...pedestal.defaults().rows, { ...(pedestal.defaults().rows[0] as PedestalInput['rows'][number]), name: 'C2', footing: 1, height: 0.8 }] },
+        footing: { rows: [F1, { ...F1, name: 'F2', depth: 0.5, width: 1, length: 1.2 }] },
+        pedestal: { rows: [C1, { ...C1, name: 'C2', footing: 1, height: 0.8 }] },
     }],
-    ['D1: ground beam 14 rows (Excel G6/V6/X6 short)', { ...sample, groundBeam: randomGroundBeamInput(24_014) }],
+    ['D1: ground beam 14 rows (Excel G6/V6/X6 short)', {
+        ...sample,
+        groundBeam: (() => {
+            const rng = seededRandom(24_014);
+            return { beams: Array.from({ length: 14 }, (_, i) => randomGroundBeamRow(rng, i)) };
+        })(),
+    }],
     ...Array.from({ length: 50 }, (_, k): [string, Case] => [`random #${k} (seed ${24_000 + k})`, randomCase(24_000 + k)]),
 ];
 

@@ -1,6 +1,6 @@
 import { MAX_DOC_BYTES, type Role, type VersionConflictDetails } from '@contrack/contract';
 import { docsToProject, projectSummary, stableStringify } from '@contrack/domain/sync';
-import type { ProjectId, UserId } from '../../../../shared/domain';
+import type { ProjectId, UserId, WorkspaceId } from '../../../../shared/domain';
 import {
     BREAKING_DOC, OUTSIDER, OWNER, OWNER_B, ROLE_USERS, SAMPLE_DOCS, WS_A, WS_B, type ProjectsKit, projectsKit,
 } from '../../testing/projects-test-kit';
@@ -9,6 +9,11 @@ async function put(
     kit: ProjectsKit, projectId: ProjectId, docKey: string, data: unknown, baseVersion: number, userId: UserId = OWNER,
 ) {
     return kit.putDoc.execute({ userId, projectId, docKey, data, baseVersion });
+}
+
+/** Keys of the stored documents (a new project always has its seeded meta). */
+async function storedKeys(kit: ProjectsKit, projectId: ProjectId, workspaceId: WorkspaceId = WS_A): Promise<string[]> {
+    return (await kit.docs.listByProject(workspaceId, projectId)).map(d => d.docKey).sort();
 }
 
 /** The summary the shared engine gives for the documents now stored. */
@@ -144,7 +149,7 @@ describe('PutDocUseCase', () => {
             expect(a.ok && b.ok).toBe(true);
             const stored = await kit.projects.findInWorkspace(WS_A, p.id);
             expect(stored?.summary).toEqual(await expectedSummary(kit, p.id));
-            expect((await kit.docs.listByProject(WS_A, p.id)).map(d => d.docKey).sort()).toEqual(['boq:R13', 'calc:fill']);
+            expect(await storedKeys(kit, p.id)).toEqual(['boq:R13', 'calc:fill', 'meta']);
         });
     });
 
@@ -163,7 +168,7 @@ describe('PutDocUseCase', () => {
             const r = await put(kit, p.id, docKey, data, 0);
             expect(!r.ok && r.error.code).toBe('unprocessable');
             expect(!r.ok && r.error.message.length).toBeGreaterThan(0);
-            expect(await kit.docs.listByProject(WS_A, p.id)).toEqual([]);
+            expect(await storedKeys(kit, p.id)).toEqual(['meta']);
             expect((await kit.projects.findInWorkspace(WS_A, p.id))?.summary).toEqual(p.summary);
             expect(kit.publisher.events).toEqual([]);
         });
@@ -184,7 +189,7 @@ describe('PutDocUseCase', () => {
             kit.publisher.events.length = 0;
             const r = await put(kit, p.id, 'calc:fill', { width: 1 }, 0);
             expect(!r.ok && r.error.code).toBe('conflict');
-            expect(await kit.docs.listByProject(WS_A, p.id)).toEqual([]);
+            expect(await storedKeys(kit, p.id)).toEqual(['meta']);
             expect(kit.publisher.events).toEqual([]);
         });
     });
@@ -238,7 +243,7 @@ describe('PutDocUseCase', () => {
                 if (allowed) expect(r.ok).toBe(true);
                 else {
                     expect(!r.ok && r.error.code).toBe('forbidden');
-                    expect(await kit.docs.listByProject(WS_A, p.id)).toEqual([]);
+                    expect(await storedKeys(kit, p.id)).toEqual(['meta']);
                 }
             },
         );
@@ -258,12 +263,12 @@ describe('PutDocUseCase', () => {
             // Even an invalid key gets not_found (authorization first, no oracle).
             const bad = await put(kit, p.id, 'calc:nope', {}, 0, OWNER_B);
             expect(!bad.ok && bad.error.code).toBe('not_found');
-            expect(await kit.docs.listByProject(WS_A, p.id)).toEqual([]);
+            expect(await storedKeys(kit, p.id)).toEqual(['meta']);
 
             const theirs = await kit.seedProject({ by: OWNER_B, workspaceId: WS_B });
             const reverse = await put(kit, theirs.id, 'calc:fill', { width: 1 }, 0, OWNER);
             expect(!reverse.ok && reverse.error.code).toBe('not_found');
-            expect(await kit.docs.listByProject(WS_B, theirs.id)).toEqual([]);
+            expect(await storedKeys(kit, theirs.id, WS_B)).toEqual(['meta']);
         });
     });
 });

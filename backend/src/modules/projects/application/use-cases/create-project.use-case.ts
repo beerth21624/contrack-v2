@@ -61,6 +61,14 @@ export class CreateProjectUseCase {
             seen.add(key.value);
             entries.push({ docKey: key.value, data: doc.data });
         }
+        if (!seen.has('meta')) {
+            // The BOQ header starts named like the project (otherwise it shows the default sample name).
+            // An uploaded meta doc is kept as is. Checked like any other document; meta never changes totals.
+            const meta = { projectName: name.value.value };
+            const key = this.assembler.checkDoc('meta', meta);
+            if (!key.ok) return key;
+            entries.unshift({ docKey: key.value, data: meta });
+        }
         const evaluated = this.assembler.evaluate(input.start, entries);
         if (!evaluated.ok) return evaluated;
 

@@ -33,11 +33,13 @@ import {
     colToIndex, indexToCol, isOracleError, loadV5Oracle, type ExcelOracle, type OracleCellInput, type OracleValue,
 } from '../../../test-utils/excel-oracle';
 import { expectBoqRow, expectClose, seededRandom } from '../../../test-utils/oracle-helpers';
-import { computeProject, createProject, projectPlanningInput, type ProjectResult } from '../../project';
+import { computeBoq } from '../../boq/engine';
+import { BOQ_TEMPLATE_V5 } from '../../boq/template.v5';
+import type { BoqResult } from '../../boq/types';
 import {
-    blankPlanningInput, bucketIndexOf, buildWeekBuckets, computeCashFlow, defaultPlanningInput, isoToSerial, overlapDays,
-    PLAN_TASKS, serialToIso,
-    type CashFlowResult, type PlanningInput, type PlanTaskDef, type ScheduleActualInput, type ScheduleResult,
+    blankPlanningInput, bucketIndexOf, buildWeekBuckets, computeCashFlow, computePlanning, defaultPlanningInput, isoToSerial,
+    overlapDays, PLAN_TASKS, resolvePlanningInput, serialToIso,
+    type CashFlowResult, type PlanningInput, type PlanningResult, type PlanTaskDef, type ScheduleActualInput, type ScheduleResult,
     type ScheduleTaskInput, type ScheduleTaskResult, type WageRate, type WageSetId, type WeekBucket,
 } from '..';
 
@@ -323,13 +325,23 @@ function excelInputs(c: PlanCase, fixes?: OffsetFixes): Record<string, OracleCel
     return out;
 }
 
-function appResult(c: PlanCase): ProjectResult {
-    const p = createProject();
-    p.planning = c.planning;
-    p.boqOverrides = Object.fromEntries(Object.entries(c.labour).map(([row, lab]) => [`R${row}`, { lab }]));
-    // What the app computes is exactly the case (resolvePlanningInput merges nothing back).
-    expect(JSON.parse(JSON.stringify(projectPlanningInput(p)))).toEqual(JSON.parse(JSON.stringify(c.planning)));
-    return computeProject(p);
+interface AppResult { boq: BoqResult; planning: PlanningResult }
+
+/**
+ * The app side: computePlanning (what computeProject runs) on the stored input as the app resolves it, over the
+ * BOQ (Home) template at the Excel sample + the case's labour prices. (computeProject's BOQ also carries the
+ * calculator-level decisions, e.g. D3 R16 = 6,469 instead of the typed 6,500 — asserted in boq-home.oracle.test.ts;
+ * here both sides must start from the same BOQ.)
+ */
+function appResult(c: PlanCase): AppResult {
+    const boq = computeBoq({
+        sections: BOQ_TEMPLATE_V5,
+        overrides: Object.fromEntries(Object.entries(c.labour).map(([row, lab]) => [`R${row}`, { lab }])),
+    });
+    const input = resolvePlanningInput(c.planning);
+    // What the app computes is exactly the case (resolvePlanningInput merges nothing back from the sample).
+    expect(JSON.parse(JSON.stringify(input))).toEqual(JSON.parse(JSON.stringify(c.planning)));
+    return { boq, planning: computePlanning(input, boq) };
 }
 
 // ─── Reading Excel ──────────────────────────────────────────────────────────
@@ -407,9 +419,9 @@ function scheduleAsExcel(s: ScheduleResult): ScheduleResult {
 
 // ─── Man-Day ────────────────────────────────────────────────────────────────
 const MD_BLOCK_KEYS = ['boqLabour', 'budget', 'calcDays', 'crew', 'dailyWage', 'days', 'excelRow', 'id', 'labourBasis',
-    'labourCost', 'labourers', 'section', 'skilled', 'suggestedDays', 'title', 'wageSet'];
+    'labourCost', 'labourers', 'section', 'skilled', 'suggestedDays', 'title', 'wageSet'].sort();
 
-function checkManDay(o: ExcelOracle, c: PlanCase, res: ProjectResult): void {
+function checkManDay(o: ExcelOracle, c: PlanCase, res: AppResult): void {
     const md = res.planning.manday;
     expect(Object.keys(md).sort()).toEqual(['blocks', 'totalBudget', 'totalDays']);
     expect(md.blocks).toHaveLength(32);
@@ -456,12 +468,12 @@ function checkManDay(o: ExcelOracle, c: PlanCase, res: ProjectResult): void {
 
 // ─── S-Curve ────────────────────────────────────────────────────────────────
 const SC_KEYS = ['actualCumulative', 'actualWeekly', 'budget', 'buckets', 'durationDays', 'finish', 'installments', 'months',
-    'planCumulative', 'planWeekly', 'projectName', 'start', 'status', 'tasks'];
+    'planCumulative', 'planWeekly', 'projectName', 'start', 'status', 'tasks'].sort();
 const SC_TASK_KEYS = ['actual', 'budget', 'duration', 'durationFromManDay', 'excelRow', 'finish', 'id', 'installment', 'name',
-    'plan', 'progress', 'start', 'weight'];
+    'plan', 'progress', 'start', 'weight'].sort();
 
 /** Checks the S-Curve; returns the D1 shift of the project duration (app − Excel AA2). */
-function checkSchedule(o: ExcelOracle, c: PlanCase, res: ProjectResult): number {
+function checkSchedule(o: ExcelOracle, c: PlanCase, res: AppResult): number {
     const s = res.planning.schedule;
     expect(Object.keys(s).sort(), 'S-Curve output keys').toEqual(SC_KEYS);
     expect(s.buckets, 'the plans stay within the 12 Excel months').toHaveLength(SC_BUCKETS);
@@ -502,8 +514,6 @@ function checkSchedule(o: ExcelOracle, c: PlanCase, res: ProjectResult): number 
                 else expectClose(share, typeof x === 'number' ? x : NaN, `${label} ${kind} ${ref} (+1E-12)`);
             }
         }
-        // D1 BE: what Excel loses is the app's whole last-bucket share (non-zero only in the named case).
-        if (!caseTouchesLastBucket(res)) expect(t.plan[LAST]).toBe(0);
     }
 
     // Rows 86–93: app + Excel's 1E-12 per non-empty share − the D1 BE bucket.
@@ -519,12 +529,16 @@ function checkSchedule(o: ExcelOracle, c: PlanCase, res: ProjectResult): number 
         expectClose(e87[k], o.num(`${SC}!${col}87`), `row 87 ${col}`);
         expectClose(e90[k], o.num(`${SC}!${col}90`), `row 90 ${col}`);
         expectClose(e91[k], o.num(`${SC}!${col}91`), `row 91 ${col}`);
-        // the delta is exactly the 1E-12s (+ the lost BE share): app + delta = Excel's view
-        const d86 = e86[k] ?? NaN;
-        expectClose((s.planWeekly[k] ?? NaN) + (d86 - (s.planWeekly[k] ?? NaN)), d86, 'row 86 delta');
-        expect(Math.abs(d86 - (s.planWeekly[k] ?? NaN)) <= s.tasks.length * EPS * 1.01 || k === LAST).toBe(true);
-        expect(Math.abs((e90[k] ?? NaN) - (s.actualWeekly[k] ?? NaN)) <= s.tasks.length * EPS * 1.01 || k === LAST).toBe(true);
+        // Narrow: before BE, Excel's view differs from the app only by the 1E-12s (≤ one per task).
+        if (k !== LAST) {
+            expect(Math.abs((e86[k] ?? NaN) - (s.planWeekly[k] ?? NaN)), `row 86 ${col} − app`).toBeLessThanOrEqual(s.tasks.length * EPS * 1.01);
+            expect(Math.abs((e90[k] ?? NaN) - (s.actualWeekly[k] ?? NaN)), `row 90 ${col} − app`).toBeLessThanOrEqual(s.tasks.length * EPS * 1.01);
+        }
     }
+    // D1 BE: Excel loses exactly the app's last-bucket shares.
+    expect(e86[LAST]).toBe(0);
+    expect(e90[LAST]).toBe(0);
+    expectClose((s.planWeekly[LAST] ?? NaN) - (e86[LAST] ?? NaN), sum(s.tasks.map(t => t.plan[LAST] ?? 0)), 'BE86 delta');
     expect(s.months).toHaveLength(12);
     for (const m of s.months) {
         const col = scCol(m.firstBucket);
@@ -584,7 +598,7 @@ function checkSchedule(o: ExcelOracle, c: PlanCase, res: ProjectResult): number 
     return dFinish - dStart;
 }
 
-function caseTouchesLastBucket(res: ProjectResult): boolean {
+function caseTouchesLastBucket(res: AppResult): boolean {
     return res.planning.schedule.tasks.some(t => (t.plan[LAST] ?? 0) > 0 || (t.actual.weekly[LAST] ?? 0) > 0);
 }
 
@@ -592,7 +606,7 @@ function caseTouchesLastBucket(res: ProjectResult): boolean {
 const CF_KEYS = ['buckets', 'cost', 'cumulative', 'costWeekly', 'evm', 'groups', 'incomeWeekly', 'installmentPctTotal', 'installments',
     'minCumulative', 'months', 'netWeekly', 'opexWeekly', 'outflowWeekly', 'planPctWeekly', 'profitWeekly', 'quotation', 'tasks',
     'totalIncome', 'totalOutflow'].sort();
-const EVM_KEYS = ['ac', 'bac', 'cpi', 'cv', 'duration', 'eacCost', 'eacDays', 'ev', 'profitForecast', 'profitPlan', 'pv', 'spi', 'sv', 'vac'];
+const EVM_KEYS = ['ac', 'bac', 'cpi', 'cv', 'duration', 'eacCost', 'eacDays', 'ev', 'profitForecast', 'profitPlan', 'pv', 'spi', 'sv', 'vac'].sort();
 
 /** D1 rows 26/29: what Excel's four misaligned cells read, from the S-Curve PLAN rows of tasks 1.6 (24) and 2.2 (31). */
 interface OffsetDelta { byBucket: Map<number, number>; effect: boolean }
@@ -631,14 +645,14 @@ function checkTaskRows(o: ExcelOracle, cfX: CashFlowResult, skipOffsetCells: boo
     }
 }
 
-function checkCashFlow(o: ExcelOracle, c: PlanCase, res: ProjectResult, cfX: CashFlowResult, durDelta: number): void {
+function checkCashFlow(o: ExcelOracle, c: PlanCase, res: AppResult, cfX: CashFlowResult, durDelta: number): void {
     const input = c.planning.cashflow;
     expect(Object.keys(cfX).sort(), 'CashFlow output keys').toEqual(CF_KEYS);
     expect(Object.keys(cfX.evm).sort(), 'EVM keys').toEqual(EVM_KEYS);
     const n = cfX.buckets.length;
     const extra = range(n).filter(k => k >= CF_BUCKETS);   // D18: app columns beyond W
     const ks = range(CF_BUCKETS);
-    expect(n).toBe(Math.max(CF_BUCKETS, n));
+    expect(n).toBeGreaterThanOrEqual(CF_BUCKETS);
 
     expectClose(cfX.cost, o.num(`${CF}!D2`), 'D2');
     expectClose(cfX.cost, o.num(`${BOQ}!M310`), 'D2 = BOQ M310');
@@ -746,7 +760,7 @@ function checkAppVsExcelShares(app: CashFlowResult, cfX: CashFlowResult): void {
 }
 
 // ─── Branch coverage ────────────────────────────────────────────────────────
-function branchesOf(c: PlanCase, res: ProjectResult): string[] {
+function branchesOf(c: PlanCase, res: AppResult): string[] {
     const out: string[] = [];
     const { manday, schedule, cashflow } = c.planning;
     const s = res.planning.schedule;
@@ -766,8 +780,8 @@ function branchesOf(c: PlanCase, res: ProjectResult): string[] {
     out.push(s.start === s.tasks[0]?.start ? 'SC D5 = E14' : 'SC D1 earlier start than E14');
     out.push(s.finish === s.tasks[31]?.finish ? 'SC D6 = F83' : 'SC D1 later finish than F83');
     out.push(s.status.lastUpdate === null ? 'SC no ACTUAL (Q4 #N/A)' : `SC Q7 ${s.status.delayStatus ?? 'blank'}`);
-    if (Object.values(schedule.tasks).some(t => t.actual && t.actual.cost === undefined)) out.push('SC actual without cost');
-    if (Object.values(schedule.tasks).some(t => t.actual && t.actual.days === undefined)) out.push('SC actual without days');
+    if (Object.values(schedule.tasks).some(t => t.actual !== undefined && t.actual.cost === undefined)) out.push('SC actual without cost');
+    if (Object.values(schedule.tasks).some(t => t.actual !== undefined && t.actual.days === undefined)) out.push('SC actual without days');
     if (s.status.earnedValue > 0) out.push('SC Q5 > 0');
     if (caseTouchesLastBucket(res)) out.push('SC D1 last bucket BE');
     const cf = res.planning.cashflow;
@@ -874,11 +888,9 @@ describe('Man-Day / S-Curve / CashFlow vs Excel formulas (oracle, whole workbook
         // D1 rows 26/29: the raw cells read the documented wrong columns; row 54 differs by exactly that.
         const offsets = checkOffsetCells(oracle, cfX);
         checkTaskRows(oracle, cfX, true);
-        const lostD15 = cfX.installments[8]?.weekly[0] ?? 0;
         for (const k of range(CF_BUCKETS)) {
             expectClose(cfX.planPctWeekly[k] - (offsets.byBucket.get(k) ?? 0), oracle.num(`${CF}!${cfCol(k)}54`), `${cfCol(k)}54 raw`);
         }
-        expect(lostD15).toBeGreaterThanOrEqual(0);
         if (offsets.effect) oracle.replaceInputs(excelInputs(c, fixes));   // the four cells typed with the right column
         checkCashFlow(oracle, c, res, cfX, durDelta);
     }, 120_000);

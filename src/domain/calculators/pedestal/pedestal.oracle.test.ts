@@ -16,7 +16,7 @@ import {
 } from '../../../test-utils/oracle-boq-checks';
 import { expectClose, seededRandom } from '../../../test-utils/oracle-helpers';
 import {
-    FOOTING_TABLE, PEDESTAL_TABLE, SHEETS, excelKgPerM, footingExcelInputs, pedestalExcelInputs, pedestalLayout,
+    FOOTING_TABLE, PEDESTAL_TABLE, SHEETS, excelKgPerM, firstRow, footingExcelInputs, pedestalExcelInputs, pedestalLayout,
     pedestalStirrupCounts, pedestalStirrupKgDelta, randomFootingPedestal, randomFootingRow, randomPedestalRow, tableRef,
 } from '../../../test-utils/oracle-structure-inputs';
 import { REBAR_SIZES } from '../../boq/slots';
@@ -50,8 +50,8 @@ const BEAM_BLOCK: RebarBlock = { slot: 'ground-beam:rebar', rows: [71, 72], tieW
 const PS_BLOCK: RebarBlock = { slot: 'precast-slab:shear-key', rows: [75] };
 
 // ─── Cases ──────────────────────────────────────────────────────────────────
-const F1 = footing.defaults().rows[0] as FootingRow;
-const C1 = pedestal.defaults().rows[0] as PedestalRow;
+const F1 = firstRow(footing.defaults().rows);
+const C1 = firstRow(pedestal.defaults().rows);
 const F2: FootingRow = {
     name: 'F2', count: 4, width: 1.0, length: 1.2, depth: 0.5, excavationDepth: 1.2, sandThickness: 0.05, leanThickness: 0.05,
     shortBarSize: 'DB16', shortBarCount: 6, longBarSize: 'DB16', longBarCount: 7, ringBarSize: 'RB9', ringBarCount: 2,

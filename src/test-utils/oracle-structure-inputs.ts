@@ -82,6 +82,13 @@ export const COLUMN_TABLE: TableSpec<ColumnRow> = {
     ],
 };
 
+/** The first row of a table (the Excel sample's row 8); throws on an empty table. */
+export function firstRow<T>(rows: readonly T[]): T {
+    const [row] = rows;
+    if (row === undefined) throw new Error('empty table');
+    return row;
+}
+
 /** `Sheet!<col><row>` of table row i (0-based). */
 export const tableRef = <R>(spec: TableSpec<R>, col: string, i: number): string => `${spec.sheet}!${col}${spec.first + i}`;
 

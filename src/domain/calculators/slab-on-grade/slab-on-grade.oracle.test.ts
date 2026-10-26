@@ -10,7 +10,7 @@ import {
 } from '../../../test-utils/oracle-boq-checks';
 import { expectClose, seededRandom } from '../../../test-utils/oracle-helpers';
 import {
-    SHEETS, SLAB_TABLE, randomSlabInput, randomSlabRow, slabExcelInputs, tableRef,
+    SHEETS, SLAB_TABLE, firstRow, randomSlabInput, randomSlabRow, slabExcelInputs, tableRef,
 } from '../../../test-utils/oracle-structure-inputs';
 import { REBAR_SIZES } from '../../boq/slots';
 import { computeProject, createProject, type ProjectResult } from '../../project';
@@ -40,7 +40,7 @@ const BLOCK: RebarBlock = { slot: 'slab-on-grade:rebar', rows: [92], tieWire: 93
 
 // ─── Cases ──────────────────────────────────────────────────────────────────
 const sample = slabOnGrade.defaults();
-const s1 = sample.slabs[0] as SlabRow;
+const s1 = firstRow(sample.slabs);
 const ZERO_ROW: SlabRow = { name: '', width: 0, length: 0, thickness: 0, fillDepth: 0, sandThickness: 0, barSize: '', layers: 0, spacing: 0 };
 const fullTable = (): SlabRow[] => {
     const rng = seededRandom(2817);

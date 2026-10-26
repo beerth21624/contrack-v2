@@ -154,17 +154,17 @@ export function expectRebarBlock(
     }
 
     let exact = true;
-    sizes.forEach((size, k) => {
+    for (const [k, size] of sizes.entries()) {
         const er = block.rows[k] ?? 0;
         const row = slot(size);
-        if (!row) return;
+        if (!row) continue;
         expect(oracle.get(`${BOQ_SHEET}!D${er}`), `${tag}: Excel D${er}`).toBe(`- เหล็ก ${size}`);
         const e = cell(oracle, 'E', er), g = cell(oracle, 'G', er);
         const dKg = kgDelta[size] ?? 0;
         expectClose(row.qty - e, dKg, `${tag}:${size} E − Excel E${er} (documented kg delta)`);
         if (dKg === 0 && closeTo(g, REBAR_WASTE[size])) {
             expectBoqRow(oracle, boq, `${block.slot}:${size}`, er, label);
-            return;
+            continue;
         }
         exact = false;
         const i = cell(oracle, 'I', er), kLab = cell(oracle, 'K', er), w = REBAR_WASTE[size];
@@ -172,7 +172,7 @@ export function expectRebarBlock(
         expectClose(row.grossQty ?? NaN, row.qty * (1 + w), `${tag}:${size} H (per-size waste ${w})`);
         expectClose(row.matTotal, i * row.qty * (1 + w), `${tag}:${size} J = Excel I${er} × H`);
         expectClose(row.labTotal, kLab * row.qty, `${tag}:${size} L = Excel K${er} × E`);
-    });
+    }
     for (let k = sizes.length; k < block.rows.length; k++) {
         expect(cell(oracle, 'E', block.rows[k] ?? 0), `${tag}: unused Excel row ${block.rows[k] ?? 0}`).toBe(0);
     }

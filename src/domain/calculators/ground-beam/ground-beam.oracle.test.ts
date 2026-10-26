@@ -9,7 +9,7 @@ import {
 } from '../../../test-utils/oracle-boq-checks';
 import { expectClose, seededRandom } from '../../../test-utils/oracle-helpers';
 import {
-    GROUND_BEAM_TABLE, SHEETS, groundBeamExcelInputs, groundBeamShortRangeDelta, randomGroundBeamInput,
+    GROUND_BEAM_TABLE, SHEETS, firstRow, groundBeamExcelInputs, groundBeamShortRangeDelta, randomGroundBeamInput,
     randomGroundBeamRow, tableRef,
 } from '../../../test-utils/oracle-structure-inputs';
 import { REBAR_SIZES } from '../../boq/slots';
@@ -51,7 +51,7 @@ const PS_BLOCK: RebarBlock = { slot: 'precast-slab:shear-key', rows: [75] };
 
 // ─── Cases ──────────────────────────────────────────────────────────────────
 const sample = groundBeam.defaults();
-const b1 = sample.beams[0] as GroundBeamRow;
+const b1 = firstRow(sample.beams);
 const ZERO_ROW: GroundBeamRow = { name: '', width: 0, depth: 0, length: 0, leanThickness: 0, mainSize: '', mainCount: 0, stirrupSize: '', stirrupSpacing: 0 };
 const rows = (n: number, seed: number): GroundBeamRow[] => {
     const rng = seededRandom(seed);

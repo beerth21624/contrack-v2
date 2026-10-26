@@ -48,7 +48,7 @@ describe('DeleteProjectUseCase', () => {
         const a = await kit.seedProject({ name: 'A' });
         const b = await kit.seedProject({ name: 'B', docs: [SAMPLE_DOCS.fill] });
         await kit.deleteProject.execute({ userId: OWNER, projectId: a.id });
-        expect(await kit.docs.listByProject(WS_A, b.id)).toHaveLength(1);
+        expect((await kit.docs.listByProject(WS_A, b.id)).map(d => d.docKey).sort()).toEqual(['calc:fill', 'meta']);
     });
 
     it.each<[Role, boolean]>([['owner', true], ['admin', true], ['estimator', false], ['viewer', false]])(

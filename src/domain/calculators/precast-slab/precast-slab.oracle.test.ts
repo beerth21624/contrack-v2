@@ -10,7 +10,7 @@ import {
 } from '../../../test-utils/oracle-boq-checks';
 import { expectClose, seededRandom } from '../../../test-utils/oracle-helpers';
 import {
-    PRECAST_KEY_WEIGHT_ROWS, PRECAST_TABLE, SHEETS, precastExcelInputs, randomPrecastInput, randomPrecastPanel, tableRef,
+    PRECAST_KEY_WEIGHT_ROWS, PRECAST_TABLE, SHEETS, firstRow, precastExcelInputs, randomPrecastInput, randomPrecastPanel, tableRef,
 } from '../../../test-utils/oracle-structure-inputs';
 import { REBAR_SIZES } from '../../boq/slots';
 import { computeProject, createProject, type ProjectResult } from '../../project';
@@ -43,7 +43,7 @@ const BEAM_BLOCK: RebarBlock = { slot: 'ground-beam:rebar', rows: [71, 72], tieW
 
 // ─── Cases ──────────────────────────────────────────────────────────────────
 const sample = precastSlab.defaults();
-const p1 = sample.panels[0] as PrecastPanelRow;
+const p1 = firstRow(sample.panels);
 const ZERO_ROW: PrecastPanelRow = { width: 0, length: 0, keySize: '', keySpacing: 0, keyBarLength: 0, topping: 0 };
 const panels = (n: number, seed: number, noKeyFrom = Infinity): PrecastPanelRow[] => {
     const rng = seededRandom(seed);
@@ -149,14 +149,21 @@ describe(' พื้นสำเร็จรูป_PS vs Excel formulas (oracle)
 
     it.each(CASES)('%s', (_name, input) => { compare(input); });
 
-    // REAL MISMATCH (not a documented decision; reported to the coordinator, domain code unchanged):
-    // Excel's shear-key weight column M has its formula on rows 8–21 only — M22:M24 are empty although the table
-    // (and its K/L columns, and the H6:L6 SUMIFs over rows 8–100) run to row 24. A 15th–17th panel's shear key is
-    // therefore never weighed in Excel; the app weighs every panel.
-    // Inputs: 17 panels 3 × 3 m, RB6 @ 0.35 m, 0.80 m a bar, topping 0.05 → per panel ROUNDUP(6/0.35) = 18 bars,
-    // 14.4 m, 3.1968 kg. Excel H6 (sheet 24 I10, BOQ E75) = 14 × 3.1968 = 44.7552 kg; app rebar.RB6 = 17 × 3.1968
-    // = 54.3456 kg (row 22 M: Excel empty, app 3.1968).
-    it.fails('PS rows 22–24 shear key: Excel H6 44.7552 kg (M22:M24 have no formula), app 54.3456 kg — 17 panels 3×3, RB6 @0.35, 0.8 m; see report', () => {
-        compare({ panels: Array.from({ length: PRECAST_TABLE.rows }, () => ({ width: 3, length: 3, keySize: 'RB6', keySpacing: 0.35, keyBarLength: 0.8, topping: 0.05 })) });
+    // D1 (Excel bug fixed on purpose): Excel's shear-key weight column M has its formula on rows 8–21 only — M22:M24
+    // are empty although the table (its K/L columns and the H6:L6 SUMIFs over rows 8–100) runs to row 24, so a
+    // 15th–17th panel's shear key is never weighed in Excel. The app weighs every panel.
+    // 17 panels 3 × 3 m, RB6 @ 0.35 m, 0.80 m a bar → per panel ROUNDUP(6/0.35) = 18 bars, 14.4 m, 3.1968 kg.
+    // Excel H6 (sheet 24 I10, BOQ E75) = 14 × 3.1968 = 44.7552 kg; the app 17 × 3.1968 = 54.3456 kg.
+    it('D1: panels 15–17 — the app weighs their shear key, Excel (no formula in M22:M24) does not', () => {
+        const panel = { width: 3, length: 3, keySize: 'RB6', keySpacing: 0.35, keyBarLength: 0.8, topping: 0.05 };
+        const input: PrecastSlabInput = { panels: Array.from({ length: PRECAST_TABLE.rows }, () => ({ ...panel })) };
+        oracle.replaceInputs(precastExcelInputs(input));
+        const perPanel = precastPanel({ ...panel }).keyWeight;
+        expectClose(perPanel, 3.1968, 'one panel key weight');
+        const excelKg = oracle.num(`${BOQ}!E75`);
+        expectClose(excelKg, PRECAST_KEY_WEIGHT_ROWS * perPanel, 'Excel weighs only the formula rows');
+        const appKg = appResult(input).calcOutputs['precast-slab']?.['rebar.RB6'] ?? NaN;
+        expectClose(appKg, PRECAST_TABLE.rows * perPanel, 'the app weighs every panel');
+        expectClose(appKg - excelKg, (PRECAST_TABLE.rows - PRECAST_KEY_WEIGHT_ROWS) * perPanel, 'delta = the rows Excel leaves out');
     });
 });

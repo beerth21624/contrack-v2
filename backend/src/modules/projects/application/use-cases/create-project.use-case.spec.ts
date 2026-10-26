@@ -19,7 +19,7 @@ describe('CreateProjectUseCase', () => {
         expect(project.engineVersion).toBe('excel-v5');
         expect(project.createdAt).toEqual(kit.clock.now());
         expect(project.summary).toEqual(projectSummary(docsToProject('blank', [])));
-        expect(docs).toEqual([]);
+        expect(docs.map(d => [d.docKey, d.data, d.version])).toEqual([['meta', { projectName: 'บ้าน' }, 1]]);
 
         expect(await kit.projects.findInWorkspace(WS_A, project.id)).toBeDefined();
         const activity = await kit.activity.list(WS_A, project.id, { limit: 10 });
@@ -36,6 +36,36 @@ describe('CreateProjectUseCase', () => {
         const stored = await kit.docs.listByProject(WS_A, r.value.project.id);
         expect(stored.map(d => d.docKey).sort()).toEqual(uploaded.map(d => d.docKey).sort());
         expect(stored.every(d => d.version === 1 && d.updatedBy === OWNER)).toBe(true);
+    });
+
+    it('seeds the BOQ header (meta) with the project name when no meta doc is given; totals unchanged', async () => {
+        for (const start of ['blank', 'sample'] as const) {
+            const kit = projectsKit();
+            const r = await kit.createProject.execute({
+                userId: OWNER, workspaceId: WS_A, name: ' บ้านคุณสมชาย ', start, docs: [SAMPLE_DOCS.fill],
+            });
+            if (!r.ok) throw new Error(r.error.message);
+            const meta = await kit.docs.find(WS_A, r.value.project.id, 'meta');
+            expect(meta?.data).toEqual({ projectName: 'บ้านคุณสมชาย' });
+            expect(meta?.version).toBe(1);
+            expect(meta?.updatedBy).toBe(OWNER);
+            const assembled = docsToProject(start, (await kit.docs.listByProject(WS_A, r.value.project.id)).map(d => d.toEntry()));
+            expect(assembled.meta.projectName).toBe('บ้านคุณสมชาย');
+            expect(r.value.project.summary).toEqual(projectSummary(assembled));
+            expect(r.value.project.summary).toEqual(projectSummary(docsToProject(start, [SAMPLE_DOCS.fill])));
+        }
+    });
+
+    it('keeps an uploaded meta doc as is', async () => {
+        const kit = projectsKit();
+        const r = await kit.createProject.execute({
+            userId: OWNER, workspaceId: WS_A, name: 'Cloud name', start: 'sample', docs: [SAMPLE_DOCS.meta],
+        });
+        if (!r.ok) throw new Error(r.error.message);
+        const metas = r.value.docs.filter(d => d.docKey === 'meta');
+        expect(metas).toHaveLength(1);
+        expect(metas[0]?.data).toEqual(SAMPLE_DOCS.meta.data);
+        expect((await kit.docs.find(WS_A, r.value.project.id, 'meta'))?.data).toEqual(SAMPLE_DOCS.meta.data);
     });
 
     it('a full guest project (projectToDocs) uploads with identical totals', async () => {
