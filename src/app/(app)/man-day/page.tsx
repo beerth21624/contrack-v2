@@ -1,14 +1,11 @@
 'use client';
 
-import { ManDayTable } from '@/components/ManDayTable';
-import { useAppStore } from '@/lib/store';
+import { Spin } from 'antd';
+import { useProjectStore } from '@/store/project-store';
+import { ManDayPage } from '@/features/planning/manday/ManDayPage';
 
-export default function ManDayPage() {
-    const stepSaves = useAppStore(state => state.stepSaves);
-    const scheduleData = useAppStore(state => state.scheduleData);
-    return (
-        <div className="w-full">
-            <ManDayTable stepSaves={stepSaves} scheduleData={scheduleData} />
-        </div>
-    );
+export default function ManDayRoute() {
+    const hasHydrated = useProjectStore(s => s.hasHydrated);
+    if (!hasHydrated) return <div className="flex justify-center p-20"><Spin size="large" /></div>;
+    return <ManDayPage />;
 }
