@@ -8,6 +8,9 @@ import { useProjectStore } from '@/store/project-store';
 import { computeProject } from '@/domain/project';
 import type { BoqItemRow, BoqSectionResult } from '@/domain/boq/types';
 import { NumberCell, TextCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { getCalculator } from '@/domain/calculators/registry';
+import { CALCULATOR_PAGES } from '@/features/calculators/pages';
+import Link from 'next/link';
 
 const { Title, Text } = Typography;
 
@@ -64,6 +67,7 @@ export function BoqHomePage() {
                     {r.editable.qty
                         ? <Tooltip title={qtyTip}>
                             <div><NumberCell value={r.qty} edited={ov.qty !== undefined} digits={r.qty % 1 === 0 ? 0 : 2}
+                                tone={r.fromCalc.qty ? 'calc' : 'input'}
                                 onCommit={v => setOverride(r.key, 'qty', v)} ariaLabel={`${r.desc} ${t('colQty')}`} /></div>
                           </Tooltip>
                         : <CalcValue value={r.qtySource === 'none' ? null : r.qty} tip={qtyTip} />}
@@ -75,12 +79,12 @@ export function BoqHomePage() {
                 </td>
                 <td className={num} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.grossQty} /></td>
                 <td className={num} style={{ minWidth: 90 }}>
-                    <NumberCell value={r.matUnit} edited={ov.mat !== undefined}
+                    <NumberCell value={r.matUnit} edited={ov.mat !== undefined} tone={r.fromCalc.mat ? 'calc' : 'input'}
                         onCommit={v => setOverride(r.key, 'mat', v)} ariaLabel={`${r.desc} ${t('colMat')}`} />
                 </td>
                 <td className={num} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.matTotal} /></td>
                 <td className={num} style={{ minWidth: 90 }}>
-                    <NumberCell value={r.labUnit} edited={ov.lab !== undefined}
+                    <NumberCell value={r.labUnit} edited={ov.lab !== undefined} tone={r.fromCalc.lab ? 'calc' : 'input'}
                         onCommit={v => setOverride(r.key, 'lab', v)} ariaLabel={`${r.desc} ${t('colLab')}`} />
                 </td>
                 <td className={num} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.labTotal} /></td>
@@ -107,11 +111,20 @@ export function BoqHomePage() {
                                 icon={isCollapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
                                 onClick={() => toggle(s.no)} />
                             <span>{s.title}</span>
-                            {s.calculators.length > 0 && (
-                                <Tooltip title={t('calcPending')}>
-                                    <LinkOutlined className="text-gray-400" />
-                                </Tooltip>
-                            )}
+                            {s.calculators.map(id => {
+                                const def = getCalculator(id);
+                                return def && CALCULATOR_PAGES[id]
+                                    ? (
+                                        <Link key={id} href={`/calc/${id}`} className="text-[12px] font-normal text-blue-600 hover:underline">
+                                            <LinkOutlined /> {def.title}
+                                        </Link>
+                                    )
+                                    : (
+                                        <Tooltip key={id} title={t('calcPending')}>
+                                            <LinkOutlined className="text-gray-400" />
+                                        </Tooltip>
+                                    );
+                            })}
                             <span className="ml-auto text-gray-600 tabular-nums">{formatNumber(s.total)}</span>
                             {hasEdits && (
                                 <Tooltip title={t('resetSection')}>

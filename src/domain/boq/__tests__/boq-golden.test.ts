@@ -85,8 +85,15 @@ describe('BOQ engine behaviour', () => {
         expect(line(r, 'R39').qty).toBe(30);
     });
 
-    it('uses calculator outputs when present, falling back to the Excel sample', () => {
-        const r = computeBoq({ sections: BOQ_TEMPLATE_V5, calcOutputs: { 'fill.R13': 100 } });
+    it('uses calculator values when present; BOQ-page edits win over them', () => {
+        const r = computeBoq({ sections: BOQ_TEMPLATE_V5, linked: { R13: { qty: 100 }, R9: { lab: 9000 } } });
         expect(line(r, 'R13').qty).toBe(100);
+        expect(line(r, 'R13').fromCalc.qty).toBe(true);
+        expect(line(r, 'R9').total).toBe(9000);
+        const edited = computeBoq({
+            sections: BOQ_TEMPLATE_V5, linked: { R13: { qty: 100 } }, overrides: { R13: { qty: 50 } },
+        });
+        expect(line(edited, 'R13').qty).toBe(50);
+        expect(line(edited, 'R13').fromCalc.qty).toBe(false);
     });
 });

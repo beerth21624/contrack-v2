@@ -24,13 +24,15 @@ interface NumberCellProps {
     /** Display/enter as a percentage (stored as a fraction). */
     percent?: boolean;
     ariaLabel?: string;
+    /** 'calc' = value currently comes from a calculator (green) but can still be overridden. */
+    tone?: 'input' | 'calc';
 }
 
 /**
  * A yellow input cell that edits like a spreadsheet: type, then Enter/Tab/blur commits.
  * Clearing the cell commits `undefined` (back to the template default).
  */
-export function NumberCell({ value, onCommit, edited, digits = 2, percent, ariaLabel }: NumberCellProps) {
+export function NumberCell({ value, onCommit, edited, digits = 2, percent, ariaLabel, tone = 'input' }: NumberCellProps) {
     const shown = percent ? value * 100 : value;
     // Draft text only while the cell is being edited; otherwise the formatted value is shown.
     const [text, setText] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export function NumberCell({ value, onCommit, edited, digits = 2, percent, ariaL
             }}
             style={{
                 width: '100%', minWidth: 0, textAlign: 'right', border: '1px solid transparent',
-                background: SHEET_COLORS.input, padding: '2px 4px', borderRadius: 3,
+                background: tone === 'calc' ? SHEET_COLORS.calc : SHEET_COLORS.input, padding: '2px 4px', borderRadius: 3,
                 fontWeight: edited ? 700 : 400, font: 'inherit',
             }}
             className="focus:outline-none focus:border-orange-400"

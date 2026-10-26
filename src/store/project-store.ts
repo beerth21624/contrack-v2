@@ -16,6 +16,8 @@ interface ProjectState {
     /** Set (or clear with `undefined`) one edited field of a BOQ line. */
     setBoqOverride: <F extends BoqEditableField>(key: BoqLineKey, field: F, value: BoqLineOverride[F] | undefined) => void;
     resetBoqSection: (keys: BoqLineKey[]) => void;
+    /** Replace a calculator's whole input (undefined = back to the Excel sample). */
+    setCalculatorInput: (id: string, input: unknown) => void;
     resetProject: () => void;
 }
 
@@ -43,6 +45,11 @@ export const useProjectStore = create<ProjectState>()(
                     Object.entries(s.project.boqOverrides).filter(([k]) => !drop.has(k)),
                 );
                 return { project: { ...s.project, boqOverrides } };
+            }),
+            setCalculatorInput: (id, input) => set(s => {
+                const others = Object.entries(s.project.calculators).filter(([k]) => k !== id);
+                const calculators = Object.fromEntries(input === undefined ? others : [...others, [id, input]]);
+                return { project: { ...s.project, calculators } };
             }),
             resetProject: () => set({ project: createProject() }),
         }),

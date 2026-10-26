@@ -85,8 +85,8 @@ export interface BoqLineOverride {
     note?: string;
 }
 
-/** Values a calculator exposes to the BOQ, keyed `${calcId}.${output}`. */
-export type CalcOutputs = Record<string, number | undefined>;
+/** Values calculators supply to BOQ cells (resolved from their `boqLinks`). */
+export type LinkedValues = Record<BoqLineKey, { qty?: number; mat?: number; lab?: number } | undefined>;
 
 // ─── Computed results ────────────────────────────────────────────────────────
 
@@ -108,6 +108,8 @@ export interface BoqItemRow {
     labTotal: number;          // L
     total: number;             // M
     editable: { qty: boolean };
+    /** Which cells currently show a value supplied by a calculator (not edited on the BOQ page). */
+    fromCalc: { qty: boolean; mat: boolean; lab: boolean };
 }
 
 export interface BoqHeadingRow {

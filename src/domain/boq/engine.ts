@@ -1,6 +1,6 @@
 import type {
     BoqItemTemplate, BoqLineKey, BoqLineOverride, BoqResult, BoqRow, BoqSectionTemplate,
-    CalcOutputs, PriceRule,
+    LinkedValues, PriceRule,
 } from './types';
 
 const EPS = 1e-9;
@@ -17,8 +17,10 @@ export function ceilingTo(x: number, step: number): number {
 
 export interface ComputeBoqInput {
     sections: BoqSectionTemplate[];
+    /** Edits made on the BOQ page — win over everything. */
     overrides?: Record<BoqLineKey, BoqLineOverride | undefined>;
-    calcOutputs?: CalcOutputs;
+    /** Values supplied by calculator sheets — win over the template's Excel sample. */
+    linked?: LinkedValues;
 }
 
 interface LineCalc {
@@ -37,7 +39,7 @@ interface LineCalc {
  * Sub-totals sum every item row of the section (decision D1 fixes Excel's short ranges at
  * J95/L95, J216/L216, L243; M sub-totals are unchanged).
  */
-export function computeBoq({ sections, overrides = {}, calcOutputs = {} }: ComputeBoqInput): BoqResult {
+export function computeBoq({ sections, overrides = {}, linked = {} }: ComputeBoqInput): BoqResult {
     const items = new Map<BoqLineKey, BoqItemTemplate>();
     for (const s of sections) for (const l of s.lines) if (l.type === 'item') items.set(l.key, l);
 
@@ -66,10 +68,11 @@ export function computeBoq({ sections, overrides = {}, calcOutputs = {} }: Compu
         return guard(`${key}.net`, () => {
             const t = get(key);
             const ov = overrides[key];
+            const fromCalc = linked[key]?.qty;
             let v: number;
             switch (t.qty.kind) {
-                case 'input': v = ov?.qty ?? t.qty.value; break;
-                case 'calc': v = ov?.qty ?? calcOutputs[`${t.qty.calc}.${t.qty.output}`] ?? t.qty.fallback; break;
+                case 'input': v = ov?.qty ?? fromCalc ?? t.qty.value; break;
+                case 'calc': v = ov?.qty ?? fromCalc ?? t.qty.fallback; break;
                 case 'line': v = t.qty.factor * net(t.qty.ref); break;
                 case 'sumLines': v = t.qty.refs.reduce((s, r) => s + net(r), 0); break;
                 case 'none': v = 0; break;
@@ -105,7 +108,7 @@ export function computeBoq({ sections, overrides = {}, calcOutputs = {} }: Compu
         if (cached !== undefined) return cached;
         return guard(`${key}.${field}`, () => {
             const t = get(key);
-            const ov = overrides[key]?.[field];
+            const ov = overrides[key]?.[field] ?? linked[key]?.[field];
             const rule: PriceRule = t[field];
             let v: number;
             if (ov !== undefined) v = ov;
@@ -166,6 +169,11 @@ export function computeBoq({ sections, overrides = {}, calcOutputs = {} }: Compu
                 labTotal: k,
                 total: j + k,
                 editable: { qty: l.qty.kind === 'input' || l.qty.kind === 'calc' },
+                fromCalc: {
+                    qty: ov?.qty === undefined && linked[l.key]?.qty !== undefined,
+                    mat: ov?.mat === undefined && linked[l.key]?.mat !== undefined,
+                    lab: ov?.lab === undefined && linked[l.key]?.lab !== undefined,
+                },
             };
         });
         const total = mat + lab;
