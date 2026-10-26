@@ -61,8 +61,9 @@ export interface MonthBucket {
 /**
  * Builds `months` × 4 week buckets starting at the month containing `startSerial`.
  * W1 = 1–7, W2 = 8–15, W3 = 16–22, W4 = 23–end of month.
- * (D1: Excel's last column BE ends at BE9+6 because of a #REF!, losing the 29th–31st of the last
- * month; here every W4 ends on the last day of its month.)
+ * (D1: in Excel the last bucket BE ends at IFERROR(BF$9 − 1, …) with BF9 blank, i.e. −1, so the task rows drop the
+ * whole last W4 (23rd–end of the last month); only BE13 carries a #REF! literal. Here every W4 ends on the last day
+ * of its month — see planning.oracle.slow.test.ts.)
  */
 export function buildWeekBuckets(startSerial: number, months: number): WeekBucket[] {
     const { y, m } = serialToParts(startSerial);

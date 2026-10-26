@@ -376,6 +376,18 @@ function expectNullable(app: number | null, o: ExcelOracle, ref: string, label: 
     expectClose(app, typeof v === 'number' ? v : NaN, label);
 }
 
+/**
+ * The oracle tolerance for a difference of large amounts (net cash flow, its cumulative, SV, CV, VAC): the relative
+ * 1e-9 applies to the size of the operands, not to the (small) result. Why: the app's BOQ is the template, whose
+ * calculator-linked quantities are cached with ~10 significant digits, so task budgets differ from Excel's live ones
+ * by up to ~1e-10 relative (tasks 2.5, 3.2, 3.3); in row 18 of random #15 that is −413.5608719 vs −413.5608695
+ * (Δ 2.3e-6) on terms of ~1.4e6. Same policy as ORACLE_TESTS.md, applied where the subtraction cancels.
+ */
+function expectCloseDifference(app: number, excel: number, operands: number, label: string): void {
+    const tol = Math.max(1e-6, 1e-9 * Math.max(Math.abs(excel), operands));
+    if (!(Math.abs(app - excel) <= tol)) expect.fail(`${label}: app ${app} ≠ Excel ${excel} (Δ ${app - excel}, tol ${tol})`);
+}
+
 /** A date cell (Excel serial or blank) vs an ISO date. */
 function expectDate(app: string | null, o: ExcelOracle, ref: string, label: string): void {
     const v = cell(o, ref);
@@ -458,7 +470,7 @@ function checkManDay(o: ExcelOracle, c: PlanCase, res: AppResult): void {
         } else {
             // D1 (S82 / S209): app S − Excel S = pipe labour ÷ R exactly; 0 for every other block.
             expect(typeof s, label).toBe('number');
-            expectClose(b.calcDays, (typeof s === 'number' ? s : NaN) + pipe / b.dailyWage, `${label} S`);
+            expectClose(b.calcDays ?? NaN, (typeof s === 'number' ? s : NaN) + pipe / b.dailyWage, `${label} S`);
         }
         expect(b.suggestedDays).toBe(b.calcDays === null ? null : Math.round(b.calcDays));   // no Excel cell
     }
@@ -696,10 +708,11 @@ function checkCashFlow(o: ExcelOracle, c: PlanCase, res: AppResult, cfX: CashFlo
     // Rows 15–18 and 54–59.
     for (const k of ks) {
         const col = cfCol(k);
-        expectClose(cfX.incomeWeekly[k] - atD(k), o.num(`${CF}!${col}15`), `${col}15`);
+        expectClose((cfX.incomeWeekly[k] ?? NaN) - atD(k), o.num(`${CF}!${col}15`), `${col}15`);
         expectClose(cfX.outflowWeekly[k], o.num(`${CF}!${col}16`), `${col}16`);
-        expectClose((cfX.netWeekly[k] ?? NaN) - atD(k), o.num(`${CF}!${col}17`), `${col}17`);
-        expectClose((cfX.cumulative[k] ?? NaN) - lostD15, o.num(`${CF}!${col}18`), `${col}18`);
+        const flow = (j: number) => Math.abs(cfX.incomeWeekly[j] ?? 0) + Math.abs(cfX.outflowWeekly[j] ?? 0);
+        expectCloseDifference((cfX.netWeekly[k] ?? NaN) - atD(k), o.num(`${CF}!${col}17`), flow(k), `${col}17`);
+        expectCloseDifference((cfX.cumulative[k] ?? NaN) - lostD15, o.num(`${CF}!${col}18`), sum(range(k + 1).map(flow)), `${col}18`);
         expectClose(cfX.planPctWeekly[k], o.num(`${CF}!${col}54`), `${col}54`);
         expectClose(cfX.costWeekly[k], o.num(`${CF}!${col}55`), `${col}55`);
         expectClose(cfX.opexWeekly[k], o.num(`${CF}!${col}56`), `${col}56`);
@@ -716,11 +729,12 @@ function checkCashFlow(o: ExcelOracle, c: PlanCase, res: AppResult, cfX: CashFlo
     const later = extra.map(k => cfX.cumulative[k] ?? NaN);
     const laterMin = later.length ? Math.min(...later) : Infinity;
     const m = must(cfX.minCumulative, 'minCumulative');
+    const allFlow = sum(range(n).map(j => Math.abs(cfX.incomeWeekly[j] ?? 0) + Math.abs(cfX.outflowWeekly[j] ?? 0)));
     if (laterMin < excelMin - 1e-6) {
         expectClose(m.value, laterMin, 'min cumulative (later column)');
         expect(m.bucket).toBe(CF_BUCKETS + later.indexOf(laterMin));
     } else {
-        expectClose(m.value, excelMin, 'min cumulative');
+        expectCloseDifference(m.value, excelMin, allFlow, 'min cumulative');
         expect(m.bucket).toBe(excelArg);
     }
 
@@ -732,16 +746,20 @@ function checkCashFlow(o: ExcelOracle, c: PlanCase, res: AppResult, cfX: CashFlo
     expectClose(e.pv, o.num(`${CF}!AA6`), 'AA6');
     expectClose(e.ev, o.num(`${CF}!Z19`), 'Z19');
     expectClose(e.ac, o.num(`${CF}!Z18`), 'Z18');
-    expectClose(e.sv, o.num(`${CF}!AA7`), 'AA7');
-    expectClose(e.cv, o.num(`${CF}!AA8`), 'AA8');
+    expectCloseDifference(e.sv, o.num(`${CF}!AA7`), Math.abs(e.ev) + Math.abs(e.pv), 'AA7 EV − PV');
+    expectCloseDifference(e.cv, o.num(`${CF}!AA8`), Math.abs(e.ev) + Math.abs(e.ac), 'AA8 EV − AC');
     expectNullable(e.spi, o, `${CF}!AA9`, 'AA9');
     expectNullable(e.cpi, o, `${CF}!AA10`, 'AA10');
     if (e.eacDays === null || durDelta === 0) expectNullable(e.eacDays, o, `${CF}!AA11`, 'AA11');
     else expectClose(e.eacDays, o.num(`${CF}!AA11`) + durDelta / o.num(`${CF}!AA9`), 'AA11 + D1 duration delta ÷ SPI');
     expectNullable(e.eacCost, o, `${CF}!AA12`, 'AA12');
-    expectNullable(e.vac, o, `${CF}!AA13`, 'AA13');
+    // AA13 = AA4 − AA12 and AA15 = AA14 + AA13 are differences too.
+    const eacScale = Math.abs(e.bac) + Math.abs(e.eacCost ?? 0);
+    if (e.vac === null) expectNullable(null, o, `${CF}!AA13`, 'AA13');
+    else expectCloseDifference(e.vac, o.num(`${CF}!AA13`), eacScale, 'AA13 BAC − EAC');
     expectClose(e.profitPlan - extraProfit, o.num(`${CF}!AA14`), 'AA14 (− D18 later columns)');
-    expectNullable(e.profitForecast === null ? null : e.profitForecast - extraProfit, o, `${CF}!AA15`, 'AA15 (− D18 later columns)');
+    if (e.profitForecast === null) expectNullable(null, o, `${CF}!AA15`, 'AA15');
+    else expectCloseDifference(e.profitForecast - extraProfit, o.num(`${CF}!AA15`), Math.abs(e.profitPlan) + eacScale, 'AA15 (− D18 later columns)');
     expect(input.pvBuckets).toBeLessThanOrEqual(CF_BUCKETS);
 }
 
@@ -812,6 +830,10 @@ const ALL_BRANCHES = [
 ].sort();
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
+const yieldToVitest = () => new Promise<void>(resolve => { setTimeout(resolve, 0); });
+/** Cases whose Excel rows 26/29 really read a misaligned non-empty cell (so the corrected second pass ran). */
+const offsetCases = new Set<string>();
+
 describe('Man-Day / S-Curve / CashFlow vs Excel formulas (oracle, whole workbook)', () => {
     let oracle: ExcelOracle;
     let fixes: OffsetFixes;
@@ -869,7 +891,9 @@ describe('Man-Day / S-Curve / CashFlow vs Excel formulas (oracle, whole workbook
         expect(norm(oracle.formula(`${SC}!BE13`))).toContain('IFERROR(#REF!-1,BE$9+6)');
     });
 
-    it.each(CASES)('%s', (_name, c) => {
+    // async + yields: a recalculation blocks for seconds; yielding lets vitest's worker RPC answer in between.
+    it.each(CASES)('%s', async (_name, c) => {
+        await yieldToVitest();
         const res = appResult(c);
         const schedule = res.planning.schedule;
         const cost = res.boq.constructionTotal;
@@ -879,6 +903,7 @@ describe('Man-Day / S-Curve / CashFlow vs Excel formulas (oracle, whole workbook
         checkAppVsExcelShares(res.planning.cashflow, cfX);
 
         oracle.replaceInputs(excelInputs(c));
+        await yieldToVitest();
         expect(oracle.spillOverflows).toEqual([]);
         for (const row of Object.keys(c.labour)) expectBoqRow(oracle, res.boq, `R${row}`, Number(row));
         expectClose(res.boq.sections[2]?.total, oracle.num(`${BOQ}!M17`), 'BOQ M17 (S-Curve G14)');
@@ -889,9 +914,13 @@ describe('Man-Day / S-Curve / CashFlow vs Excel formulas (oracle, whole workbook
         const offsets = checkOffsetCells(oracle, cfX);
         checkTaskRows(oracle, cfX, true);
         for (const k of range(CF_BUCKETS)) {
-            expectClose(cfX.planPctWeekly[k] - (offsets.byBucket.get(k) ?? 0), oracle.num(`${CF}!${cfCol(k)}54`), `${cfCol(k)}54 raw`);
+            expectClose((cfX.planPctWeekly[k] ?? NaN) - (offsets.byBucket.get(k) ?? 0), oracle.num(`${CF}!${cfCol(k)}54`), `${cfCol(k)}54 raw`);
         }
-        if (offsets.effect) oracle.replaceInputs(excelInputs(c, fixes));   // the four cells typed with the right column
+        if (offsets.effect) {
+            offsetCases.add(_name);
+            oracle.replaceInputs(excelInputs(c, fixes));   // the four cells typed with the right column
+            await yieldToVitest();
+        }
         checkCashFlow(oracle, c, res, cfX, durDelta);
     }, 120_000);
 
@@ -905,5 +934,7 @@ describe('Man-Day / S-Curve / CashFlow vs Excel formulas (oracle, whole workbook
         expect(branchesOf(named('D1 last'), appResult(named('D1 last')))).toEqual(expect.arrayContaining(['SC D1 last bucket BE', 'CF D18 axis grows']));
         expect(branchesOf(named('D1 CashFlow D15'), appResult(named('D1 CashFlow D15')))).toContain('CF D1 D15 without row 14');
         expect(CASES.filter(([n]) => n.startsWith('random'))).toHaveLength(30);
+        // …and on the Excel side the misaligned cells were non-empty, so the corrected pass ran (needs the cases above).
+        expect([...offsetCases]).toContain(CASES[3]?.[0]);
     });
 });
