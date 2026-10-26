@@ -8,13 +8,14 @@ import { IdentityModule } from './modules/identity/identity.module';
 import { WorkspacesModule } from './modules/workspaces/workspaces.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
+import { AiAssistModule } from './modules/ai-assist/ai-assist.module';
 
 @Module({})
 export class AppModule {
     static forRoot(options: CoreOptions): DynamicModule {
         return {
             module: AppModule,
-            imports: [CoreModule.forRoot(options), IdentityModule, WorkspacesModule, ProjectsModule, RealtimeModule],
+            imports: [CoreModule.forRoot(options), IdentityModule, WorkspacesModule, ProjectsModule, RealtimeModule, AiAssistModule],
             controllers: [HealthController],
             providers: [
                 { provide: APP_GUARD, useClass: AuthGuard },

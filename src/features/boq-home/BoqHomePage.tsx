@@ -1,18 +1,22 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Input, Select, Spin, Tooltip, Typography } from 'antd';
-import { CaretDownOutlined, CaretRightOutlined, UndoOutlined, LinkOutlined, SearchOutlined } from '@ant-design/icons';
+import { AuditOutlined, CaretDownOutlined, CaretRightOutlined, UndoOutlined, LinkOutlined, SearchOutlined } from '@ant-design/icons';
 import { useLocale, useTranslations } from 'next-intl';
 import { useProjectStore } from '@/store/project-store';
 import { computeProject } from '@/domain/project';
 import type { BoqItemRow, BoqSectionResult } from '@/domain/boq/types';
+import { BOQ_TEMPLATE_V5 } from '@/domain/boq/template.v5';
+import type { BoqReviewProject } from '@/shared/contract/ai-assist';
 import { NumberCell, TextCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 import { getCalculator } from '@/domain/calculators/registry';
 import { CALCULATOR_PAGES } from '@/features/calculators/pages';
 import Link from 'next/link';
 import { BoqExportButtons } from '@/features/export/BoqExportButtons';
 import { RevisionButtons } from '@/features/cloud/revisions/RevisionButtons';
+import { useBoqReview } from './review/useBoqReview';
+import { REVIEW_TEXT, ReviewPanel } from './review/ReviewPanel';
 
 const { Title, Text } = Typography;
 
@@ -53,6 +57,11 @@ const TOOL_TEXT = {
 /** An edited value: an orange inner outline on top of the bold text. */
 const editedCls = (on: boolean) => (on ? 'shadow-[inset_0_0_0_2px_#fdba74]' : '');
 
+/** How long a row picked from the review list stays amber. */
+const FLASH_MS = 1800;
+/** The amber wash over every cell of the picked row (inline cell backgrounds included). */
+const flashCls = (on: boolean) => (on ? '[&>td]:!bg-amber-100' : '');
+
 /** `text` with the parts matching `q` (case-insensitive) marked. */
 function Highlight({ text, q }: { text: string; q: string }) {
     if (q === '') return <>{text}</>;
@@ -79,11 +88,20 @@ export function BoqHomePage() {
     const resetSection = useProjectStore(s => s.resetBoqSection);
     const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
     const [query, setQuery] = useState('');
+    const [flashKey, setFlashKey] = useState<string | null>(null);
+    const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const boxRef = useRef<HTMLDivElement>(null);
     const headRef = useRef<HTMLTableSectionElement>(null);
 
     const result = useMemo(() => computeProject(project), [project]);
     const overrides = project.boqOverrides;
+
+    // "ตรวจ BOQ ก่อนส่ง": what the project knows about itself (no usable-area or floors field yet, so only the name).
+    const projectName = project.meta.projectName.trim();
+    const reviewProject = useMemo<BoqReviewProject>(() => (projectName === '' ? {} : { name: projectName }), [projectName]);
+    const review = useBoqReview(result.boq, BOQ_TEMPLATE_V5, reviewProject);
+
+    useEffect(() => () => { if (flashTimer.current !== null) clearTimeout(flashTimer.current); }, []);
 
     if (!hasHydrated) {
         return <div className="flex justify-center p-20"><Spin size="large" /></div>;
@@ -116,6 +134,32 @@ export function BoqHomePage() {
         });
     };
 
+    /** Brings a BOQ row into view (its section opened, a filter that hides it cleared) and washes it amber briefly. */
+    const jumpToRow = (key: string) => {
+        const section = result.boq.sections.find(s => s.rows.some(r => r.key === key));
+        if (section === undefined) return;
+        if (filtering) setQuery('');
+        setCollapsed(prev => {
+            if (!prev.has(section.no)) return prev;
+            const next = new Set(prev);
+            next.delete(section.no);
+            return next;
+        });
+        setFlashKey(key);
+        if (flashTimer.current !== null) clearTimeout(flashTimer.current);
+        flashTimer.current = setTimeout(() => { setFlashKey(null); flashTimer.current = null; }, FLASH_MS);
+        requestAnimationFrame(() => {
+            const box = boxRef.current;
+            const el = box?.querySelector(`[data-boq-row="${CSS.escape(key)}"]`);
+            if (!box || !(el instanceof HTMLElement)) return;
+            const head = headRef.current?.offsetHeight ?? 0;
+            const rowTop = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+            const top = rowTop - head - Math.max(0, (box.clientHeight - head - el.offsetHeight) / 2);
+            box.scrollTo({ top, behavior: 'smooth' });
+            box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        });
+    };
+
     const toggle = (no: number) => setCollapsed(prev => {
         const next = new Set(prev);
         if (next.has(no)) next.delete(no); else next.add(no);
@@ -137,7 +181,8 @@ export function BoqHomePage() {
         const ov = overrides[r.key] ?? {};
         const qtyTip = r.qtySource === 'calc' ? t('fromCalc') : r.qtySource === 'line' || r.qtySource === 'sumLines' ? t('fromLine') : undefined;
         return (
-            <tr key={r.key} className="hover:bg-orange-50/40">
+            <tr key={r.key} data-boq-row={r.key}
+                className={`hover:bg-orange-50/40 [&>td]:transition-colors [&>td]:duration-500 ${flashCls(flashKey === r.key)}`}>
                 <td className={`${cell} bg-white ${STICKY.no.className}`} />
                 <td className={`${cell} text-center text-gray-500 bg-white ${STICKY.step.className}`}>{r.itemNo}</td>
                 <td className={`${cell} min-w-[260px] bg-white ${STICKY.desc.className}`}><Highlight text={r.desc} q={q} /></td>
@@ -250,6 +295,9 @@ export function BoqHomePage() {
                         <Text type="secondary">{meta.projectName || t('subtitle')}</Text>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 justify-end">
+                        <Button icon={<AuditOutlined />} onClick={review.run} aria-expanded={review.open} aria-controls="boq-review">
+                            {REVIEW_TEXT.button}
+                        </Button>
                         <BoqExportButtons project={project} />
                         <RevisionButtons />
                     </div>
@@ -294,6 +342,12 @@ export function BoqHomePage() {
                         onClick={() => setCollapsed(new Set(boq.sections.map(s => s.no)))}>{t('collapseAll')}</Button>
                 </span>
             </div>
+
+            {review.open && (
+                <div id="boq-review">
+                    <ReviewPanel findings={review.findings} ai={review.ai} onPick={jumpToRow} onClose={review.close} />
+                </div>
+            )}
 
             <div ref={boxRef} className="bg-white border border-gray-200 rounded-card shadow-card overflow-auto max-h-[75vh]">
                 <table className="w-full border-collapse text-[13px]">

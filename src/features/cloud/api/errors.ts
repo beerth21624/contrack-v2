@@ -62,5 +62,7 @@ export function thaiErrorMessage(e: unknown): string {
         case 'unprocessable': return 'ข้อมูลนี้ใช้คำนวณไม่ได้ ระบบจึงไม่บันทึก';
         case 'rate_limited': return 'ทำรายการถี่เกินไป รอสักครู่แล้วลองใหม่';
         case 'internal': return 'เซิร์ฟเวอร์ขัดข้อง ลองใหม่อีกครั้ง';
+        case 'ai_unavailable': return 'ผู้ช่วย AI ใช้งานไม่ได้ในขณะนี้ ลองใหม่อีกครั้งภายหลัง';
+        case 'ai_quota': return 'เครดิตผู้ช่วย AI หมด ติดต่อผู้ดูแลระบบ';
     }
 }

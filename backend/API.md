@@ -53,3 +53,17 @@ Events and payloads: `../src/shared/contract/realtime.ts`. A bad/missing token �
 `project.join` checks `projects.read`; after joining the client receives `presence.state`, then live
 `doc.updated` / `project.updated` / `project.deleted` / `assignment.updated` / `presence.state` for that project.
 `project.deleted` `{ projectId }` is sent after the delete committed: clients leave the project and drop queued edits.
+
+## ai-assist (module `ai-assist`: `../src/shared/contract/ai-assist.ts`)
+Typed decisions from a decision model (Jev by TypeSafe AI; env `JEV_API_KEY`, `JEV_MODEL`, `JEV_BASE_URL`). The model never
+computes BOQ numbers; every answer is a proposal the user confirms. Nothing is written. Both routes need the caller to be a
+member of the workspace (any role) and the module on for the platform **and** the workspace, else 404 `module_disabled`.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| POST | `/workspaces/:workspaceId/ai/boq-review` | `BoqReviewRequest` → `BoqReviewResponse` (200) | two questions per row (`<key>_flag` noul, `<key>_kind` choice); rows are sent in chunks of 25 (50 questions, the model's per-call cap), ≤ 3 calls in flight; only rows with probability ≥ `AI_REVIEW_MIN` come back, most probable first; a row flagged with kind `none` gets the most probable real kind; `usage` is summed over the calls |
+| POST | `/workspaces/:workspaceId/ai/match-items` | `MatchItemsRequest` → `MatchItemsResponse` (200) | one call, one choice per input; criteria keys are the trimmed catalogue texts (blanks / duplicates dropped), `item` is the original catalogue text; `none` or an unknown option → `item: null` |
+
+Model errors: `ai_unavailable` 503 (no `JEV_API_KEY`, key rejected, unreachable / timeout after one retry, or an answer that
+fails validation), `ai_quota` 402 (no credits), `rate_limited` 429, `unprocessable` 422 (request rejected or too large for the model).
+`NODE_ENV=test` wires a scripted `FakeDecisionAdapter` (`src/modules/ai-assist/testing`), reachable in e2e through `app.get(DecisionPort)`.

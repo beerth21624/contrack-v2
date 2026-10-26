@@ -33,6 +33,10 @@ export const ERROR_CODES = [
     'personal_workspace',
     'unprocessable',
     'rate_limited',
+    /** The decision model (module `ai-assist`) cannot answer right now: not configured, unreachable or broken. */
+    'ai_unavailable',
+    /** The decision model account has no credits left. */
+    'ai_quota',
     'internal',
 ] as const;
 export const errorCodeSchema = z.enum(ERROR_CODES);

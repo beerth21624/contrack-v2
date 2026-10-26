@@ -24,6 +24,8 @@ export const STATUS_OF: Record<ErrorCode, number> = {
     invitation_invalid: 410,
     unprocessable: 422,
     rate_limited: 429,
+    ai_quota: 402,
+    ai_unavailable: 503,
     internal: 500,
 };
 

@@ -18,7 +18,14 @@ const envSchema = z.object({
     COOKIE_SECURE: bool.default('false'),
     /** Path of the refresh cookie as the browser sees it (the web app reaches the API through `/api/*`). */
     REFRESH_COOKIE_PATH: z.string().startsWith('/').default('/api/auth'),
+    /** Decision model (module `ai-assist`, Jev by TypeSafe AI). The key is required when the module is offered. */
+    JEV_API_KEY: z.string().optional(),
+    JEV_MODEL: z.string().min(1).default('jev-1.14.0'),
+    JEV_BASE_URL: z.string().url().default('https://jevtypesafeai.com/api/v1'),
 }).superRefine((env, ctx) => {
+    if (env.MODULES_ENABLED.includes('ai-assist') && env.NODE_ENV !== 'test' && (env.JEV_API_KEY === undefined || env.JEV_API_KEY === '')) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['JEV_API_KEY'], message: 'required when MODULES_ENABLED includes ai-assist' });
+    }
     if (env.PERSISTENCE === 'postgres' && env.DATABASE_URL === undefined) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['DATABASE_URL'], message: 'required when PERSISTENCE=postgres' });
     }

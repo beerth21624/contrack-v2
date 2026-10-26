@@ -10,6 +10,8 @@ import {
     type LoginRequest, type MeResponse, type MemberDto, type ProjectDetailDto, type ProjectDto, type PutAssignmentRequest,
     type PutDocRequest, type PutDocResponse, type RegisterRequest, type RenameWorkspaceRequest, type RevisionDetailDto,
     type RevisionDto, type UpdateProjectRequest, type WorkspaceDto,
+    boqReviewResponseSchema, matchItemsResponseSchema,
+    type BoqReviewRequest, type BoqReviewResponse, type MatchItemsRequest, type MatchItemsResponse,
 } from '@/shared/contract';
 import { apiClient, type ApiClient } from './client';
 
@@ -110,6 +112,14 @@ export function createApi(client: ApiClient) {
                 client.request('GET', `/projects/${seg(projectId)}/activity`, {
                     schema: z.array(activityDtoSchema), query: { before: params.before, limit: params.limit },
                 }),
+        },
+
+        /** Module `ai-assist` (contract ai-assist.ts). 404 `module_disabled` when the workspace has it off. */
+        ai: {
+            reviewBoq: (workspaceId: string, body: BoqReviewRequest, signal?: AbortSignal): Promise<BoqReviewResponse> =>
+                client.request('POST', `/workspaces/${seg(workspaceId)}/ai/boq-review`, { body, schema: boqReviewResponseSchema, signal }),
+            matchItems: (workspaceId: string, body: MatchItemsRequest, signal?: AbortSignal): Promise<MatchItemsResponse> =>
+                client.request('POST', `/workspaces/${seg(workspaceId)}/ai/match-items`, { body, schema: matchItemsResponseSchema, signal }),
         },
     };
 }

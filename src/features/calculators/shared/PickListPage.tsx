@@ -19,6 +19,8 @@ import {
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
+import { suggestionText, type ItemSuggestion } from './itemMatch';
+import { useItemMatches, type ItemMatches } from './useItemMatches';
 
 interface PickListPageProps {
     def: CalculatorDef<PickListInput>;
@@ -72,25 +74,49 @@ export function PickListPage(props: PickListPageProps) {
 
 const itemOptionsOf = (options: readonly string[]) => options.map(o => ({ value: o, label: o.trim() }));
 
-/** รายการ cell: dropdown, or dropdown + free text. */
-function ItemCell({ row, options, allowFreeText, catalogue, onChange, placeholder }: {
+/** รายการ cell: dropdown, or dropdown + free text; under it, what the AI thinks a free text means (quiet, inline). */
+function ItemCell({ row, options, allowFreeText, catalogue, onChange, placeholder, matches }: {
     row: PickRow; options: readonly string[]; allowFreeText?: boolean; catalogue: Catalogue;
-    onChange: (row: PickRow) => void; placeholder?: string;
+    onChange: (row: PickRow) => void; placeholder?: string; matches?: ItemMatches;
 }) {
     const itemOptions = itemOptionsOf(options);
+    const suggestion = matches?.suggestionFor(row.item);
     return (
         <div style={{ background: SHEET_COLORS.input, borderRadius: 3, minWidth: 260 }}>
             {allowFreeText
                 ? (
                     <AutoComplete size="small" variant="borderless" style={{ width: '100%' }}
                         value={row.item} options={itemOptions} placeholder={placeholder ?? 'เลือกหรือพิมพ์รายการ'}
-                        onChange={v => onChange(selectItem(row, v, catalogue))} />
+                        onChange={v => onChange(selectItem(row, v, catalogue))}
+                        onBlur={() => matches?.flush()} />
                 )
                 : (
                     <Select size="small" variant="borderless" style={{ width: '100%' }} allowClear
                         value={row.item === '' ? undefined : row.item} options={itemOptions} placeholder={placeholder ?? 'เลือกรายการ'}
                         onChange={(v: string | undefined) => onChange(selectItem(row, v ?? '', catalogue))} />
                 )}
+            {suggestion !== undefined && matches !== undefined && (
+                <ItemSuggestionLine suggestion={suggestion}
+                    onAccept={() => onChange(selectItem(row, suggestion.item, catalogue))}
+                    onDecline={() => matches.decline(row.item)} />
+            )}
+        </div>
+    );
+}
+
+/**
+ * The AI's reading of a free text, as secondary text under the field: "หมายถึง "X" ใช่ไหม" (sure) or
+ * "อาจหมายถึง "X"" (likely), with [ใช้รายการนี้] [ไม่ใช่]. Accepting picks the catalogue item like the dropdown
+ * would (unit and prices follow; qty and typed prices stay); declining is remembered for the session.
+ */
+function ItemSuggestionLine({ suggestion, onAccept, onDecline }: {
+    suggestion: ItemSuggestion; onAccept: () => void; onDecline: () => void;
+}) {
+    return (
+        <div className="flex flex-wrap items-center gap-x-1 px-2 pb-1 text-[12px] leading-tight text-gray-500" role="status">
+            <span className="min-w-0 break-words">{suggestionText(suggestion)}</span>
+            <Button type="link" size="small" className="!px-1 !h-auto !text-[12px]" onClick={onAccept}>ใช้รายการนี้</Button>
+            <Button type="link" size="small" className="!px-1 !h-auto !text-[12px] !text-gray-400" onClick={onDecline}>ไม่ใช่</Button>
         </div>
     );
 }
@@ -141,6 +167,7 @@ function PriceCell({ row, field, catalogue, onChange, highlight, blankZero }: {
 function SheetPickList({ catalogue, options, units = [], allowFreeText, title, notes, calc }: PickListPageProps & { calc: Calc }) {
     const { input, update, outputs } = calc;
     const setRow = (i: number, row: PickRow) => update(p => ({ ...p, items: p.items.map((r, j) => (j === i ? row : r)) }));
+    const matches = useItemMatches(input.items, catalogue);
 
     return (
         <SheetCard title={title}>
@@ -154,7 +181,7 @@ function SheetPickList({ catalogue, options, units = [], allowFreeText, title, n
                         kind: 'label', key: 'item', title: 'รายการ',
                         get: (r, i) => (
                             <ItemCell row={r} options={options} allowFreeText={allowFreeText} catalogue={catalogue}
-                                onChange={row => setRow(i, row)} />
+                                matches={matches} onChange={row => setRow(i, row)} />
                         ),
                     },
                     {
@@ -281,6 +308,7 @@ function JourneyPickList({
     const setQty = (option: number, qty: number) =>
         update(p => ({ ...p, items: setOptionQty(p.items, options, option, qty, catalogue) }));
     const addOther = () => update(p => ({ ...p, items: [...p.items, emptyPickRow()] }));
+    const matches = useItemMatches(rows, catalogue);
 
     const lines: OptionLine[] = options.map((o, option) => {
         const index = first.get(option);
@@ -344,7 +372,7 @@ function JourneyPickList({
                                             kind: 'label', key: 'item', title: 'รายการ',
                                             get: l => (
                                                 <ItemCell row={l.row} options={options} allowFreeText={allowFreeText} catalogue={catalogue}
-                                                    placeholder={allowFreeText ? 'พิมพ์ชื่องาน' : undefined}
+                                                    placeholder={allowFreeText ? 'พิมพ์ชื่องาน' : undefined} matches={matches}
                                                     onChange={row => setRow(l.index, row)} />
                                             ),
                                         },
