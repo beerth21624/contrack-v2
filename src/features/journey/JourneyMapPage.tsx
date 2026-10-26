@@ -9,6 +9,7 @@ import { computeProject } from '@/domain/project';
 import { JOURNEY, JOURNEY_LEVELS, currentLevel, journeyComplete, journeyRatio, levelStates, levelTotal, type LevelState } from '@/domain/journey';
 import { formatNumber } from '@/components/sheet/NumberCell';
 import { NewProjectButton } from './NewProjectButton';
+import { BoqExportButtons } from '@/features/export/BoqExportButtons';
 
 const { Title, Text } = Typography;
 
@@ -124,7 +125,10 @@ export function JourneyMapPage() {
                         {complete ? 'ตรวจทาน ปรับราคา และพิมพ์/ส่งออก BOQ ได้เลย' : 'ผ่านทุกด่าน (หรือกด "ไม่มีงานนี้") เพื่อปลดล็อก'}
                     </Text>
                 </div>
-                <Link href="/boq"><Button type={complete ? 'primary' : 'default'} icon={<TableOutlined />}>เปิด BOQ</Button></Link>
+                <div className="flex flex-wrap items-center gap-2 justify-end">
+                    <Link href="/boq"><Button type={complete ? 'primary' : 'default'} icon={<TableOutlined />}>เปิด BOQ</Button></Link>
+                    {complete && <BoqExportButtons />}
+                </div>
             </section>
         </div>
     );

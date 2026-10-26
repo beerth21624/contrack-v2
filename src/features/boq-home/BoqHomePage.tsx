@@ -11,6 +11,7 @@ import { NumberCell, TextCell, SHEET_COLORS, formatNumber } from '@/components/s
 import { getCalculator } from '@/domain/calculators/registry';
 import { CALCULATOR_PAGES } from '@/features/calculators/pages';
 import Link from 'next/link';
+import { BoqExportButtons } from '@/features/export/BoqExportButtons';
 
 const { Title, Text } = Typography;
 
@@ -164,8 +165,13 @@ export function BoqHomePage() {
     return (
         <div className="flex flex-col gap-4">
             <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-5 shadow-sm">
-                <Title level={4} style={{ margin: 0 }}>{t('title')}</Title>
-                <Text type="secondary">{meta.projectName || t('subtitle')}</Text>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <Title level={4} style={{ margin: 0 }}>{t('title')}</Title>
+                        <Text type="secondary">{meta.projectName || t('subtitle')}</Text>
+                    </div>
+                    <BoqExportButtons project={project} />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mt-4">
                     {metaField(t('projectName'), 'projectName')}
                     {metaField(t('revision'), 'revision')}
