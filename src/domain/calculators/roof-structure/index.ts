@@ -119,6 +119,18 @@ export const roofStructure = defineCalculator<RoofStructureInput>({
         rafter: { desc: 'จันทัน C 100x50x20x2.3 มม.', c: 1, factor: 1.15, area: null, spacing: 1 },
         purlin: { desc: 'แปสำเร็จรูป GZ หนา 0.7 มม.', c: 1, factor: 1.15, area: null, spacing: 0.34 },
     }),
+    // A real project: lengths, king posts, valley runs / count / pitch read off the roof-frame plan start empty. Steel
+    // sections (desc), ซีคู่, Factor Roof and the rafter / purlin spacing keep the Excel spec; the rafter / purlin area
+    // stays linked to the roofing sheet (0 until the roof size is typed there). The wall plate and ridge keep
+    // "1 line" so only their lengths need typing.
+    blank: () => ({
+        wallPlate: { desc: 'อะเส 2-C 150x50x20x3.2 มม.', c: 2, lengths: [], count: 1 },
+        kingPosts: { desc: 'ดั้ง 2-C 100x50x20x2.3 มม.', parts: [] },
+        ridge: { desc: 'อกไก่ 2-C 100x50x20x2.3 มม.', c: 2, lengths: [], count: 1 },
+        valley: { desc: 'ตะเข้ราง C 100x50x20x2.3 มม.', c: 1, runA: 0, runB: 0, deg: 0, count: 0 },
+        rafter: { desc: 'จันทัน C 100x50x20x2.3 มม.', c: 1, factor: 1.15, area: null, spacing: 1 },
+        purlin: { desc: 'แปสำเร็จรูป GZ หนา 0.7 มม.', c: 1, factor: 1.15, area: null, spacing: 0.34 },
+    }),
     compute: (input, ctx) => {
         const linked = linkedSlopeArea(ctx);
         // I = ความยาวรวม (ม.), J = จำนวน (ท่อน) = ROUNDUP(I/6, 0)

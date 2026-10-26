@@ -11,6 +11,8 @@ import { NumberCell, SHEET_COLORS, formatNumber } from '@/components/sheet/Numbe
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
 import { LengthsCell } from '@/components/sheet/LengthsCell';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
+import RoofingJourney from './RoofingJourney';
 
 const opts = (xs: readonly string[]) => xs.map(value => ({ value }));
 
@@ -58,6 +60,11 @@ function TakeoffCell({ row, index, rows, value, onChange }: {
 }
 
 export default function RoofingPage() {
+    return useJourneyMode() ? <RoofingJourney /> : <RoofingSheet />;
+}
+
+/** The Excel-mirror sheet (/calc/roofing). */
+function RoofingSheet() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(roofing);
 
     const setRow = (i: number, patch: Partial<RoofingRow>) =>

@@ -55,6 +55,17 @@ export function plasterTotal(input: PlasterInput, ctx: CalcContext, kind: string
     return input.rows.reduce((s, r) => s + (r.kind.trim() === kind ? plasterRowArea(r, ctx) : 0), 0);
 }
 
+/** Excel rows 5–11: the plaster rules of the sample house, with the structure-wall area per side. */
+const sampleRows = (structuralArea: number): PlasterRow[] => [
+    { wallPart: 'ผนังรอบบ้าน', kind: 'ฉาบภายใน', sides: 1 },
+    { wallPart: 'ผนังรอบบ้าน', kind: 'ฉาบภายนอก', sides: 1 },
+    { wallPart: 'ผนังภายในบ้าน', kind: 'ฉาบภายใน', sides: 2 },
+    { wallPart: 'ผนังภายนอกบ้าน', kind: 'ฉาบภายนอก', sides: 2 },
+    { wallPart: 'ผนังรอบบ้าน-พิเศษ', kind: 'ฉาบภายใน', sides: 1 },
+    { wallPart: 'ผนังรอบบ้าน-พิเศษ', kind: 'ฉาบภายนอก', sides: 1 },
+    { wallPart: STRUCTURAL_WALL, kind: 'ฉาบภายนอก', sides: 1, manualArea: structuralArea },
+];
+
 export const plaster = defineCalculator<PlasterInput>({
     id: 'plaster',
     sheetName: 'ฉาบปูน_Plaster',
@@ -62,17 +73,11 @@ export const plaster = defineCalculator<PlasterInput>({
     titleEn: 'Plastering',
     sections: [18],
     deps: ['brick'],
-    defaults: () => ({
-        rows: [
-            { wallPart: 'ผนังรอบบ้าน', kind: 'ฉาบภายใน', sides: 1 },
-            { wallPart: 'ผนังรอบบ้าน', kind: 'ฉาบภายนอก', sides: 1 },
-            { wallPart: 'ผนังภายในบ้าน', kind: 'ฉาบภายใน', sides: 2 },
-            { wallPart: 'ผนังภายนอกบ้าน', kind: 'ฉาบภายนอก', sides: 2 },
-            { wallPart: 'ผนังรอบบ้าน-พิเศษ', kind: 'ฉาบภายใน', sides: 1 },
-            { wallPart: 'ผนังรอบบ้าน-พิเศษ', kind: 'ฉาบภายนอก', sides: 1 },
-            { wallPart: STRUCTURAL_WALL, kind: 'ฉาบภายนอก', sides: 1, manualArea: STRUCTURAL_WALL_DEFAULT_AREA },
-        ],
-    }),
+    defaults: () => ({ rows: sampleRows(STRUCTURAL_WALL_DEFAULT_AREA) }),
+    // A real project keeps the sheet's plaster rules (which wall part is plastered inside / outside, how many faces):
+    // the areas come from the brick sheet, so with no walls every row is 0. Only the typed structure-wall area
+    // (columns / beams, read off the plan) starts empty.
+    blank: () => ({ rows: sampleRows(0) }),
     compute: (input, ctx) => {
         const exterior = plasterTotal(input, ctx, 'ฉาบภายนอก');
         const interior = plasterTotal(input, ctx, 'ฉาบภายใน');

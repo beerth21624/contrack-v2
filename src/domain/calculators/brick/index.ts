@@ -146,6 +146,8 @@ export const brick = defineCalculator<BrickInput>({
             { wallPart: 'ผนังรอบบ้าน-พิเศษ', brickType: 'อิฐมวลเบา', thickness: 'ครึ่งแผ่น', length: 7, height: 3, shape: 'triangle' },
         ],
     }),
+    // A real project: no walls yet (every wall length / height is read off the plan). No prices live on this sheet.
+    blank: () => ({ walls: [] }),
     compute: (input, ctx) => {
         const openings = brickOpenings(ctx);
         const rows = brickWallResults(input, openings);

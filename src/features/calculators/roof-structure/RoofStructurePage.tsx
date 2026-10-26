@@ -13,6 +13,8 @@ import { NumberCell, TextCell, SHEET_COLORS, formatNumber } from '@/components/s
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
 import { LengthsCell } from '@/components/sheet/LengthsCell';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
+import RoofStructureJourney from './RoofStructureJourney';
 
 const th = 'border border-gray-200 px-2 py-1 text-[12px] font-semibold text-gray-700 bg-gray-50 text-center';
 const td = 'border border-gray-200 px-1 py-0.5 text-[13px] align-middle';
@@ -52,6 +54,11 @@ function NumInput({ value, onChange, label, digits }: { value: number; onChange:
 }
 
 export default function RoofStructurePage() {
+    return useJourneyMode() ? <RoofStructureJourney /> : <RoofStructureSheet />;
+}
+
+/** The Excel-mirror sheet (/calc/roof-structure). */
+function RoofStructureSheet() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(roofStructure);
     const linked = outputs.linkedSlopeArea;
 

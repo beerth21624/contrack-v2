@@ -2,9 +2,12 @@
 
 import type { ReactNode } from 'react';
 import {
-    ALUMINIUM, ALUMINIUM_RATES, BRICK_THICKNESSES, DOOR_TYPES, doorWindow, itemCode, OPENING_WALL_TYPES,
+    ALUMINIUM, ALUMINIUM_RATES, BRICK_THICKNESSES, DOOR_TYPES, doorWindow, OPENING_WALL_TYPES,
     openingRowCalc, WALL_PARTS, WOOD, WOOD_DOOR_NOTE, type DoorWindowInput, type OpeningRow,
 } from '@/domain/calculators/door-window';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
+import { newOpeningRow, priceCommit } from './rows';
+import DoorWindowJourney from './DoorWindowJourney';
 import { EditableTable, type SheetColumn } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { NumberCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
@@ -29,42 +32,18 @@ const PRICE = 'ราคาต่อชุด (ส่ง BOQ)';
 
 const options = (list: readonly string[]) => list.map(v => ({ value: v }));
 
-/**
- * NumberCell commits on every blur, even when only focused (its draft is the value rounded to 6 decimals).
- * A commit equal to the shown default must not turn the default price into a typed (frozen) one.
- */
-const sameValue = (a: number, b: number) => Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(b));
-const priceCommit = (typed: number | null, shown: number, v: number | undefined): number | null | 'unchanged' => {
-    if (v === undefined) return null;
-    if (typed === null && sameValue(v, shown)) return 'unchanged';
-    return v;
-};
 const typeOptions = options(DOOR_TYPES);
 const wallOptions = options(WALL_PARTS);
 const brickOptions = options(OPENING_WALL_TYPES);
 const thicknessOptions = options(BRICK_THICKNESSES);
-
-/** Next code of a block, e.g. "D10-" after D1–D9 (the code is the row's key in the BOQ). */
-const nextName = (rows: OpeningRow[], prefix: string): string => {
-    const used = rows.map(r => itemCode(r.name)).filter(c => c.startsWith(prefix)).map(c => Number(c.slice(prefix.length)));
-    return `${prefix}${Math.max(0, ...used) + 1}-`;
-};
-
-/** A new row keeps the previous row's type and wall settings; size starts empty. */
-const newRow = (rows: OpeningRow[], prefix: string): OpeningRow => {
-    const prev = rows[rows.length - 1];
-    return {
-        name: nextName(rows, prefix),
-        type: prev?.type ?? ALUMINIUM,
-        wallPart: prev?.wallPart ?? 'ผนังรอบบ้าน',
-        brick: prev?.brick ?? 'อิฐมอญ',
-        thickness: prev?.thickness ?? 'ครึ่งแผ่น',
-        count: 1, width: 0, height: 0,
-        rate: ALUMINIUM_RATES.sliding, matPrice: null, labPrice: null,
-    };
-};
+const newRow = newOpeningRow;
 
 export default function DoorWindowPage() {
+    return useJourneyMode() ? <DoorWindowJourney /> : <DoorWindowSheet />;
+}
+
+/** The Excel-mirror sheet (/calc/door-window). */
+function DoorWindowSheet() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(doorWindow);
 
     const setRow = (block: Block, i: number, row: OpeningRow) =>

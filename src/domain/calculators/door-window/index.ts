@@ -203,6 +203,9 @@ export const doorWindow = defineCalculator<DoorWindowInput>({
             openingRow({ name: 'W4-บานวงกลม ช่องแสงติดตาย ขนาด Dia.1.1 ม.', type: W, count: 1, width: 1.1, height: 1.1, matPrice: 5000, labPrice: 500 }),
         ],
     }),
+    // A real project starts with an empty schedule: every opening is read off the plan's door/window table.
+    // Prices are per row (aluminium rate, typed prices) and come with each new row (ALUMINIUM_RATES, WOOD_DEFAULT_PRICE).
+    blank: () => ({ doors: [], windows: [] }),
     compute: (input) => computeDoorWindow(input),
     boqLinks: [{ line: 'R191', field: 'qty', output: 'R191' }],
     boqSlots: (input) => ({

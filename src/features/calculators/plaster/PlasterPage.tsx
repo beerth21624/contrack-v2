@@ -1,20 +1,21 @@
 'use client';
 
-import {
-    plaster, plasterRowArea, PLASTER_KINDS, PLASTER_SIDES, PLASTER_WALL_PARTS, STRUCTURAL_WALL,
-    STRUCTURAL_WALL_DEFAULT_AREA, type PlasterRow,
-} from '@/domain/calculators/plaster';
+import { plaster, type PlasterRow } from '@/domain/calculators/plaster';
 import { netByPartKey } from '@/domain/calculators/brick';
 import type { CalcContext } from '@/domain/calculators/types';
-import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
-import { NumberCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-
-const isStructural = (r: PlasterRow) => r.wallPart.trim() === STRUCTURAL_WALL;
+import { PlasterTable } from './PlasterTable';
+import PlasterJourney from './PlasterJourney';
 
 export default function PlasterPage() {
+    return useJourneyMode() ? <PlasterJourney /> : <PlasterSheet />;
+}
+
+/** The Excel-mirror sheet (/calc/plaster). */
+function PlasterSheet() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(plaster);
     const ctx: CalcContext = { outputs: id => result.calcOutputs[id] };
     const brickNet = (part: string) => result.calcOutputs.brick?.[netByPartKey(part)] ?? 0;
@@ -25,38 +26,7 @@ export default function PlasterPage() {
     return (
         <CalculatorShell def={plaster} result={result} isDefault={isDefault} onReset={reset}>
             <SheetCard title=": ตารางคำนวณปริมาณปูนฉาบ">
-                <EditableTable<PlasterRow>
-                    rows={input.rows}
-                    onChange={rows => update({ rows })}
-                    newRow={() => ({ wallPart: '', kind: '', sides: 1 })}
-                    addLabel="+ เพิ่มรายการ"
-                    columns={[
-                        { kind: 'select', key: 'wallPart', title: 'แยกส่วนผนัง', width: 160,
-                            options: PLASTER_WALL_PARTS.map(v => ({ value: v })),
-                            get: r => r.wallPart,
-                            set: (r, v) => ({
-                                ...r, wallPart: v,
-                                manualArea: v === STRUCTURAL_WALL ? (r.manualArea ?? STRUCTURAL_WALL_DEFAULT_AREA) : r.manualArea,
-                            }) },
-                        { kind: 'select', key: 'kind', title: 'รายการ', width: 120, options: PLASTER_KINDS.map(v => ({ value: v })),
-                            get: r => r.kind.trim(), set: (r, v) => ({ ...r, kind: v }) },
-                        { kind: 'select', key: 'sides', title: 'ฉาบกี่ด้าน', width: 80,
-                            options: PLASTER_SIDES.map(v => ({ value: String(v) })),
-                            get: r => (r.sides ? String(r.sides) : ''), set: (r, v) => ({ ...r, sides: Number(v) }) },
-                        {
-                            kind: 'label', key: 'perSide', title: 'พื้นที่ผนัง ต่อด้าน (ตร.ม.)', width: 120,
-                            get: (r, i) => (isStructural(r)
-                                ? <NumberCell value={r.manualArea ?? 0} ariaLabel="พื้นที่ผนังโครงสร้าง ต่อด้าน"
-                                    onCommit={v => setRow(i, { manualArea: v ?? STRUCTURAL_WALL_DEFAULT_AREA })} />
-                                : (
-                                    <div className="text-right tabular-nums px-1" style={{ background: SHEET_COLORS.calc }}>
-                                        {r.wallPart.trim() ? formatNumber(brickNet(r.wallPart)) : ''}
-                                    </div>
-                                )),
-                        },
-                        { kind: 'calc', key: 'area', title: 'รวม (ตร.ม.)', width: 100, get: r => plasterRowArea(r, ctx) },
-                    ]}
-                />
+                <PlasterTable rows={input.rows} onChange={rows => update({ rows })} setRow={setRow} ctx={ctx} brickNet={brickNet} />
                 <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
                     <li>รวม = พื้นที่ก่ออิฐสุทธิของส่วนผนังนี้ (ทุกชนิดอิฐ/ความหนา จากโปรแกรมก่ออิฐ) × จำนวนด้านที่ฉาบ</li>
                     <li>

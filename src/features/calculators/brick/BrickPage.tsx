@@ -11,10 +11,17 @@ import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber } from '@/components/sheet/NumberCell';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
+import BrickJourney from './BrickJourney';
 
 const opts = (list: readonly string[]) => list.map(v => ({ value: v }));
 
 export default function BrickPage() {
+    return useJourneyMode() ? <BrickJourney /> : <BrickSheet />;
+}
+
+/** The Excel-mirror sheet (/calc/brick). */
+function BrickSheet() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(brick);
     const ctx: CalcContext = { outputs: id => result.calcOutputs[id] };
     const openings = brickOpenings(ctx);

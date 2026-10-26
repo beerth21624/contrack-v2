@@ -121,6 +121,19 @@ export function roofingQty(row: RoofingRow, takeoff: number): number {
     return roundUp(takeoff * c);
 }
 
+/**
+ * The roof pitch K6 set to `slopeDeg` (journey page). Rake rows whose own pitch equalled the old roof pitch follow
+ * the new one; a rake pitch typed differently stays. Calculation unchanged: E7 still uses the row's own pitch.
+ */
+export function withRoofSlope(input: RoofingInput, slopeDeg: number): RoofingInput {
+    return {
+        ...input,
+        slopeDeg,
+        rows: input.rows.map(r => (r.takeoff.kind === 'rake' && r.takeoff.deg === input.slopeDeg
+            ? { ...r, takeoff: { ...r.takeoff, deg: slopeDeg } } : r)),
+    };
+}
+
 const BOQ_LINES = Array.from({ length: ROOFING_BOQ_ROWS }, (_, i) => `R${162 + i}`);
 
 export const roofing = defineCalculator<RoofingInput>({
@@ -130,7 +143,31 @@ export const roofing = defineCalculator<RoofingInput>({
     titleEn: 'Roofing (CPAC tile)',
     sections: [16],
     deps: [],
-    defaults: () => ({
+    defaults: () => sampleInput(),
+    // A real project: roof size, pitch and every typed length / count empty (read off the roof plan). The 13 material
+    // rows keep their items, factors and units (CPAC spec); slope-area and same-as-row links stay. The rake row's own
+    // pitch starts at the roof pitch (0), so the journey page can keep it following the roof pitch.
+    blank: () => blankInput(),
+    compute: (input) => computeRoofing(input),
+    boqLinks: [
+        ...BOQ_LINES.map(line => ({ line, field: 'qty' as const, output: line })),
+        { line: 'R175', field: 'qty', output: 'R175' },
+        { line: 'R176', field: 'qty', output: 'R176' },
+    ],
+    // D162…D174 = B5…B17 (the BOQ description follows the item chosen on the sheet).
+    boqText: (input) => {
+        const text: Record<string, { desc?: string }> = {};
+        BOQ_LINES.forEach((line, i) => {
+            const desc = input.rows[i]?.item.trim() ?? '';
+            if (desc !== '') text[line] = { desc };
+        });
+        return text;
+    },
+});
+
+/** Excel v5 sample input (sheet 23 yellow cells). */
+function sampleInput(): RoofingInput {
+    return {
         planArea: 113,
         slopeDeg: 40,
         rows: [
@@ -148,37 +185,38 @@ export const roofing = defineCalculator<RoofingInput>({
             { key: 'fascia', item: 'ไม้เชิงชาย', factor: 4, factorUnit: 'ม./แผ่น', takeoff: { kind: 'lengths', lengths: [62.3] }, takeoffUnit: 'ม.', unit: 'แผ่น' },
             { key: 'foil', item: 'แผ่นสะท้อนความร้อน (1.25 x 60 ม./ม้วน)', factor: 75, factorUnit: 'ตร.ม./ม้วน', takeoff: { kind: 'slope' }, takeoffUnit: 'ตร.ม.', unit: 'ม้วน' },
         ],
-    }),
-    compute: (input) => {
-        const k7 = slopeArea(input);
-        const takeoffs = roofingTakeoffs(input);
-        const out: Record<string, number> = { slopeArea: k7 };
-        const qtys = input.rows.map((r, i) => roofingQty(r, takeoffs[i] ?? 0));
-        input.rows.forEach((_, i) => {
-            out[`takeoff.${i}`] = takeoffs[i] ?? 0;
-            out[`qty.${i}`] = qtys[i] ?? 0;
-        });
-        // BOQ E162…E174 = G5…G17 (by position).
-        BOQ_LINES.forEach((line, i) => { out[line] = qtys[i] ?? 0; });
-        // E175 ค่าแรงมุงหลังคา = K7; E176 ค่าแรงติดตั้งไม้เชิงชาย = E16 (fascia take-off).
-        out.R175 = k7;
-        out.R176 = takeoffs[FASCIA_ROW] ?? 0;
-        // Named outputs for other sheets (the Paint sheet reads the fascia length).
-        out.fasciaLength = out.R176;
-        return out;
-    },
-    boqLinks: [
-        ...BOQ_LINES.map(line => ({ line, field: 'qty' as const, output: line })),
-        { line: 'R175', field: 'qty', output: 'R175' },
-        { line: 'R176', field: 'qty', output: 'R176' },
-    ],
-    // D162…D174 = B5…B17 (the BOQ description follows the item chosen on the sheet).
-    boqText: (input) => {
-        const text: Record<string, { desc?: string }> = {};
-        BOQ_LINES.forEach((line, i) => {
-            const desc = input.rows[i]?.item.trim() ?? '';
-            if (desc !== '') text[line] = { desc };
-        });
-        return text;
-    },
-});
+    };
+}
+
+/** Blank project input (see `roofing.blank`). */
+function blankInput(): RoofingInput {
+    return {
+        planArea: 0,
+        slopeDeg: 0,
+        rows: sampleInput().rows.map((r): RoofingRow => {
+            const t = r.takeoff;
+            if (t.kind === 'lengths') return { ...r, takeoff: { kind: 'lengths', lengths: [] } };
+            if (t.kind === 'rake') return { ...r, takeoff: { kind: 'rake', lengths: [], deg: 0 } };
+            return r;
+        }),
+    };
+}
+
+function computeRoofing(input: RoofingInput): Record<string, number> {
+    const k7 = slopeArea(input);
+    const takeoffs = roofingTakeoffs(input);
+    const out: Record<string, number> = { slopeArea: k7 };
+    const qtys = input.rows.map((r, i) => roofingQty(r, takeoffs[i] ?? 0));
+    input.rows.forEach((_, i) => {
+        out[`takeoff.${i}`] = takeoffs[i] ?? 0;
+        out[`qty.${i}`] = qtys[i] ?? 0;
+    });
+    // BOQ E162…E174 = G5…G17 (by position).
+    BOQ_LINES.forEach((line, i) => { out[line] = qtys[i] ?? 0; });
+    // E175 ค่าแรงมุงหลังคา = K7; E176 ค่าแรงติดตั้งไม้เชิงชาย = E16 (fascia take-off).
+    out.R175 = k7;
+    out.R176 = takeoffs[FASCIA_ROW] ?? 0;
+    // Named outputs for other sheets (the Paint sheet reads the fascia length).
+    out.fasciaLength = out.R176;
+    return out;
+}
