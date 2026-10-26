@@ -154,3 +154,55 @@ export const pickRow = (item: string, qty: number, unit: string): PickRow => ({ 
 
 /** An empty row for the "+ เพิ่มรายการ" button. */
 export const emptyPickRow = (): PickRow => pickRow('', 0, '');
+
+/** Units of things counted one by one (the sheets' หน่วย options that are not lengths). */
+export const COUNT_UNITS: readonly string[] = [
+    'ชุด', 'ตัว', 'ท่อน', 'อัน', 'เครื่อง', 'ใบ', 'ถัง', 'บ่อ', 'จุด', 'ชิ้น', 'ดวง', 'คู่', 'แผ่น', 'บาน', 'หลัง', 'ลูก', 'ต้น', 'ม้วน',
+];
+
+export const isCountUnit = (unit: string): boolean => COUNT_UNITS.includes(unit.trim());
+
+/** Decimals to show a quantity with: whole counts as integers ("1", not "1.00"), everything else 2. */
+export const qtyDigits = (qty: number, unit: string): number => (isCountUnit(unit) && Number.isInteger(qty) ? 0 : 2);
+
+/** Position of an option in the dropdown list (-1 = free text or empty). */
+export const optionIndex = (options: readonly string[], item: string): number => {
+    const key = matchKey(item);
+    return key === '' ? -1 : options.findIndex(o => matchKey(o) === key);
+};
+
+/** The first row of each dropdown option (by option index), and every other row (duplicates, free text, empty). */
+export function splitByOption(rows: readonly PickRow[], options: readonly string[]): { first: Map<number, number>; others: number[] } {
+    const first = new Map<number, number>();
+    const others: number[] = [];
+    rows.forEach((row, i) => {
+        const o = optionIndex(options, row.item);
+        if (o >= 0 && !first.has(o)) first.set(o, i);
+        else others.push(i);
+    });
+    return { first, others };
+}
+
+/**
+ * Sets the quantity of a dropdown option (the guided journey's count sheet): its first row gets the qty; an option
+ * with no row yet gets a new catalogue-priced row, placed in dropdown order before later options and free text.
+ * Rows are never removed here (qty 0 keeps the row, so BOQ edits stored under its key stay with it).
+ */
+export function setOptionQty(
+    rows: readonly PickRow[], options: readonly string[], option: number, qty: number, catalogue: Catalogue,
+): PickRow[] {
+    const item = options[option];
+    if (item === undefined) return [...rows];
+    const at = splitByOption(rows, options).first.get(option);
+    if (at !== undefined) return rows.map((r, i) => (i === at ? { ...r, qty } : r));
+    if (num(qty) === 0) return [...rows];
+    const pos = rows.findIndex(r => { const o = optionIndex(options, r.item); return o === -1 || o > option; });
+    const row = pickRow(item, qty, catalogueItem(catalogue, item)?.unit ?? '');
+    return pos === -1 ? [...rows, row] : [...rows.slice(0, pos), row, ...rows.slice(pos)];
+}
+
+/** A row the BOQ would price at 0: it has an item but no catalogue price and none typed (e.g. new free text). */
+export const needsPrice = (row: PickRow, catalogue: Catalogue): boolean => {
+    const c = pickRowCalc(row, catalogue);
+    return matchKey(row.item) !== '' && c.mat === 0 && c.lab === 0;
+};

@@ -12,6 +12,9 @@ export default function MiscPage() {
                 <p className="mt-1 text-[12px] text-gray-500">
                     พิมพ์ชื่อรายการอื่นที่ไม่อยู่ในรายการได้ — ใส่หน่วย, ค่าวัสดุ และค่าแรงต่อหน่วยเอง (ถ้าไม่ใส่ราคา = 0).
                 </p>
+            )}
+            journeyNotes={(
+                <p className="mt-1 text-[12px] text-gray-500">ราวกันตก: ใส่ความยาวรวมเป็นเมตร (วัดจากแปลน/รูปด้าน)</p>
             )} />
     );
 }

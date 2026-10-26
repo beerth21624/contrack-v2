@@ -46,6 +46,8 @@ export const loadCenter = defineCalculator<LoadCenterInput>({
     titleEn: 'Load Center',
     sections: [26],
     deps: [],
+    // A real project starts with an empty list: every item is counted off the plan.
+    blank: () => ({ items: [] }),
     // Excel rows 5–12, verbatim (rows 13–19 are blank; rows can be added, D5).
     defaults: () => ({
         items: [

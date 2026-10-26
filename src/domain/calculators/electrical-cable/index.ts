@@ -4,7 +4,7 @@
 // keeps only the wire settings D/E/F of each circuit, keyed by the circuit id.
 // Spec: docs/excel-spec/05-mep-sanitary-misc.md §5 (oddities D4, D6, D7, D8).
 import { defineCalculator, type CalcContext } from '../types';
-import { circuitLengths, type CircuitLengths } from '../electrical-pipe';
+import { circuitKind, circuitLengths, type Circuit, type CircuitKind, type CircuitLengths } from '../electrical-pipe';
 
 /** Dropdown D6:E28 (verbatim). */
 export const WIRE_SIZES = ['THW 1.5', 'THW 2.5', 'THW 4', 'THW 6'] as const;
@@ -64,6 +64,61 @@ export function cableRows(input: ElectricalCableInput, ctx: CalcContext): CableR
     });
 }
 
+/** No size and no conductor count chosen (a blank Excel row). */
+export const isBlankWiring = (w: CircuitWiring | undefined): boolean =>
+    w === undefined || (w.mainSize.trim() === '' && w.deviceSize.trim() === '' && num(w.conductors) === 0);
+
+/**
+ * Wire settings of the Excel v5 sample by circuit kind (lights 2.5 / 1.5 × 2 wires; sockets 4 / 2.5 × 3;
+ * heater, air conditioner, pump 4 × 3 with no device run). Used by the guided journey to pre-select a new
+ * circuit's cable; 'other' has no suggestion. Never applied by `compute` (a blank row still counts nothing, D8).
+ */
+export const KIND_WIRING: Partial<Record<CircuitKind, CircuitWiring>> = {
+    light: { mainSize: 'THW 2.5', deviceSize: 'THW 1.5', conductors: 2 },
+    socket: { mainSize: 'THW 4', deviceSize: 'THW 2.5', conductors: 3 },
+    'kitchen-socket': { mainSize: 'THW 4', deviceSize: 'THW 2.5', conductors: 3 },
+    heater: { mainSize: 'THW 4', deviceSize: '', conductors: 3 },
+    ac: { mainSize: 'THW 4', deviceSize: '', conductors: 3 },
+    pump: { mainSize: 'THW 4', deviceSize: '', conductors: 3 },
+};
+
+/** Suggested wire settings of a circuit (its kind, else guessed from its name); undefined = no suggestion. */
+export const suggestWiring = (c: Circuit): CircuitWiring | undefined => {
+    const kind = circuitKind(c);
+    const w = kind ? KIND_WIRING[kind] : undefined;
+    return w ? { ...w } : undefined;
+};
+
+/** Gives every circuit with blank wire settings its suggestion (rows already set are kept as they are). */
+export function fillSuggestedWiring(input: ElectricalCableInput, circuits: readonly Circuit[]): ElectricalCableInput {
+    const wiring = { ...input.wiring };
+    for (const c of circuits) {
+        const s = suggestWiring(c);
+        if (s && isBlankWiring(wiring[c.id])) wiring[c.id] = s;
+    }
+    return { ...input, wiring };
+}
+
+const sameWiring = (a: CircuitWiring, b: CircuitWiring) =>
+    a.mainSize.trim() === b.mainSize.trim() && a.deviceSize.trim() === b.deviceSize.trim() && num(a.conductors) === num(b.conductors);
+
+/**
+ * A circuit changed kind (journey): its wire settings follow the new kind's suggestion when they were blank or
+ * still the old kind's suggestion; settings the user chose are kept.
+ */
+export function rewireForKind(input: ElectricalCableInput, before: Circuit, after: Circuit): ElectricalCableInput {
+    const current = input.wiring[after.id];
+    const old = suggestWiring(before);
+    const next = suggestWiring(after);
+    const untouched = isBlankWiring(current) || (current !== undefined && old !== undefined && sameWiring(current, old));
+    if (!untouched || !next) return input;
+    return { ...input, wiring: { ...input.wiring, [after.id]: next } };
+}
+
+/** Circuits whose wiring is blank but that have a suggestion. */
+export const circuitsToSuggest = (input: ElectricalCableInput, circuits: readonly Circuit[]): Circuit[] =>
+    circuits.filter(c => isBlankWiring(input.wiring[c.id]) && suggestWiring(c) !== undefined);
+
 /** Default D/E/F of the 14 Excel circuits (ids c1…c14 of the conduit sheet defaults). */
 const sampleWiring = (): Record<string, CircuitWiring> => {
     const w = (mainSize: string, deviceSize: string, conductors: number): CircuitWiring => ({ mainSize, deviceSize, conductors });
@@ -93,6 +148,8 @@ export const electricalCable = defineCalculator<ElectricalCableInput>({
     titleEn: 'Electrical Cable',
     sections: [18],
     deps: ['electrical-pipe'],
+    // A real project has no circuits yet (they are added at the conduit level), so no wire settings.
+    blank: () => ({ wiring: {} }),
     defaults: () => ({ wiring: sampleWiring() }),
     compute: (input, ctx) => {
         // I4:L4 = SUM(I6:I28) …; every circuit of the conduit sheet is counted (Excel links G/H on rows 6–19 only — D6).

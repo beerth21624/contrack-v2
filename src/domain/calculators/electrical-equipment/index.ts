@@ -41,6 +41,8 @@ export const electricalEquipment = defineCalculator<ElectricalEquipmentInput>({
     titleEn: 'Electrical Equipment',
     sections: [26],
     deps: [],
+    // A real project starts with an empty list: every item is counted off the plan.
+    blank: () => ({ items: [] }),
     // Excel rows 5–10 (rows 11–18 are blank; rows can be added, D5).
     defaults: () => ({
         items: [

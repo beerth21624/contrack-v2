@@ -29,6 +29,8 @@ export const misc = defineCalculator<MiscInput>({
     titleEn: 'Other',
     sections: [28],
     deps: [],
+    // A real project starts with an empty list: every item is counted off the plan.
+    blank: () => ({ items: [] }),
     // Excel row 5 (rows 6–18 blank; rows can be added, D5).
     defaults: () => ({
         items: [pickRow(GLASS_RAILING, 7.1, 'ม.')],
