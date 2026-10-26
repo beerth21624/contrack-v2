@@ -30,7 +30,8 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
 
     // Determine active menu key from pathname
     let activeKey = 'timeline';
-    if (pathname.includes('/summary')) activeKey = 'summary';
+    if (pathname.startsWith('/boq')) activeKey = 'boq';
+    else if (pathname.includes('/summary')) activeKey = 'summary';
     else if (pathname.includes('/schedule')) activeKey = 'schedule';
     else if (pathname.includes('/man-day')) activeKey = 'man-day';
     else if (pathname.includes('/cashflow')) activeKey = 'cashflow';
@@ -38,6 +39,7 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
     else if (pathname.includes('/productivity')) activeKey = 'productivity';
 
     const menuItems = [
+        { key: 'boq', icon: <CalculatorOutlined />, label: tNav('boqHome'), onClick: () => router.push('/boq') },
         { key: 'summary', icon: <TableOutlined />, label: tNav('boqSummary'), onClick: () => router.push('/summary') },
         { key: 'timeline', icon: <DashboardOutlined />, label: tNav('taskList'), onClick: () => router.push('/timeline') },
         { key: 'schedule', icon: <ScheduleOutlined />, label: tNav('schedule'), onClick: () => router.push('/schedule') },

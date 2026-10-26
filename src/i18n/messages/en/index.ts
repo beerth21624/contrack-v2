@@ -9,6 +9,7 @@ import steps from './steps.json';
 import quantities from './quantities.json';
 import boqItems from './boqItems.json';
 import schedule from './schedule.json';
+import boqHome from './boqHome.json';
 
 const messages = {
   common,
@@ -21,7 +22,8 @@ const messages = {
   steps,
   quantities,
   boqItems,
-  schedule
+  schedule,
+  boqHome
 };
 
 export default messages;
