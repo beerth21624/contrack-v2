@@ -4,7 +4,7 @@ import { computeBoq } from '../../boq/engine';
 import { BOQ_TEMPLATE_V5 } from '../../boq/template.v5';
 import { computeProject, createProject } from '../../project';
 import {
-    buildWeekBuckets, computePlanning, defaultPlanningInput, isoToSerial, resolvePlanningInput, serialToIso,
+    blankPlanningInput, buildWeekBuckets, computePlanning, defaultPlanningInput, isoToSerial, resolvePlanningInput, serialToIso,
     type PlanningInput,
 } from '..';
 
@@ -161,6 +161,27 @@ describe('input resolution and project wire-up', () => {
         expect(r.schedule.tasks['4.2']?.duration).toBe(4);
         expect(r.cashflow.installments).toHaveLength(9);
         expect(resolvePlanningInput()).toEqual(defaultPlanningInput());
+    });
+
+    it('blankPlanningInput keeps the sample plan but drops the sample progress tracking', () => {
+        const b = blankPlanningInput();
+        const d = defaultPlanningInput();
+        expect(b.manday).toEqual(d.manday);
+        expect(b.schedule.tasks['1.1']).toEqual({ start: '2026-01-10', progress: 0 });
+        expect(b.schedule.tasks['4.2']).toEqual({ start: '2026-03-18', progress: 0, duration: 4 });
+        expect(Object.values(b.cashflow.progress).every(p => p === 0)).toBe(true);
+        expect(b.cashflow.actualCost).toBe(0);
+        expect(b.cashflow.installments).toEqual(d.cashflow.installments);
+        const r = computePlanning(b, boq);
+        expect(r.schedule.status.lastUpdate).toBeNull();
+        expect(r.schedule.durationDays).toBe(142);
+        expect(r.cashflow.evm.ev).toBe(0);
+        expect(r.cashflow.evm.ac).toBe(0);
+        // Stored edits still win over the blank base.
+        const stored = { schedule: { ...b.schedule, tasks: { ...b.schedule.tasks, '1.2': { start: '2026-01-11', actual: { days: 2 } } } } };
+        const resolved = resolvePlanningInput(stored, blankPlanningInput());
+        expect(resolved.schedule.tasks['1.2']).toEqual({ start: '2026-01-11', progress: 0, actual: { days: 2 } });
+        expect(resolved.schedule.tasks['1.1']?.actual).toBeUndefined();
     });
 
     it('computeProject exposes planning; CashFlow cost = BOQ construction total', () => {

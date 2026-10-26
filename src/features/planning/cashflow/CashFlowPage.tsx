@@ -63,6 +63,7 @@ export function CashFlowPage() {
                         {bucket >= 0 && bucket !== r.bucket && (
                             <Tooltip title="เรียกเก็บในสัปดาห์ที่งานงวดนี้เสร็จ">
                                 <Button size="small" type="link" className="!px-1"
+                                    aria-label={`เรียกเก็บ ${r.label} ใน ${bucketLabel(cf.buckets[bucket])}`}
                                     onClick={() => saveInstallments(ci.installments.map((x, j) => (j === i ? { ...x, bucket } : x)))}>ใช้</Button>
                             </Tooltip>
                         )}

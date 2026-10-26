@@ -255,7 +255,7 @@ describe('CashFLOW_Basic', () => {
         expectRow(cashflow.outflowWeekly, 16, true);
         expectRow(cashflow.netWeekly, 17, true);
         expectRow(cashflow.cumulative, 18, true);
-        expect(cashflow.minCumulative?.bucket).toBe(14);   // column R (Mar W3)
+        expect(cashflow.minCumulative?.bucket).toBe(14);   // column R = Apr W3 (D..G Jan, H..K Feb, L..O Mar, P..S Apr)
         money(cashflow.minCumulative?.value, 'min R18', -115556.1054);
         money(cashflow.cumulative[19], 'W18', 277547.6014);
         // The cash position ends at quotation − cost × 1.15 = 15 % of the cost.

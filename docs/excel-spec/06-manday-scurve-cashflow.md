@@ -340,7 +340,7 @@ This is a weekly cash-flow plan for the contractor. Cash-IN is the client's inst
 | Row 59 | `=D55*15%` | กำไร 15% (profit) per week |
 | Row 16 | `=D55+D56` | รวมรายจ่าย (total cash-out) per week |
 | Row 17 | `=D15-D16` | net per week |
-| Row 18 | D18 `=D17`; E18 `=D18+E17` | cumulative cash position. Sample min −115,556 at R (Mar W3); ends at +277,547.60 (= 15% of cost). |
+| Row 18 | D18 `=D17`; E18 `=D18+E17` | cumulative cash position. Sample min −115,556 at R (Apr W3); ends at +277,547.60 (= 15% of cost). |
 
 **Finance Dashboard (EVM)**
 | Cell | Label | Excel | Sample |

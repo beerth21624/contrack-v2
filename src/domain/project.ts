@@ -7,7 +7,7 @@ import type {
 } from './boq/types';
 import { calculatorsInOrder } from './calculators/registry';
 import type { CalculatorDef, SlotRow } from './calculators/types';
-import { computePlanning, resolvePlanningInput, type PlanningInput, type PlanningResult } from './planning';
+import { blankPlanningInput, computePlanning, resolvePlanningInput, type PlanningInput, type PlanningResult } from './planning';
 import { JOURNEY_LEVELS } from './journey/levels';
 import type { JourneyProgress } from './journey/progress';
 
@@ -90,6 +90,11 @@ export function calculatorInput<I>(project: Project, def: CalculatorDef<I>): I {
     return stored && typeof stored === 'object' ? { ...base, ...(stored as Partial<I>) } : base;
 }
 
+/** Planning input as shown and computed: stored values over the sample plan (a blank project drops the sample's progress tracking). */
+export function projectPlanningInput(project: Project): PlanningInput {
+    return resolvePlanningInput(project.planning, project.start === 'blank' ? blankPlanningInput() : undefined);
+}
+
 /** Calculators of journey levels marked "ไม่มีงานนี้": they put nothing into the BOQ. */
 function skippedCalculators(project: Project): Set<string> {
     const progress = project.journey ?? {};
@@ -139,6 +144,6 @@ export function computeProject(project: Project, calculators?: CalculatorDef[]):
     }
 
     const boq = computeBoq({ sections: BOQ_TEMPLATE_V5, overrides: project.boqOverrides, linked, slots });
-    const planning = computePlanning(resolvePlanningInput(project.planning), boq);
+    const planning = computePlanning(projectPlanningInput(project), boq);
     return { calcOutputs, boq, planning };
 }

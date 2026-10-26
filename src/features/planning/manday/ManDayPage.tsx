@@ -130,7 +130,7 @@ export function ManDayPage() {
                     <div className="text-[12px] text-gray-500 mb-1">ชุด A (งานทั่วไป)</div>
                     <InputNumberField label="ช่าง" unit="บาท/วัน" digits={0} value={md.wageSets.A.skilled} onChange={v => setWage('A', 'skilled', v)} />
                     <InputNumberField label="คนงาน" unit="บาท/วัน" digits={0} value={md.wageSets.A.labourer} onChange={v => setWage('A', 'labourer', v)} />
-                    <div className="text-[12px] text-gray-500 mt-2 mb-1">ชุด B (หลังคา ไฟฟ้า ฝ้า สี อลูมิเนียม)</div>
+                    <div className="text-[12px] text-gray-500 mt-2 mb-1">ชุด B (หลังคา ไฟฟ้า ฝ้า สี อลูมิเนียม เบ็ดเตล็ด)</div>
                     <InputNumberField label="ช่าง" unit="บาท/วัน" digits={0} value={md.wageSets.B.skilled} onChange={v => setWage('B', 'skilled', v)} />
                     <InputNumberField label="คนงาน" unit="บาท/วัน" digits={0} value={md.wageSets.B.labourer} onChange={v => setWage('B', 'labourer', v)} />
                     <InputNumberField label="งานเหมา: ค่าแรง % ของยอดรวม" percent value={md.subcontractLabourShare}

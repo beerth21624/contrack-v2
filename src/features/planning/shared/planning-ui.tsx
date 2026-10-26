@@ -7,8 +7,8 @@ import { Button, Collapse, DatePicker, Popconfirm, Tag, Typography } from 'antd'
 import { RightOutlined, UndoOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useProjectStore } from '@/store/project-store';
-import { computeProject } from '@/domain/project';
-import { resolvePlanningInput, type WeekBucket } from '@/domain/planning';
+import { computeProject, projectPlanningInput } from '@/domain/project';
+import { type WeekBucket } from '@/domain/planning';
 import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 
 const { Title, Text } = Typography;
@@ -18,7 +18,7 @@ export function usePlanning() {
     const project = useProjectStore(s => s.project);
     const setPlanning = useProjectStore(s => s.setPlanning);
     const result = useMemo(() => computeProject(project), [project]);
-    const input = useMemo(() => resolvePlanningInput(project.planning), [project.planning]);
+    const input = useMemo(() => projectPlanningInput(project), [project]);
     return { project, result, planning: result.planning, input, stored: project.planning ?? {}, setPlanning };
 }
 

@@ -87,6 +87,31 @@ export function defaultPlanningInput(): PlanningInput {
     return { manday: defaultManDayInput(), schedule: defaultScheduleInput(), cashflow: defaultCashFlowInput() };
 }
 
+/**
+ * What a blank (real) project starts from: the Excel sample plan (crews, wages, estimated days, start
+ * dates, installments, rates) without the sample's progress tracking — no ACTUAL rows (the sample's
+ * task 1.1 actual of 7,000 บาท), no % complete (S-Curve BF, CashFlow Y21:Y53) and no Actual Cost (Z18).
+ */
+export function blankPlanningInput(): PlanningInput {
+    const d = defaultPlanningInput();
+    return {
+        manday: d.manday,
+        schedule: {
+            ...d.schedule,
+            tasks: Object.fromEntries(Object.entries(d.schedule.tasks).map(([id, t]) => {
+                const task: ScheduleTaskInput = { start: t.start, progress: 0 };
+                if (t.duration !== undefined) task.duration = t.duration;
+                return [id, task];
+            })),
+        },
+        cashflow: {
+            ...d.cashflow,
+            progress: Object.fromEntries(PLAN_TASKS.map(t => [t.id, 0])),
+            actualCost: 0,
+        },
+    };
+}
+
 const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
 
 /** Per-key merge of a record of objects (each stored entry over its default, so new fields get defaults). */
@@ -102,10 +127,11 @@ function mergeRecord<T extends object>(defaults: Record<string, T>, stored: unkn
 
 /**
  * Stored (possibly partial / older) planning input → a complete PlanningInput: every level falls
- * back to the Excel sample, so fields added later get a default.
+ * back to `base` (default: the Excel sample; `blankPlanningInput()` for a blank project), so fields
+ * added later get a default.
  */
-export function resolvePlanningInput(stored?: Partial<PlanningInput>): PlanningInput {
-    const d = defaultPlanningInput();
+export function resolvePlanningInput(stored?: Partial<PlanningInput>, base?: PlanningInput): PlanningInput {
+    const d = base ?? defaultPlanningInput();
     if (!stored) return d;
     const md = isObject(stored.manday) ? stored.manday as Partial<ManDayInput> : {};
     const sc = isObject(stored.schedule) ? stored.schedule as Partial<ScheduleInput> : {};
