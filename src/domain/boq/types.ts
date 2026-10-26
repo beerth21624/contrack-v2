@@ -126,6 +126,9 @@ export interface BoqItemRow {
     labUnit: number;           // K
     labTotal: number;          // L
     total: number;             // M
+    /** Which quantity J and L multiply (copied from the template; used to snapshot rows for subcontracting). */
+    materialBasis: 'gross' | 'net';
+    labourBasis: 'net' | 'gross';
     editable: { qty: boolean };
     /** Which cells currently show a value supplied by a calculator (not edited on the BOQ page). */
     fromCalc: { qty: boolean; mat: boolean; lab: boolean };

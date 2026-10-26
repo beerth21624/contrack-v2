@@ -1,6 +1,7 @@
 import { asUserId } from '../../../../shared/domain/ids';
 import { DisplayName } from '../value-objects/display-name.value-object';
 import { Email } from '../value-objects/email.value-object';
+import { Phone } from '../value-objects/phone.value-object';
 import { User } from './user.entity';
 
 const props = () => ({
@@ -35,5 +36,37 @@ describe('User', () => {
 
     it('rehydrates from storage', () => {
         expect(User.rehydrate(props()).email.value).toBe('alice@example.com');
+    });
+});
+
+describe('User phone', () => {
+    it('has no phone by default', () => {
+        const user = User.create(props());
+        expect(user.phone).toBeNull();
+        expect(user.phoneVerifiedAt).toBeNull();
+        expect(user.isPhoneOnly).toBe(false);
+    });
+
+    it('keeps a verified phone and copies the verification date', () => {
+        const at = new Date('2026-02-01T00:00:00.000Z');
+        const user = User.create(props()).withVerifiedPhone(Phone.rehydrate('+66812345678'), at);
+        at.setUTCFullYear(2000);
+        expect(user.phone?.value).toBe('+66812345678');
+        expect(user.phoneVerifiedAt?.toISOString()).toBe('2026-02-01T00:00:00.000Z');
+        user.phoneVerifiedAt?.setUTCFullYear(1999);
+        expect(user.phoneVerifiedAt?.toISOString()).toBe('2026-02-01T00:00:00.000Z');
+    });
+
+    it('recognises a phone-only user by the placeholder e-mail', () => {
+        const phone = Phone.rehydrate('+66812345678');
+        const user = User.create({ ...props(), email: Email.rehydrate(phone.placeholderEmail), phone });
+        expect(user.isPhoneOnly).toBe(true);
+    });
+
+    it('round-trips through toProps', () => {
+        const user = User.create({ ...props(), phone: Phone.rehydrate('+66812345678'), phoneVerifiedAt: new Date(0) });
+        const again = User.rehydrate(user.toProps());
+        expect(again.phone?.value).toBe('+66812345678');
+        expect(again.phoneVerifiedAt?.getTime()).toBe(0);
     });
 });

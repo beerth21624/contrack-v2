@@ -33,11 +33,15 @@ export const ERROR_CODES = [
     'personal_workspace',
     'unprocessable',
     'rate_limited',
+    'internal',
+    /** The business module (subcontracting, …) is switched off for the platform or the workspace. */
+    'module_disabled',
+    /** Wrong, expired or used-up one-time code (phone sign-in). */
+    'otp_invalid',
     /** The decision model (module `ai-assist`) cannot answer right now: not configured, unreachable or broken. */
     'ai_unavailable',
     /** The decision model account has no credits left. */
     'ai_quota',
-    'internal',
 ] as const;
 export const errorCodeSchema = z.enum(ERROR_CODES);
 export type ErrorCode = z.infer<typeof errorCodeSchema>;

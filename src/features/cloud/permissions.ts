@@ -5,7 +5,14 @@ export type Permission =
     | 'workspace.read' | 'workspace.rename' | 'workspace.delete'
     | 'members.read' | 'members.invite' | 'members.changeRole' | 'members.remove'
     | 'projects.read' | 'projects.create' | 'projects.edit' | 'projects.archive' | 'projects.delete'
-    | 'revisions.create' | 'levels.assign';
+    | 'revisions.create' | 'levels.assign'
+    // module switches
+    | 'modules.manage'
+    // subcontracting, buyer side (docs/marketplace/01 §10); some are widened by workspace settings in the use case
+    | 'sc.read' | 'sc.readPrices' | 'sc.vendors.manage' | 'sc.packages.manage' | 'sc.award'
+    | 'sc.claims.inspect' | 'sc.claims.approve' | 'sc.payments.record' | 'sc.settings'
+    // subcontracting, vendor side (the crew's own workspace)
+    | 'vendor.read' | 'vendor.bid.draft' | 'vendor.bid.submit' | 'vendor.contract.act' | 'vendor.profile.edit';
 
 const MATRIX: Record<Role, readonly Permission[]> = {
     owner: [
@@ -13,15 +20,25 @@ const MATRIX: Record<Role, readonly Permission[]> = {
         'members.read', 'members.invite', 'members.changeRole', 'members.remove',
         'projects.read', 'projects.create', 'projects.edit', 'projects.archive', 'projects.delete',
         'revisions.create', 'levels.assign',
+        'modules.manage',
+        'sc.read', 'sc.readPrices', 'sc.vendors.manage', 'sc.packages.manage', 'sc.award',
+        'sc.claims.inspect', 'sc.claims.approve', 'sc.payments.record', 'sc.settings',
+        'vendor.read', 'vendor.bid.draft', 'vendor.bid.submit', 'vendor.contract.act', 'vendor.profile.edit',
     ],
     admin: [
         'workspace.read', 'workspace.rename',
         'members.read', 'members.invite', 'members.changeRole', 'members.remove',
         'projects.read', 'projects.create', 'projects.edit', 'projects.archive', 'projects.delete',
         'revisions.create', 'levels.assign',
+        'modules.manage',
+        'sc.read', 'sc.readPrices', 'sc.vendors.manage', 'sc.packages.manage', 'sc.award',
+        'sc.claims.inspect', 'sc.claims.approve', 'sc.payments.record', 'sc.settings',
+        'vendor.read', 'vendor.bid.draft', 'vendor.bid.submit', 'vendor.contract.act', 'vendor.profile.edit',
     ],
-    estimator: ['workspace.read', 'members.read', 'projects.read', 'projects.create', 'projects.edit', 'projects.archive', 'revisions.create'],
-    viewer: ['workspace.read', 'members.read', 'projects.read'],
+    estimator: ['workspace.read', 'members.read', 'projects.read', 'projects.create', 'projects.edit', 'projects.archive', 'revisions.create',
+        'sc.read', 'sc.readPrices', 'sc.vendors.manage', 'sc.packages.manage', 'sc.claims.inspect',
+        'vendor.read', 'vendor.bid.draft',],
+    viewer: ['workspace.read', 'members.read', 'projects.read', 'sc.read', 'vendor.read'],
 };
 
 export function can(role: Role | undefined, permission: Permission): boolean {

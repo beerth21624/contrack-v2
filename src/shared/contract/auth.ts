@@ -24,7 +24,10 @@ export type LoginRequest = z.infer<typeof loginRequestSchema>;
 
 export const userDtoSchema = z.object({
     id: uuidSchema,
+    /** Phone-only users (subcontractors) have a placeholder ending in PHONE_EMAIL_DOMAIN: show the phone instead. */
     email: z.string(),
+    /** E.164 phone of users who signed in with a one-time code; null/absent otherwise. */
+    phone: z.string().nullable().optional(),
     displayName: z.string(),
     createdAt: isoDateTimeSchema,
 });

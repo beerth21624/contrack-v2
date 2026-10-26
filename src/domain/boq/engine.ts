@@ -178,6 +178,8 @@ export function computeBoq({ sections: rawSections, overrides = {}, linked = {},
                 labUnit: price(l.key, 'lab'),
                 labTotal: k,
                 total: j + k,
+                materialBasis: l.materialBasis,
+                labourBasis: l.labourBasis,
                 editable: { qty: l.qty.kind === 'input' || l.qty.kind === 'calc' },
                 fromCalc: {
                     qty: ov?.qty === undefined && linked[l.key]?.qty !== undefined,

@@ -76,6 +76,7 @@ describe('RegisterUserUseCase', () => {
         ['a too short password', { ...ALICE, password: 'short' }],
         ['a too long password', { ...ALICE, password: 'x'.repeat(129) }],
         ['an empty display name', { ...ALICE, displayName: '   ' }],
+        ['the reserved phone placeholder domain', { ...ALICE, email: '66812345678@Phone.ConTrack.invalid' }],
     ])('rejects %s with validation_failed and writes nothing', async (_label, input) => {
         const kit = identityKit();
         const result = await kit.register.execute(input);

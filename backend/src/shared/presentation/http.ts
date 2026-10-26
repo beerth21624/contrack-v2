@@ -24,9 +24,11 @@ export const STATUS_OF: Record<ErrorCode, number> = {
     invitation_invalid: 410,
     unprocessable: 422,
     rate_limited: 429,
+    internal: 500,
+    module_disabled: 404,
+    otp_invalid: 401,
     ai_quota: 402,
     ai_unavailable: 503,
-    internal: 500,
 };
 
 /** Thrown at the edge to turn a DomainError into a response (domain/application code never throws it). */

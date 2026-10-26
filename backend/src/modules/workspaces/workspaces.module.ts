@@ -1,5 +1,5 @@
 import { Global, Module } from '@nestjs/common';
-import { MembershipDirectory, PersonalWorkspaceProvisioner, WorkspaceAccess } from '../../shared/application/ports';
+import { MembershipDirectory, PersonalWorkspaceProvisioner, WorkspaceAccess, WorkspaceDirectory } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
 import { InvitationRepository } from './application/ports/invitation.repository';
 import { MembershipRepository } from './application/ports/membership.repository';
@@ -24,6 +24,7 @@ import { InMemoryInvitationRepository } from './infrastructure/adapters/in-memor
 import { InMemoryMembershipRepository } from './infrastructure/adapters/in-memory-membership.repository';
 import { InMemoryWorkspaceRepository } from './infrastructure/adapters/in-memory-workspace.repository';
 import { RepositoryMembershipDirectory } from './infrastructure/adapters/membership-directory.adapter';
+import { RepositoryWorkspaceDirectory } from './infrastructure/adapters/workspace-directory.adapter';
 import { UseCasePersonalWorkspaceProvisioner } from './infrastructure/adapters/personal-workspace-provisioner.adapter';
 import { RepositoryWorkspaceAccess } from './infrastructure/adapters/workspace-access.adapter';
 import { InvitationsController } from './presentation/invitations.controller';
@@ -57,7 +58,8 @@ import { WorkspacesController } from './presentation/workspaces.controller';
         { provide: WorkspaceAccess, useClass: RepositoryWorkspaceAccess },
         { provide: MembershipDirectory, useClass: RepositoryMembershipDirectory },
         { provide: PersonalWorkspaceProvisioner, useClass: UseCasePersonalWorkspaceProvisioner },
+        { provide: WorkspaceDirectory, useClass: RepositoryWorkspaceDirectory },
     ],
-    exports: [WorkspaceAccess, MembershipDirectory, PersonalWorkspaceProvisioner],
+    exports: [WorkspaceAccess, MembershipDirectory, PersonalWorkspaceProvisioner, WorkspaceDirectory],
 })
 export class WorkspacesModule {}

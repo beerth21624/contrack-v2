@@ -1,13 +1,14 @@
 // ─── Register: new user + personal workspace (one transaction), then a new session ───
 import { Injectable } from '@nestjs/common';
 import { Clock, IdGenerator, PersonalWorkspaceProvisioner, UnitOfWork } from '../../../../shared/application/ports';
-import type { DomainError } from '../../../../shared/domain/domain-error';
+import { DomainError } from '../../../../shared/domain/domain-error';
 import { asUserId } from '../../../../shared/domain/ids';
 import { type Result, err, ok } from '../../../../shared/domain/result';
 import { User } from '../../domain/entities/user.entity';
 import { IdentityErrors } from '../../domain/identity-errors';
 import { DisplayName } from '../../domain/value-objects/display-name.value-object';
 import { Email } from '../../domain/value-objects/email.value-object';
+import { isPhonePlaceholderEmail } from '../../domain/value-objects/phone.value-object';
 import { PlainPassword } from '../../domain/value-objects/plain-password.value-object';
 import { PasswordHasher } from '../ports/password-hasher.port';
 import { RefreshTokenRepository } from '../ports/refresh-token.repository';
@@ -36,6 +37,8 @@ export class RegisterUserUseCase {
     async execute(input: RegisterUserInput): Promise<Result<AuthSession, DomainError>> {
         const email = Email.create(input.email);
         if (!email.ok) return email;
+        // Reserved for phone-only users (would take the placeholder of a phone that signs in later).
+        if (isPhonePlaceholderEmail(email.value.value)) return err(DomainError.validation('Invalid e-mail address'));
         const displayName = DisplayName.create(input.displayName);
         if (!displayName.ok) return displayName;
         const password = PlainPassword.create(input.password);

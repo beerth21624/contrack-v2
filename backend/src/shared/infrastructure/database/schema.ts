@@ -16,8 +16,11 @@ export const users = pgTable('users', {
     email: text('email').notNull(),
     passwordHash: text('password_hash').notNull(),
     displayName: text('display_name').notNull(),
+    /** E.164 (+66…), set by phone sign-in (subcontractors). Phone-only users get a placeholder e-mail and an unusable password hash. */
+    phone: text('phone'),
+    phoneVerifiedAt: timestamp('phone_verified_at', { withTimezone: true }),
     createdAt: createdAt(),
-}, t => [uniqueIndex('users_email_key').on(t.email)]);
+}, t => [uniqueIndex('users_email_key').on(t.email), uniqueIndex('users_phone_key').on(t.phone)]);
 
 export const refreshTokens = pgTable('refresh_tokens', {
     id: uuid('id').primaryKey(),

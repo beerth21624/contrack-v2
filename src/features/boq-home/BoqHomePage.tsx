@@ -15,6 +15,7 @@ import { CALCULATOR_PAGES } from '@/features/calculators/pages';
 import Link from 'next/link';
 import { BoqExportButtons } from '@/features/export/BoqExportButtons';
 import { RevisionButtons } from '@/features/cloud/revisions/RevisionButtons';
+import { SubcontractSectionLink } from '@/features/subcontracting/shared/SubcontractSectionLink';
 import { useBoqReview } from './review/useBoqReview';
 import { REVIEW_TEXT, ReviewPanel } from './review/ReviewPanel';
 
@@ -250,6 +251,7 @@ export function BoqHomePage() {
                                         </Tooltip>
                                     );
                             })}
+                            <SubcontractSectionLink section={s} />
                             <span className="ml-auto text-gray-600 tabular-nums">{formatNumber(s.total)}</span>
                             {hasEdits && (
                                 <Tooltip title={t('resetSection')}>

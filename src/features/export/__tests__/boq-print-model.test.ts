@@ -11,7 +11,7 @@ const model = buildBoqPrintModel(boq, { ...sample.meta, ownerName: ' คุณ�
 
 const item = (p: Partial<BoqItemRow>): BoqItemRow => ({
     type: 'item', key: 'k', excelRow: 0, desc: '', unit: '', qty: 0, qtySource: 'input', waste: 0, grossQty: 0,
-    matUnit: 0, matTotal: 0, labUnit: 0, labTotal: 0, total: 0, editable: { qty: true },
+    matUnit: 0, matTotal: 0, labUnit: 0, labTotal: 0, total: 0, materialBasis: 'gross', labourBasis: 'net', editable: { qty: true },
     fromCalc: { qty: false, mat: false, lab: false }, ...p,
 });
 

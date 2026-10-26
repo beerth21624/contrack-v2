@@ -2,7 +2,7 @@
 // Needs WorkspaceAccess (workspaces module) and RealtimePublisher (realtime module); provides ProjectDirectory and
 // ProjectDocLookup and MemberAssignmentCleanup to the others.
 import { Global, Module } from '@nestjs/common';
-import { MemberAssignmentCleanup, ProjectDirectory, ProjectDocLookup } from '../../shared/application/ports';
+import { MemberAssignmentCleanup, ProjectDirectory, ProjectDocLookup, ProjectReader } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
 import { ActivityRepository } from './application/ports/activity.repository';
 import { AssignmentRepository } from './application/ports/assignment.repository';
@@ -37,6 +37,7 @@ import { InMemoryProjectRepository } from './infrastructure/adapters/in-memory-p
 import { InMemoryRevisionRepository } from './infrastructure/adapters/in-memory-revision.repository';
 import { ProjectsMemberAssignmentCleanup } from './infrastructure/adapters/member-assignment-cleanup.adapter';
 import { RepositoryProjectDirectory, RepositoryProjectDocLookup } from './infrastructure/adapters/project-directory.adapter';
+import { RepositoryProjectReader } from './infrastructure/adapters/project-reader.adapter';
 import { ProjectsController } from './presentation/projects.controller';
 import { WorkspaceProjectsController } from './presentation/workspace-projects.controller';
 
@@ -68,7 +69,8 @@ import { WorkspaceProjectsController } from './presentation/workspace-projects.c
         { provide: ProjectDirectory, useClass: RepositoryProjectDirectory },
         { provide: ProjectDocLookup, useClass: RepositoryProjectDocLookup },
         { provide: MemberAssignmentCleanup, useClass: ProjectsMemberAssignmentCleanup },
+        { provide: ProjectReader, useClass: RepositoryProjectReader },
     ],
-    exports: [ProjectDirectory, ProjectDocLookup, MemberAssignmentCleanup],
+    exports: [ProjectDirectory, ProjectDocLookup, MemberAssignmentCleanup, ProjectReader],
 })
 export class ProjectsModule {}

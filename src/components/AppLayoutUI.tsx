@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
     FlagOutlined,
     CalculatorOutlined, MenuOutlined, ScheduleOutlined, FieldTimeOutlined,
-    MoneyCollectOutlined,
+    MoneyCollectOutlined, TeamOutlined, ToolOutlined,
 } from '@ant-design/icons';
 import { useTranslations } from 'next-intl';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -15,6 +15,9 @@ import { CloudRuntime } from '@/features/cloud/CloudRuntime';
 import { AccountMenu } from '@/features/cloud/ui/AccountMenu';
 import { ProjectBadge } from '@/features/cloud/ui/ProjectBadge';
 import { ReadOnlyBanner } from '@/features/cloud/ui/ReadOnlyBanner';
+import { useModuleEnabled } from '@/features/modules/modules';
+import { NotificationBell } from '@/features/notifications/NotificationBell';
+import { useHasVendorWorkspace } from '@/features/subcontracting/shared/useHasVendorWorkspace';
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -27,6 +30,10 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
     const tApp = useTranslations('app');
     
     const hasHydrated = useProjectStore(state => state.hasHydrated);
+    // Business modules add menu entries only when they are on (docs/marketplace/README.md §1).
+    const cloudWorkspace = useProjectStore(state => (state.binding.kind === 'cloud' ? state.binding.workspaceId : undefined));
+    const subcontracting = useModuleEnabled('subcontracting', cloudWorkspace).enabled;
+    const isVendor = useHasVendorWorkspace();
 
     // Determine active menu key from pathname
     let activeKey = 'journey';
@@ -34,6 +41,7 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
     else if (pathname.includes('/schedule')) activeKey = 'schedule';
     else if (pathname.includes('/man-day')) activeKey = 'man-day';
     else if (pathname.includes('/cashflow')) activeKey = 'cashflow';
+    else if (pathname.startsWith('/subcontracting')) activeKey = 'subcontracting';
     else if (/^\/(projects|workspace|login|register|invite)(\/|$)/.test(pathname)) activeKey = '';
 
     const menuItems = [
@@ -42,6 +50,8 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
         { key: 'man-day', icon: <FieldTimeOutlined />, label: tNav('manDay'), onClick: () => router.push('/man-day') },
         { key: 'schedule', icon: <ScheduleOutlined />, label: tNav('schedule'), onClick: () => router.push('/schedule') },
         { key: 'cashflow', icon: <MoneyCollectOutlined />, label: tNav('cashflow'), onClick: () => router.push('/cashflow') },
+        ...(subcontracting ? [{ key: 'subcontracting', icon: <TeamOutlined />, label: tNav('subcontracting'), onClick: () => router.push('/subcontracting') }] : []),
+        ...(isVendor ? [{ key: 'vendor', icon: <ToolOutlined />, label: 'งานรับเหมาช่วง', onClick: () => router.push('/vendor') }] : []),
     ];
 
     React.useEffect(() => {
@@ -99,6 +109,8 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
                 <div className="min-w-0" style={{ display: 'flex', alignItems: 'center' }}>
                     <ProjectBadge />
                 </div>
+
+                <div className="shrink-0"><NotificationBell /></div>
 
                 <div className="shrink-0"><LanguageSwitcher /></div>
 

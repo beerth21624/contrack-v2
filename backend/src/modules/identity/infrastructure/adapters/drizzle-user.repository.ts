@@ -9,6 +9,7 @@ import { User } from '../../domain/entities/user.entity';
 import { IdentityErrors } from '../../domain/identity-errors';
 import { DisplayName } from '../../domain/value-objects/display-name.value-object';
 import { Email } from '../../domain/value-objects/email.value-object';
+import { Phone } from '../../domain/value-objects/phone.value-object';
 import { isUniqueViolation } from './postgres-errors';
 
 type UserRow = typeof users.$inferSelect;
@@ -20,6 +21,8 @@ function toUser(row: UserRow): User {
         displayName: DisplayName.rehydrate(row.displayName),
         passwordHash: row.passwordHash,
         createdAt: row.createdAt,
+        phone: row.phone === null ? null : Phone.rehydrate(row.phone),
+        phoneVerifiedAt: row.phoneVerifiedAt,
     });
 }
 
@@ -40,6 +43,12 @@ export class DrizzleUserRepository extends UserRepository {
         return row === undefined ? undefined : toUser(row);
     }
 
+    async findByPhone(phone: Phone): Promise<User | undefined> {
+        const rows = await this.ctx.executor.select().from(users).where(eq(users.phone, phone.value)).limit(1);
+        const row = rows[0];
+        return row === undefined ? undefined : toUser(row);
+    }
+
     async findMany(ids: readonly UserId[]): Promise<User[]> {
         if (ids.length === 0) return [];
         const rows = await this.ctx.executor.select().from(users).where(inArray(users.id, [...new Set(ids)]));
@@ -54,12 +63,19 @@ export class DrizzleUserRepository extends UserRepository {
                 displayName: user.displayName.value,
                 passwordHash: user.passwordHash,
                 createdAt: user.createdAt,
+                phone: user.phone?.value ?? null,
+                phoneVerifiedAt: user.phoneVerifiedAt,
             });
             return okVoid();
         } catch (error: unknown) {
-            // A concurrent registration with the same e-mail won the race.
+            // A concurrent registration / phone sign-in with the same e-mail or phone won the race.
             if (isUniqueViolation(error, 'users_email_key')) return err(IdentityErrors.emailTaken());
+            if (isUniqueViolation(error, 'users_phone_key')) return err(IdentityErrors.phoneTaken());
             throw error;
         }
+    }
+
+    async markPhoneVerified(id: UserId, phone: Phone, at: Date): Promise<void> {
+        await this.ctx.executor.update(users).set({ phone: phone.value, phoneVerifiedAt: at }).where(eq(users.id, id));
     }
 }

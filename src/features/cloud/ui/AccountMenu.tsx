@@ -3,12 +3,13 @@
 // ─── Header: "เข้าสู่ระบบ" for guests; for signed-in users a menu (workspace, projects, members, sign out) ───
 import { useRouter } from 'next/navigation';
 import { Avatar, Button, Dropdown, type MenuProps } from 'antd';
-import { CheckOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, TeamOutlined } from '@ant-design/icons';
+import { AppstoreOutlined, CheckOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, TeamOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { initials, useSession } from '../auth/session';
 import { signOut } from '../auth/actions';
 import { useCurrentWorkspace } from '../query/hooks';
-import { ROLE_LABEL } from '../permissions';
+import { ROLE_LABEL, can } from '../permissions';
+import { usePlatformModules } from '@/features/modules/modules';
 
 export function AccountMenu({ compact = false }: { compact?: boolean }) {
     const router = useRouter();
@@ -16,6 +17,8 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
     const status = useSession(s => s.status);
     const user = useSession(s => s.user);
     const { workspace, workspaces, select } = useCurrentWorkspace();
+    // Business modules: the switch page only when this server offers any and the user may switch them.
+    const offersModules = (usePlatformModules().data?.length ?? 0) > 0 && can(workspace?.role, 'modules.manage');
 
     if (status === 'unknown') return null;
 
@@ -56,6 +59,7 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
         { type: 'divider' },
         { key: 'projects', icon: <FolderOpenOutlined />, label: 'โครงการทั้งหมด' },
         { key: 'members', icon: <TeamOutlined />, label: 'สมาชิก' },
+        ...(offersModules ? [{ key: 'modules', icon: <AppstoreOutlined />, label: 'โมดูลเสริม' }] : []),
         { type: 'divider' },
         { key: 'logout', icon: <LogoutOutlined />, label: 'ออกจากระบบ', danger: true },
     ];
@@ -68,6 +72,8 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
             router.push('/projects');
         } else if (key === 'members') {
             router.push('/workspace/members');
+        } else if (key === 'modules') {
+            router.push('/workspace/modules');
         } else if (key === 'logout') {
             void signOut(qc).then(() => { router.push('/journey'); });
         }

@@ -4,7 +4,11 @@
 import type {
     AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDeletedEvent, ProjectDocDto, ProjectUpdatedEvent, Role,
 } from '@contrack/contract';
+import type { FileDto, FilePurpose, ModuleId } from '@contrack/contract';
+import type { DomainError } from '../domain/domain-error';
 import type { ProjectId, UserId, WorkspaceId } from '../domain/ids';
+import type { Result } from '../domain/result';
+import type { Project as BoqProject } from '@contrack/domain/project';
 
 /** Current time (fixed in tests). */
 export abstract class Clock {
@@ -94,4 +98,102 @@ export interface AuthenticatedUser {
 }
 export abstract class AccessTokenVerifier {
     abstract verify(token: string): Promise<AuthenticatedUser | undefined>;
+}
+
+// ─── Platform services (module flags, files, notifications). Implemented by src/modules/platform. ───
+
+/** Which business modules are on: for the platform (env MODULES_ENABLED) and for a workspace (owner/admin switch). */
+export abstract class ModuleFlags {
+    /** The platform offers the module at all. */
+    abstract platformEnabled(module: ModuleId): boolean;
+    /** The platform offers it AND the workspace switched it on. */
+    abstract isEnabled(workspaceId: WorkspaceId, module: ModuleId): Promise<boolean>;
+}
+
+/** Uploaded files (drawings, photos, scans). Callers keep only file ids; DTOs get fresh signed links from `describe`. */
+export abstract class FileService {
+    /** FileDto (with a signed link) of each id that exists, in the order given; unknown ids are skipped. */
+    abstract describe(ids: readonly string[]): Promise<FileDto[]>;
+    /**
+     * Checks that every id was uploaded by `userId` (any purpose when `purpose` is omitted). Use before attaching
+     * files a user sent to something (bid photos, claim photos, package drawings).
+     */
+    abstract assertUploadedBy(ids: readonly string[], userId: UserId): Promise<Result<undefined, DomainError>>;
+    /** Stores bytes produced by the server (e.g. a generated document) and returns its id. */
+    abstract store(input: { name: string; contentType: string; bytes: Uint8Array; uploadedBy: UserId; purpose: FilePurpose }): Promise<FileDto>;
+}
+
+/** Message templates the platform can send (text lives in the notifications module, Thai). */
+export type NotificationTemplate =
+    | 'sc.invitation' | 'sc.addendum' | 'sc.question_answered' | 'sc.deadline_soon' | 'sc.outcome_won'
+    | 'sc.outcome_lost' | 'sc.package_cancelled' | 'sc.contract_to_accept' | 'sc.inspection_result'
+    | 'sc.claim_paid' | 'sc.retention_due' | 'sc.variation_proposed' | 'sc.message'
+    | 'sc.bid_received' | 'sc.declined' | 'sc.question_asked' | 'sc.contract_accepted' | 'sc.change_requested'
+    | 'sc.claim_requested' | 'sc.variation_answered';
+
+export interface NotificationRequest {
+    template: NotificationTemplate;
+    /** Signed-in users to reach (in-app + their linked channels). */
+    toUserIds?: readonly UserId[];
+    /** Everyone with a membership in these workspaces (e.g. a vendor crew, a buyer company). */
+    toWorkspaceIds?: readonly WorkspaceId[];
+    /** A phone that may have no account yet (invitations): SMS only. */
+    toPhone?: string;
+    /** Values for the template ({{title}}, {{buyerName}}, {{url}}, …). */
+    payload: Record<string, string | number>;
+}
+
+/** Queues messages; delivery (in-app, LINE, SMS, e-mail) happens in the background. Call after the transaction committed. */
+export abstract class Notifier {
+    abstract notify(request: NotificationRequest): Promise<void>;
+}
+
+/** Public base URL of the web app (for links in messages), e.g. https://app.contrack.co.th */
+export abstract class AppLinks {
+    abstract url(path: string): string;
+}
+
+/** Provided by projects: a project rebuilt from its stored documents (for the BOQ snapshot of a work package). */
+export interface ProjectRead {
+    projectId: ProjectId;
+    workspaceId: WorkspaceId;
+    name: string;
+    archived: boolean;
+    /** The BOQ project (computeProject() of @contrack/domain/project turns it into the BOQ). */
+    project: BoqProject;
+}
+export abstract class ProjectReader {
+    /** undefined when the project does not exist. Callers check access to `workspaceId` themselves. */
+    abstract read(projectId: ProjectId): Promise<ProjectRead | undefined>;
+}
+
+/** Provided by workspaces: display names of workspaces (buyer company / crew name on documents and lists). */
+export abstract class WorkspaceDirectory {
+    abstract names(ids: readonly WorkspaceId[]): Promise<Map<WorkspaceId, string>>;
+    /** The personal workspace of a user (every user has exactly one). */
+    abstract personalWorkspaceOf(userId: UserId): Promise<WorkspaceId | undefined>;
+    /** User ids of every member of a workspace (notification recipients). */
+    abstract memberIds(workspaceId: WorkspaceId): Promise<UserId[]>;
+}
+
+/** What identity tells the business modules after a phone sign-in (inside the sign-in transaction). */
+export interface PhoneSignInEvent {
+    userId: UserId;
+    /** E.164, verified. */
+    phone: string;
+    isNewUser: boolean;
+    displayName: string;
+    /** Name of the crew: creates the vendor profile when the user has none. */
+    teamName?: string;
+    /** Raw token of the subcontracting invitation the user came from. */
+    invitationToken?: string;
+}
+/** Provided by subcontracting (sourcing): vendor profile + links invitations / vendor-list entries with that phone. */
+export abstract class PhoneSignInHook {
+    abstract afterSignIn(event: PhoneSignInEvent): Promise<{ vendorWorkspaceId: WorkspaceId | null }>;
+}
+
+/** Provided by business modules: work that would be hidden by switching the module off (asked before switching off). */
+export abstract class ModuleUsage {
+    abstract activeWork(workspaceId: WorkspaceId, module: ModuleId): Promise<{ activeSubcontracts: number }>;
 }

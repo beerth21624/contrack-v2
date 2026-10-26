@@ -3,7 +3,19 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { UnitOfWork } from '../../application/ports';
-import { schema } from './schema';
+import { schema as coreSchema } from './schema';
+import { identityPhoneTables } from './schema-identity-phone';
+import { platformTables } from './schema-platform';
+import { scBiddingTables } from './schema-sc-bidding';
+import { scContractsTables } from './schema-sc-contracts';
+import { scSharedTables } from './schema-sc-shared';
+import { scSourcingTables } from './schema-sc-sourcing';
+
+/** Core tables (schema.ts) + one file per business work stream (no file imports another stream's file). */
+export const schema = {
+    ...coreSchema, ...identityPhoneTables, ...platformTables, ...scSharedTables, ...scSourcingTables, ...scBiddingTables,
+    ...scContractsTables,
+};
 
 export type Database = NodePgDatabase<typeof schema>;
 /** A Drizzle handle: the root database or the current transaction (same query API). */

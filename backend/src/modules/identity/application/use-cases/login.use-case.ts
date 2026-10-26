@@ -4,6 +4,7 @@ import type { DomainError } from '../../../../shared/domain/domain-error';
 import { type Result, err, ok } from '../../../../shared/domain/result';
 import { IdentityErrors } from '../../domain/identity-errors';
 import { Email } from '../../domain/value-objects/email.value-object';
+import { isPhonePlaceholderEmail } from '../../domain/value-objects/phone.value-object';
 import { PasswordHasher } from '../ports/password-hasher.port';
 import { RefreshTokenRepository } from '../ports/refresh-token.repository';
 import { UserRepository } from '../ports/user.repository';
@@ -25,8 +26,11 @@ export class LoginUseCase {
 
     async execute(input: LoginInput): Promise<Result<AuthSession, DomainError>> {
         const email = Email.create(input.email);
-        const user = email.ok ? await this.users.findByEmail(email.value) : undefined;
-        if (user === undefined) {
+        // Phone-only users have a placeholder e-mail and no usable password: they never sign in this way.
+        const user = email.ok && !isPhonePlaceholderEmail(email.value.value)
+            ? await this.users.findByEmail(email.value)
+            : undefined;
+        if (user === undefined || user.isPhoneOnly) {
             // Same work and the same answer as a wrong password: response time does not reveal unknown e-mails.
             await this.hasher.dummyVerify(input.password);
             return err(IdentityErrors.invalidCredentials());

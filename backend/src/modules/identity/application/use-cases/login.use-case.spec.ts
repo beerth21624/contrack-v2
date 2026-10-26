@@ -1,4 +1,10 @@
+import { PHONE_EMAIL_DOMAIN } from '@contrack/contract';
+import { asUserId } from '../../../../shared/domain/ids';
 import { sha256 } from '../../../../shared/infrastructure/crypto';
+import { User } from '../../domain/entities/user.entity';
+import { DisplayName } from '../../domain/value-objects/display-name.value-object';
+import { Email } from '../../domain/value-objects/email.value-object';
+import { Phone } from '../../domain/value-objects/phone.value-object';
 import { ALICE, identityKit } from '../../testing/identity-test-kit';
 
 async function registered() {
@@ -55,5 +61,26 @@ describe('LoginUseCase', () => {
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('invalid_credentials');
         expect(kit.hasher.dummyVerifications).toBe(1);
+    });
+
+    it('never signs a phone-only user in with e-mail + password, even when the hash would match', async () => {
+        const { kit } = await registered();
+        const phone = Phone.rehydrate('+66812345678');
+        await kit.users.insert(User.create({
+            id: asUserId('00000000-0000-4000-8000-0000000000aa'),
+            email: Email.rehydrate(phone.placeholderEmail),
+            displayName: DisplayName.rehydrate('สมชาย'),
+            passwordHash: 'hashed:guessable password',
+            createdAt: kit.clock.now(),
+            phone,
+            phoneVerifiedAt: kit.clock.now(),
+        }));
+        for (const email of [phone.placeholderEmail, `66812345678@${PHONE_EMAIL_DOMAIN.toUpperCase()}`]) {
+            const result = await kit.login.execute({ email, password: 'guessable password' });
+            expect(result.ok).toBe(false);
+            if (!result.ok) expect(result.error.code).toBe('invalid_credentials');
+        }
+        expect(kit.hasher.dummyVerifications).toBe(2);
+        expect(kit.refreshTokens.all()).toHaveLength(1);
     });
 });
