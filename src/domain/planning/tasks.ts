@@ -3,8 +3,11 @@
 // Excel sample inputs (yellow cells) and only seed the defaults (see ./index.ts).
 // docs/excel-spec/06-manday-scurve-cashflow.md §1.4 (blocks) and §2.2 (task list).
 
-/** Wage set of a Man-Day block: A = 800 skilled / 500 labourer, B = 1000 / 600 (Excel R formulas). */
-export type WageSetId = 'A' | 'B';
+/** The Excel wage sets: A = 800 skilled / 500 labourer, B = 1000 / 600 (Excel R formulas). */
+export type BuiltInWageSetId = 'A' | 'B';
+
+/** Id of the wage set a Man-Day block uses: 'A' / 'B' or a set the user added (see ./wage-sets). */
+export type WageSetId = string;
 
 /**
  * What the calculated days (Man-Day S) divide by the daily crew wage:
@@ -46,7 +49,7 @@ export interface PlanTaskDef {
     sample: {
         skilled: number;      // Man-Day O
         labourers: number;    // Man-Day P
-        wageSet: WageSetId;   // which constants the R formula uses
+        wageSet: BuiltInWageSetId;   // which constants the R formula uses (also the fallback of an unknown set)
         days: number;         // Man-Day T (6.ประเมิน)
         start: string;        // S-Curve E (PLAN row)
     };
@@ -55,7 +58,7 @@ export interface PlanTaskDef {
 interface Row {
     id: string; inst: number; name: string; sc: number; cf: number;
     md: number; title: string; sec: number; rows?: { from?: number; to?: number }; basis?: ManDayLabourBasis;
-    o: number; p: number; set: WageSetId; t: number; start: string;
+    o: number; p: number; set: BuiltInWageSetId; t: number; start: string;
 }
 
 const ROWS: Row[] = [

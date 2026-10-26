@@ -2,7 +2,7 @@
 import type { BoqLineOverride } from '../boq/types';
 import { JOURNEY_LEVELS } from '../journey/levels';
 import type { JourneyProgress } from '../journey/progress';
-import type { PlanningInput } from '../planning';
+import { WAGE_SET_LIMITS, type PlanningInput } from '../planning';
 import {
     computeProject, createProject, DEFAULT_PROJECT_META, type Project, type ProjectMeta, type ProjectResult,
     type ProjectStart,
@@ -107,6 +107,62 @@ const META_FIELDS = new Set<keyof ProjectMeta>(['projectName', 'siteAddress', 'o
 const OVERRIDE_NUMBERS = new Set(['qty', 'waste', 'mat', 'lab']);
 const OVERRIDE_TEXTS = new Set(['desc', 'note']);
 const LEVEL_IDS = new Set(JOURNEY_LEVELS.map(l => l.id));
+const WAGE_SET_FIELDS = new Set(['id', 'name', 'skilled', 'labourer']);
+
+const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+const isWageSetId = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= WAGE_SET_LIMITS.maxIdLength;
+
+/** One wage set's rates, if given, are finite numbers (both shapes). */
+function checkRates(where: string, v: Record<string, unknown>): Validation {
+    for (const k of ['skilled', 'labourer'] as const) {
+        if (v[k] !== undefined && !isFiniteNumber(v[k])) return fail(`${where}.${k} must be a finite number`);
+    }
+    return ok;
+}
+
+/**
+ * planning:manday — the wage sets as a list [{ id, name, skilled, labourer }] or the older
+ * { A: { skilled, labourer }, B: {...} } record; the blocks' wageSet is a set id. Other fields
+ * (and partial documents) stay as free as before.
+ */
+function validateManDayDoc(data: Record<string, unknown>): Validation {
+    const { wageSets, blocks } = data;
+    if (Array.isArray(wageSets)) {
+        if (wageSets.length > WAGE_SET_LIMITS.maxSets) return fail(`at most ${String(WAGE_SET_LIMITS.maxSets)} wage sets`);
+        const ids = new Set<string>();
+        for (const [i, set] of wageSets.entries()) {
+            const where = `wageSets[${String(i)}]`;
+            if (!isPlainObject(set)) return fail(`${where} must be an object`);
+            for (const k of Object.keys(set)) if (!WAGE_SET_FIELDS.has(k)) return fail(`${where} has unknown field "${k}"`);
+            if (!isWageSetId(set.id)) return fail(`${where}.id must be text of 1–${String(WAGE_SET_LIMITS.maxIdLength)} characters`);
+            if (ids.has(set.id)) return fail(`wage set "${set.id}" is listed twice`);
+            ids.add(set.id);
+            if (set.name !== undefined && (typeof set.name !== 'string' || set.name.length > WAGE_SET_LIMITS.maxNameLength)) {
+                return fail(`${where}.name must be text up to ${String(WAGE_SET_LIMITS.maxNameLength)} characters`);
+            }
+            const rates = checkRates(where, set);
+            if (!rates.ok) return rates;
+        }
+    } else if (isPlainObject(wageSets)) {
+        // Older shape, keyed by set id.
+        for (const [id, set] of Object.entries(wageSets)) {
+            if (!isWageSetId(id)) return fail(`a wage set id must be text of 1–${String(WAGE_SET_LIMITS.maxIdLength)} characters`);
+            if (!isPlainObject(set)) return fail(`wageSets.${id} must be an object`);
+            const rates = checkRates(`wageSets.${id}`, set);
+            if (!rates.ok) return rates;
+        }
+    } else if (wageSets !== undefined) {
+        return fail('wageSets must be a list or an object');
+    }
+    if (blocks !== undefined) {
+        if (!isPlainObject(blocks)) return fail('blocks must be an object');
+        for (const [id, b] of Object.entries(blocks)) {
+            if (!isPlainObject(b)) return fail(`blocks.${id} must be an object`);
+            if (b.wageSet !== undefined && !isWageSetId(b.wageSet)) return fail(`blocks.${id}.wageSet must be a wage set id`);
+        }
+    }
+    return ok;
+}
 
 /** Checks one document's data against its key (shape only; whether it computes is checked by validateProject). */
 export function validateDoc(docKey: string, data: unknown): Validation {
@@ -146,8 +202,10 @@ export function validateDoc(docKey: string, data: unknown): Validation {
             return ok;
         }
         case 'calc':
-        case 'planning':
             return isPlainObject(data) ? ok : fail('the document must be an object');
+        case 'planning':
+            if (!isPlainObject(data)) return fail('the document must be an object');
+            return parsed.sheet === 'manday' ? validateManDayDoc(data) : ok;
     }
 }
 
