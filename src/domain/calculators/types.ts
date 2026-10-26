@@ -33,6 +33,8 @@ export interface CalculatorDef<I = unknown> {
     /** Pure: same input → same outputs. Outputs are plain numbers keyed by name. */
     compute(input: I, ctx: CalcContext): Record<string, number>;
     boqLinks: BoqLink[];
+    /** Optional text for BOQ cells (description D / note N), e.g. a pile spec built from the inputs. */
+    boqText?(input: I, ctx: CalcContext): Record<BoqLineKey, { desc?: string; note?: string }>;
 }
 
 /** Helper that keeps the input type when registering. */

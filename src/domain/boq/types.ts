@@ -86,7 +86,9 @@ export interface BoqLineOverride {
 }
 
 /** Values calculators supply to BOQ cells (resolved from their `boqLinks`). */
-export type LinkedValues = Record<BoqLineKey, { qty?: number; mat?: number; lab?: number } | undefined>;
+export type LinkedValues = Record<BoqLineKey, {
+    qty?: number; mat?: number; lab?: number; desc?: string; note?: string;
+} | undefined>;
 
 // ─── Computed results ────────────────────────────────────────────────────────
 

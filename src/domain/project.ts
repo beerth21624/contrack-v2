@@ -62,12 +62,17 @@ export function computeProject(project: Project, calculators?: CalculatorDef[]):
     const linked: LinkedValues = {};
 
     for (const def of calculatorsInOrder(calculators)) {
-        const outputs = def.compute(calculatorInput(project, def), { outputs: id => calcOutputs[id] });
+        const input = calculatorInput(project, def);
+        const ctx = { outputs: (id: string) => calcOutputs[id] };
+        const outputs = def.compute(input, ctx);
         calcOutputs[def.id] = outputs;
         for (const link of def.boqLinks) {
             const v = outputs[link.output];
             if (v === undefined || !Number.isFinite(v)) continue;
             linked[link.line] = { ...linked[link.line], [link.field]: v };
+        }
+        for (const [line, text] of Object.entries(def.boqText?.(input, ctx) ?? {})) {
+            linked[line] = { ...linked[line], ...text };
         }
     }
 
