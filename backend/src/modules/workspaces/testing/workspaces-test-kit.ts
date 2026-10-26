@@ -1,6 +1,6 @@
 // ─── Test support for the workspaces specs: in-memory adapters, fixed clock, sequential ids, fake UserDirectory ───
 import type { Role, WorkspaceKind } from '@contrack/contract';
-import { UserDirectory, type UserProfile } from '../../../shared/application/ports';
+import { MemberAssignmentCleanup, UserDirectory, type UserProfile } from '../../../shared/application/ports';
 import type { DomainError } from '../../../shared/domain/domain-error';
 import { type UserId, type WorkspaceId, asUserId, asWorkspaceId } from '../../../shared/domain/ids';
 import type { Result } from '../../../shared/domain/result';
@@ -33,6 +33,16 @@ export class FakeUserDirectory extends UserDirectory {
             if (profile !== undefined) found.set(id, profile);
         }
         return Promise.resolve(found);
+    }
+}
+
+/** Stand-in for projects' MemberAssignmentCleanup: records every call. */
+export class FakeMemberAssignmentCleanup extends MemberAssignmentCleanup {
+    readonly calls: { workspaceId: WorkspaceId; userId: UserId }[] = [];
+
+    removeUser(workspaceId: WorkspaceId, userId: UserId): Promise<void> {
+        this.calls.push({ workspaceId, userId });
+        return Promise.resolve();
     }
 }
 
@@ -89,6 +99,7 @@ export class WorkspacesTestKit {
     readonly memberships: InMemoryMembershipRepository;
     readonly invitations = new InMemoryInvitationRepository();
     readonly users = new FakeUserDirectory();
+    readonly assignmentCleanup = new FakeMemberAssignmentCleanup();
     readonly config = new AppConfig(testEnv({ INVITATION_TTL_DAYS: String(INVITATION_TTL_DAYS) }));
 
     constructor(options: { slowMembershipWrites?: boolean } = {}) {

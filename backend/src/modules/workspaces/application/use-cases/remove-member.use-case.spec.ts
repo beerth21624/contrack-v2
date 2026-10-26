@@ -3,7 +3,8 @@ import { asWorkspaceId } from '../../../../shared/domain/ids';
 import { ROLES_UNDER_TEST, WorkspacesTestKit, outcome } from '../../testing/workspaces-test-kit';
 import { RemoveMemberUseCase } from './remove-member.use-case';
 
-const build = (kit: WorkspacesTestKit): RemoveMemberUseCase => new RemoveMemberUseCase(kit.workspaces, kit.memberships, kit.uow);
+const build = (kit: WorkspacesTestKit): RemoveMemberUseCase =>
+    new RemoveMemberUseCase(kit.workspaces, kit.memberships, kit.uow, kit.assignmentCleanup);
 
 describe('RemoveMemberUseCase', () => {
     let kit: WorkspacesTestKit;
@@ -33,6 +34,7 @@ describe('RemoveMemberUseCase', () => {
             const target = s.byRole[targetRole];
             expect(outcome(await useCase.execute({ actorId: s.byRole[actorRole], workspaceId: s.workspaceId, targetUserId: target }))).toBe(expected);
             expect(await kit.roleOf(s.workspaceId, target)).toBe(expected === 'ok' ? undefined : targetRole);
+            expect(kit.assignmentCleanup.calls).toEqual(expected === 'ok' ? [{ workspaceId: s.workspaceId, userId: target }] : []);
         });
 
         it('an admin may remove another admin', async () => {
@@ -113,6 +115,59 @@ describe('RemoveMemberUseCase', () => {
             const personal = await kit.seedPersonal(me);
             expect(outcome(await useCase.execute({ actorId: me, workspaceId: personal, targetUserId: me }))).toBe('personal_workspace');
             expect(await kit.roleOf(personal, me)).toBe('owner');
+            expect(kit.assignmentCleanup.calls).toEqual([]);
+        });
+    });
+
+    describe('level assignment cleanup', () => {
+        it('removes the leaving user\'s assignments in that workspace, inside the unit of work', async () => {
+            const s = await kit.seedCompany();
+            let insideRun = false;
+            const run = kit.uow.run.bind(kit.uow);
+            jest.spyOn(kit.uow, 'run').mockImplementation(async work => {
+                insideRun = true;
+                try {
+                    return await run(work);
+                } finally {
+                    insideRun = false;
+                }
+            });
+            const seenInside: boolean[] = [];
+            const original = kit.assignmentCleanup.removeUser.bind(kit.assignmentCleanup);
+            jest.spyOn(kit.assignmentCleanup, 'removeUser').mockImplementation((workspaceId, userId) => {
+                seenInside.push(insideRun);
+                return original(workspaceId, userId);
+            });
+
+            expect(outcome(await useCase.execute({ actorId: s.viewer, workspaceId: s.workspaceId, targetUserId: s.viewer }))).toBe('ok');
+
+            expect(kit.assignmentCleanup.calls).toEqual([{ workspaceId: s.workspaceId, userId: s.viewer }]);
+            expect(seenInside).toEqual([true]);
+        });
+
+        it('is not called when the removal is refused', async () => {
+            const s = await kit.seedCompany();
+            expect(outcome(await useCase.execute({ actorId: s.owner, workspaceId: s.workspaceId, targetUserId: s.owner }))).toBe('last_owner');
+            expect(outcome(await useCase.execute({ actorId: s.viewer, workspaceId: s.workspaceId, targetUserId: s.estimator }))).toBe('forbidden');
+            expect(outcome(await useCase.execute({ actorId: s.owner, workspaceId: s.workspaceId, targetUserId: s.outsider }))).toBe('not_found');
+            expect(outcome(await useCase.execute({ actorId: s.outsider, workspaceId: s.workspaceId, targetUserId: s.viewer }))).toBe('not_found');
+            expect(kit.assignmentCleanup.calls).toEqual([]);
+        });
+
+        it('is called once, for the winner only, when two owners leave at the same time', async () => {
+            kit = new WorkspacesTestKit({ slowMembershipWrites: true });
+            useCase = build(kit);
+            const a = kit.addUser('Owner A');
+            const b = kit.addUser('Owner B');
+            const ws = await kit.seedWorkspace('company', [[a, 'owner'], [b, 'owner']]);
+            await Promise.all([
+                useCase.execute({ actorId: a, workspaceId: ws, targetUserId: a }),
+                useCase.execute({ actorId: b, workspaceId: ws, targetUserId: b }),
+            ]);
+            expect(kit.assignmentCleanup.calls).toHaveLength(1);
+            const [call] = kit.assignmentCleanup.calls;
+            expect(call?.workspaceId).toBe(ws);
+            expect(await kit.roleOf(ws, call!.userId)).toBeUndefined();
         });
     });
 });

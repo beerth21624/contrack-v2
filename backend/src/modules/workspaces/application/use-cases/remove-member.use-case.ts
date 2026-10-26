@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { UnitOfWork } from '../../../../shared/application/ports';
+import { MemberAssignmentCleanup, UnitOfWork } from '../../../../shared/application/ports';
 import type { DomainError } from '../../../../shared/domain/domain-error';
 import type { UserId, WorkspaceId } from '../../../../shared/domain/ids';
 import { type Result, err, okVoid } from '../../../../shared/domain/result';
@@ -16,13 +16,17 @@ export interface RemoveMemberInput {
     targetUserId: UserId;
 }
 
-/** Remove a member or leave; rules in `member-removal.policy.ts`, checked under the membership lock. */
+/**
+ * Remove a member or leave; rules in `member-removal.policy.ts`, checked under the membership lock.
+ * The user's level assignments in the workspace are removed in the same transaction (MemberAssignmentCleanup).
+ */
 @Injectable()
 export class RemoveMemberUseCase {
     constructor(
         private readonly workspaces: WorkspaceRepository,
         private readonly memberships: MembershipRepository,
         private readonly uow: UnitOfWork,
+        private readonly assignments: MemberAssignmentCleanup,
     ) {}
 
     async execute(input: RemoveMemberInput): Promise<Result<undefined, DomainError>> {
@@ -44,6 +48,8 @@ export class RemoveMemberUseCase {
             });
             if (!allowed.ok) return allowed;
             await this.memberships.delete(workspace.id, target.userId);
+            // Same transaction: a removed member keeps no level assignments in this workspace.
+            await this.assignments.removeUser(workspace.id, target.userId);
             return okVoid();
         }));
     }
