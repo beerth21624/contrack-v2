@@ -115,7 +115,7 @@ export const updatePersonRequestSchema = z.object({
     trades: z.array(workforceTradeIdSchema).max(WORKFORCE_TRADE_IDS.length).optional(),
     dailyWage: wageSchema.nullable().optional(),
     note: noteSchema.nullable().optional(),
-}).refine(v => Object.values(v).some(x => x !== undefined), { message: 'nothing to update' });
+}).refine(v => (Object.values(v) as unknown[]).some(x => x !== undefined), { message: 'nothing to update' });
 export type UpdatePersonRequest = z.infer<typeof updatePersonRequestSchema>;
 
 // ─── Crews ───────────────────────────────────────────────────────────────────
@@ -168,7 +168,7 @@ export const updateCrewRequestSchema = z.object({
     rateCardId: uuidSchema.nullable().optional(),
     dailyCostOverride: wageSchema.nullable().optional(),
     note: noteSchema.nullable().optional(),
-}).refine(v => Object.values(v).some(x => x !== undefined), { message: 'nothing to update' });
+}).refine(v => (Object.values(v) as unknown[]).some(x => x !== undefined), { message: 'nothing to update' });
 export type UpdateCrewRequest = z.infer<typeof updateCrewRequestSchema>;
 
 // ─── Crew assignments (a crew on a planned task of a project, for a date range) ───
@@ -190,6 +190,8 @@ export const crewAssignmentDtoSchema = z.object({
 export type CrewAssignmentDto = z.infer<typeof crewAssignmentDtoSchema>;
 
 export const createCrewAssignmentRequestSchema = z.object({
+    /** A project of the same workspace. */
+    projectId: uuidSchema,
     taskId: planTaskIdSchema,
     crewId: uuidSchema,
     start: isoDateSchema,
@@ -203,7 +205,7 @@ export const updateCrewAssignmentRequestSchema = z.object({
     start: isoDateSchema.optional(),
     end: isoDateSchema.optional(),
     note: noteSchema.nullable().optional(),
-}).refine(v => Object.values(v).some(x => x !== undefined), { message: 'nothing to update' });
+}).refine(v => (Object.values(v) as unknown[]).some(x => x !== undefined), { message: 'nothing to update' });
 export type UpdateCrewAssignmentRequest = z.infer<typeof updateCrewAssignmentRequestSchema>;
 
 /** GET /workspaces/:workspaceId/crew-assignments query: every filter optional; `from`/`to` keep ranges that overlap. */
