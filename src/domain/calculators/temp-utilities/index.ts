@@ -55,6 +55,23 @@ export const tempUtilities = defineCalculator<TempUtilitiesInput>({
         electricalAccPct: 0.15,
         prices: { pvcPipe: 60, faucet: 120, powerBox: 1200, cable: 2500, lightPlug: 200 },
     }),
+    // Site values (distances to the meters, points) empty; waste, % rows and prices keep Excel v5.
+    // The 30A temporary power box is 1 ชุด regardless of the site (C21 = 1), so a blank project still costs
+    // its 1,200 บาท.
+    blank: () => ({
+        projectName: '',
+        calculatedBy: '',
+        calcDate: '',
+        remark: '',
+        powerDistance: 0,
+        waterDistance: 0,
+        waterPoints: 0,
+        powerPoints: 0,
+        waste: 0.1,
+        waterFittingsPct: 0.3,
+        electricalAccPct: 0.15,
+        prices: { pvcPipe: 60, faucet: 120, powerBox: 1200, cable: 2500, lightPlug: 200 },
+    }),
     compute: (input) => {
         const waste = num(input.waste);
         const p = input.prices;

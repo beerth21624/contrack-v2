@@ -7,7 +7,7 @@ import { DownOutlined, RightOutlined, SettingOutlined } from '@ant-design/icons'
  * Prices, waste %, ratios and other values that come from Excel and rarely change. Folded by default inside
  * the guided journey (`defaultOpen` false) so a user filling from a plan only sees what the plan tells them.
  */
-export function AdvancedSection({ title = 'ราคาและค่าตั้งต้น', hint = 'ค่าจาก Excel v5 — ไม่ต้องแก้ก็ได้', defaultOpen = false, children }: {
+export function AdvancedSection({ title = 'ราคาและค่าตั้งต้น', hint = 'ค่ามาตรฐาน — ไม่ต้องแก้ก็ได้', defaultOpen = false, children }: {
     title?: ReactNode; hint?: ReactNode; defaultOpen?: boolean; children: ReactNode;
 }) {
     const [open, setOpen] = useState(defaultOpen);

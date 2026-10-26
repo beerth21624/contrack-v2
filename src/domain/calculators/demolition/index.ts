@@ -44,6 +44,11 @@ export const demolition = defineCalculator<DemolitionInput>({
     defaults: () => ({
         items: DEMOLITION_FIXED_ITEMS.map(i => ({ ...i, qty: 0, rate: 0 })),
     }),
+    // Excel v5 already leaves every ปริมาณ / Rate blank, so a new project starts the same: the 7 kinds of
+    // work listed with 0 quantity (Excel has no rates to keep).
+    blank: () => ({
+        items: DEMOLITION_FIXED_ITEMS.map(i => ({ ...i, qty: 0, rate: 0 })),
+    }),
     compute: (input) => {
         // F11 รวมทั้งหมด = SUM(F4:F10) (static 0 in Excel v5)
         const total = demolitionTotal(input.items);

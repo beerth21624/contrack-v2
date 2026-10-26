@@ -67,6 +67,20 @@ describe('งานรื้อถอน_Site Preparation (sheet 35)', () => {
         expect(demolition.compute(withRow(demolition.defaults(), 0, Number.NaN, 100), ctx).total).toBe(0);
     });
 
+    it('blank project: the 7 kinds of work at 0, BOQ R12 and section 1 at 0', () => {
+        const blank = demolition.blank?.();
+        expect(blank).toBeDefined();
+        if (!blank) return;
+        expect(blank.items.map(i => i.label)).toEqual(DEMOLITION_FIXED_ITEMS.map(i => i.label));
+        const out = demolition.compute(blank, ctx);
+        expect(Object.values(out).every(Number.isFinite)).toBe(true);
+        expect(out).toEqual({ total: 0, boqQty: 0 });
+        const res = computeProject(createProject('blank'), [demolition, fill]);
+        const sec = res.boq.sections.find(s => s.no === 1);
+        expect((sec?.rows.find(r => r.key === 'R12') as BoqItemRow).total).toBe(0);
+        expect(sec?.total).toBe(0);
+    });
+
     it('links F11 to BOQ R12 as qty flag + labour', () => {
         expect(demolition.boqLinks).toEqual([
             { line: 'R12', field: 'qty', output: 'boqQty' },

@@ -62,6 +62,22 @@ describe('น้ำไฟชั่วคราว (sheet 37)', () => {
         expect(Object.is(zero.pipeQty, 0)).toBe(true);
     });
 
+    it('blank project: distances and points 0, prices and % kept; only the 30A box (1 ชุด) stays', () => {
+        const blank = tempUtilities.blank?.();
+        expect(blank).toBeDefined();
+        if (!blank) return;
+        const sample = tempUtilities.defaults();
+        expect(blank).toEqual({ ...sample, powerDistance: 0, waterDistance: 0, waterPoints: 0, powerPoints: 0 });
+        const o = tempUtilities.compute(blank, ctx);
+        expect(Object.values(o).every(Number.isFinite)).toBe(true);
+        expect(o).toMatchObject({ pipeQty: 0, faucetQty: 0, cableQty: 0, lightPlugQty: 0, waterMaterial: 0 });
+        expect(o.powerMaterial).toBe(1200);
+        expect(o.total).toBe(1200);
+        // BOQ R16: material 1,200 (linked) + typed labour 1,500
+        const s2 = computeProject(createProject('blank'), [tempUtilities]).boq.sections.find(s => s.no === 2);
+        expect(s2?.total).toBeCloseTo(2700, 6);
+    });
+
     it('points and prices drive faucets, lights and their % rows', () => {
         const input = tempUtilities.defaults();
         input.waterPoints = 5;

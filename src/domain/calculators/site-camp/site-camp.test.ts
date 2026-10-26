@@ -102,6 +102,19 @@ describe('แคมป์คนงาน / ห้องน้ำ / ห้อง�
         expect(o.lab_shower).toBeCloseTo(680, 6);
     });
 
+    it('blank project: room counts 0 (BOQ E19:E22 = 0, section 3 = 0), recipe and % kept', () => {
+        const blank = siteCamp.blank?.();
+        expect(blank).toBeDefined();
+        if (!blank) return;
+        expect(blank).toEqual({ ...siteCamp.defaults(), workerRooms: 0, toilets: 0, showers: 0, stores: 0 });
+        const o = siteCamp.compute(blank, ctx);
+        expect(Object.values(o).every(Number.isFinite)).toBe(true);
+        for (const l of siteCamp.boqLinks) expect(o[l.output]).toBe(0);
+        expect(o.total).toBe(0);
+        const s3 = computeProject(createProject('blank'), [siteCamp]).boq.sections.find(s => s.no === 3);
+        expect(s3?.total).toBe(0);
+    });
+
     it('ฐานต่อ 0 gives 0 instead of dividing by zero', () => {
         const i = siteCamp.defaults();
         const line = { ...first(i.materials), basePer: 0 };

@@ -59,6 +59,18 @@ describe('STEP 04 วางผัง / ปักหมุด (external sheet, de
         expect(o.materialTotal).toBe(3 * 65); // 2 × 1.05 = 2.1 → 3
     });
 
+    it('blank project: points and stakes 0, recipe kept; BOQ R32 keeps the Excel lump sum (not linked)', () => {
+        const blank = layout.blank?.();
+        expect(blank).toBeDefined();
+        if (!blank) return;
+        expect(blank).toEqual({ ...layout.defaults(), points: 0, stakes: 0 });
+        const o = layout.compute(blank, ctx);
+        expect(Object.values(o).every(Number.isFinite)).toBe(true);
+        expect(o).toMatchObject({ points: 0, stakes: 0, orderBoards: 0, orderEucalyptus: 0, orderStakes: 0, total: 0 });
+        const s4 = computeProject(createProject('blank'), [layout]).boq.sections.find(s => s.no === 4);
+        expect(s4?.total).toBeCloseTo(golden.sections['4'].M, 2);   // 4,000 + 1,500 typed in Excel
+    });
+
     it('ROUNDUP ignores float noise and keeps 0 at 0', () => {
         // 10 × 1.1 = 11.000000000000002 in JS → 11 (Excel shows 11)
         expect(layout.compute({ ...layout.defaults(), points: 10, waste: 0.1 }, ctx).orderBoards).toBe(11);

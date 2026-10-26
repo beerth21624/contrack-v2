@@ -50,6 +50,19 @@ describe('ถมดิน (sheet 34)', () => {
         expect(r13({ ...fill.defaults(), material: '' }).row.note).toBe('');
     });
 
+    it('blank project: area and height empty, settlement % and material kept, BOQ E13 = 0', () => {
+        const blank = fill.blank?.();
+        expect(blank).toEqual({ width: 0, length: 0, height: 0, settlementPct: 30, material: 'ลูกค้าจัดหาเอง' });
+        if (!blank) return;
+        const out = fill.compute(blank, ctx);
+        expect(Object.values(out).every(Number.isFinite)).toBe(true);
+        expect(out.volume).toBe(0);
+        const res = computeProject(createProject('blank'), [demolition, fill]);
+        const row = res.boq.sections.find(s => s.no === 1)?.rows.find(r => r.key === 'R13') as BoqItemRow;
+        expect(row.qty).toBe(0);
+        expect(row.total).toBe(0);
+    });
+
     it('links D9 to BOQ R13 qty', () => {
         expect(fill.boqLinks).toEqual([{ line: 'R13', field: 'qty', output: 'volume' }]);
     });

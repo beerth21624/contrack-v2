@@ -37,6 +37,21 @@ export const LAND_INSPECTION_CHECKLIST = [
 
 export const lineTotal = (l: CostLine) => (Number.isFinite(l.qty) ? l.qty : 0) * (Number.isFinite(l.unitPrice) ? l.unitPrice : 0);
 
+/** Excel v5 sample (rows 4–11). */
+const sample = (): LandInspectionInput => ({
+    projectName: '',
+    province: '',
+    surveyDate: '',
+    inspector: '',
+    items: [
+        { label: 'ค่าแรงตรวจสอบที่ดิน', qty: 2, unit: 'วัน', unitPrice: 1500, note: 'เอกสารสำรวจหน้างาน' },
+        { label: 'ค่าเดินทาง', qty: 1, unit: 'เที่ยว', unitPrice: 2500 },
+        { label: 'ค่าที่พัก', qty: 1, unit: 'คืน', unitPrice: 1200 },
+        { label: 'ค่าอุปกรณ์สำรวจ / เอกสาร', qty: 1, unit: 'งาน', unitPrice: 800 },
+    ],
+    checklist: LAND_INSPECTION_CHECKLIST.map(() => ({ done: false, note: '' })),
+});
+
 export const landInspection = defineCalculator<LandInspectionInput>({
     id: 'land-inspection',
     sheetName: 'ค่าตรวจสอบที่ดิน',
@@ -44,19 +59,11 @@ export const landInspection = defineCalculator<LandInspectionInput>({
     titleEn: 'Land Inspection Cost',
     sections: [0],
     deps: [],
-    defaults: () => ({
-        projectName: '',
-        province: '',
-        surveyDate: '',
-        inspector: '',
-        items: [
-            { label: 'ค่าแรงตรวจสอบที่ดิน', qty: 2, unit: 'วัน', unitPrice: 1500, note: 'เอกสารสำรวจหน้างาน' },
-            { label: 'ค่าเดินทาง', qty: 1, unit: 'เที่ยว', unitPrice: 2500 },
-            { label: 'ค่าที่พัก', qty: 1, unit: 'คืน', unitPrice: 1200 },
-            { label: 'ค่าอุปกรณ์สำรวจ / เอกสาร', qty: 1, unit: 'งาน', unitPrice: 800 },
-        ],
-        checklist: LAND_INSPECTION_CHECKLIST.map(() => ({ done: false, note: '' })),
-    }),
+    defaults: sample,
+    // Nothing on this sheet is read off the plan: the 4 cost lines are a standard inspection lump sum
+    // (2 วัน, 1 เที่ยว, 1 คืน, 1 งาน at the Excel prices = 7,500), so a blank project keeps them. The text
+    // fields and checklist are already empty in the Excel sample.
+    blank: sample,
     compute: (input) => ({
         // F14 ต้นทุนรวม = SUM(F8:F12)
         total: input.items.reduce((s, l) => s + lineTotal(l), 0),

@@ -51,6 +51,17 @@ export function layoutLine(line: LayoutMaterialLine, input: LayoutInput): Layout
     return { fixed, beforeWaste, orderQty, total: orderQty * num(line.unitPrice) };
 }
 
+/** The 5 material rows of deck p19. */
+function sampleMaterials(): LayoutMaterialLine[] {
+    return [
+        { item: 'ไม้หน้าสาม 1-1/2" x 3" ยาว 1 ม.', unit: 'ท่อน', perPoint: 1, fixed: 0, unitPrice: 0 },
+        { item: 'ไม้ยูคา 3 นิ้ว x 3 ม.', unit: 'ท่อน', perPoint: 3, fixed: 0, unitPrice: 0 },
+        { item: 'ไม้ปักหมุด', unit: 'ต้น', perPoint: 0, fixed: 0, fixedFromStakes: true, unitPrice: 0 },
+        { item: 'ตะปู 1-1/2 x 14 (ถุง 1 กก.)', unit: 'กล่อง', perPoint: 0, fixed: 1, unitPrice: 0 },
+        { item: 'สายเอ็น สีเขียว #60', unit: 'ม้วน', perPoint: 0, fixed: 1, unitPrice: 0 },
+    ];
+}
+
 export const layout = defineCalculator<LayoutInput>({
     id: 'layout',
     // The real sheet name is unknown (external file, D8).
@@ -64,13 +75,17 @@ export const layout = defineCalculator<LayoutInput>({
         stakes: 21,
         waste: 0.05,
         labour: 0,
-        materials: [
-            { item: 'ไม้หน้าสาม 1-1/2" x 3" ยาว 1 ม.', unit: 'ท่อน', perPoint: 1, fixed: 0, unitPrice: 0 },
-            { item: 'ไม้ยูคา 3 นิ้ว x 3 ม.', unit: 'ท่อน', perPoint: 3, fixed: 0, unitPrice: 0 },
-            { item: 'ไม้ปักหมุด', unit: 'ต้น', perPoint: 0, fixed: 0, fixedFromStakes: true, unitPrice: 0 },
-            { item: 'ตะปู 1-1/2 x 14 (ถุง 1 กก.)', unit: 'กล่อง', perPoint: 0, fixed: 1, unitPrice: 0 },
-            { item: 'สายเอ็น สีเขียว #60', unit: 'ม้วน', perPoint: 0, fixed: 1, unitPrice: 0 },
-        ],
+        materials: sampleMaterials(),
+    }),
+    // Counts read off the foundation plan (layout points, stakes) empty. Waste, labour and the material recipe
+    // (per-point / fixed bases, prices) keep the sheet values. The BOQ row is not linked (see below), so the
+    // Excel lump sum 4,000 + 1,500 stays in the BOQ whatever is typed here.
+    blank: () => ({
+        points: 0,
+        stakes: 0,
+        waste: 0.05,
+        labour: 0,
+        materials: sampleMaterials(),
     }),
     compute: (input) => {
         const lines = input.materials.map(l => layoutLine(l, input));

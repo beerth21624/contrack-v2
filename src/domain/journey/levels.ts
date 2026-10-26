@@ -53,7 +53,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'temp-utilities', title: 'น้ำ-ไฟชั่วคราว', kind: calc('temp-utilities'), sections: [2],
-                planHint: 'ระยะเวลาก่อสร้าง และระยะเดินสายไฟ/ท่อน้ำจากจุดจ่ายถึงหน้างาน',
+                planHint: 'ดูผังบริเวณ: ระยะเดินสายไฟและท่อน้ำจากมิเตอร์ถึงหน้างาน และจำนวนจุดน้ำ/จุดไฟที่ใช้ระหว่างก่อสร้าง',
             },
             {
                 id: 'site-camp', title: 'แคมป์คนงาน', kind: calc('site-camp'), sections: [3],
@@ -61,7 +61,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'layout', title: 'วางผัง / ปักหมุด', kind: calc('layout'), sections: [4],
-                planHint: 'ดูแปลนฐานราก: ขนาดรอบอาคาร และจำนวนแนวเสา (กริด) สำหรับทำผังและหมุด',
+                planHint: 'ดูแปลนฐานราก: นับจุดตั้งผังตามแนวเสา และจำนวนหมุด (ปกติเท่าจำนวนเสาเข็ม)',
             },
         ],
     },

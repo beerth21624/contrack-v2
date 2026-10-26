@@ -41,3 +41,18 @@ describe('ค่าตรวจสอบที่ดิน (sheet 36)', () => {
         expect(changed.boq.constructionTotal).toBeCloseTo(base.boq.constructionTotal, 6);
     });
 });
+
+describe('ค่าตรวจสอบที่ดิน: blank project', () => {
+    it('keeps the standard inspection lump sum (not read off the plan), empty texts and checklist', () => {
+        const blank = landInspection.blank?.();
+        expect(blank).toBeDefined();
+        if (!blank) return;
+        expect(blank).toEqual(landInspection.defaults());
+        expect(blank.checklist.every(a => !a.done && a.note === '')).toBe(true);
+        const out = landInspection.compute(blank, ctx);
+        expect(Object.values(out).every(Number.isFinite)).toBe(true);
+        expect(out.total).toBe(7500);
+        const s0 = computeProject(createProject('blank'), [landInspection]).boq.sections.find(s => s.no === 0);
+        expect(s0?.total).toBe(7500);
+    });
+});

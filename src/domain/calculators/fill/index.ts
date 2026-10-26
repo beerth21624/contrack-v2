@@ -27,6 +27,14 @@ export const fill = defineCalculator<FillInput>({
         settlementPct: 30,
         material: 'ลูกค้าจัดหาเอง',
     }),
+    // Plan values (area and fill height) empty; the settlement allowance and the material choice keep Excel v5.
+    blank: () => ({
+        width: 0,
+        length: 0,
+        height: 0,
+        settlementPct: 30,
+        material: 'ลูกค้าจัดหาเอง',
+    }),
     compute: (input) => ({
         // D9 ปริมาณดินที่ต้องสั่ง = D4*D5*D6*(1+D7/100)
         volume: num(input.width) * num(input.length) * num(input.height) * (1 + num(input.settlementPct) / 100),
