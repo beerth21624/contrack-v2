@@ -5,9 +5,10 @@
 import { defineCalculator, type CalcContext } from '../types';
 import { BRICK_THICKNESSES, BRICK_TYPES, WALL_PARTS, openingKey } from '../door-window';
 
-// Dropdowns B/C/D share their lists with the door-window sheet (D/E/F). Sheet 13 lists the wall parts in another
-// order (ภายใน, รอบบ้าน-พิเศษ, รอบบ้าน, ภายนอก) — same values.
+// Dropdowns B/C/D share their values with the door-window sheet (D/E/F).
 export { BRICK_THICKNESSES, BRICK_TYPES, WALL_PARTS, openingKey };
+/** Dropdown B5:B20 ส่วนผนัง in sheet 13's own order (same values as the door-window WALL_PARTS). */
+export const BRICK_WALL_PARTS = ['ผนังภายในบ้าน', 'ผนังรอบบ้าน-พิเศษ', 'ผนังรอบบ้าน', 'ผนังภายนอกบ้าน'] as const;
 
 /** สี่เหลี่ยม: G = E × F. สามเหลี่ยม (gable): G = 0.5 × E × F. */
 export type WallShape = 'rect' | 'triangle';

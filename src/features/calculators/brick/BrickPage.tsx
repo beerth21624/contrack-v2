@@ -3,7 +3,7 @@
 import { Alert } from 'antd';
 import {
     brick, brickOpenings, brickWallResults, unmatchedOpenings, BRICK_BOQ_ROWS, BRICK_THICKNESSES, BRICK_TYPES,
-    WALL_PARTS, WALL_SHAPES, type BrickWall,
+    BRICK_WALL_PARTS, WALL_SHAPES, type BrickWall,
 } from '@/domain/calculators/brick';
 import type { CalcContext } from '@/domain/calculators/types';
 import { EditableTable } from '@/components/sheet/EditableTable';
@@ -39,7 +39,7 @@ export default function BrickPage() {
                     newRow={newRow}
                     addLabel="+ เพิ่มผนัง"
                     columns={[
-                        { kind: 'select', key: 'wallPart', title: 'ส่วนผนัง', width: 150, options: opts(WALL_PARTS),
+                        { kind: 'select', key: 'wallPart', title: 'ส่วนผนัง', width: 150, options: opts(BRICK_WALL_PARTS),
                             get: r => r.wallPart, set: (r, v) => ({ ...r, wallPart: v }) },
                         { kind: 'select', key: 'brickType', title: 'รายการ', width: 110, options: opts(BRICK_TYPES),
                             get: r => r.brickType, set: (r, v) => ({ ...r, brickType: v }) },

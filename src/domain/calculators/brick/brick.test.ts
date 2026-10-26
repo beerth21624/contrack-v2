@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-    brick, brickOpenings, brickWallResults, excelStyleOpenings, openingKey, unmatchedOpenings, wallArea,
+    brick, brickOpenings, brickWallResults, BRICK_WALL_PARTS, excelStyleOpenings, openingKey, unmatchedOpenings,
+    WALL_PARTS, wallArea,
     type BrickInput, type BrickWallResult,
 } from '.';
 import { plaster } from '../plaster';
@@ -119,6 +120,11 @@ describe('ก่ออิฐ_Brick (sheet 13)', () => {
         });
         const res2 = computeProject(createProject(), [stub, brick, plaster]);
         expect(res2.boq.sections.find(s => s.no === 17)?.total).toBeCloseTo(182049.4525, 6);
+    });
+
+    it('dropdown B (sheet 13 order) holds the same wall parts as the door-window sheet', () => {
+        expect(BRICK_WALL_PARTS).toEqual(['ผนังภายในบ้าน', 'ผนังรอบบ้าน-พิเศษ', 'ผนังรอบบ้าน', 'ผนังภายนอกบ้าน']);
+        expect([...BRICK_WALL_PARTS].sort()).toEqual([...WALL_PARTS].sort());
     });
 
     it('triangle rows use ½·E·F; rows without a shape (added rows) are rectangles', () => {

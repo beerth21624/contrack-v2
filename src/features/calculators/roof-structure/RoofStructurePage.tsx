@@ -12,7 +12,7 @@ import { InputNumberField, CalcField, SheetCard } from '@/components/sheet/Sheet
 import { NumberCell, TextCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { LengthsCell } from '../roofing/LengthsCell';
+import { LengthsCell } from '@/components/sheet/LengthsCell';
 
 const th = 'border border-gray-200 px-2 py-1 text-[12px] font-semibold text-gray-700 bg-gray-50 text-center';
 const td = 'border border-gray-200 px-1 py-0.5 text-[13px] align-middle';
@@ -98,7 +98,13 @@ export default function RoofStructurePage() {
             <NumSelect value={m.factor} options={ROOF_FACTOR_OPTIONS} digits={2} label="Factor Roof" onChange={factor => set(key, { factor })} />
             <td className={td}>
                 <NumberCell value={outputs[`${key}.area`] ?? 0} ariaLabel="พื้นที่หลังคา (ตร.ม.)" tone={m.area === null ? 'calc' : 'input'}
-                    onCommit={v => set(key, { area: v ?? null })} />
+                    onCommit={v => {
+                        // NumberCell commits on blur even when only focused (draft rounded to 6 decimals):
+                        // an unchanged linked value must keep the link to the Roofing sheet.
+                        const shown = outputs[`${key}.area`] ?? 0;
+                        if (m.area === null && v !== undefined && Math.abs(v - shown) <= 1e-6 * Math.max(1, Math.abs(shown))) return;
+                        set(key, { area: v ?? null });
+                    }} />
             </td>
             <NumInput value={m.spacing} label="ระยะห่าง (ม.)" onChange={spacing => set(key, { spacing })} />
             <Dash /><Dash />

@@ -10,7 +10,7 @@ import { CalcField, InputNumberField, SheetCard } from '@/components/sheet/Sheet
 import { NumberCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { LengthsCell } from './LengthsCell';
+import { LengthsCell } from '@/components/sheet/LengthsCell';
 
 const opts = (xs: readonly string[]) => xs.map(value => ({ value }));
 

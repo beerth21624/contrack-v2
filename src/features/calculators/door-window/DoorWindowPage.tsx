@@ -28,6 +28,17 @@ const BRICK = '[ ใช้คำนวณงานก่ออิฐ ]';
 const PRICE = 'ราคาต่อชุด (ส่ง BOQ)';
 
 const options = (list: readonly string[]) => list.map(v => ({ value: v }));
+
+/**
+ * NumberCell commits on every blur, even when only focused (its draft is the value rounded to 6 decimals).
+ * A commit equal to the shown default must not turn the default price into a typed (frozen) one.
+ */
+const sameValue = (a: number, b: number) => Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(b));
+const priceCommit = (typed: number | null, shown: number, v: number | undefined): number | null | 'unchanged' => {
+    if (v === undefined) return null;
+    if (typed === null && sameValue(v, shown)) return 'unchanged';
+    return v;
+};
 const typeOptions = options(DOOR_TYPES);
 const wallOptions = options(WALL_PARTS);
 const brickOptions = options(OPENING_WALL_TYPES);
@@ -86,13 +97,19 @@ export default function DoorWindowPage() {
             get: (r, i) => (
                 <NumberCell value={openingRowCalc(r).matUnit} tone={r.matPrice === null ? 'calc' : 'input'}
                     edited={r.matPrice !== null} ariaLabel="ค่าวัสดุต่อชุด"
-                    onCommit={v => setRow(block, i, { ...r, matPrice: v ?? null })} />
+                    onCommit={v => {
+                        const p = priceCommit(r.matPrice, openingRowCalc(r).matUnit, v);
+                        if (p !== 'unchanged') setRow(block, i, { ...r, matPrice: p });
+                    }} />
             ) },
         { kind: 'label', key: 'lab', title: head(PRICE, 'ค่าแรง (บาท)'), width: 90,
             get: (r, i) => (
                 <NumberCell value={openingRowCalc(r).labUnit} tone={r.labPrice === null ? 'calc' : 'input'}
                     edited={r.labPrice !== null} ariaLabel="ค่าแรงต่อชุด"
-                    onCommit={v => setRow(block, i, { ...r, labPrice: v ?? null })} />
+                    onCommit={v => {
+                        const p = priceCommit(r.labPrice, openingRowCalc(r).labUnit, v);
+                        if (p !== 'unchanged') setRow(block, i, { ...r, labPrice: p });
+                    }} />
             ) },
     ];
 

@@ -36,9 +36,13 @@ export function NumberCell({ value, onCommit, edited, digits = 2, percent, ariaL
     const shown = percent ? value * 100 : value;
     // Draft text only while the cell is being edited; otherwise the formatted value is shown.
     const [text, setText] = useState<string | null>(null);
+    // Text the cell started with on focus: leaving the cell without typing commits nothing, so a value that
+    // comes from a calculator (green) is not frozen into an override just by clicking through it.
+    const [initial, setInitial] = useState<string | null>(null);
 
     const commit = () => {
         if (text === null) return;
+        if (text === initial) { setText(null); return; }
         const trimmed = text.replace(/,/g, '').trim();
         if (trimmed === '') onCommit(undefined);
         else {
@@ -53,7 +57,12 @@ export function NumberCell({ value, onCommit, edited, digits = 2, percent, ariaL
             aria-label={ariaLabel}
             inputMode="decimal"
             value={text ?? (percent ? `${formatNumber(shown, 0)}%` : formatNumber(shown, digits))}
-            onFocus={(e) => { setText(String(Number(shown.toFixed(6)))); requestAnimationFrame(() => e.target.select()); }}
+            onFocus={(e) => {
+                const start = String(Number(shown.toFixed(6)));
+                setText(start);
+                setInitial(start);
+                requestAnimationFrame(() => e.target.select());
+            }}
             onChange={(e) => setText(e.target.value)}
             onBlur={commit}
             onKeyDown={(e) => {
@@ -79,9 +88,11 @@ interface TextCellProps {
 }
 
 export function TextCell({ value, onCommit, edited, placeholder, ariaLabel }: TextCellProps) {
+    // Draft text only exists once the user types (onChange), so focusing and leaving commits nothing.
     const [text, setText] = useState<string | null>(null);
     const commit = () => {
         if (text === null) return;
+        if (text === value) { setText(null); return; }
         onCommit(text.trim() === '' ? undefined : text);
         setText(null);
     };
