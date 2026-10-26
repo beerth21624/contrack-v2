@@ -8,6 +8,8 @@ import type {
 import { calculatorsInOrder } from './calculators/registry';
 import type { CalculatorDef, SlotRow } from './calculators/types';
 import { computePlanning, resolvePlanningInput, type PlanningInput, type PlanningResult } from './planning';
+import { JOURNEY_LEVELS } from './journey/levels';
+import type { JourneyProgress } from './journey/progress';
 
 /** Gives slot rows project-unique keys (`${calc}:${slot}:${key}`), rewriting references between them. */
 function prefixSlotRows(rows: SlotRow[], prefix: string, excelRow: number): (BoqItemTemplate | BoqHeadingTemplate)[] {
@@ -44,7 +46,16 @@ export interface Project {
     boqOverrides: Record<BoqLineKey, BoqLineOverride>;
     /** Man-Day / S-Curve / CashFlow inputs. Missing parts = the Excel sample (see resolvePlanningInput). */
     planning?: Partial<PlanningInput>;
+    /**
+     * What untouched calculators start from: 'blank' (a real project, filled from its plan) or 'sample' (the
+     * Excel v5 training house). Missing = 'sample', so projects saved before this field keep their numbers.
+     */
+    start?: ProjectStart;
+    /** Levels of the guided journey passed or marked "ไม่มีงานนี้". Missing = none yet. */
+    journey?: JourneyProgress;
 }
+
+export type ProjectStart = 'blank' | 'sample';
 
 export const DEFAULT_PROJECT_META: ProjectMeta = {
     projectName: 'บ้านพักอาศัย คสล. 1 ชั้น',
@@ -55,20 +66,34 @@ export const DEFAULT_PROJECT_META: ProjectMeta = {
     preparedBy: '',
 };
 
-export function createProject(): Project {
+/** A new project. Without an argument it is the Excel v5 sample house (what the golden tests check). */
+export function createProject(start: ProjectStart = 'sample'): Project {
     return {
         schemaVersion: PROJECT_SCHEMA_VERSION,
-        meta: { ...DEFAULT_PROJECT_META },
+        meta: { ...DEFAULT_PROJECT_META, projectName: start === 'blank' ? '' : DEFAULT_PROJECT_META.projectName },
         calculators: {},
         boqOverrides: {},
+        start,
+        journey: {},
     };
 }
 
-/** A calculator's current input: stored values over its defaults (so newly added fields get a default). */
+/** What a calculator shows before the user types anything: empty for a blank project, else the Excel sample. */
+export function calculatorBase<I>(project: Project, def: CalculatorDef<I>): I {
+    return project.start === 'blank' && def.blank ? def.blank() : def.defaults();
+}
+
+/** A calculator's current input: stored values over its base (so newly added fields get a default). */
 export function calculatorInput<I>(project: Project, def: CalculatorDef<I>): I {
     const stored = project.calculators[def.id];
-    const defaults = def.defaults();
-    return stored && typeof stored === 'object' ? { ...defaults, ...(stored as Partial<I>) } : defaults;
+    const base = calculatorBase(project, def);
+    return stored && typeof stored === 'object' ? { ...base, ...(stored as Partial<I>) } : base;
+}
+
+/** Calculators of journey levels marked "ไม่มีงานนี้": they put nothing into the BOQ. */
+function skippedCalculators(project: Project): Set<string> {
+    const progress = project.journey ?? {};
+    return new Set(JOURNEY_LEVELS.flatMap(l => (l.kind.type === 'calc' && progress[l.id] === 'skipped' ? [l.kind.calc] : [])));
 }
 
 export interface ProjectResult {
@@ -85,10 +110,18 @@ export function computeProject(project: Project, calculators?: CalculatorDef[]):
     const slots: SlotLines = {};
     const slotRow = new Map<string, number>();
     for (const s of BOQ_TEMPLATE_V5) for (const l of s.lines) if (l.type === 'slot') slotRow.set(`${l.calc}.${l.slot}`, l.excelRow);
+    const skipped = skippedCalculators(project);
 
     for (const def of calculatorsInOrder(calculators)) {
         const input = calculatorInput(project, def);
         const ctx = { outputs: (id: string) => calcOutputs[id] };
+        if (skipped.has(def.id)) {
+            // "ไม่มีงานนี้": every output 0, every BOQ line it fills gets quantity 0, its slots stay empty.
+            calcOutputs[def.id] = Object.fromEntries(Object.keys(def.compute(input, ctx)).map(k => [k, 0]));
+            for (const link of def.boqLinks) linked[link.line] = { ...linked[link.line], qty: 0 };
+            for (const slot of Object.keys(def.boqSlots?.(input, ctx) ?? {})) slots[`${def.id}.${slot}`] = [];
+            continue;
+        }
         const outputs = def.compute(input, ctx);
         calcOutputs[def.id] = outputs;
         for (const link of def.boqLinks) {

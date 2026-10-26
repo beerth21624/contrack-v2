@@ -4,7 +4,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { BoqLineKey, BoqLineOverride } from '@/domain/boq/types';
 import type { PlanningInput } from '@/domain/planning';
-import { createProject, PROJECT_SCHEMA_VERSION, type Project, type ProjectMeta } from '@/domain/project';
+import { createProject, PROJECT_SCHEMA_VERSION, type Project, type ProjectMeta, type ProjectStart } from '@/domain/project';
+import type { LevelMark } from '@/domain/journey/progress';
 
 /** Field of a BOQ line the user can edit on the BOQ (Home) page. */
 export type BoqEditableField = keyof BoqLineOverride;
@@ -21,6 +22,10 @@ interface ProjectState {
     setCalculatorInput: (id: string, input: unknown) => void;
     /** Merge planning inputs per sheet (manday / schedule / cashflow); a sheet set to undefined goes back to the Excel sample. */
     setPlanning: (patch: { [K in keyof PlanningInput]?: PlanningInput[K] | undefined }) => void;
+    /** Mark a journey level passed / not in this project, or clear the mark (undefined). */
+    setLevelMark: (levelId: string, mark: LevelMark | undefined) => void;
+    /** Throw the current project away and start a new one: blank (from a plan) or the Excel sample house. */
+    newProject: (start: ProjectStart) => void;
     resetProject: () => void;
 }
 
@@ -61,6 +66,12 @@ export const useProjectStore = create<ProjectState>()(
                 ) as Partial<PlanningInput>;
                 return { project: { ...s.project, planning } };
             }),
+            setLevelMark: (levelId, mark) => set(s => {
+                const others = Object.entries(s.project.journey ?? {}).filter(([k]) => k !== levelId);
+                const journey = Object.fromEntries(mark === undefined ? others : [...others, [levelId, mark]]);
+                return { project: { ...s.project, journey } };
+            }),
+            newProject: (start) => set({ project: createProject(start) }),
             resetProject: () => set({ project: createProject() }),
         }),
         {
