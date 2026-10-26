@@ -233,13 +233,13 @@ describe('มุงหลังคา_Roofing vs Excel formulas (oracle)', () =>
 
     // BOQ F162…F174 = 'มุงหลังคา_Roofing'!H5…H17 (the purchase unit typed on the sheet); the app's BOQ unit is the
     // template's and ignores RoofingRow.unit. Inputs: Excel sample, H5 = ม้วน. Excel F162 "ม้วน", app "แผ่น".
-    it.fails('mismatch: BOQ unit F162 follows Roofing H5 — Excel "ม้วน", app "แผ่น"', () => {
+    it('BOQ unit F162 follows Roofing H5 (ม้วน)', () => {
         compareCase(oracle, withRow(sample, 0, { unit: 'ม้วน' }));
     });
 
     // BOQ D162…D174 = B5…B17. With fewer than 13 rows Excel shows a blank description (and qty 0) on the missing
     // rows; the app keeps the template text. Inputs: the first 4 sample rows. Excel D166 blank, app "ครอบปิดชาย".
-    it.fails('mismatch: fewer than 13 rows — Excel D166 blank, app keeps "ครอบปิดชาย"', () => {
+    it('fewer than 13 rows — the missing BOQ rows have a blank description, as in Excel', () => {
         const input = { ...sample, rows: sample.rows.slice(0, 4) };
         oracle.replaceInputs(roofingExcelInputs(input));
         const res = appResult(input);

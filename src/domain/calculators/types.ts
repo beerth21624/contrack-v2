@@ -41,8 +41,8 @@ export interface CalculatorDef<I = unknown> {
     /** Pure: same input → same outputs. Outputs are plain numbers keyed by name. */
     compute(input: I, ctx: CalcContext): Record<string, number>;
     boqLinks: BoqLink[];
-    /** Optional text for BOQ cells (description D / note N), e.g. a pile spec built from the inputs. */
-    boqText?(input: I, ctx: CalcContext): Record<BoqLineKey, { desc?: string; note?: string }>;
+    /** Optional text for BOQ cells (description D / unit F / note N), e.g. a pile spec built from the inputs. */
+    boqText?(input: I, ctx: CalcContext): Record<BoqLineKey, { desc?: string; note?: string; unit?: string }>;
     /**
      * Rows for the BOQ slots this calculator owns (see BoqSlotTemplate in boq/types.ts), keyed by slot name.
      * Row keys are prefixed with `${calcId}:${slot}:` by the project so they stay unique.

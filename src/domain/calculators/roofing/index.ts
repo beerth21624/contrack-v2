@@ -156,10 +156,12 @@ export const roofing = defineCalculator<RoofingInput>({
     ],
     // D162…D174 = B5…B17 (the BOQ description follows the item chosen on the sheet).
     boqText: (input) => {
-        const text: Record<string, { desc?: string }> = {};
+        // BOQ D162…D174 = sheet B5…B17 and F = H5…H17: a row left out (or with no item) shows blank, as in Excel.
+        const text: Record<string, { desc: string; unit?: string }> = {};
         BOQ_LINES.forEach((line, i) => {
-            const desc = input.rows[i]?.item.trim() ?? '';
-            if (desc !== '') text[line] = { desc };
+            const row = input.rows[i];
+            const unit = row?.unit.trim() ?? '';
+            text[line] = { desc: row?.item.trim() ?? '', ...(unit === '' ? {} : { unit }) };
         });
         return text;
     },
