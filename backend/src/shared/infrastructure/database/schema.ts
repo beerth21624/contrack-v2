@@ -2,7 +2,7 @@
 // Every tenant-owned table carries workspace_id; repositories always filter by it.
 import { sql } from 'drizzle-orm';
 import {
-    bigserial, check, foreignKey, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid,
+    bigserial, check, foreignKey, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid,
 } from 'drizzle-orm/pg-core';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import type { ProjectSummary } from '@contrack/contract';
@@ -88,7 +88,8 @@ export const projects = pgTable('projects', {
 }, t => [
     index('projects_workspace_idx').on(t.workspaceId, t.archivedAt),
     // Target of the (project_id, workspace_id) foreign keys: a child row can only name its project's own workspace.
-    uniqueIndex('projects_id_workspace_key').on(t.id, t.workspaceId),
+    // A table constraint (not just an index): it is created with the table, before the foreign keys that use it.
+    unique('projects_id_workspace_key').on(t.id, t.workspaceId),
     check('projects_start_check', sql`${t.start} in ('blank', 'sample')`),
 ]);
 

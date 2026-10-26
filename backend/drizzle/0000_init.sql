@@ -78,6 +78,7 @@ CREATE TABLE "projects" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"archived_at" timestamp with time zone,
+	CONSTRAINT "projects_id_workspace_key" UNIQUE("id","workspace_id"),
 	CONSTRAINT "projects_start_check" CHECK ("projects"."start" in ('blank', 'sample'))
 );
 --> statement-breakpoint
@@ -128,7 +129,6 @@ CREATE INDEX "memberships_user_idx" ON "memberships" USING btree ("user_id");-->
 CREATE UNIQUE INDEX "project_revisions_label_key" ON "project_revisions" USING btree ("project_id","label");--> statement-breakpoint
 CREATE INDEX "project_revisions_project_idx" ON "project_revisions" USING btree ("project_id","created_at");--> statement-breakpoint
 CREATE INDEX "projects_workspace_idx" ON "projects" USING btree ("workspace_id","archived_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "projects_id_workspace_key" ON "projects" USING btree ("id","workspace_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "refresh_tokens_hash_key" ON "refresh_tokens" USING btree ("token_hash");--> statement-breakpoint
 CREATE INDEX "refresh_tokens_user_idx" ON "refresh_tokens" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "refresh_tokens_family_idx" ON "refresh_tokens" USING btree ("family_id");--> statement-breakpoint

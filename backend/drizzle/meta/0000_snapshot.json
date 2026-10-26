@@ -1,5 +1,5 @@
 {
-  "id": "34698332-753a-49b1-b0af-8be61aec1de1",
+  "id": "ab1098fa-b9e5-408b-9298-ec50a50c32c3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -741,27 +741,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "projects_id_workspace_key": {
-          "name": "projects_id_workspace_key",
-          "columns": [
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -793,7 +772,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "projects_id_workspace_key": {
+          "name": "projects_id_workspace_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "workspace_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "projects_start_check": {
