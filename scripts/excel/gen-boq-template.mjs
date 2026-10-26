@@ -45,7 +45,7 @@ const SHEET_TO_CALC = {
 // Calculator pages each section links to (design doc §4).
 const SECTION_CALCS = {
     0: ['land-inspection'], 1: ['demolition', 'fill'], 2: ['temp-utilities'], 3: ['site-camp'], 4: ['layout'],
-    5: ['piles'], 6: ['footing', 'structure-summary'], 7: ['pedestal'], 8: ['ground-beam'], 9: ['slab-on-grade', 'waste-pipe'],
+    5: ['piles'], 6: ['footing', 'pedestal', 'column'], 7: ['pedestal'], 8: ['ground-beam', 'precast-slab', 'pedestal'], 9: ['slab-on-grade', 'waste-pipe'],
     10: ['precast-slab'], 11: ['column'], 12: ['roof-beam', 'roof-slab'], 13: ['stair'], 14: [],
     15: ['roof-structure'], 16: ['roofing'], 17: ['brick', 'electrical-pipe'], 18: ['plaster', 'door-window', 'electrical-cable'],
     19: ['ceiling'], 20: ['floor-tile'], 21: ['toilet-tile', 'water-pipe'], 22: ['wall-finishing'], 23: ['paint'],
@@ -73,6 +73,20 @@ const SLOTS = [
     { from: 282, to: 291, calc: 'sanitary-ware', slot: 'items' },
     { from: 294, to: 297, calc: 'door-window', slot: 'wood' },
 ];
+
+// Excel routes structural quantities through "ตารางสรุปวัสดุงานโครงสร้าง" (a pass-through sheet); in the app
+// each element calculator feeds its BOQ rows directly, so label those rows with the element calculator.
+const ROW_CALC = {
+    38: 'footing', 40: 'footing', 41: 'footing', 55: 'footing', 58: 'footing',
+    62: 'pedestal', 65: 'pedestal', 68: 'pedestal',
+    69: 'ground-beam', 77: 'ground-beam', 80: 'ground-beam',
+    88: 'slab-on-grade', 89: 'slab-on-grade', 90: 'slab-on-grade', 94: 'slab-on-grade',
+    97: 'precast-slab', 99: 'precast-slab', 101: 'precast-slab', 104: 'precast-slab',
+    108: 'column', 111: 'column',
+    119: 'roof-beam', 121: 'roof-beam', 124: 'roof-beam',
+    129: 'roof-slab', 131: 'roof-slab', 134: 'roof-slab',
+    140: 'stair', 142: 'stair', 145: 'stair',
+};
 
 const num = v => (v === undefined || v === '' ? undefined : Number(v));
 const clean = s => (s ?? '').replace(/\s+$/u, '').replace(/^\s+/u, '');
@@ -129,7 +143,7 @@ for (const r of rows) {
             ? [...cur.lines].reverse().find(l => l.type === 'item' && l.qty.kind === 'calc')
             : undefined;
         if (!sheet && !spillFrom) throw new Error(`Row ${r.row}: unknown E formula ${Ef}`);
-        const calc = sheet ? SHEET_TO_CALC[sheet] : spillFrom.qty.calc;
+        const calc = ROW_CALC[r.row] ?? (sheet ? SHEET_TO_CALC[sheet] : spillFrom.qty.calc);
         qty = { kind: 'calc', calc, output: key(r.row), fallback: E ?? 0 };
     }
 

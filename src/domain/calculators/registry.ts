@@ -7,6 +7,25 @@ import { tempUtilities } from './temp-utilities';
 import { siteCamp } from './site-camp';
 import { layout } from './layout';
 import { piles } from './piles';
+import { footing } from './footing';
+import { pedestal } from './pedestal';
+import { groundBeam } from './ground-beam';
+import { slabOnGrade } from './slab-on-grade';
+import { precastSlab } from './precast-slab';
+import { column } from './column';
+import { roofBeam } from './roof-beam';
+import { roofSlab } from './roof-slab';
+import { stair } from './stair';
+import { roofing } from './roofing';
+import { roofStructure } from './roof-structure';
+import { doorWindow } from './door-window';
+import { brick } from './brick';
+import { plaster } from './plaster';
+import { ceiling } from './ceiling';
+import { floorTile } from './floor-tile';
+import { toiletTile } from './toilet-tile';
+import { wallFinishing } from './wall-finishing';
+import { paint } from './paint';
 
 export const CALCULATORS: CalculatorDef[] = [
     landInspection,
@@ -16,6 +35,25 @@ export const CALCULATORS: CalculatorDef[] = [
     siteCamp,
     layout,
     piles,
+    footing,
+    pedestal,
+    groundBeam,
+    slabOnGrade,
+    precastSlab,
+    column,
+    roofBeam,
+    roofSlab,
+    stair,
+    roofing,
+    roofStructure,
+    doorWindow,
+    brick,
+    plaster,
+    ceiling,
+    floorTile,
+    toiletTile,
+    wallFinishing,
+    paint,
 ];
 
 export function getCalculator(id: string): CalculatorDef | undefined {

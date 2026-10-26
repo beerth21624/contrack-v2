@@ -380,7 +380,8 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
     "title": "งานฐานราก",
     "calculators": [
       "footing",
-      "structure-summary"
+      "pedestal",
+      "column"
     ],
     "inConstructionTotal": true,
     "lines": [
@@ -433,7 +434,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "footing",
           "output": "R40",
           "fallback": 2.5725
         },
@@ -453,7 +454,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "footing",
           "output": "R41",
           "fallback": 2.058
         },
@@ -710,7 +711,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ตร.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "footing",
           "output": "R55",
           "fallback": 30.24
         },
@@ -766,7 +767,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "footing",
           "output": "R58",
           "fallback": 4.536
         },
@@ -802,7 +803,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ตร.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "pedestal",
           "output": "R62",
           "fallback": 11.34
         },
@@ -858,7 +859,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "pedestal",
           "output": "R65",
           "fallback": 0.63
         },
@@ -875,7 +876,9 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
     "no": 8,
     "title": "งานคานคอดิน",
     "calculators": [
-      "ground-beam"
+      "ground-beam",
+      "precast-slab",
+      "pedestal"
     ],
     "inConstructionTotal": true,
     "lines": [
@@ -888,7 +891,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "pedestal",
           "output": "R68",
           "fallback": 43.7115
         },
@@ -909,7 +912,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "ground-beam",
           "output": "R69",
           "fallback": 1.152
         },
@@ -1103,7 +1106,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "ground-beam",
           "output": "R80",
           "fallback": 9.416
         },
@@ -1224,7 +1227,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "slab-on-grade",
           "output": "R88",
           "fallback": 20.04
         },
@@ -1245,7 +1248,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "slab-on-grade",
           "output": "R89",
           "fallback": 3.13125
         },
@@ -1265,7 +1268,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ตร.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "slab-on-grade",
           "output": "R90",
           "fallback": 50.1
         },
@@ -1342,7 +1345,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "slab-on-grade",
           "output": "R94",
           "fallback": 5.01
         },
@@ -1410,7 +1413,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ตร.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "precast-slab",
           "output": "R99",
           "fallback": 74.75
         },
@@ -1436,7 +1439,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ตร.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "precast-slab",
           "output": "R101",
           "fallback": 5.14
         },
@@ -1492,7 +1495,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "precast-slab",
           "output": "R104",
           "fallback": 3.7375
         },
@@ -1528,7 +1531,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ตร.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "column",
           "output": "R108",
           "fallback": 68.04
         },
@@ -1584,7 +1587,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "column",
           "output": "R111",
           "fallback": 3.402
         },
@@ -1698,7 +1701,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ต้น",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "roof-beam",
           "output": "R119",
           "fallback": 57
         },
@@ -1724,7 +1727,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ตร.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "roof-beam",
           "output": "R121",
           "fallback": 20.8
         },
@@ -1780,7 +1783,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "roof-beam",
           "output": "R124",
           "fallback": 2.04
         },
@@ -1863,7 +1866,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ต้น",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "roof-slab",
           "output": "R129",
           "fallback": 42
         },
@@ -1889,7 +1892,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ตร.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "roof-slab",
           "output": "R131",
           "fallback": 24
         },
@@ -1945,7 +1948,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "roof-slab",
           "output": "R134",
           "fallback": 2.4
         },
@@ -2032,7 +2035,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ต้น",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "stair",
           "output": "R140",
           "fallback": 15
         },
@@ -2058,7 +2061,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ตร.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "stair",
           "output": "R142",
           "fallback": 13.69193206
         },
@@ -2114,7 +2117,7 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "unit": "ลบ.ม.",
         "qty": {
           "kind": "calc",
-          "calc": "structure-summary",
+          "calc": "stair",
           "output": "R145",
           "fallback": 1.708652717
         },

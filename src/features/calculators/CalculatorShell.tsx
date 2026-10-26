@@ -14,9 +14,13 @@ const td = 'border border-gray-200 px-2 py-1 text-[13px]';
 const tdNum = `${td} text-right tabular-nums whitespace-nowrap`;
 
 /** The BOQ (Home) rows of the given sections, as they stand with the current input. */
-export function BoqPreview({ result, sections, highlight }: {
+export function BoqPreview({ result, sections, highlight, highlightPrefix }: {
     result: ProjectResult; sections: number[]; highlight?: Set<string>;
+    /** Rows whose key starts with this (slot rows `${calcId}:…`) are highlighted too. */
+    highlightPrefix?: string;
 }) {
+    const isHighlighted = (key: string) =>
+        (highlight?.has(key) ?? false) || (highlightPrefix !== undefined && key.startsWith(highlightPrefix));
     const secs = result.boq.sections.filter(s => sections.includes(s.no));
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
@@ -40,7 +44,7 @@ export function BoqPreview({ result, sections, highlight }: {
                             {s.rows.map(r => r.type === 'heading'
                                 ? <tr key={r.key}><td className={`${td} font-medium`} colSpan={6}>{r.itemNo} {r.desc}</td></tr>
                                 : (
-                                    <tr key={r.key} style={highlight?.has(r.key) ? { background: SHEET_COLORS.calc } : undefined}>
+                                    <tr key={r.key} style={isHighlighted(r.key) ? { background: SHEET_COLORS.calc } : undefined}>
                                         <td className={td}>{r.itemNo} {r.desc}</td>
                                         <td className={tdNum}>{formatNumber(r.qty)}</td>
                                         <td className={`${td} text-center`}>{r.unit}</td>
@@ -94,7 +98,7 @@ export function CalculatorShell({ def, result, isDefault, onReset, children, asi
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
                 <div className="xl:col-span-7 flex flex-col gap-4 min-w-0">{children}</div>
                 <div className="xl:col-span-5 flex flex-col gap-4 min-w-0 xl:sticky xl:top-4">
-                    <BoqPreview result={result} sections={def.sections} highlight={highlight} />
+                    <BoqPreview result={result} sections={def.sections} highlight={highlight} highlightPrefix={`${def.id}:`} />
                     {aside}
                 </div>
             </div>
