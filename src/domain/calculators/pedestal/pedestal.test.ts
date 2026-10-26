@@ -152,7 +152,8 @@ describe('เสาตอม่อ_Footing Column — blank project (guided jour
         const o = pedestal.compute(pedestal.defaults(), withFooting([]));
         expect(Object.values(o).every(Number.isFinite)).toBe(true);
         expect(o.concrete).toBeCloseTo(0.63, 9);
-        expect(o.backfill).toBeCloseTo(-0.63, 9); // nothing dug: the journey page asks for footings first
+        // Nothing dug: Excel would give −0.63; backfill is clamped at 0 (D1). The journey page asks for footings first.
+        expect(o.backfill).toBe(0);
     });
 
     it('a pedestal added in the journey sits on the next free footing, takes its count and standard bars', () => {

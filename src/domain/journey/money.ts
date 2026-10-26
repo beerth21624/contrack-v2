@@ -36,7 +36,7 @@ export function levelRows(level: JourneyLevel, result: ProjectResult): BoqItemRo
     const items = itemsOf(true);
     const def = getCalculator(level.kind.calc);
     if (!def) return [];
-    const own = new Set(def.boqLinks.map(l => l.line));
+    const own = new Set([...def.boqLinks.map(l => l.line), ...(level.extraRows ?? [])]);
     const prefix = `${def.id}:`;
     for (const r of items) if (r.key.startsWith(prefix)) own.add(r.key);
     // Rows whose every source line belongs to the level belong to it too (repeat until nothing changes).

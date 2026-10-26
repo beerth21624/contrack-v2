@@ -2,8 +2,8 @@
 import { computeBoq } from './boq/engine';
 import { BOQ_TEMPLATE_V5 } from './boq/template.v5';
 import type {
-    BoqHeadingTemplate, BoqItemTemplate, BoqLineKey, BoqLineOverride, BoqResult, GrossRule, LinkedValues, PriceRule,
-    QtyRule, SlotLines,
+    BoqHeadingTemplate, BoqItemTemplate, BoqLineKey, BoqLineOverride, BoqResult, BoqSectionTemplate, GrossRule,
+    LinkedValues, PriceRule, QtyRule, SlotLines,
 } from './boq/types';
 import { calculatorsInOrder } from './calculators/registry';
 import type { CalculatorDef, SlotRow } from './calculators/types';
@@ -95,10 +95,36 @@ export function projectPlanningInput(project: Project): PlanningInput {
     return resolvePlanningInput(project.planning, project.start === 'blank' ? blankPlanningInput() : undefined);
 }
 
-/** Calculators of journey levels marked "ไม่มีงานนี้": they put nothing into the BOQ. */
-function skippedCalculators(project: Project): Set<string> {
+/** Journey levels marked "ไม่มีงานนี้": their calculators and extra lines put nothing into the BOQ. */
+function skippedWork(project: Project): { calcs: Set<string>; lines: Set<BoqLineKey> } {
     const progress = project.journey ?? {};
-    return new Set(JOURNEY_LEVELS.flatMap(l => (l.kind.type === 'calc' && progress[l.id] === 'skipped' ? [l.kind.calc] : [])));
+    const levels = JOURNEY_LEVELS.filter(l => progress[l.id] === 'skipped');
+    return {
+        calcs: new Set(levels.flatMap(l => (l.kind.type === 'calc' ? [l.kind.calc] : []))),
+        lines: new Set(levels.flatMap(l => l.extraRows ?? [])),
+    };
+}
+
+/**
+ * A blank project starts with no quantity on the BOQ rows typed directly in a journey level (e.g. column
+ * plates); the Excel sample counts would otherwise show up as money nobody entered.
+ */
+const BLANK_TEMPLATE_V5: BoqSectionTemplate[] = (() => {
+    const typed = new Set(JOURNEY_LEVELS.flatMap(l => (l.kind.type === 'boq' ? l.kind.sections : [])));
+    return BOQ_TEMPLATE_V5.map(s => (!typed.has(s.no) ? s : {
+        ...s,
+        lines: s.lines.map(l => (l.type === 'item' && l.qty.kind === 'input' ? { ...l, qty: { kind: 'input', value: 0 } } : l)),
+    }));
+})();
+
+/** Drops the quantity the user typed on the BOQ page for lines that must be 0 (skipped work). */
+function withoutQtyOverrides(overrides: Project['boqOverrides'], lines: Set<BoqLineKey>): Project['boqOverrides'] {
+    if (lines.size === 0) return overrides;
+    return Object.fromEntries(Object.entries(overrides).flatMap(([key, ov]) => {
+        if (!lines.has(key)) return [[key, ov]];
+        const rest = Object.fromEntries(Object.entries(ov).filter(([f]) => f !== 'qty')) as BoqLineOverride;
+        return Object.keys(rest).length === 0 ? [] : [[key, rest]];
+    }));
 }
 
 export interface ProjectResult {
@@ -115,15 +141,17 @@ export function computeProject(project: Project, calculators?: CalculatorDef[]):
     const slots: SlotLines = {};
     const slotRow = new Map<string, number>();
     for (const s of BOQ_TEMPLATE_V5) for (const l of s.lines) if (l.type === 'slot') slotRow.set(`${l.calc}.${l.slot}`, l.excelRow);
-    const skipped = skippedCalculators(project);
+    const skipped = skippedWork(project);
+    // Lines forced to quantity 0 by "ไม่มีงานนี้" (a quantity typed on the BOQ page must not bring them back).
+    const zeroed = new Set(skipped.lines);
 
     for (const def of calculatorsInOrder(calculators)) {
         const input = calculatorInput(project, def);
         const ctx = { outputs: (id: string) => calcOutputs[id] };
-        if (skipped.has(def.id)) {
+        if (skipped.calcs.has(def.id)) {
             // "ไม่มีงานนี้": every output 0, every BOQ line it fills gets quantity 0, its slots stay empty.
             calcOutputs[def.id] = Object.fromEntries(Object.keys(def.compute(input, ctx)).map(k => [k, 0]));
-            for (const link of def.boqLinks) linked[link.line] = { ...linked[link.line], qty: 0 };
+            for (const link of def.boqLinks) zeroed.add(link.line);
             for (const slot of Object.keys(def.boqSlots?.(input, ctx) ?? {})) slots[`${def.id}.${slot}`] = [];
             continue;
         }
@@ -143,7 +171,14 @@ export function computeProject(project: Project, calculators?: CalculatorDef[]):
         }
     }
 
-    const boq = computeBoq({ sections: BOQ_TEMPLATE_V5, overrides: project.boqOverrides, linked, slots });
+    for (const line of zeroed) linked[line] = { ...linked[line], qty: 0 };
+
+    const boq = computeBoq({
+        sections: project.start === 'blank' ? BLANK_TEMPLATE_V5 : BOQ_TEMPLATE_V5,
+        overrides: withoutQtyOverrides(project.boqOverrides, zeroed),
+        linked,
+        slots,
+    });
     const planning = computePlanning(projectPlanningInput(project), boq);
     return { calcOutputs, boq, planning };
 }

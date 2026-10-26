@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { evaluateNumber } from './evaluate';
 
 /** Excel-like cell colours: yellow = user input, green = formula. */
@@ -61,8 +61,11 @@ export function NumberCell({
     // Text the cell started with on focus: leaving the cell without typing commits nothing, so a value that
     // comes from a calculator (green) is not frozen into an override just by clicking through it.
     const [initial, setInitial] = useState<string | null>(null);
+    // Escape blurs the cell in the same event, before the cleared draft renders: this flag stops that blur committing.
+    const cancelled = useRef(false);
 
     const commit = () => {
+        if (cancelled.current) { cancelled.current = false; setText(null); return; }
         if (text === null) return;
         if (text === initial) { setText(null); return; }
         const trimmed = text.replace(/,/g, '').replace(/%$/, '').trim();
@@ -91,7 +94,7 @@ export function NumberCell({
             onBlur={commit}
             onKeyDown={(e) => {
                 if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                if (e.key === 'Escape') { setText(null); (e.target as HTMLInputElement).blur(); }
+                if (e.key === 'Escape') { cancelled.current = true; setText(null); (e.target as HTMLInputElement).blur(); }
             }}
             style={{
                 width: '100%', minWidth: 0, textAlign: 'right', border: '1px solid transparent',
@@ -114,7 +117,9 @@ interface TextCellProps {
 export function TextCell({ value, onCommit, edited, placeholder, ariaLabel }: TextCellProps) {
     // Draft text only exists once the user types (onChange), so focusing and leaving commits nothing.
     const [text, setText] = useState<string | null>(null);
+    const cancelled = useRef(false);
     const commit = () => {
+        if (cancelled.current) { cancelled.current = false; setText(null); return; }
         if (text === null) return;
         if (text === value) { setText(null); return; }
         onCommit(text.trim() === '' ? undefined : text);
@@ -129,7 +134,7 @@ export function TextCell({ value, onCommit, edited, placeholder, ariaLabel }: Te
             onBlur={commit}
             onKeyDown={(e) => {
                 if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                if (e.key === 'Escape') { setText(null); (e.target as HTMLInputElement).blur(); }
+                if (e.key === 'Escape') { cancelled.current = true; setText(null); (e.target as HTMLInputElement).blur(); }
             }}
             style={{
                 width: '100%', minWidth: 0, border: '1px solid transparent', background: 'transparent',

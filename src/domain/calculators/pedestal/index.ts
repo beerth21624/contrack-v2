@@ -194,8 +194,9 @@ export const pedestal = defineCalculator<PedestalInput>({
                 const v = pedestalRow(r, footingRefFor(fo, r.footing)).concrete;
                 if (r.footing >= 0 && r.footing < footingRows) onFooting[r.footing] = (onFooting[r.footing] ?? 0) + v;
             }
-            onFooting.forEach((v, i) => { out[footingBackfillKey(i)] = (fo[footingRowKey(i, 'backfillGross')] ?? 0) - v; });
-            out.backfill = (fo.backfillGross ?? 0) - t.concrete;   // Footing!AI6 → sheet 24 Q6 → BOQ E68
+            // Excel lets backfill go negative (pedestals with no footing pit); no soil can be negative (D1).
+            onFooting.forEach((v, i) => { out[footingBackfillKey(i)] = Math.max(0, (fo[footingRowKey(i, 'backfillGross')] ?? 0) - v); });
+            out.backfill = Math.max(0, (fo.backfillGross ?? 0) - t.concrete);   // Footing!AI6 → sheet 24 Q6 → BOQ E68
         }
         return out;
     },

@@ -123,3 +123,45 @@ describe('level money', () => {
         expect(sum).toBeLessThanOrEqual(result.boq.constructionTotal + result.boq.preConstructionTotal + 1e-6);
     });
 });
+
+describe('review fixes', () => {
+    it('a quantity typed on the BOQ page does not survive "ไม่มีงานนี้"', () => {
+        const base = createProject();
+        const level = getLevel('precast-slab');
+        if (!level) throw new Error('level missing');
+        const withEdit = { ...base, boqOverrides: { R97: { qty: 40, mat: 123 } } };
+        const skipped = computeProject({ ...withEdit, journey: { 'precast-slab': 'skipped' } });
+        expect(levelTotal(level, skipped)).toBe(0);
+        const r97 = skipped.boq.sections.flatMap(s => s.rows).find(r => r.key === 'R97');
+        expect(r97?.type === 'item' ? r97.qty : undefined).toBe(0);
+        // Other edits on the line (price) are kept for when the work comes back.
+        expect(r97?.type === 'item' ? r97.matUnit : undefined).toBe(123);
+    });
+
+    it('a blank project has no quantity on rows typed directly in a level (column plates)', () => {
+        const result = computeProject(createProject('blank'));
+        const plates = getLevel('column-plates');
+        if (!plates) throw new Error('level missing');
+        expect(levelTotal(plates, result)).toBe(0);
+        // The sample still has the Excel plate count.
+        expect(levelTotal(plates, computeProject(createProject()))).toBeGreaterThan(0);
+    });
+
+    it('every BOQ row with money belongs to some level (level totals add up to the BOQ)', () => {
+        for (const project of [createProject(), createProject('blank')]) {
+            const result = computeProject(project);
+            const sum = JOURNEY_LEVELS.reduce((s, l) => s + levelTotal(l, result), 0);
+            expect(sum).toBeCloseTo(result.boq.constructionTotal + result.boq.preConstructionTotal, 4);
+        }
+    });
+
+    it('backfill never goes negative (pedestals without a footing pit)', () => {
+        const project = createProject('blank');
+        const pedestal = CALCULATORS.find(c => c.id === 'pedestal');
+        if (!pedestal?.blank) throw new Error('pedestal blank missing');
+        const input = pedestal.blank() as { rows: unknown[] };
+        expect(input.rows).toEqual([]);
+        const result = computeProject(project);
+        expect(result.calcOutputs.pedestal?.backfill ?? 0).toBeGreaterThanOrEqual(0);
+    });
+});

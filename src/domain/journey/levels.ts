@@ -22,6 +22,8 @@ export interface JourneyLevel {
     sections: number[];
     /** The work may not exist in every project (e.g. no demolition); the level can be marked "ไม่มีงานนี้". */
     optional?: boolean;
+    /** BOQ lines that belong to the level although its calculator does not fill them (typed lump sums). */
+    extraRows?: string[];
 }
 
 export interface JourneyPhase {
@@ -60,7 +62,7 @@ export const JOURNEY: JourneyPhase[] = [
                 planHint: 'จำนวนห้องพักคนงาน ห้องน้ำ ห้องอาบน้ำ และสโตร์ที่ต้องสร้างในไซต์',
             },
             {
-                id: 'layout', title: 'วางผัง / ปักหมุด', kind: calc('layout'), sections: [4],
+                id: 'layout', title: 'วางผัง / ปักหมุด', kind: calc('layout'), sections: [4], extraRows: ['R32'],
                 planHint: 'ดูแปลนฐานราก: นับจุดตั้งผังตามแนวเสา และจำนวนหมุด (ปกติเท่าจำนวนเสาเข็ม)',
             },
         ],
@@ -124,7 +126,7 @@ export const JOURNEY: JourneyPhase[] = [
                 planHint: 'ดูแปลนหลังคาและรูปด้าน: ขนาดหลังคาแต่ละด้าน ความชัน และความยาวเชิงชาย',
             },
             {
-                id: 'roof-structure', title: 'โครงหลังคา', kind: calc('roof-structure'), sections: [15],
+                id: 'roof-structure', title: 'โครงหลังคา', kind: calc('roof-structure'), sections: [15], extraRows: ['R158'],
                 planHint: 'ดูแปลนโครงหลังคา: ขนาดเหล็กจันทัน แป อะเส และความยาวแต่ละชิ้น',
             },
         ],
