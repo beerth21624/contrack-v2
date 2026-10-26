@@ -2,7 +2,7 @@
 // Abstract classes double as Nest DI tokens (type-safe, no string tokens). A module depends only on these
 // abstractions; the module that owns the data provides the implementation (exported from its Nest module).
 import type {
-    AssignmentUpdatedEvent, DocUpdatedEvent, ProjectUpdatedEvent, Role,
+    AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDocDto, ProjectUpdatedEvent, Role,
 } from '@contrack/contract';
 import type { ProjectId, UserId, WorkspaceId } from '../domain/ids';
 
@@ -61,6 +61,14 @@ export abstract class UserDirectory {
 /** Provided by projects: which workspace a project belongs to (undefined when it does not exist / is deleted). */
 export abstract class ProjectDirectory {
     abstract workspaceOf(projectId: ProjectId): Promise<WorkspaceId | undefined>;
+}
+
+/**
+ * Provided by projects: one stored document. Lets another server instance rebuild a `doc.updated` event whose data
+ * was too large for a PostgreSQL NOTIFY payload (8 kB).
+ */
+export abstract class ProjectDocLookup {
+    abstract find(projectId: ProjectId, docKey: string): Promise<ProjectDocDto | undefined>;
 }
 
 /** Provided by realtime: fan-out to everyone viewing a project. Called only after the transaction committed. */

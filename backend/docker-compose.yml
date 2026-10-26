@@ -1,0 +1,23 @@
+# Local PostgreSQL for development and integration tests.
+#   docker compose up -d        → db on localhost:5432 (databases: contrack, contrack_test)
+#   docker compose down -v      → stop and wipe
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: contrack
+      POSTGRES_PASSWORD: contrack
+      POSTGRES_DB: contrack
+    ports:
+      - "5432:5432"
+    volumes:
+      - contrack-pg:/var/lib/postgresql/data
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U contrack -d contrack"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  contrack-pg:
