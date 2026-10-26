@@ -9,6 +9,13 @@ export const REBAR_KG_PER_M: Record<RebarSize, number> = {
     RB6: 0.222, RB9: 0.499, DB12: 0.888, DB16: 1.58, DB20: 2.47,
 };
 
+export const isRebarSize = (size: string): size is RebarSize => (REBAR_SIZES as readonly string[]).includes(size);
+
+/** Excel `SWITCH(size,"RB6",0.222,"RB9",0.499,"DB12",0.888,"DB16",1.58,"DB20",2.47,0)` — 0 for blank/unknown. */
+export function kgPerMetre(size: string): number {
+    return isRebarSize(size) ? REBAR_KG_PER_M[size] : 0;
+}
+
 /**
  * BOQ waste per bar size. Excel: RB6 6 %, RB9 9 %, DB12 12 % (roof beam has RB6/DB12 swapped — fixed, D1);
  * DB16/DB20 have no example → 12 % like DB12 (D12).

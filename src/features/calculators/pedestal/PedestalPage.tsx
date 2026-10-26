@@ -15,7 +15,7 @@ import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
 import {
     GROUP_COLORS, StructureTable, TotalValue, type StructColumn, type StructGroup,
-} from '../footing/StructureTable';
+} from '@/components/sheet/StructureTable';
 
 const sizeOptions = PEDESTAL_BAR_SIZES.map(s => ({ value: s }));
 

@@ -1,7 +1,7 @@
 // Sheet "พื้นหล่อในที่_S" (Excel v5 sheet 28) → BOQ (Home) section 9 (rows 88–94).
 // Spec: docs/excel-spec/02-structure-steps-06-13.md §2.4 (and §1.2 row 9 of the summary sheet 24).
 import { defineCalculator } from '../types';
-import { rebarSlotRows, REBAR_KG_PER_M, REBAR_SIZES } from '../../boq/slots';
+import { rebarSlotRows, REBAR_SIZES, kgPerMetre } from '../../boq/slots';
 
 /** One slab panel = one row of the sheet (rows 8–24; D5: unlimited). */
 export interface SlabRow {
@@ -22,15 +22,11 @@ export interface SlabOnGradeInput {
 
 /** Excel dropdown lists of the sheet. */
 export const SLAB_NAMES = ['S1', 'S2'] as const;
-/** Excel M8:M24 list — DB20 is not offered on this sheet (the SWITCH still knows it). */
 export const SLAB_BAR_SIZES = ['RB6', 'RB9', 'DB12', 'DB16'] as const;
 export const SLAB_LAYERS = [1, 2] as const;
 
 const num = (v: number) => (Number.isFinite(v) ? v : 0);
 
-/** Excel SWITCH(size, "RB6",0.222, …, 0): kg per metre, 0 for anything else. */
-const KG_PER_M: Partial<Record<string, number>> = REBAR_KG_PER_M;
-const kgPerM = (size: string): number => KG_PER_M[size] ?? 0;
 
 export interface SlabRowCalc {
     backfill: number;   // H ปริมาณ (ลบ.ม.)
@@ -52,7 +48,7 @@ export function slabRowCalc(r: SlabRow): SlabRowCalc {
         sand: area * num(r.sandThickness) * (1 + 0.25),    // J = (C*D)*I*(100%+25%)
         plastic: area,                                     // K = C*D
         barLength,
-        weight: barLength * kgPerM(r.barSize),             // Q = IFERROR(P*SWITCH(M,…),0)
+        weight: barLength * kgPerMetre(r.barSize),             // Q = IFERROR(P*SWITCH(M,…),0)
         concrete: area * num(r.thickness),                 // S = C*D*E
     };
 }

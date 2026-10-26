@@ -12,7 +12,7 @@ import { useProjectStore } from '@/store/project-store';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { GROUP_COLORS, StructureTable, TotalValue, type StructColumn, type StructGroup } from './StructureTable';
+import { GROUP_COLORS, StructureTable, TotalValue, type StructColumn, type StructGroup } from '@/components/sheet/StructureTable';
 
 const sizeOptions = FOOTING_BAR_SIZES.map(s => ({ value: s }));
 

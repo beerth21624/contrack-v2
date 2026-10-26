@@ -8,7 +8,7 @@ import { EditableTable, type SheetColumn } from '@/components/sheet/EditableTabl
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { RebarSummary } from '../roof-beam/RebarSummary';
+import { RebarSummary } from '@/components/sheet/RebarSummary';
 
 const sizeOptions = STAIR_BAR_SIZES.map(value => ({ value }));
 const nameOptions = STAIR_NAMES.map(value => ({ value }));

@@ -3,7 +3,7 @@
 // Spec: docs/excel-spec/02-structure-steps-06-13.md §2.6 (and §1.2 row 11 of the summary sheet 24).
 import { defineCalculator } from '../types';
 import { roundUp } from '../../boq/engine';
-import { rebarSlotRows, REBAR_KG_PER_M, REBAR_SIZES } from '../../boq/slots';
+import { rebarSlotRows, REBAR_SIZES, kgPerMetre } from '../../boq/slots';
 
 /** One column type = one row of the sheet (rows 8–17; D5: unlimited). */
 export interface ColumnRow {
@@ -29,9 +29,6 @@ export const COLUMN_BAR_SIZES = ['RB6', 'RB9', 'DB12', 'DB16', 'DB20'] as const;
 
 const num = (v: number) => (Number.isFinite(v) ? v : 0);
 
-/** Excel SWITCH(size, "RB6",0.222, …, 0): kg per metre, 0 for anything else. */
-const KG_PER_M: Partial<Record<string, number>> = REBAR_KG_PER_M;
-const kgPerM = (size: string): number => KG_PER_M[size] ?? 0;
 
 export interface ColumnRowCalc {
     mainBarLength: number;        // J ความยาว /เส้น (ม.)
@@ -61,11 +58,11 @@ export function columnRowCalc(r: ColumnRow): ColumnRowCalc {
     return {
         mainBarLength,
         mainTotalLength,
-        mainWeight: mainTotalLength * kgPerM(r.mainSize),      // L = K*SWITCH(H,…)
+        mainWeight: mainTotalLength * kgPerMetre(r.mainSize),      // L = K*SWITCH(H,…)
         stirrupCount,
         stirrupLength,
         stirrupTotalLength,
-        stirrupWeight: (stirrupTotalLength ?? 0) * kgPerM(r.stirrupSize), // R = IFERROR(Q*SWITCH(M,…), 0)
+        stirrupWeight: (stirrupTotalLength ?? 0) * kgPerMetre(r.stirrupSize), // R = IFERROR(Q*SWITCH(M,…), 0)
         formwork: n * (2 * (w + d)) * h,                       // T = C*(2*(D+E))*F
         concrete: n * (w * d) * h,                             // V = C*(D*E)*F
     };

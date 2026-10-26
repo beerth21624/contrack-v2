@@ -8,7 +8,10 @@
 // footing → pedestal: this calculator outputs the backfill *before* the pedestal volume
 // (`backfillGross`, per row and in total) and the pedestal calculator subtracts its concrete and
 // outputs the final `backfill` that feeds R68.
-import { REBAR_KG_PER_M, REBAR_SIZES, rebarSlotRows, type RebarSize } from '../../boq/slots';
+import { REBAR_SIZES, rebarSlotRows, type RebarSize, kgPerMetre } from '../../boq/slots';
+
+/** Re-exported for the pedestal sheet. */
+export { kgPerMetre } from '../../boq/slots';
 import { defineCalculator } from '../types';
 
 export interface FootingRow {
@@ -45,10 +48,6 @@ export const SAND_FACTOR = 1.25;
 
 const num = (v: number) => (Number.isFinite(v) ? v : 0);
 
-/** Excel SWITCH(size,"RB6",0.222,…,0): kg per metre, 0 for a blank/unknown size. */
-export function kgPerMetre(size: string): number {
-    return (REBAR_KG_PER_M as Record<string, number | undefined>)[size] ?? 0;
-}
 
 export type RebarWeights = Record<RebarSize, number>;
 

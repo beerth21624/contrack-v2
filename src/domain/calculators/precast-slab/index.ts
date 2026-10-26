@@ -5,7 +5,7 @@
 // Spec: docs/excel-spec/02-structure-steps-06-13.md §2.5 and §3 (rows 74–75, 96–104).
 import { defineCalculator } from '../types';
 import { roundUp } from '../../boq/engine';
-import { REBAR_KG_PER_M, REBAR_SIZES, rebarSlotRows, type RebarSize } from '../../boq/slots';
+import { REBAR_SIZES, rebarSlotRows, type RebarSize, kgPerMetre, isRebarSize } from '../../boq/slots';
 
 export interface PrecastPanelRow {
     width: number;        // B กว้าง (ม.)
@@ -26,10 +26,7 @@ export const PS_BAR_SIZES = ['RB6', 'RB9', 'DB12', 'DB16', 'DB20'] as const;
 
 const num = (v: number) => (Number.isFinite(v) ? v : 0);
 
-const isRebarSize = (s: string): s is RebarSize => (REBAR_SIZES as readonly string[]).includes(s);
 
-/** Excel `SWITCH(size,"RB6",0.222,"RB9",0.499,"DB12",0.888,"DB16",1.58,"DB20",2.47,0)` (kg/m). */
-const kgPerMetre = (size: string) => (isRebarSize(size) ? REBAR_KG_PER_M[size] : 0);
 
 export interface PrecastPanelResult {
     area: number;                  // E = B*C แผ่นพื้น (ตร.ม)

@@ -2,7 +2,7 @@
 // Spec: docs/excel-spec/02-structure-steps-06-13.md §2.7, §3 (rows 114–124), oddities 1–4.
 // Excel goes through sheet 24 (ตารางสรุปวัสดุงานโครงสร้าง row 12); the app links straight to the BOQ rows.
 import { roundUp } from '../../boq/engine';
-import { REBAR_KG_PER_M, REBAR_SIZES, rebarSlotRows, type RebarSize } from '../../boq/slots';
+import { REBAR_SIZES, rebarSlotRows, type RebarSize, kgPerMetre, isRebarSize } from '../../boq/slots';
 import { defineCalculator } from '../types';
 
 /** Bar-size dropdown of G8:G21 / L8:L21. */
@@ -27,9 +27,6 @@ export interface RoofBeamInput {
 }
 
 const num = (v: number) => (Number.isFinite(v) ? v : 0);
-const isRebarSize = (s: string): s is RebarSize => (REBAR_SIZES as readonly string[]).includes(s);
-/** Excel SWITCH(size, "RB6", 0.222, …, 0). */
-const kgPerM =(size: string) => (isRebarSize(size) ? REBAR_KG_PER_M[size] : 0);
 
 export interface RoofBeamRowResult {
     mainLength: number;            // I ความยาว รวม (ม.) = H × E
@@ -56,11 +53,11 @@ export function roofBeamRow(r: RoofBeamRow): RoofBeamRowResult {
     const stirrupLength = stirrupCount === null ? null : stirrupCount * stirrupPerimeter;
     return {
         mainLength,
-        mainKg: mainLength * kgPerM(r.mainSize),
+        mainKg: mainLength * kgPerMetre(r.mainSize),
         stirrupCount,
         stirrupPerimeter,
         stirrupLength,
-        stirrupKg: (stirrupLength ?? 0) * kgPerM(r.stirrupSize),
+        stirrupKg: (stirrupLength ?? 0) * kgPerMetre(r.stirrupSize),
         props: roundUp(e / 0.6),
         formwork: 2 * d * e + c * e,
         formworkExcel: 2 * d * e + c,

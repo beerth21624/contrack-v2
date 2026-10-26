@@ -2,7 +2,7 @@
 // Spec: docs/excel-spec/02-structure-steps-06-13.md §2.8, §3 (rows 125–134), oddities 3 and 5.
 // Excel goes through sheet 24 (ตารางสรุปวัสดุงานโครงสร้าง row 13); the app links straight to the BOQ rows.
 import { roundUp } from '../../boq/engine';
-import { REBAR_KG_PER_M, REBAR_SIZES, rebarSlotRows, type RebarSize } from '../../boq/slots';
+import { REBAR_SIZES, rebarSlotRows, type RebarSize, kgPerMetre, isRebarSize } from '../../boq/slots';
 import { defineCalculator } from '../types';
 
 /** Bar-size dropdown of G8:G24 (Excel leaves DB20 out). */
@@ -28,9 +28,6 @@ export interface RoofSlabInput {
 }
 
 const num = (v: number) => (Number.isFinite(v) ? v : 0);
-const isRebarSize = (s: string): s is RebarSize => (REBAR_SIZES as readonly string[]).includes(s);
-/** Excel SWITCH(size, "RB6", 0.222, …, 0). */
-const kgPerM = (size: string) => (isRebarSize(size) ? REBAR_KG_PER_M[size] : 0);
 
 export interface RoofSlabRowResult {
     /** J ยาวรวม (ม.) = (C·D / I) × 2 × H — IFERROR(…, "0") gives 0 with no spacing. */
@@ -48,7 +45,7 @@ export function roofSlabRow(r: RoofSlabRow): RoofSlabRowResult {
     const barLength = spacing > 0 ? (area / spacing) * 2 * num(r.layers) : 0;
     return {
         barLength,
-        kg: barLength * kgPerM(r.size),
+        kg: barLength * kgPerMetre(r.size),
         props: roundUp(area / 0.6),
         formwork: area,
         concrete: area * num(r.thickness),

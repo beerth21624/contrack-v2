@@ -4,7 +4,7 @@
 // The formulas are the tradesman's rules of thumb and are ported as they are (D1): 1.2 m anchorage on the
 // waist main bars, 2 temperature bars per step (spacing AB unused), step-side formwork 2·I·G, props from area.
 import { roundUp } from '../../boq/engine';
-import { REBAR_KG_PER_M, REBAR_SIZES, rebarSlotRows, type RebarSize } from '../../boq/slots';
+import { REBAR_SIZES, rebarSlotRows, type RebarSize, kgPerMetre, isRebarSize } from '../../boq/slots';
 import { defineCalculator } from '../types';
 
 /** Bar-size dropdown of L/Q/V/AA 8:17. */
@@ -39,9 +39,6 @@ export interface StairInput {
 }
 
 const num = (v: number) => (Number.isFinite(v) ? v : 0);
-const isRebarSize = (s: string): s is RebarSize => (REBAR_SIZES as readonly string[]).includes(s);
-/** Excel SWITCH(size, "RB6", 0.222, …, 0). */
-const kgPerM = (size: string) => (isRebarSize(size) ? REBAR_KG_PER_M[size] : 0);
 /** Excel IFERROR(ROUNDUP(a / s, 0), "_") → null where Excel shows "_". */
 const barCount = (a: number, spacing: number) => (spacing > 0 ? roundUp(a / spacing) : null);
 
@@ -70,7 +67,7 @@ export interface StairRowResult {
 }
 
 const group = (count: number | null, length: number | null, size: string): StairBarGroup =>
-    ({ count, length, kg: (length ?? 0) * kgPerM(size) });
+    ({ count, length, kg: (length ?? 0) * kgPerMetre(size) });
 
 export function stairRow(r: StairRow): StairRowResult {
     const c = num(r.width), d = num(r.waist), e = num(r.rise), f = num(r.run);
