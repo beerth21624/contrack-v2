@@ -59,7 +59,7 @@ export default function FootingPage() {
 
     const groups: StructGroup<FootingRow>[] = [
         {
-            title: 'ข้อมูลงานฐานราก Footing', color: GROUP_COLORS.info,
+            title: 'ข้อมูลงานฐานราก', color: GROUP_COLORS.info,
             columns: [
                 {
                     kind: 'select', key: 'name', title: 'ชื่อ ฐานราก', width: 76,
@@ -152,7 +152,7 @@ export default function FootingPage() {
 
     return (
         <CalculatorShell def={footing} result={result} isDefault={isDefault} onReset={reset} aside={summary}>
-            <SheetCard title="ข้อมูลงานฐานราก Footing">
+            <SheetCard title="ข้อมูลงานฐานราก">
                 <StructureTable<FootingRow>
                     rows={input.rows}
                     groups={groups}

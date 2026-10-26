@@ -6,15 +6,15 @@
   "siteAddressPh": "[ที่อยู่โครงการ]",
   "ownerName": "👤 เจ้าของบ้าน",
   "ownerNamePh": "[ชื่อเจ้าของบ้าน]",
-  "revision": "📝 Revision",
-  "documentDate": "📅 Date",
-  "preparedBy": "👤 Prepared By",
+  "revision": "📝 ฉบับแก้ไข",
+  "documentDate": "📅 วันที่",
+  "preparedBy": "👤 ผู้จัดทำ",
   "preparedByPh": "[ผู้จัดทำ / บริษัท]",
   "legendInput": "ช่องสีเหลือง = กรอกเอง",
   "legendCalc": "ช่องสีเขียว = คำนวณ / ลิงก์จากเครื่องคำนวณ",
   "legendEdited": "ตัวหนา = แก้จากค่าตั้งต้น",
-  "colNo": "No.",
-  "colStep": "ขั้นตอน",
+  "colNo": "หมวด",
+  "colStep": "ลำดับ",
   "colDesc": "รายการ",
   "colQty": "ปริมาณ",
   "colUnit": "หน่วย",
@@ -36,5 +36,6 @@
   "resetSection": "คืนค่าตั้งต้นหมวดนี้",
   "search": "ค้นหารายการ",
   "expandAll": "ขยายทั้งหมด",
-  "collapseAll": "ย่อทั้งหมด"
+  "collapseAll": "ย่อทั้งหมด",
+  "documentDatePh": "วว/ดด/ปปปป"
 }

@@ -81,7 +81,7 @@ function RoofingSheet() {
                 <div className="max-w-lg">
                     <InputNumberField label="พื้นที่ตามแนวราบ (ตร.ม)" value={input.planArea} unit="ตร.ม."
                         onChange={v => update({ planArea: v })} />
-                    <InputNumberField label="ความลาดเอียงหลังคา Slope (องศา)" value={input.slopeDeg} unit="องศา"
+                    <InputNumberField label="ความลาดเอียงหลังคา (องศา)" value={input.slopeDeg} unit="องศา"
                         onChange={v => update({ slopeDeg: v })} />
                     <CalcField label="พื้นที่ตามแนวลาดเอียง (ตร.ม)" value={outputs.slopeArea} unit="ตร.ม." strong />
                 </div>

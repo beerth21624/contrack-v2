@@ -1,6 +1,6 @@
 'use client';
 
-// ─── "ออก Revision" + the list of revisions of the open cloud project (nothing in guest mode) ───
+// ─── "ออกฉบับแก้ไข" + the list of revisions of the open cloud project (nothing in guest mode) ───
 // A revision is a frozen copy of the whole project (what was sent to the owner). Each one can be exported again.
 import { useState } from 'react';
 import { App, Button, Drawer, Empty, Form, Input, Modal, Space, Spin, Tag } from 'antd';
@@ -52,15 +52,15 @@ export function RevisionButtons({ size = 'middle' }: { size?: 'small' | 'middle'
         <>
             <Space wrap size={8}>
                 {can(cloud.role, 'revisions.create') && (
-                    <Button size={size} icon={<SnippetsOutlined />} onClick={() => setCreateOpen(true)}>ออก Revision</Button>
+                    <Button size={size} icon={<SnippetsOutlined />} onClick={() => setCreateOpen(true)}>ออกฉบับแก้ไข</Button>
                 )}
                 <Button size={size} type="text" icon={<HistoryOutlined />} onClick={() => setListOpen(true)}>
-                    Revision ทั้งหมด{count > 0 ? ` (${String(count)})` : ''}
+                    ฉบับแก้ไขทั้งหมด{count > 0 ? ` (${String(count)})` : ''}
                 </Button>
             </Space>
             <CreateRevisionModal open={createOpen} projectId={cloud.projectId} used={(revisions.data ?? []).map(r => r.label)}
                 onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); setListOpen(true); }} />
-            <Drawer open={listOpen} onClose={() => setListOpen(false)} title="Revision ที่ออกแล้ว" size={420}>
+            <Drawer open={listOpen} onClose={() => setListOpen(false)} title="ฉบับแก้ไขที่ออกแล้ว" size={420}>
                 <RevisionList projectId={cloud.projectId} workspaceId={cloud.workspaceId} />
             </Drawer>
         </>
@@ -90,18 +90,18 @@ function CreateRevisionModal({ open, projectId, used, onClose, onCreated }: {
     };
 
     return (
-        <Modal open={open} onCancel={onClose} destroyOnHidden title="ออก Revision" okText="ออก Revision" cancelText="ยกเลิก"
+        <Modal open={open} onCancel={onClose} destroyOnHidden title="ออกฉบับแก้ไข" okText="ออกฉบับแก้ไข" cancelText="ยกเลิก"
             confirmLoading={create.isPending} okButtonProps={{ disabled: pending > 0 }}
             onOk={() => { void submit().catch(() => undefined); }}>
             <p className="text-[13px] text-gray-600">
                 เก็บ BOQ ตอนนี้ไว้เป็นฉบับที่ส่งให้เจ้าของบ้าน แก้ไม่ได้ภายหลัง (โครงการยังแก้ต่อได้ตามปกติ)
             </p>
             {pending > 0 && (
-                <p className="text-[13px] text-orange-600">รอบันทึกข้อมูลล่าสุดขึ้น cloud ให้ครบก่อน ({pending} รายการ)</p>
+                <p className="text-[13px] text-orange-600">รอบันทึกข้อมูลล่าสุดขึ้นคลาวด์ ให้ครบก่อน ({pending} รายการ)</p>
             )}
             <Form form={form} layout="vertical" requiredMark={false}
                 initialValues={{ label: nextRevisionLabel(used, headerRevision) }}>
-                <Form.Item name="label" label="ชื่อ Revision" rules={RULES.revisionLabel}>
+                <Form.Item name="label" label="ชื่อฉบับแก้ไข" rules={RULES.revisionLabel}>
                     <Input placeholder="เช่น Rev.01" autoFocus />
                 </Form.Item>
                 <Form.Item name="note" label="หมายเหตุ (ไม่บังคับ)" rules={[{ max: 2000, message: 'ยาวได้ไม่เกิน 2000 ตัวอักษร' }]}>
@@ -120,7 +120,7 @@ function RevisionList({ projectId, workspaceId }: { projectId: string; workspace
     if (revisions.isLoading) return <div className="flex justify-center p-10"><Spin /></div>;
     if (revisions.isError) return <div className="text-gray-600">{thaiErrorMessage(revisions.error)}</div>;
     const list = revisions.data ?? [];
-    if (list.length === 0) return <Empty description="ยังไม่เคยออก Revision" />;
+    if (list.length === 0) return <Empty description="ยังไม่เคยออกฉบับแก้ไข" />;
 
     const nameOf = (userId: string) => members.data?.find(m => m.userId === userId)?.displayName ?? '';
 
@@ -152,6 +152,6 @@ function RevisionExport({ projectId, revisionId }: { projectId: string; revision
     if (detail.isLoading) return <Spin size="small" />;
     if (detail.isError) return <span className="text-[12px] text-red-500">{thaiErrorMessage(detail.error)}</span>;
     const snapshot = asProjectSnapshot(detail.data?.snapshot);
-    if (!snapshot) return <span className="text-[12px] text-red-500">ข้อมูล Revision นี้เปิดไม่ได้</span>;
+    if (!snapshot) return <span className="text-[12px] text-red-500">ข้อมูลฉบับแก้ไขนี้เปิดไม่ได้</span>;
     return <BoqExportButtons project={snapshot} size="small" />;
 }

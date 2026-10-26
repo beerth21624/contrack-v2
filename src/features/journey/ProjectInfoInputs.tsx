@@ -37,7 +37,7 @@ export function ProjectInfoInputs() {
 
     return (
         <SheetCard>
-            <p className="mb-2 text-[12px] text-gray-500">ใช้เป็นหัวเอกสาร BOQ — เว้นว่างแล้วกลับมากรอกทีหลังได้</p>
+            <p className="mb-2 text-[12px] text-gray-500">เว้นว่างไว้แล้วกลับมากรอกทีหลังได้</p>
             {FIELDS.map(f => (
                 <InputTextField key={f.field} label={f.label} value={meta[f.field]} placeholder={f.placeholder}
                     onChange={v => setMeta({ [f.field]: v })} />

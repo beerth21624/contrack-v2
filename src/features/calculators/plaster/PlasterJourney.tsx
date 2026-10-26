@@ -109,24 +109,16 @@ export default function PlasterJourney() {
                             กรอกผนังในขั้นตอนก่ออิฐก่อน แล้วระบบจะคิดพื้นที่ฉาบให้อัตโนมัติ
                         </>
                     )
-                    : (
-                        <>
-                            พื้นที่ผนัง (หักประตู-หน้าต่างแล้ว):{' '}
-                            {walls.map((w, i) => (
-                                <span key={w.part}>{i > 0 && ' · '}{w.part} <b>{formatNumber(w.area)} ตร.ม.</b></span>
-                            ))}
-                        </>
-                    )}
+                    // Each wall card below shows its own area: here only where the areas come from.
+                    : <>ใช้พื้นที่ผนังที่ก่อไว้ {formatNumber(walls.length, 0)} ส่วน (หักประตู-หน้าต่างแล้ว) — ไม่ต้องกรอกซ้ำ</>}
             </FromLevel>
 
             <SheetCard title="ผนังที่ต้องฉาบ">
-                <p className="mb-3 text-[12px] text-gray-500">
-                    ตั้งไว้ตามงานทั่วไปแล้ว — เลือก &quot;ไม่ฉาบ&quot; สำหรับผนังที่ไม่ฉาบ เช่น ผนังโชว์อิฐ
-                </p>
+                <p className="mb-3 text-[12px] text-gray-500">ตั้งด้านที่ฉาบตามงานทั่วไปไว้แล้ว</p>
                 <div className="flex flex-col gap-2">{groups.map(group)}</div>
             </SheetCard>
 
-            <AdvancedSection title="ตั้งค่ารายการฉาบ" hint="เพิ่ม/ลบรายการ หรือเปลี่ยนผนังและด้านที่ฉาบ — ปกติไม่ต้องแก้">
+            <AdvancedSection title="ตั้งค่ารายการฉาบ">
                 <PlasterTable rows={input.rows} onChange={rows => update({ rows })} setRow={setRow} ctx={ctx}
                     brickNet={brickNet} structuralDefault={0} />
             </AdvancedSection>

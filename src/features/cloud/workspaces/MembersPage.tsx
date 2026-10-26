@@ -155,7 +155,7 @@ function WorkspaceSection({ workspace, onCreate }: { workspace: WorkspaceDto; on
                 return (
                     <Popconfirm title={`นำ ${m.displayName} ออกจากพื้นที่ทำงาน?`} okText="นำออก" cancelText="ยกเลิก"
                         okButtonProps={{ danger: true }} onConfirm={() => onRemove(m)}>
-                        <Button size="small" danger icon={<DeleteOutlined />}>นำออก</Button>
+                        <Button size="small" type="text" danger icon={<DeleteOutlined />}>นำออก</Button>
                     </Popconfirm>
                 );
             },
@@ -175,7 +175,7 @@ function WorkspaceSection({ workspace, onCreate }: { workspace: WorkspaceDto; on
                             <Button size="small" icon={<EditOutlined />} onClick={() => setRenameOpen(true)}>เปลี่ยนชื่อ</Button>
                         )}
                         {isCompany && can(myRole, 'workspace.delete') && (
-                            <Button size="small" danger icon={<DeleteOutlined />} onClick={onDelete}>ลบพื้นที่</Button>
+                            <Button size="small" type="text" danger icon={<DeleteOutlined />} onClick={onDelete}>ลบพื้นที่</Button>
                         )}
                     </span>
                 </div>

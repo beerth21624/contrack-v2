@@ -45,7 +45,7 @@ export default function DemolitionPage() {
                             { kind: 'label', key: 'label', title: 'รายการ', get: (r, i) => cell('label', 'ชื่อรายการ', r, i) },
                             { kind: 'label', key: 'unit', title: 'หน่วย', width: 80, get: (r, i) => cell('unit', 'หน่วย', r, i) },
                             { kind: 'number', key: 'qty', title: 'ปริมาณ', width: 100, get: r => r.qty, set: (r, v) => ({ ...r, qty: v }) },
-                            { kind: 'number', key: 'rate', title: 'Rate', width: 110, get: r => r.rate, set: (r, v) => ({ ...r, rate: v }) },
+                            { kind: 'number', key: 'rate', title: 'ค่ารื้อต่อหน่วย', width: 110, get: r => r.rate, set: (r, v) => ({ ...r, rate: v }) },
                             { kind: 'calc', key: 'total', title: 'รวม', width: 120, get: r => lineTotal(r) },
                             {
                                 kind: 'label', key: 'check', title: 'รายละเอียดที่ต้องตรวจสอบ', width: 200,
@@ -90,7 +90,7 @@ function JourneyView({ calc }: { calc: UseCalculator<DemolitionInput> }) {
         <>
             <SheetCard title="งานรื้อถอนในที่ดิน">
                 <p className="mb-3 text-[12px] text-gray-500">
-                    กรอกเฉพาะงานที่มีจริง งานที่ไม่มีปล่อยว่างไว้ — ค่ารื้อต่อหน่วยรวมค่าแรง เครื่องมือ และค่าใช้จ่ายเบื้องต้น
+                    กรอกเฉพาะงานที่มีจริง — ค่ารื้อต่อหน่วยรวมค่าแรง เครื่องมือ และค่าใช้จ่ายเบื้องต้น
                 </p>
                 <div className="flex flex-col gap-2">
                     {input.items.map((r, i) => {
@@ -128,8 +128,12 @@ function JourneyView({ calc }: { calc: UseCalculator<DemolitionInput> }) {
                 </div>
             </SheetCard>
 
+            {/* The money is มูลค่าขั้นตอนนี้ in the bottom bar; here only what is counted. */}
             <ResultSummary
-                items={total > 0 ? [{ label: 'งานรื้อถอนรวม', value: total, unit: 'บาท', digits: 0, detail: 'คิดเป็นเหมา 1 งาน' }] : []}
+                items={total > 0 ? [{
+                    label: 'งานรื้อถอน', value: input.items.filter(r => isPositive(lineTotal(r))).length, unit: 'รายการ', digits: 0,
+                    detail: 'รวมเป็นเหมา 1 งานใน BOQ',
+                }] : []}
                 empty={<>ยังไม่มีงานรื้อถอน — หากที่ดินว่างและไม่มีสิ่งที่ต้องรื้อ กด &quot;ไม่มีในโครงการนี้&quot; ด้านล่าง</>} />
         </>
     );

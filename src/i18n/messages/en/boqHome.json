@@ -36,5 +36,6 @@
   "resetSection": "Reset this section",
   "search": "Search items",
   "expandAll": "Expand all",
-  "collapseAll": "Collapse all"
+  "collapseAll": "Collapse all",
+  "documentDatePh": "dd/mm/yyyy"
 }

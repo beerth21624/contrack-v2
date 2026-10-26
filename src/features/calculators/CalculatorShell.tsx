@@ -17,7 +17,7 @@ const td = 'border border-gray-200 px-2 py-1 text-[13px]';
 const tdNum = `${td} text-right tabular-nums whitespace-nowrap`;
 
 /** The BOQ (Home) rows of the given sections, as they stand with the current input. */
-export function BoqPreview({ result, sections, highlight, highlightPrefix, title = 'ส่งเข้า BOQ (Home)' }: {
+export function BoqPreview({ result, sections, highlight, highlightPrefix, title = 'ส่งเข้า BOQ' }: {
     result: ProjectResult; sections: number[]; highlight?: Set<string>;
     /** Rows whose key starts with this (slot rows `${calcId}:…`) are highlighted too. */
     highlightPrefix?: string;
@@ -111,11 +111,11 @@ export function CalculatorShell({ def, result, isDefault, onReset, children, asi
         <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-3 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                 <Link href={`/boq#boq-section-${def.sections[0] ?? 0}`}>
-                    <Button icon={<ArrowLeftOutlined />} aria-label="กลับ BOQ (Home)" />
+                    <Button icon={<ArrowLeftOutlined />} aria-label="กลับไปหน้าสรุป BOQ" />
                 </Link>
                 <div className="min-w-0">
                     <Text className="text-[11px] font-bold tracking-widest text-orange-500 uppercase">
-                        ขั้นตอน {def.sections.join(', ')}
+                        หมวด BOQ {def.sections.join(', ')}
                     </Text>
                     <Title level={4} style={{ margin: 0 }}>{def.title}</Title>
                     <Text type="secondary" className="text-[12px]">ชีต Excel: {def.sheetName}</Text>

@@ -65,8 +65,8 @@ function Dim({ label, hint, value, onCommit, extra, note, missing }: {
     note?: string; missing?: boolean;
 }) {
     return (
-        <PlanField label={label} hint={hint} note={note} missing={missing}>
-            <span className={`block w-[120px] rounded ${missing ? 'ring-1 ring-red-400' : ''}`}>
+        <PlanField label={label} hint={hint} note={note}>
+            <span className={`block w-[120px] rounded ${missing ? 'ring-1 ring-red-300' : ''}`}>
                 <OptionalNumberCell value={value} ariaLabel={label} onCommit={onCommit} />
             </span>
             {extra}

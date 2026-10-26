@@ -131,7 +131,7 @@ export default function DoorWindowJourney() {
                         <JText wide label="รหัส-รายการ (ตามตารางในแบบ)" value={r.name} placeholder={b.placeholder}
                             onChange={name => setRow(block, i, { name })} />
                     </div>
-                    <PlanField label="วัสดุบาน" missing={missing.has('วัสดุบาน')}>
+                    <PlanField label="วัสดุบาน">
                         <ChoiceButtons ariaLabel="วัสดุบาน" value={r.type.trim() === '' ? undefined : r.type.trim()} options={TYPE_CHOICES}
                             onChange={type => setRow(block, i, { type })} />
                     </PlanField>
@@ -143,12 +143,12 @@ export default function DoorWindowJourney() {
                     <PlanNumber label="สูง" unit="ม." value={r.height} presets={b.heights} presetFormat={v => v.toFixed(1)}
                         range={b.heightRange} missing={missing.has('ความสูง')}
                         onChange={height => setRow(block, i, { height })} />
-                    <PlanField className="sm:col-span-2" label="ติดตั้งที่ผนัง" missing={missing.has('ผนังที่ติดตั้ง')}>
+                    <PlanField className="sm:col-span-2" label="ติดตั้งที่ผนัง">
                         <ChoiceButtons ariaLabel="ติดตั้งที่ผนัง" size="small" options={WALL_PART_CHOICES}
                             value={r.wallPart.trim() === '' ? undefined : r.wallPart.trim()}
                             onChange={wallPart => setRow(block, i, { wallPart })} />
                     </PlanField>
-                    <PlanField className="sm:col-span-2" label="ชนิดผนัง" missing={missing.has('ชนิดผนัง')}>
+                    <PlanField className="sm:col-span-2" label="ชนิดผนัง">
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
                             <ChoiceButtons ariaLabel="ชนิดผนัง" size="small" options={WALL_CHOICES}
                                 value={r.brick.trim() === '' ? undefined : r.brick.trim()}
@@ -191,7 +191,7 @@ export default function DoorWindowJourney() {
             </ul>
 
             {all.length > 0 && (
-                <AdvancedSection title="ราคาประตู-หน้าต่าง" hint="ราคาตั้งต้น แก้เฉพาะเมื่อมีราคาจริง">
+                <AdvancedSection title="ราคาประตู-หน้าต่าง">
                     {(['doors', 'windows'] as const).filter(block => input[block].length > 0).map(block => (
                         <div key={block} className="mb-3">
                             <div className="font-semibold text-[13px] text-gray-700 mb-1">{BLOCKS[block].title}</div>

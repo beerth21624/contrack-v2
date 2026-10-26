@@ -70,7 +70,7 @@ export function PrecastSlabJourney({ input, outputs, onChange }: {
 
             <AddButton label="เพิ่มช่วงถัดไป" onClick={add} />
 
-            <AdvancedSection title="เหล็กล็อคหัวแผ่น และคอนกรีตทับหน้า" hint="ค่ามาตรฐาน ไม่ต้องแก้ก็ได้">
+            <AdvancedSection title="เหล็กล็อคหัวแผ่น และคอนกรีตทับหน้า">
                 <EditableTable<PrecastPanelRow>
                     rows={rows}
                     onChange={onChange}
@@ -98,7 +98,7 @@ export function PrecastSlabJourney({ input, outputs, onChange }: {
             <ResultSummary
                 items={[
                     { label: 'พื้นสำเร็จรูป', value: outputs.area ?? 0, unit: 'ตร.ม.' },
-                    { label: 'คอนกรีตทับหน้า', value: outputs.concrete ?? 0, unit: 'ลบ.ม.', digits: 3 },
+                    { label: 'คอนกรีตทับหน้า', value: outputs.concrete ?? 0, unit: 'ลบ.ม.' },
                 ]}
                 minor={[
                     { label: 'ไวร์เมช', value: outputs.wiremesh ?? 0, unit: 'ตร.ม.' },

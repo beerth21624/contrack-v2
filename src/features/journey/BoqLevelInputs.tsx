@@ -115,9 +115,8 @@ export function BoqLevelInputs({ sections }: { sections: number[] }) {
                 </div>
             </AdvancedSection>
 
-            <ResultSummary
-                items={total > 0 ? [{ label: 'รวมขั้นตอนนี้', value: total, unit: 'บาท', digits: 0 }] : []}
-                empty="ใส่จำนวนจากแบบ ระบบจะคิดค่าวัสดุและค่าแรงให้" />
+            {/* Once there is a quantity the result is the money, shown in the table and the bottom bar: no box. */}
+            {total === 0 && <ResultSummary items={[]} empty="ใส่จำนวนจากแบบ ระบบจะคิดค่าวัสดุและค่าแรงให้" />}
         </div>
     );
 }

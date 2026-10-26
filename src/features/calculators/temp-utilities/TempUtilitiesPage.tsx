@@ -21,7 +21,7 @@ interface ItemRow {
 }
 
 const WARNINGS = [
-    'ราคานี้เป็นต้นทุนตั้งต้น ปรับ Rate ได้',
+    'ราคานี้เป็นต้นทุนตั้งต้น ปรับราคาต่อหน่วยได้',
     'ถ้าระยะไฟไกลมาก ควรให้ช่างไฟตรวจขนาดสายจริง',
     'อุปกรณ์ต่อท่อและไฟฟ้าคิดเป็น % เพื่อลดความรกใน BOQ',
     'BOQ หลักส่งออกเป็นรายการเดียว: เดินน้ำ–ไฟชั่วคราว',
@@ -53,7 +53,7 @@ export default function TempUtilitiesPage() {
         update(p => ({ ...p, prices: { ...p.prices, [key]: v } }));
 
     const rows: ItemRow[] = [
-        { label: 'ท่อ PVC 1/2 นิ้ว', qty: o('pipeQty'), unit: 'เส้น', hint: 'ปัดขึ้น ระยะน้ำ ÷ 4 ม. × Waste', price: 'pvcPipe', total: o('pipeTotal') },
+        { label: 'ท่อ PVC 1/2 นิ้ว', qty: o('pipeQty'), unit: 'เส้น', hint: 'ปัดขึ้น ระยะน้ำ ÷ 4 ม. × (1 + %เผื่อ)', price: 'pvcPipe', total: o('pipeTotal') },
         { label: 'ก๊อกน้ำ 1/2 นิ้ว', qty: o('faucetQty'), unit: 'อัน', hint: 'เท่ากับจำนวนจุดใช้น้ำ', price: 'faucet', total: o('faucetTotal') },
         { label: 'อุปกรณ์ต่อท่อน้ำ', qty: null, unit: '', hint: '% ของค่าวัสดุหลัก', total: o('waterFittings') },
         { label: 'ตู้ไฟฟ้าชั่วคราว 30A', qty: o('powerBoxQty'), unit: 'ชุด', hint: '', price: 'powerBox', total: o('powerBoxTotal') },
@@ -113,7 +113,7 @@ export default function TempUtilitiesPage() {
                         />
                     </SheetCard>
 
-                    <SheetCard title="สรุปราคา STEP 02">
+                    <SheetCard title="สรุปราคาน้ำ-ไฟชั่วคราว">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <CalcField label="ค่าวัสดุน้ำประปาชั่วคราว" value={outputs.waterMaterial} unit="บาท" />
@@ -172,7 +172,7 @@ function JourneyView({ calc, setPrice }: { calc: Calc; setPrice: (key: keyof Tem
                     </PlanField>
                 </div>
             </SheetCard>
-            <AdvancedSection hint="ตั้งไว้ให้แล้ว ไม่ต้องแก้ก็ได้">
+            <AdvancedSection>
                 <Allowances calc={calc} />
                 <div className="mt-3 text-[12px] font-semibold text-gray-600">ราคาต่อหน่วย</div>
                 {PRICE_FIELDS.map(f => (
@@ -181,17 +181,15 @@ function JourneyView({ calc, setPrice }: { calc: Calc; setPrice: (key: keyof Tem
                 ))}
             </AdvancedSection>
 
+            {/* Quantities to order only: the money (with the fixed power box and labour) is มูลค่าขั้นตอนนี้ below. */}
             <ResultSummary
-                items={[
+                items={nothingYet ? [] : [
                     { label: 'ท่อ PVC', value: o('pipeQty'), unit: 'เส้น', digits: 0 },
                     { label: 'สายไฟ', value: o('cableQty'), unit: 'ม้วน', digits: 0 },
-                    { label: 'ค่าวัสดุน้ำ', value: o('waterMaterial'), unit: 'บาท', digits: 0 },
-                    { label: 'ค่าวัสดุไฟ', value: o('powerMaterial'), unit: 'บาท', digits: 0 },
-                    { label: 'ค่าวัสดุน้ำ-ไฟชั่วคราวรวม', value: o('total'), unit: 'บาท', digits: 0 },
+                    { label: 'ก๊อกน้ำ', value: o('faucetQty'), unit: 'อัน', digits: 0 },
+                    { label: 'หลอดไฟ + ปลั๊ก', value: o('lightPlugQty'), unit: 'ชุด', digits: 0 },
                 ]}
-                note={nothingYet
-                    ? 'กรอกระยะจากมิเตอร์และจำนวนจุดใช้งาน ระบบจะคิดท่อ สายไฟ และอุปกรณ์ให้ (ตอนนี้คิดเฉพาะตู้ไฟชั่วคราว 1 ชุด)'
-                    : undefined} />
+                empty="กรอกระยะจากมิเตอร์และจำนวนจุดใช้งาน ระบบจะคิดท่อ สายไฟ และอุปกรณ์ให้ (ตอนนี้คิดเฉพาะตู้ไฟชั่วคราว 1 ชุด)" />
         </>
     );
 }

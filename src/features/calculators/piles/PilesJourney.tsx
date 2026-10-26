@@ -34,30 +34,30 @@ export function PilesJourney({ input, update }: { input: PilesInput; update: (pa
                     <JNumber label="จำนวนเสาเข็มทั้งหมด" value={input.count} unit="ต้น" digits={0} onChange={v => update({ count: v })}
                         hint="นับจากแปลนฐานราก (ทุกฐานรวมกัน)" />
                 </JGroup>
-                <JGroup title="ไม่บังคับ">
-                    <JText wide label="รายละเอียดเพิ่มเติม" value={input.extraSpec} placeholder="เช่น รับน้ำหนัก 15 ตัน/ต้น, ยี่ห้อ"
+                <JGroup title="">
+                    <JText wide label="รายละเอียดเพิ่มเติม (ถ้ามี)" value={input.extraSpec} placeholder="เช่น รับน้ำหนัก 15 ตัน/ต้น, ยี่ห้อ"
                         onChange={v => update({ extraSpec: v })} />
                 </JGroup>
                 {count > 0 && missing.length > 0 && (
-                    <div className="mt-3 text-[12px] text-orange-600">ราคาเหมาต้องระบุรายละเอียดเข็มให้ครบ — ยังไม่ได้เลือก: {missing.join(', ')}</div>
+                    <div className="mt-3 text-[12px] text-red-600">ยังขาด: {missing.join(', ')} — ราคาเหมาต้องระบุรายละเอียดเข็มให้ครบ</div>
                 )}
             </div>
 
-            <AdvancedSection hint="ไม่ต้องแก้ก็ได้">
+            <AdvancedSection>
                 <JGroup title="ราคาเหมา">
                     <JNumber label="ราคาเหมาต่อต้น (ค่าเสาเข็ม + ค่าตอก)" value={input.pricePerPile} unit="บาท"
                         onChange={v => update({ pricePerPile: v })} />
                 </JGroup>
             </AdvancedSection>
 
+            {/* The money is มูลค่าขั้นตอนนี้ in the bottom bar. */}
             <ResultSummary items={[
-                { label: 'เสาเข็ม', value: count, unit: 'ต้น', digits: 0 },
-                { label: 'ราคาเหมา', value: price, unit: 'บาท/ต้น', digits: 0 },
-                { label: 'รวม', value: count * price, unit: 'บาท', digits: 0 },
-            ]} note={<>
+                { label: 'เสาเข็ม', value: count, unit: 'ต้น', digits: 0, detail: `ราคาเหมาต้นละ ${formatNumber(price, 0)} บาท` },
+            ]} note={count > 0 ? <>
                 {spec ? <>รายการใน BOQ: {spec}</> : 'ยังไม่ได้เลือกชนิดและหน้าตัดเสาเข็ม'}
-                {count > 0 && <> · ค่าตัดหัวเสาเข็ม {formatNumber(count, 0)} ต้น คิดให้อัตโนมัติในขั้นตอนฐานราก</>}
-            </>} />
+                {' · '}ค่าตัดหัวเสาเข็ม {formatNumber(count, 0)} ต้น คิดให้อัตโนมัติในขั้นตอนฐานราก
+            </> : undefined}
+            empty={<>เลือกชนิดเสาเข็ม หน้าตัด ความยาว และใส่จำนวนต้นจากแปลนฐานราก — หากไม่ใช้เสาเข็ม กด &quot;ไม่มีในโครงการนี้&quot; ด้านล่าง</>} />
         </div>
     );
 }

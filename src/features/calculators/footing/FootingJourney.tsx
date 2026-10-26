@@ -100,7 +100,7 @@ export function FootingJourney({ rows, onChange, backfillTotal }: {
 
             <AddButton label={nextName === '' ? 'เพิ่มฐานรากแบบถัดไป' : `เพิ่มฐานราก ${nextName}`} onClick={add} />
 
-            <AdvancedSection title="ค่าตั้งต้น" hint="ไม่ต้องแก้ก็ได้">
+            <AdvancedSection title="ค่าตั้งต้น">
                 <div className="flex flex-col gap-3">
                     {rows.map((r, i) => (
                         <JGroup key={i} title={`ชั้นรองก้นหลุม ฐาน ${label(r, i)}`}>
@@ -125,7 +125,9 @@ export function FootingJourney({ rows, onChange, backfillTotal }: {
                 { label: 'ดินขุด', value: t.excavation, unit: 'ลบ.ม.' },
                 { label: 'ทรายหยาบ', value: t.sand, unit: 'ลบ.ม.' },
                 { label: 'คอนกรีตหยาบ', value: t.lean, unit: 'ลบ.ม.' },
-            ]} note={`ดินถมกลับ ${formatNumber(backfillTotal)} ลบ.ม. — หักคอนกรีตเสาตอม่อให้อัตโนมัติเมื่อกรอกขั้นตอนเสาตอม่อ`} />
+            ]} note={backfillTotal > 0
+                ? `ดินถมกลับ ${formatNumber(backfillTotal)} ลบ.ม. — หักคอนกรีตเสาตอม่อให้อัตโนมัติเมื่อกรอกขั้นตอนเสาตอม่อ`
+                : undefined} />
         </div>
     );
 }

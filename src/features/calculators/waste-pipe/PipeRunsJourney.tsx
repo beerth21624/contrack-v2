@@ -161,7 +161,7 @@ export function PipeRunsJourney({ def, input, onChange, result, items, sizes, li
                                                         setExtra({ label: v, size: fromLabel === '' ? r.size : fromLabel });
                                                     }} />
                                             </PlanField>
-                                            <PlanField label="ขนาดท่อ" missing={state === 'missing' && size === ''}>
+                                            <PlanField label="ขนาดท่อ">
                                                 <ChoiceButtons ariaLabel="ขนาดท่อ" size="small" options={sizeOptions}
                                                     value={size === '' ? undefined : size} onChange={v => setExtra({ size: v })} />
                                             </PlanField>

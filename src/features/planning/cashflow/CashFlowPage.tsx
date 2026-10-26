@@ -75,7 +75,7 @@ export function CashFlowPage() {
 
     return (
         <div className="flex flex-col gap-4">
-            <PlanningHeader current="/cashflow" title="วางแผนการเงิน (Project Cash-FLOW)" sheetName="CashFLOW_Basic"
+            <PlanningHeader current="/cashflow" title="วางแผนการเงิน (Cash Flow)" sheetName="CashFLOW_Basic"
                 isDefault={stored.cashflow === undefined} onReset={() => setPlanning({ cashflow: undefined })} />
             <NoBoqYet constructionTotal={result.boq.constructionTotal} />
 
@@ -99,9 +99,9 @@ export function CashFlowPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
                 <SheetCard title="ราคาและค่าใช้จ่าย">
-                    <CalcField label="ต้นทุนก่อสร้าง Construction Cost" value={cf.cost} unit="บาท" />
+                    <CalcField label="ต้นทุนก่อสร้าง" value={cf.cost} unit="บาท" />
                     <InputNumberField label="ตัวคูณราคาเสนอ" value={ci.quotationFactor} unit="เท่า" onChange={v => save({ ...ci, quotationFactor: v })} />
-                    <CalcField label="เสนอราคาลูกค้า Quotation" value={cf.quotation} unit="บาท" strong />
+                    <CalcField label="ราคาเสนอลูกค้า" value={cf.quotation} unit="บาท" strong />
                     <InputNumberField label="ค่าใช้จ่ายดำเนินงาน" percent value={ci.operatingCostRate} unit="ของต้นทุน"
                         onChange={v => save({ ...ci, operatingCostRate: v })} />
                     <InputNumberField label="กำไร" percent value={ci.profitRate} unit="ของต้นทุน" onChange={v => save({ ...ci, profitRate: v })} />
@@ -123,7 +123,7 @@ export function CashFlowPage() {
                 </div>
             </div>
 
-            <SheetCard title="งวดรับเงินจากลูกค้า (Cash IN)">
+            <SheetCard title="งวดรับเงินจากลูกค้า">
                 <EditableTable rows={ci.installments} columns={columns} onChange={saveInstallments}
                     newRow={i => ({ label: `งวดที่ ${i}`, pct: 0, bucket: null })} addLabel="+ เพิ่มงวด"
                     footer={(
@@ -144,12 +144,12 @@ export function CashFlowPage() {
                 </div>
             </SheetCard>
 
-            <DetailSection label="💵 Finance Dashboard (สำหรับ ADVANCE) — EVM"
+            <DetailSection label="วิเคราะห์ผลงานเทียบงบ (EVM) — สำหรับผู้ใช้ขั้นสูง"
                 extra={<span className="text-[12px] text-gray-500">SPI {formatNumber(cf.evm.spi, 3)} · CPI {formatNumber(cf.evm.cpi, 3)}</span>}>
                 <EvmPanel cf={cf} input={ci} onChange={save} />
             </DetailSection>
 
-            <DetailSection label="ดูตารางละเอียด (ตาราง Cash-FLOW รายสัปดาห์แบบ Excel)">
+            <DetailSection label="ดูตารางละเอียด (ตาราง Cash Flow รายสัปดาห์แบบ Excel)">
                 <CashFlowDetailGrid cf={cf} opexRate={ci.operatingCostRate} profitRate={ci.profitRate} />
             </DetailSection>
         </div>

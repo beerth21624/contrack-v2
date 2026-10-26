@@ -125,7 +125,7 @@ function DoorWindowSheet() {
                 </SheetCard>
             )}>
             <SheetCard title=": ตารางคำนวณปริมาณประตู-หน้าต่าง, พื้นที่ช่องเปิด">
-                <div className="font-semibold text-[13px] text-gray-800 mb-1">ประตู (Door)</div>
+                <div className="font-semibold text-[13px] text-gray-800 mb-1">ประตู</div>
                 <EditableTable<OpeningRow>
                     rows={input.doors}
                     onChange={doors => update({ doors })}
@@ -133,7 +133,7 @@ function DoorWindowSheet() {
                     addLabel="+ เพิ่มประตู"
                     columns={columns('doors')}
                 />
-                <div className="font-semibold text-[13px] text-gray-800 mt-4 mb-1">หน้าต่าง (Window)</div>
+                <div className="font-semibold text-[13px] text-gray-800 mt-4 mb-1">หน้าต่าง</div>
                 <EditableTable<OpeningRow>
                     rows={input.windows}
                     onChange={windows => update({ windows })}

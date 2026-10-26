@@ -66,19 +66,18 @@ export function ElectricalCableJourney({ calc }: { calc: Calc }) {
                         : 'ยังไม่มีระยะท่อของวงจรนี้'}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-3 items-start">
-                    <PlanField label="สายเมนวงจร (ตร.มม.)" missing={state === 'missing' && w.mainSize.trim() === '' && main > 0}>
+                    <PlanField label="สายเมนวงจร (ตร.มม.)">
                         <ChoiceButtons ariaLabel="ขนาดสายเมนวงจร" size="small" options={MAIN_SIZE_CHOICES}
                             value={w.mainSize.trim() === '' ? undefined : w.mainSize.trim()}
                             onChange={mainSize => setWiring(r, { mainSize })} />
                     </PlanField>
                     {showDevice && (
-                        <PlanField label="สายเข้าโคม / จุด (ตร.มม.)"
-                            missing={state === 'missing' && w.deviceSize.trim() === '' && device > 0}>
+                        <PlanField label="สายเข้าโคม / จุด (ตร.มม.)">
                             <ChoiceButtons ariaLabel="ขนาดสายเข้าโคม / จุด" size="small" options={DEVICE_SIZE_CHOICES}
                                 value={w.deviceSize.trim()} onChange={deviceSize => setWiring(r, { deviceSize })} />
                         </PlanField>
                     )}
-                    <PlanField label="จำนวนสาย" missing={state === 'missing' && !(w.conductors > 0)}>
+                    <PlanField label="จำนวนสาย">
                         <ChoiceButtons ariaLabel="จำนวนสาย" size="small" options={CONDUCTOR_CHOICES}
                             value={w.conductors > 0 ? w.conductors : undefined}
                             onChange={conductors => setWiring(r, { conductors })} />

@@ -258,7 +258,7 @@ export function BoqHomePage() {
                     {metaField(t('projectName'), 'projectName')}
                     {metaField(t('revision'), 'revision')}
                     {metaField(t('siteAddress'), 'siteAddress', t('siteAddressPh'))}
-                    {metaField(t('documentDate'), 'documentDate', 'xx/xx/xxxx')}
+                    {metaField(t('documentDate'), 'documentDate', t('documentDatePh'))}
                     {metaField(t('ownerName'), 'ownerName', t('ownerNamePh'))}
                     {metaField(t('preparedBy'), 'preparedBy', t('preparedByPh'))}
                 </div>

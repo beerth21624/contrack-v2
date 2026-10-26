@@ -59,7 +59,7 @@ export function SuggestedValue({ levelId, value, current, unit, onUse }: {
                 <ArrowRightOutlined className="text-orange-400 text-[11px]" />
                 <b className="text-orange-700">{formatNumber(value)} {unit}</b>
             </span>
-            <Button type="primary" size="small" className="ml-auto" onClick={() => { setPrevious(current); onUse(value); }}>
+            <Button size="small" className="ml-auto" onClick={() => { setPrevious(current); onUse(value); }}>
                 ใช้ค่านี้
             </Button>
         </div>

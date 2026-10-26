@@ -43,7 +43,7 @@ export function CashFlowDetailGrid({ cf, opexRate, profitRate }: { cf: CashFlowR
     return (
         <div className="overflow-x-auto">
             <table className="border-collapse">
-                <thead>{header('รายรับ - Cash IN', '#d9ead3')}</thead>
+                <thead>{header('รายรับ', '#d9ead3')}</thead>
                 <tbody>
                     {cf.installments.map(inst => (
                         <tr key={inst.no}>
@@ -60,7 +60,7 @@ export function CashFlowDetailGrid({ cf, opexRate, profitRate }: { cf: CashFlowR
                 </tbody>
                 <tbody>
                     <tr><td colSpan={buckets.length + 3} className="h-3" /></tr>
-                    {header('รายจ่าย - Cash OUT', '#f4cccc')}
+                    {header('รายจ่าย', '#f4cccc')}
                     {cf.groups.map(g => {
                         const ts = cf.tasks.filter(t => t.installment === g.no);
                         return (

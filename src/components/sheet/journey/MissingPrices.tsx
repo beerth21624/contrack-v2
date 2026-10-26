@@ -33,7 +33,10 @@ export function MissingPrices({ rows }: { rows: BoqItemRow[] }) {
                 {shown.map(r => (
                     <div key={r.key} className="grid grid-cols-2 sm:grid-cols-[minmax(0,1fr)_120px_120px] items-center gap-x-3 gap-y-1">
                         <div className="col-span-2 sm:col-span-1 text-[13px] text-gray-800">
-                            {r.desc} <span className="text-gray-500 tabular-nums">({formatNumber(r.grossQty ?? r.qty)} {r.unit})</span>
+                            {r.desc}{' '}
+                            <span className="text-gray-500 tabular-nums">
+                                ({r.grossQty !== null && r.grossQty !== r.qty ? 'รวมเผื่อ ' : ''}{formatNumber(r.grossQty ?? r.qty)} {r.unit})
+                            </span>
                         </div>
                         <label className="flex flex-col gap-0.5">
                             <span className="text-[11px] text-gray-500">ค่าวัสดุ/{r.unit} (บาท)</span>

@@ -80,7 +80,7 @@ export function GroundBeamJourney({ beams, onChange }: { beams: GroundBeamRow[];
 
             <AddButton label={nextName === '' ? 'เพิ่มคานคอดินแบบถัดไป' : `เพิ่มคานคอดิน ${nextName}`} onClick={add} />
 
-            <AdvancedSection title="ค่าตั้งต้น" hint="ไม่ต้องแก้ก็ได้">
+            <AdvancedSection title="ค่าตั้งต้น">
                 <div className="flex flex-col gap-3">
                     <JGroup title="คอนกรีตหยาบรองท้องคาน หนา">
                         {beams.map((r, i) => (

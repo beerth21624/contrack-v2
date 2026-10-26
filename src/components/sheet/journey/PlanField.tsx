@@ -9,22 +9,20 @@ const hintCls = 'text-[11px] text-gray-400 leading-tight';
 
 /**
  * A labelled field of a plan card around any control (choice buttons, a stepper …): label, the control, an
- * optional grey hint and plausibility note. While the card is half filled and this value is still empty
- * (`missing`) the label turns red; the card itself says what is missing.
+ * optional grey hint and plausibility note. The label stays grey when the value is missing: the card's
+ * "ยังขาด: …" line names it, and the empty box itself (`PlanNumber`, `CountStepper`) gets a thin red ring.
  */
-export function PlanField({ label, hint, note, missing, className, children }: {
+export function PlanField({ label, hint, note, className, children }: {
     label: ReactNode;
     hint?: ReactNode;
     /** A value that looks wrong (still accepted): amber note under the field. */
     note?: ReactNode;
-    /** This plan value is still empty on a started element. */
-    missing?: boolean;
     className?: string;
     children: ReactNode;
 }) {
     return (
         <div className={`flex flex-col gap-1 min-w-0 ${className ?? ''}`}>
-            <span className={`${labelCls} ${missing ? 'text-red-600' : ''}`}>{label}</span>
+            <span className={labelCls}>{label}</span>
             {children}
             {hint !== undefined && <span className={hintCls}>{hint}</span>}
             {note !== undefined && note !== '' && <FieldNote>{note}</FieldNote>}
@@ -56,9 +54,9 @@ export function PlanNumber({
 }) {
     const note = range === undefined ? undefined : outOfRange(value, range[0], range[1], unit ?? '');
     return (
-        <PlanField label={label} hint={hint} note={note} missing={missing} className={className}>
+        <PlanField label={label} hint={hint} note={note} className={className}>
             <span className="flex items-center gap-1.5">
-                <span className={`flex-1 min-w-0 max-w-[120px] rounded ${missing ? 'ring-1 ring-red-400' : ''}`}>
+                <span className={`flex-1 min-w-0 max-w-[120px] rounded ${missing ? 'ring-1 ring-red-300' : ''}`}>
                     <NumberCell value={value} digits={digits} ariaLabel={unit === undefined ? label : `${label} (${unit})`}
                         blankZero placeholder={placeholder} onCommit={v => onChange(v ?? 0)} />
                 </span>

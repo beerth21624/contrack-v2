@@ -33,11 +33,16 @@ function keyBelongsToField(target: EventTarget | null): boolean {
     if (target.isContentEditable) return true;
     return target.closest([
         'input', 'textarea', 'select', '[role="combobox"]', '[role="listbox"]', '[role="slider"]', '[role="dialog"]',
-        '[role="radiogroup"]', '[role="tablist"]', '[role="menu"]', '.ant-select', '.ant-picker', '.ant-segmented',
+        '[role="radiogroup"]', '[role="group"]', '[role="tablist"]', '[role="menu"]', '.ant-select', '.ant-picker',
+        '.ant-segmented',
     ].join(', ')) !== null;
 }
 
-/** Shift + ← / → : previous / next step (the same as the bar buttons). Not while typing or in a dropdown. */
+/**
+ * Shift + ← / → : previous / next step. Only moves between steps; it never confirms one (an accidental key press
+ * must not mark a half-filled step done), so → works only once the step is confirmed or marked not in the project.
+ * Not while typing, in a dropdown or on a button group.
+ */
 function useStepShortcuts(onPrev: (() => void) | undefined, onNext: (() => void) | undefined) {
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -57,7 +62,7 @@ function useStepShortcuts(onPrev: (() => void) | undefined, onNext: (() => void)
     }, [onPrev, onNext]);
 }
 
-const SHORTCUT_HINT = 'ปุ่มลัด: Shift + ← / →';
+const SHORTCUT_HINT = 'ปุ่มลัด: Shift + → ขั้นตอนถัดไป · Shift + ← ขั้นตอนก่อนหน้า';
 
 /** One journey level: what to read from the plan, the inputs, and the way on to the next level. */
 export function LevelPage({ levelId }: { levelId: string }) {
@@ -83,14 +88,17 @@ export function LevelPage({ levelId }: { levelId: string }) {
     const nextId = next?.id;
     const prevId = prev?.id;
     const goNextCb = useCallback(() => router.push(nextId !== undefined ? `/journey/${nextId}` : '/journey'), [router, nextId]);
-    // The keyboard "next" does what the primary button does: confirm an open step, then go on.
     const primaryAction = useCallback(() => {
         if (level === undefined) return;
         if (mark === undefined) setLevelMark(level.id, 'done');
         goNextCb();
     }, [level, mark, setLevelMark, goNextCb]);
     const prevAction = useCallback(() => { if (prevId !== undefined) router.push(`/journey/${prevId}`); }, [router, prevId]);
-    useStepShortcuts(unlocked && prevId !== undefined ? prevAction : undefined, unlocked ? primaryAction : undefined);
+    // The keyboard "next" only moves on from a step already decided; it never confirms one.
+    useStepShortcuts(
+        unlocked && prevId !== undefined ? prevAction : undefined,
+        unlocked && mark !== undefined ? goNextCb : undefined,
+    );
 
     if (!level) return <Result status="404" title="ไม่พบขั้นตอนนี้" extra={<Link href="/journey"><Button>กลับไปภาพรวมขั้นตอน</Button></Link>} />;
 
@@ -128,7 +136,7 @@ export function LevelPage({ levelId }: { levelId: string }) {
 
     return (
         <div className="flex flex-col gap-4 max-w-6xl mx-auto w-full" style={{ paddingBottom: barHeight + 24 }}>
-            {/* Compact progress that stays on top while the step is scrolled: where am I, how far, how much is left. */}
+            {/* Compact progress that stays on top while the step is scrolled: where am I and how far (the overview says how many are left). */}
             <div className="sticky top-0 z-10 -mx-3 px-3 py-2 bg-[#f5f5f7]/95 backdrop-blur-sm">
                 <div className="flex items-center gap-3">
                     <Link href="/journey">
@@ -142,9 +150,6 @@ export function LevelPage({ levelId }: { levelId: string }) {
                             <Text type="secondary" className="text-[12px] whitespace-nowrap">
                                 {phase?.title} · ขั้นตอน {index + 1}/{JOURNEY_LEVELS.length}
                             </Text>
-                            <span className="ml-auto text-[12px] whitespace-nowrap text-gray-500">
-                                {remaining === 0 ? 'ครบทุกขั้นตอนแล้ว' : `อีก ${String(remaining)} ขั้นตอน`}
-                            </span>
                         </div>
                         <div className="mt-1 h-1 rounded-full bg-gray-200 overflow-hidden" aria-hidden>
                             <div className="h-full bg-orange-400" style={{ width: `${String(Math.round((passedCount / JOURNEY_LEVELS.length) * 100))}%` }} />
@@ -166,9 +171,6 @@ export function LevelPage({ levelId }: { levelId: string }) {
                     <div>
                         <div className="text-[12px] font-semibold text-blue-700">ดูจากแบบแปลน</div>
                         <div className="text-[14px] text-gray-800">{level.planHint}</div>
-                        <div className="text-[12px] text-gray-500 mt-1">
-                            กรอกเฉพาะช่องสีเหลือง ช่องสีเขียวระบบคิดให้เอง
-                        </div>
                     </div>
                 </div>
             </div>
@@ -212,7 +214,7 @@ export function LevelPage({ levelId }: { levelId: string }) {
                         </div>
                     )}
                     <div className="hidden sm:block min-w-0 pl-3 border-l border-gray-200">
-                        <div className="text-[11px] text-gray-500 leading-tight">มูลค่ารวมโครงการ</div>
+                        <div className="text-[11px] text-gray-500 leading-tight">ราคาค่าก่อสร้างรวม</div>
                         <div className="text-[15px] font-semibold tabular-nums leading-tight text-gray-700">
                             {formatNumber(result.boq.constructionTotal, 0)} บาท
                         </div>
@@ -224,24 +226,24 @@ export function LevelPage({ levelId }: { levelId: string }) {
                                 <Button icon={<StepForwardOutlined />}>ไม่มีในโครงการนี้</Button>
                             </Popconfirm>
                         )}
-                        <Tooltip title={SHORTCUT_HINT} mouseEnterDelay={0.8}>
-                            {mark === undefined
-                                ? (
-                                    <Button type="primary" size="large" icon={<CheckOutlined />} onClick={pass} className="max-w-full">
-                                        <span className="truncate min-w-0 max-w-[62vw] sm:max-w-[380px]">
-                                            {next ? `ยืนยัน แล้วไปขั้นตอน${next.title}` : 'ยืนยันและเสร็จสิ้น'}
-                                        </span>
-                                    </Button>
-                                )
-                                : (
+                        {mark === undefined
+                            ? (
+                                <Button type="primary" size="large" icon={<CheckOutlined />} onClick={pass} className="max-w-full">
+                                    <span className="truncate min-w-0 max-w-[62vw] sm:max-w-[380px]">
+                                        {next ? `ยืนยัน แล้วไปขั้นตอน${next.title}` : 'ยืนยันและเสร็จสิ้น'}
+                                    </span>
+                                </Button>
+                            )
+                            : (
+                                <Tooltip title={next ? SHORTCUT_HINT : undefined} mouseEnterDelay={0.8}>
                                     <Button type="primary" size="large" onClick={goNext} className="max-w-full">
                                         <span className="truncate min-w-0 max-w-[62vw] sm:max-w-[380px]">
                                             {next ? `ไปขั้นตอน${next.title}` : 'กลับไปภาพรวมขั้นตอน'}
                                         </span>
                                         {next && <ArrowRightOutlined />}
                                     </Button>
-                                )}
-                        </Tooltip>
+                                </Tooltip>
+                            )}
                     </div>
                 </div>
             </div>

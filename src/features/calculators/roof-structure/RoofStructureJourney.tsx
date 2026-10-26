@@ -85,7 +85,7 @@ export default function RoofStructureJourney() {
             <td className={td}>{name}</td>
             <td className={td} style={{ background: SHEET_COLORS.input }}><TextCell value={m.desc} ariaLabel={`ขนาดเหล็ก${name}`} onCommit={v => set(key, { desc: v ?? '' })} /></td>
             <td className={td}><NumSelect value={m.c} options={DOUBLE_C_OPTIONS} label="ซีคู่" onChange={c => set(key, { c })} /></td>
-            <td className={td}><NumSelect value={m.factor} options={ROOF_FACTOR_OPTIONS} digits={2} label="Factor Roof" onChange={factor => set(key, { factor })} /></td>
+            <td className={td}><NumSelect value={m.factor} options={ROOF_FACTOR_OPTIONS} digits={2} label="ตัวคูณหลังคา" onChange={factor => set(key, { factor })} /></td>
             <td className={td}><NumberCell value={m.spacing} ariaLabel={`ระยะห่าง${name} (ม.)`} onCommit={v => set(key, { spacing: v ?? 0 })} /></td>
             <td className={`${td} text-center text-gray-400`}>-</td>
         </tr>
@@ -162,7 +162,7 @@ export default function RoofStructureJourney() {
                 )}
             </SheetCard>
 
-            <AdvancedSection title="ขนาดเหล็กและระยะห่าง" hint="สเปกตามแบบมาตรฐาน — ไม่ต้องแก้ก็ได้">
+            <AdvancedSection title="ขนาดเหล็กและระยะห่าง">
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
@@ -170,7 +170,7 @@ export default function RoofStructureJourney() {
                                 <th className={th} style={{ width: 80 }}>รายการ</th>
                                 <th className={th} style={{ minWidth: 200 }}>ขนาดเหล็ก</th>
                                 <th className={th} style={{ width: 70 }}>ซีคู่</th>
-                                <th className={th} style={{ width: 80 }}>Factor Roof</th>
+                                <th className={th} style={{ width: 80 }}>ตัวคูณหลังคา</th>
                                 <th className={th} style={{ width: 90 }}>ระยะห่าง (ม.)</th>
                                 <th className={th} style={{ width: 80 }}>จำนวนเส้น</th>
                             </tr>

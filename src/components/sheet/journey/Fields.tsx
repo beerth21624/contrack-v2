@@ -94,7 +94,7 @@ export function JBar({ label, size, onSize, amount, onAmount, amountUnit = 'เน€เ
 export function JGroup({ title, children }: { title: string; children: ReactNode }) {
     return (
         <div className="mt-3 first:mt-0">
-            <div className="text-[12px] font-semibold text-gray-500 mb-1.5">{title}</div>
+            {title !== '' && <div className="text-[12px] font-semibold text-gray-500 mb-1.5">{title}</div>}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-3">{children}</div>
         </div>
     );

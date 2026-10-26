@@ -57,7 +57,7 @@ export function RoofSlabJourney({ input, outputs, onChange }: {
                     <PlanCard key={i} index={i + 1} state={k.state} hasData={k.hasData} missingText={k.missingText} compact
                         title={`ผืนที่ ${String(i + 1)}`}
                         result={k.state === 'empty' ? undefined : resultText([
-                            { label: 'คอนกรีต', value: c.concrete, unit: 'ลบ.ม.', digits: 3 },
+                            { label: 'คอนกรีต', value: c.concrete, unit: 'ลบ.ม.' },
                             { label: 'เหล็ก', value: c.kg, unit: 'กก.', digits: 1 },
                         ])}
                         onDuplicate={() => duplicate(r, i)}
@@ -96,7 +96,7 @@ export function RoofSlabJourney({ input, outputs, onChange }: {
             </AdvancedSection>
 
             <ResultSummary items={[
-                { label: 'คอนกรีต', value: outputs.concrete ?? 0, unit: 'ลบ.ม.', digits: 3 },
+                { label: 'คอนกรีต', value: outputs.concrete ?? 0, unit: 'ลบ.ม.' },
                 { label: 'ไม้แบบ', value: outputs.formwork ?? 0, unit: 'ตร.ม.' },
                 { label: 'ไม้ค้ำยัน', value: outputs.props ?? 0, unit: 'ต้น', digits: 0 },
                 rebarSummaryItem(outputs),

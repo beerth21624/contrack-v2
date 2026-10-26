@@ -124,9 +124,11 @@ export function ElectricalPipeJourney({ calc }: { calc: Calc }) {
     return (
         <>
             <SheetCard title="วงจรไฟฟ้าและระยะเดินท่อ">
-                <div className="mb-3 rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-[12px] text-gray-600">
-                    <div className="font-semibold text-gray-700 mb-1">วิธีกรอก (1 การ์ด = 1 วงจร = 1 เบรกเกอร์ในตู้ไฟ)</div>
-                    <ul className="list-disc pl-5 space-y-0.5">
+                {/* Folded once circuits exist: it helps the first time, then it is just in the way. */}
+                <details open={circuits.length === 0}
+                    className="mb-3 rounded-lg bg-gray-50 border border-gray-200 px-4 py-2 text-[12px] text-gray-600">
+                    <summary className="cursor-pointer font-semibold text-gray-700">วิธีกรอก (1 การ์ด = 1 วงจร = 1 เบรกเกอร์ในตู้ไฟ)</summary>
+                    <ul className="list-disc pl-5 space-y-0.5 mt-1">
                         <li><b>ท่อสายเมน</b>: วัดตามแนวท่อบนฝ้า จากตู้ไฟผ่านทุกจุดของวงจร (ดูแปลนไฟฟ้า)</li>
                         <li><b>ท่อแยกเข้าโคม</b>: ท่อที่แยกจากสายเมนเข้าดวงโคมแต่ละดวง (วงจรไฟแสงสว่าง) ถ้าไม่มีเว้นว่าง</li>
                         <li><b>จำนวนจุด</b>: นับสวิตช์ (วงจรไฟ) หรือเต้ารับ (วงจรเต้ารับ) — ระบบคิดท่อแนวดิ่งให้เอง</li>
@@ -135,7 +137,7 @@ export function ElectricalPipeJourney({ calc }: { calc: Calc }) {
                         ตัวอย่าง: ไฟแสงสว่างห้องนอน + ห้องน้ำ — ท่อสายเมน 22.4 ม., ท่อแยกเข้าโคม 25.6 ม., สวิตช์ 7 จุด
                         → ท่อลงผนัง 7 × 2.3 = 16.1 ม. + ท่อที่ตู้ไฟ 1.5 ม. = รวม 65.6 ม.
                     </div>
-                </div>
+                </details>
 
                 {circuits.length === 0
                     ? (
@@ -159,7 +161,7 @@ export function ElectricalPipeJourney({ calc }: { calc: Calc }) {
             </SheetCard>
 
             {circuits.length > 0 && (
-                <AdvancedSection title="ระยะท่อแนวดิ่งและชนิดท่อ" hint="ตั้งให้ตามชนิดวงจรแล้ว — ไม่ต้องแก้ก็ได้">
+                <AdvancedSection title="ระยะท่อแนวดิ่งและชนิดท่อ">
                     <EditableTable<Circuit>
                         rows={circuits}
                         onChange={next => update({ circuits: next })}

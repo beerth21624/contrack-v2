@@ -8,7 +8,7 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, InputTextField, SheetCard } from '@/components/sheet/SheetFields';
 import { TextCell, formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
-import { EmptyState, ResultSummary } from '@/components/sheet/journey';
+import { EmptyState } from '@/components/sheet/journey';
 import { ChecklistItem, ChecklistProgress } from '@/components/sheet/journey/ChecklistItem';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
@@ -51,7 +51,7 @@ export default function LandInspectionPage() {
                         </p>
                     </SheetCard>
 
-                    <SheetCard title="เอกสารสำรวจหน้างาน (Checklist)">
+                    <SheetCard title="เอกสารสำรวจหน้างาน (รายการตรวจ)">
                         <Checklist calc={calc} />
                     </SheetCard>
                 </>
@@ -62,14 +62,10 @@ export default function LandInspectionPage() {
 
 /** Guided journey: what to check on site first, then the cost (quantities up front, prices folded). */
 function JourneyView({ calc }: { calc: Calc }) {
-    const { input, update, outputs } = calc;
-    const total = outputs.total ?? 0;
+    const { input, update } = calc;
     return (
         <>
             <SheetCard title="ตรวจที่ดินก่อนเริ่มงาน">
-                <p className="mb-3 text-[12px] text-gray-500">
-                    เดินตรวจที่ดินจริงเทียบกับโฉนดและผังบริเวณ แล้วตอบทีละข้อ — หากพบปัญหา ให้ระบุไว้เพื่อติดตามก่อนเริ่มงาน
-                </p>
                 <Checklist calc={calc} />
                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6">
                     <InputTextField label="วันที่เข้าสำรวจ" value={input.surveyDate} placeholder="วว/ดด/ปปปป"
@@ -103,11 +99,10 @@ function JourneyView({ calc }: { calc: Calc }) {
                     )}
             </SheetCard>
 
-            <AdvancedSection title="ราคาต่อหน่วยและรายการเพิ่มเติม" hint="ตั้งไว้ให้แล้ว แก้เมื่อราคาพื้นที่ต่างไป">
+            <AdvancedSection title="ราคาต่อหน่วยและรายการเพิ่มเติม">
                 <CostTable calc={calc} />
             </AdvancedSection>
-
-            <ResultSummary items={[{ label: 'ค่าตรวจสอบที่ดินรวม', value: total, unit: 'บาท', digits: 0 }]} />
+            {/* No result box: the only result is the cost, already shown as มูลค่าขั้นตอนนี้ in the bottom bar. */}
         </>
     );
 }

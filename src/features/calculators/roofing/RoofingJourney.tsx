@@ -106,7 +106,7 @@ export default function RoofingJourney() {
                 </div>
             </SheetCard>
 
-            <AdvancedSection title="อัตราการใช้วัสดุ (กระเบื้องซีแพค)" hint="ค่าตามสเปกผู้ผลิต — ไม่ต้องแก้ก็ได้">
+            <AdvancedSection title="อัตราการใช้วัสดุ (กระเบื้องซีแพค)">
                 <EditableTable<RoofingRow>
                     rows={input.rows}
                     onChange={rows => update({ rows })}

@@ -102,7 +102,7 @@ function RoofStructureSheet() {
             <td className={`${td} text-center`}>{no}</td>
             <DescCell value={m.desc} onChange={desc => set(key, { desc })} />
             <NumSelect value={m.c} options={DOUBLE_C_OPTIONS} label="ซีคู่" onChange={c => set(key, { c })} />
-            <NumSelect value={m.factor} options={ROOF_FACTOR_OPTIONS} digits={2} label="Factor Roof" onChange={factor => set(key, { factor })} />
+            <NumSelect value={m.factor} options={ROOF_FACTOR_OPTIONS} digits={2} label="ตัวคูณหลังคา" onChange={factor => set(key, { factor })} />
             <td className={td}>
                 <NumberCell value={outputs[`${key}.area`] ?? 0} ariaLabel="พื้นที่หลังคา (ตร.ม.)" tone={m.area === null ? 'calc' : 'input'}
                     onCommit={v => {
@@ -130,7 +130,7 @@ function RoofStructureSheet() {
                                 <th className={th} style={{ width: 40 }}>ลำดับ</th>
                                 <th className={th} style={{ minWidth: 200 }}>รายการ</th>
                                 <th className={th} style={{ width: 60 }}>ซีคู่</th>
-                                <th className={th} style={{ width: 75 }}>Factor Roof</th>
+                                <th className={th} style={{ width: 75 }}>ตัวคูณหลังคา</th>
                                 <th className={th} style={{ width: 90 }}>พื้นที่หลังคา (ตร.ม.)</th>
                                 <th className={th} style={{ width: 70 }}>ระยะห่าง (ม.)</th>
                                 <th className={th} style={{ width: 150 }}>ความยาว (ม.)</th>
@@ -190,7 +190,7 @@ function RoofStructureSheet() {
                     </table>
                 </div>
                 <ul className="mt-2 text-[12px] text-gray-500 list-disc pl-5 space-y-0.5">
-                    <li>ความยาวรวม = ความยาว × จำนวน × ซีคู่ (อะเส, ดั้ง, อกไก่, ตะเข้ราง) หรือ พื้นที่หลังคา ÷ ระยะห่าง × Factor Roof × ซีคู่ (จันทัน, แป)</li>
+                    <li>ความยาวรวม = ความยาว × จำนวน × ซีคู่ (อะเส, ดั้ง, อกไก่, ตะเข้ราง) หรือ พื้นที่หลังคา ÷ ระยะห่าง × ตัวคูณหลังคา × ซีคู่ (จันทัน, แป)</li>
                     <li>จำนวน (ท่อน) = ROUNDUP(ความยาวรวม ÷ {STICK_LENGTH}) — เหล็กยาวท่อนละ {STICK_LENGTH} ม.</li>
                     <li>
                         พื้นที่หลังคา (สีเขียว) = พื้นที่ตามแนวลาดเอียง {formatNumber(linked)} ตร.ม. จาก

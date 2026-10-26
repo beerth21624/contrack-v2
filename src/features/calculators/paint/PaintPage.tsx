@@ -124,10 +124,11 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
             </SheetCard>
 
             <SheetCard title="พื้นที่ที่ต้องยืนยัน">
-                {pending > 0 && (
+                {/* One value on offer is handled by its own "ใช้ค่านี้"; the bulk action only earns its place for 2+. */}
+                {pending > 1 && (
                     <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-orange-200 bg-orange-50 px-3 py-2">
                         <span className="text-[13px] text-gray-800">ขั้นตอนก่อนหน้ามีค่าให้ใช้ {pending} รายการ — ค่าเดิมและค่าใหม่แสดงใต้แต่ละช่อง</span>
-                        <Button type="primary" className="ml-auto" onClick={applyAll}>ใช้ค่าจากขั้นตอนก่อนหน้าทั้งหมด</Button>
+                        <Button className="ml-auto" onClick={applyAll}>ใช้ค่าจากขั้นตอนก่อนหน้าทั้งหมด</Button>
                     </div>
                 )}
                 {pending === 0 && applied !== null && (
@@ -179,7 +180,7 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                 </div>
             </SheetCard>
 
-            <AdvancedSection title="ขนาดบัวและเชิงชาย" hint="ค่าตั้งต้น — ไม่ต้องแก้ก็ได้">
+            <AdvancedSection title="ขนาดบัวและเชิงชาย">
                 <EditableTable<MouldingRun>
                     rows={input.mouldings}
                     onChange={mouldings => update({ mouldings })}
@@ -206,7 +207,7 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                     { label: 'ทาสีผนัง', value: sum(['wallExterior', 'wallInterior']), unit: 'ตร.ม.' },
                     { label: 'ทาสีฝ้า', value: sum(['ceilingExterior', 'ceilingInterior']), unit: 'ตร.ม.' },
                     { label: 'ระแนง บัว เชิงชาย', value: sum(['ceilingSlat', 'wallSlat', 'moulding', 'fascia']), unit: 'ตร.ม.' },
-                    { label: 'ฉาบบาง (สกิมโค้ท)', value: outputs.skim, unit: 'ตร.ม.' },
+                    { label: 'ฉาบบาง (สกิมโค๊ท)', value: outputs.skim, unit: 'ตร.ม.' },
                 ]}
                 note="พื้นที่ทาสีคิด 3 รอบ: รองพื้น, รอบที่ 1, รอบสุดท้าย" />
         </>
@@ -277,8 +278,8 @@ export default function PaintPage() {
                     </table>
                 </div>
                 <p className="mt-2 text-[12px] text-gray-500">
-                    พื้นที่ทั้ง 8 รายการใช้เป็นปริมาณของงานทาสีรองพื้น (ขั้นตอน 23), ทาสีจริง รอบที่ 1 (25) และทาสีรอบสุดท้าย (31);
-                    งานฉาบบาง (สกิมโค๊ท) อยู่ในขั้นตอน 23 เท่านั้น — ราคาต่อหน่วยแก้ได้ที่หน้า BOQ แยกตามขั้นตอน
+                    พื้นที่ทั้ง 8 รายการใช้เป็นปริมาณของงานทาสีรองพื้น (หมวด 23), ทาสีจริง รอบที่ 1 (25) และทาสีรอบสุดท้าย (31);
+                    งานฉาบบาง (สกิมโค๊ท) อยู่ในหมวด 23 เท่านั้น — ราคาต่อหน่วยแก้ได้ที่หน้า BOQ แยกตามหมวด
                 </p>
             </SheetCard>
 

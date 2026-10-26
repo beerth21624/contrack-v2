@@ -54,7 +54,7 @@ export function bucketOptions(buckets: WeekBucket[]): { value: string; label: st
 const STEPS = [
     { href: '/man-day', label: '1. คน-วัน (Man-Day)' },
     { href: '/schedule', label: '2. แผนงาน (S-Curve)' },
-    { href: '/cashflow', label: '3. กระแสเงินสด (CashFlow)' },
+    { href: '/cashflow', label: '3. กระแสเงินสด (Cash Flow)' },
 ] as const;
 
 /** Page header: the planning steps, the title, the Excel sheet name and "back to the Excel sample". */

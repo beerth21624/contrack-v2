@@ -158,7 +158,7 @@ export function ManDayPage() {
                 </div>
             </div>
 
-            <SheetCard title="วางแผน Man-Day และ Budget รายงาน">
+            <SheetCard title="วางแผน Man-Day และงบประมาณ">
                 <EditableTable rows={rows} columns={columns} onChange={saveRows} canDelete={false} footer={footer} />
                 <div className="text-[12px] text-gray-500 mt-2">
                     ช่องเหลือง = กรอกเอง · ช่องเขียว = ระบบคำนวณ · ปุ่ม <UndoOutlined /> ข้างวันประเมิน = ใช้ค่าที่คำนวณ (ปัดเศษ)

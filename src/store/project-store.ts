@@ -32,7 +32,7 @@ export type ProjectBinding = { kind: 'guest' } | CloudBinding;
 const GUEST: ProjectBinding = { kind: 'guest' };
 
 export const READ_ONLY_TEXT = 'คุณมีสิทธิ์ดูอย่างเดียวในโครงการนี้ แก้ไขไม่ได้';
-export const CLOUD_NEW_PROJECT_TEXT = 'โครงการบน cloud เริ่มใหม่ทับไม่ได้ — สร้างโครงการใหม่ที่หน้า "โครงการทั้งหมด"';
+export const CLOUD_NEW_PROJECT_TEXT = 'โครงการบนคลาวด์ เริ่มใหม่ทับไม่ได้ — สร้างโครงการใหม่ที่หน้า "โครงการทั้งหมด"';
 
 interface ProjectState {
     hasHydrated: boolean;

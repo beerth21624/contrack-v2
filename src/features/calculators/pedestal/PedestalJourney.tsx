@@ -129,7 +129,7 @@ export function PedestalJourney({ rows, onChange, footings, footingSkipped, foot
                 { label: 'คอนกรีตเสาตอม่อ', value: t.concrete, unit: 'ลบ.ม.' },
                 { label: 'เหล็กเสริม', value: totalKg(t.rebar), unit: 'กก.' },
                 { label: 'ไม้แบบ', value: t.formwork, unit: 'ตร.ม.' },
-            ]} note={backfill === undefined ? undefined
+            ]} note={backfill === undefined || backfill === 0 ? undefined
                 : `ดินถมกลับรอบฐานราก ${formatNumber(backfill)} ลบ.ม. (หักคอนกรีตฐานรากและเสาตอม่อแล้ว)`} />
         </div>
     );

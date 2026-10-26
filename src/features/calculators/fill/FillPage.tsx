@@ -29,7 +29,7 @@ export default function FillPage() {
                             <InputNumberField label="เผื่อดินยุบตัว" value={input.settlementPct} unit="%"
                                 onChange={v => update({ settlementPct: v })} />
                             <div className="mt-3 border-t border-gray-100 pt-2">
-                                <CalcField label="ปริมาณดินที่ต้องสั่ง (Output)" value={outputs.volume} unit="คิว (ลูกบาศก์เมตร)" strong />
+                                <CalcField label="ปริมาณดินที่ต้องสั่ง" value={outputs.volume} unit="คิว (ลูกบาศก์เมตร)" strong />
                             </div>
                         </div>
                     </SheetCard>
@@ -66,7 +66,7 @@ function JourneyView({ calc }: { calc: UseCalculator<FillInput> }) {
                 </div>
             </SheetCard>
 
-            <AdvancedSection hint="ตั้งไว้ให้แล้ว ไม่ต้องแก้ก็ได้">
+            <AdvancedSection>
                 <div className="max-w-xl">
                     <InputNumberField label="เผื่อดินยุบตัว" value={input.settlementPct} digits={0} unit="%"
                         hint="ดินถมยุบตัวเมื่อบดอัด ปกติ 30%" onChange={v => update({ settlementPct: v })} />
@@ -75,7 +75,7 @@ function JourneyView({ calc }: { calc: UseCalculator<FillInput> }) {
 
             <ResultSummary
                 items={volume > 0 ? [{
-                    label: 'ดินที่ต้องสั่ง', value: volume, unit: 'คิว',
+                    label: 'ปริมาณดินถม', value: volume, unit: 'ลบ.ม.',
                     detail: `พื้นที่ ${formatNumber(area)} ตร.ม. × สูง ${formatNumber(input.height)} ม. + เผื่อยุบตัว ${formatNumber(input.settlementPct, 0)}%`,
                 }] : []}
                 empty={<>กรอกความกว้าง ความยาว และความสูงถม ระบบจะคิดปริมาณดินให้ — หากไม่ต้องถมดิน กด &quot;ไม่มีในโครงการนี้&quot; ด้านล่าง</>} />

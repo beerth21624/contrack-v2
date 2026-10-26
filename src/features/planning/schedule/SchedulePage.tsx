@@ -103,7 +103,7 @@ export function SchedulePage() {
                 </div>
             </SheetCard>
 
-            <DetailSection label={`บันทึกผลงานจริง (ACTUAL) และ % คืบหน้า${actualCount ? ` — บันทึกแล้ว ${actualCount} งาน` : ''}`}>
+            <DetailSection label={`บันทึกผลงานจริงและ % คืบหน้า${actualCount ? ` — บันทึกแล้ว ${actualCount} งาน` : ''}`}>
                 <ActualTable schedule={s} tasks={sc.tasks} onTask={setTask} />
                 <div className="text-[12px] text-gray-500 mt-2">
                     ผลงานจริงถ่วงน้ำหนักด้วยค่าใช้จ่ายจริง ÷ งบโครงการ (ตาม Excel) · % คืบหน้าใช้คำนวณ &quot;งบประมาณตามแผน&quot;

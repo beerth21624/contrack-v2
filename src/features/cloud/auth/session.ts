@@ -36,7 +36,9 @@ export function bootstrapSession(): Promise<void> {
 }
 
 export function initials(name: string): string {
-    const words = name.trim().split(/\s+/).filter(w => w !== '');
+    // "ช่างประเสริฐ (ถอดแบบ)": a note in brackets is not part of the name (it gave "ช(").
+    const bare = name.replace(/\([^)]*\)/g, ' ').trim();
+    const words = (bare === '' ? name.trim() : bare).split(/\s+/).filter(w => w !== '');
     const first = words[0] ?? '?';
     const second = words[1];
     return (second === undefined ? first.slice(0, 2) : `${first.slice(0, 1)}${second.slice(0, 1)}`).toUpperCase();

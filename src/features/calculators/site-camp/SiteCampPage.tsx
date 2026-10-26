@@ -37,7 +37,7 @@ export default function SiteCampPage() {
             aside={inJourney ? undefined : <TakeOffSummary outputs={outputs} input={input} />}>
             {inJourney ? <JourneyView calc={calc} /> : (
                 <>
-                    <SheetCard title="ข้อมูลที่ต้องกรอก" extra={<span className="text-[12px] text-gray-500">STEP 03 : เตรียมพื้นที่หน้างาน (Site Preparation)</span>}>
+                    <SheetCard title="ข้อมูลที่ต้องกรอก" extra={<span className="text-[12px] text-gray-500">หมวด 3 : เตรียมพื้นที่หน้างาน</span>}>
                         {ROOM_FIELDS.map(f => (
                             <InputNumberField key={f.key} label={f.label} value={input[f.key]} digits={0} unit="ห้อง" hint={f.hint}
                                 onChange={v => update({ [f.key]: v } as Partial<SiteCampInput>)} />
@@ -137,14 +137,12 @@ function JourneyView({ calc }: { calc: Calc }) {
     const { input, update, result } = calc;
     const groups = CAMP_GROUPS.map(g => {
         const row = boqRow(result, g.boqLine);
-        return { g, rooms: input[g.rooms], perRoom: row ? row.matUnit + row.labUnit : 0, total: row?.total ?? 0 };
+        return { g, rooms: input[g.rooms], perRoom: row ? row.matUnit + row.labUnit : 0 };
     });
-    const total = groups.reduce((s, x) => s + x.total, 0);
     const anyRoom = groups.some(x => x.rooms > 0);
     return (
         <>
             <SheetCard title="สิ่งที่ต้องสร้างในไซต์">
-                <p className="mb-2 text-[12px] text-gray-500">ใส่จำนวนห้องที่ต้องสร้าง ถ้าไม่ต้องสร้างปล่อยว่างไว้</p>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
                     {ROOM_FIELDS.map(f => (
                         <PlanField key={f.key} label={f.label} hint={f.size}>
@@ -155,22 +153,20 @@ function JourneyView({ calc }: { calc: Calc }) {
                 </div>
             </SheetCard>
 
-            <AdvancedSection title="รายการวัสดุและค่าตั้งต้น" hint="สูตรวัสดุต่อห้องตั้งไว้ให้แล้ว ใช้เป็นรายการสั่งซื้อ">
+            <AdvancedSection title="รายการวัสดุและค่าตั้งต้น">
                 <Allowances calc={calc} />
                 <div className="mt-3">
                     <MaterialTables calc={calc} emptyText="ยังไม่มีรายการวัสดุของหมวดนี้ เพิ่มได้ถ้าต้องการ" />
                 </div>
             </AdvancedSection>
 
+            {/* What gets built; the money is มูลค่าขั้นตอนนี้ in the bottom bar. */}
             <ResultSummary
                 items={anyRoom
-                    ? [
-                        ...groups.filter(x => x.rooms > 0).map(x => ({
-                            label: x.g.boqDesc, value: x.total, unit: 'บาท', digits: 0,
-                            detail: `${formatNumber(x.rooms, 0)} ห้อง × ห้องละ ${formatNumber(x.perRoom, 0)} บาท`,
-                        })),
-                        { label: 'แคมป์คนงานรวม', value: total, unit: 'บาท', digits: 0 },
-                    ]
+                    ? groups.filter(x => x.rooms > 0).map(x => ({
+                        label: x.g.boqDesc, value: x.rooms, unit: 'ห้อง', digits: 0,
+                        detail: `ห้องละ ${formatNumber(x.perRoom, 0)} บาท`,
+                    }))
                     : []}
                 empty="กรอกจำนวนห้องพัก ห้องน้ำ ห้องอาบน้ำ หรือสโตร์ที่ต้องสร้าง ระบบจะคิดราคาให้" />
         </>

@@ -82,7 +82,7 @@ export function ScheduleDetailGrid({ schedule }: { schedule: ScheduleResult }) {
                                             <td className={cls.num}>{formatDate(t.finish)}</td>
                                             <td className={cls.num}>{formatNumber(t.budget, 2)}</td>
                                             <td className={cls.num}>{(t.weight * 100).toFixed(2)}%</td>
-                                            <td className={`${cls.td} text-[11px] text-center`}>PLAN</td>
+                                            <td className={`${cls.td} text-[11px] text-center`}>แผน</td>
                                             {weekCells(t.plan, '#cde2fb')}
                                             <td className={cls.num} rowSpan={2}>{t.progress > 0 ? `${(t.progress * 100).toFixed(0)}%` : '0%'}</td>
                                         </tr>
@@ -92,7 +92,7 @@ export function ScheduleDetailGrid({ schedule }: { schedule: ScheduleResult }) {
                                             <td className={cls.num}>{formatDate(t.actual.finish)}</td>
                                             <td className={cls.num}>{t.actual.cost === null ? '' : formatNumber(t.actual.cost, 2)}</td>
                                             <td className={cls.num}>{(t.actual.weight * 100).toFixed(2)}%</td>
-                                            <td className={`${cls.td} text-[11px] text-center`}>ACTUAL</td>
+                                            <td className={`${cls.td} text-[11px] text-center`}>จริง</td>
                                             {weekCells(t.actual.weekly, '#fbd9c9')}
                                         </tr>
                                     </Fragment>

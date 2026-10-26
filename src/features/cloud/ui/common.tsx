@@ -17,7 +17,7 @@ export function RequireSignIn({ children, next, title }: { children: React.React
             <Result
                 icon={<LoginOutlined className="!text-orange-400" />}
                 title={title}
-                subTitle="เข้าสู่ระบบเพื่อเก็บโครงการบน cloud และทำงานเป็นทีม — โครงการในเครื่องนี้ใช้ต่อได้เหมือนเดิม"
+                subTitle="เข้าสู่ระบบเพื่อเก็บโครงการบนคลาวด์ และทำงานเป็นทีม — โครงการในเครื่องนี้ใช้ต่อได้เหมือนเดิม"
                 extra={[
                     <Link key="login" href={`/login?next=${encodeURIComponent(next)}`}><Button type="primary">เข้าสู่ระบบ</Button></Link>,
                     <Link key="register" href={`/register?next=${encodeURIComponent(next)}`}><Button>สมัครใช้งาน</Button></Link>,

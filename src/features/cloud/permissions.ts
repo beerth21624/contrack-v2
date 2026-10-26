@@ -47,7 +47,7 @@ export const ROLE_LABEL: Record<Role, string> = {
 export const ROLE_HINT: Record<Role, string> = {
     owner: 'ทำได้ทุกอย่าง รวมถึงลบพื้นที่ทำงาน',
     admin: 'เชิญ/ลบสมาชิก มอบหมายผู้รับผิดชอบ ลบโครงการ',
-    estimator: 'สร้างและกรอกโครงการ ออก Revision',
+    estimator: 'สร้างและกรอกโครงการ ออกฉบับแก้ไข',
     viewer: 'ดูและส่งออก BOQ ได้ แก้ไขไม่ได้',
 };
 

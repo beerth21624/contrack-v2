@@ -32,11 +32,20 @@ export function ChoiceButtons<T extends string | number>({ value, options, onCha
     );
 }
 
+/** Decimals of a value as typed ("0.15" → 2, "1" → 0). */
+const decimalsOf = (v: number): number => (String(v).split('.')[1] ?? '').length;
+
+/** Every chip with the same number of decimals, as the box shows them: 0.15 / 0.20 (not 0.15 / 0.2). */
+const sameDecimals = (values: readonly number[]) => {
+    const d = Math.max(0, ...values.map(decimalsOf));
+    return (v: number) => v.toFixed(d);
+};
+
 /**
  * Quick-pick chips for common values next to a number input (e.g. slab thickness 0.10 / 0.12 / 0.15 m). The input
  * stays the source of truth; a chip only fills it.
  */
-export function PresetChips({ values, current, onPick, format = v => String(v), label }: {
+export function PresetChips({ values, current, onPick, format = sameDecimals(values), label }: {
     values: readonly number[];
     current: number;
     onPick: (v: number) => void;

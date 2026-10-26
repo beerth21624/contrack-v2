@@ -28,7 +28,7 @@ export function CountStepper({ value, onChange, ariaLabel, min = 0, step = 1, di
                 onClick={() => onChange(Math.max(min, Number((v - step).toFixed(6))))}>
                 <MinusOutlined />
             </button>
-            <span className={`w-[56px] rounded ${missing ? 'ring-1 ring-red-400' : ''}`}>
+            <span className={`w-[56px] rounded ${missing ? 'ring-1 ring-red-300' : ''}`}>
                 <NumberCell value={v} digits={Number.isInteger(v) ? digits : 2} blankZero placeholder="0" ariaLabel={ariaLabel}
                     onCommit={n => onChange(n ?? 0)} />
             </span>

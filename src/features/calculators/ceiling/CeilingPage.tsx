@@ -88,7 +88,7 @@ function CeilingJourney({ input, update, outputs }: {
                 onDuplicate={() => duplicate(i)} onDelete={() => setRows(rs => removeAt(rs, i))} hasData={r.width > 0 || r.length > 0}
                 deleteTitle="ลบห้องนี้?" missingText={`ยังขาด: ${missingOf(r).join(', ')}`}>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3">
-                    <PlanField className="sm:col-span-3" label="ชนิดฝ้า" missing={missing.has('ชนิดฝ้า')}>
+                    <PlanField className="sm:col-span-3" label="ชนิดฝ้า">
                         <ChoiceButtons ariaLabel="ชนิดฝ้า" size="small" options={TYPE_CHOICES} value={r.code === '' ? undefined : r.code}
                             onChange={code => editRow(i, row => setCeilingCode(row, code))} />
                     </PlanField>

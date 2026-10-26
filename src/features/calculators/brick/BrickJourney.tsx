@@ -94,13 +94,13 @@ export default function BrickJourney() {
                 onDuplicate={() => duplicate(i)} onDelete={() => remove(i)} hasData={w.length > 0}
                 deleteTitle="ลบผนังนี้?" missingText={`ยังขาด: ${missingOf(w).join(', ')}`}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                    <PlanField className="sm:col-span-2" label="ส่วนผนัง" missing={missing.has('ส่วนผนัง')}
+                    <PlanField className="sm:col-span-2" label="ส่วนผนัง"
                         hint={WALL_PART_HINTS[w.wallPart.trim()]}>
                         <ChoiceButtons ariaLabel="ส่วนผนัง" size="small" options={WALL_PART_CHOICES}
                             value={w.wallPart.trim() === '' ? undefined : w.wallPart.trim()}
                             onChange={wallPart => setWall(i, { wallPart })} />
                     </PlanField>
-                    <PlanField className="sm:col-span-2" label="ชนิดอิฐ" missing={missing.has('ชนิดอิฐ')}>
+                    <PlanField className="sm:col-span-2" label="ชนิดอิฐ">
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
                             <ChoiceButtons ariaLabel="ชนิดอิฐ" size="small" options={BRICK_CHOICES}
                                 value={w.brickType.trim() === '' ? undefined : w.brickType.trim()}
@@ -116,9 +116,9 @@ export default function BrickJourney() {
                             onChange={shape => setWall(i, { shape })} />
                     </PlanField>
                     <div className="hidden sm:block" />
-                    <PlanField label={triangle ? 'ความกว้างฐานจั่ว (ม.)' : 'ความยาวรวม (ม.)'} missing={missing.has('ความยาว')}
+                    <PlanField label={triangle ? 'ความกว้างฐานจั่ว (ม.)' : 'ความยาวรวม (ม.)'}
                         note={outOfRange(w.length, 0.3, 500, 'ม.')}>
-                        <span className={`max-w-[180px] rounded ${missing.has('ความยาว') ? 'ring-1 ring-red-400' : ''}`}>
+                        <span className={`max-w-[180px] rounded ${missing.has('ความยาว') ? 'ring-1 ring-red-300' : ''}`}>
                             <SumInput value={w.length} ariaLabel="ความยาวผนัง (ม.)" onChange={length => setWall(i, { length })} />
                         </span>
                     </PlanField>

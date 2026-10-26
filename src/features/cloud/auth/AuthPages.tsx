@@ -61,7 +61,7 @@ export function LoginPage() {
     };
 
     return (
-        <AuthCard title="เข้าสู่ระบบ" subtitle="เก็บโครงการไว้บน cloud เปิดเครื่องไหนก็ทำต่อได้ และทำงานเป็นทีม">
+        <AuthCard title="เข้าสู่ระบบ" subtitle="เก็บโครงการไว้บนคลาวด์ เปิดเครื่องไหนก็ทำต่อได้ และทำงานเป็นทีม">
             {error !== null && <Alert type="error" showIcon title={error} className="!mb-4" />}
             <Form<LoginRequest> layout="vertical" requiredMark={false} onFinish={(v) => { void onFinish(v); }} disabled={busy}>
                 <Form.Item name="email" label="อีเมล" rules={RULES.email}>

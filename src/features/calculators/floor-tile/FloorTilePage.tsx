@@ -96,7 +96,7 @@ function FloorTileJourney({ input, update, outputs }: {
                 onDuplicate={() => duplicate(i)} onDelete={() => setRows(rs => removeAt(rs, i))} hasData={r.width > 0 || r.length > 0}
                 deleteTitle="ลบห้องนี้?" missingText={`ยังขาด: ${missingOf(r).join(', ')}`}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                    <PlanField className="sm:col-span-2" label="ชนิดพื้น" missing={missing.has('ชนิดพื้น')}>
+                    <PlanField className="sm:col-span-2" label="ชนิดพื้น">
                         <ChoiceButtons ariaLabel="ชนิดพื้น" size="small" options={TYPE_CHOICES} value={r.code === '' ? undefined : r.code}
                             onChange={code => setRow(i, { code })} />
                     </PlanField>

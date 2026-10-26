@@ -21,15 +21,20 @@ export const blankIfZero = (v: number | null | undefined): number | null =>
 const shown = (value: number | null | undefined, digits = 2): string =>
     formatNumber(value ?? 0, (value ?? 0) === 0 ? 0 : digits);
 
-/** "คอนกรีต 3.25 ลบ.ม. · เหล็ก 412.00 กก." */
+const hasValue = (i: SummaryItem): boolean => (i.value ?? 0) !== 0;
+
+/** "คอนกรีต 3.25 ลบ.ม. · เหล็ก 412.00 กก." — results still at 0 are left out ('' when nothing is computed yet). */
 export function resultText(items: SummaryItem[]): string {
-    return items.map(i => `${i.label} ${shown(i.value, i.digits)} ${i.unit}`).join(' · ');
+    return items.filter(hasValue).map(i => `${i.label} ${shown(i.value, i.digits)} ${i.unit}`).join(' · ');
 }
+
+/** Shown while nothing on the level is computed yet and the page gives no `empty` text of its own. */
+const DEFAULT_EMPTY = 'กรอกค่าจากแบบด้านบน ระบบจะสรุปปริมาณให้ที่นี่';
 
 /**
  * The green "what this level comes to" box at the end of every journey level: the 1–6 results that matter as
- * big numbers, optional smaller results (`minor`) and a note. With `empty` and no items, the empty text is shown
- * instead (what to fill first).
+ * big numbers, optional smaller results (`minor`) and a note. While every result is still 0, the `empty` text
+ * (what to fill first) is shown instead of a row of zeros. Money belongs in the bottom bar, not here.
  */
 export function ResultSummary({ items, minor, note, empty }: {
     items: SummaryItem[];
@@ -37,11 +42,12 @@ export function ResultSummary({ items, minor, note, empty }: {
     note?: ReactNode;
     empty?: ReactNode;
 }) {
+    const nothingYet = !items.some(hasValue);
     return (
         <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
             <div className="text-[12px] font-semibold text-green-800 mb-2">สรุปผลขั้นตอนนี้</div>
-            {items.length === 0 && empty !== undefined
-                ? <div className="text-[13px] text-gray-600">{empty}</div>
+            {nothingYet
+                ? <div className="text-[13px] text-gray-600">{empty ?? DEFAULT_EMPTY}</div>
                 : (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2">
                         {items.map((it, i) => (
@@ -56,7 +62,7 @@ export function ResultSummary({ items, minor, note, empty }: {
                         ))}
                     </div>
                 )}
-            {minor !== undefined && minor.length > 0 && (
+            {minor !== undefined && minor.some(hasValue) && (
                 <div className="mt-2 text-[12px] text-gray-600 tabular-nums">{resultText(minor)}</div>
             )}
             {note !== undefined && <div className="mt-2 text-[12px] text-gray-600">{note}</div>}

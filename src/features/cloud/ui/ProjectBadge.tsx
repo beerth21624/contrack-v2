@@ -43,8 +43,8 @@ export function ProjectBadge({ compact = false }: { compact?: boolean }) {
         );
         return (
             <Tooltip title={status === 'signed-in'
-                ? 'บันทึกไว้ในเบราว์เซอร์นี้เท่านั้น — อัปโหลดขึ้น cloud ได้ที่ "โครงการทั้งหมด"'
-                : 'บันทึกไว้ในเบราว์เซอร์นี้ เข้าสู่ระบบเพื่อเก็บขึ้น cloud และทำงานเป็นทีม'}>
+                ? 'บันทึกไว้ในเบราว์เซอร์นี้เท่านั้น — อัปโหลดขึ้นคลาวด์ ได้ที่ "โครงการทั้งหมด"'
+                : 'บันทึกไว้ในเบราว์เซอร์นี้ เข้าสู่ระบบเพื่อเก็บขึ้นคลาวด์ และทำงานเป็นทีม'}>
                 {body}
             </Tooltip>
         );
@@ -64,7 +64,7 @@ export function ProjectBadge({ compact = false }: { compact?: boolean }) {
             <button type="button" className={`${pill} cursor-pointer hover:bg-white/10`} aria-label="โครงการที่เปิดอยู่"
                 title={project?.name}>
                 <span className="shrink-0 flex"><CloudOutlined /></span>
-                <span className={`${label} font-semibold`}>{project?.name ?? 'โครงการ cloud'}</span>
+                <span className={`${label} font-semibold`}>{project?.name ?? 'โครงการบนคลาวด์'}</span>
                 <span className="flex shrink-0 items-center gap-1 whitespace-nowrap text-white/70">
                     {STATUS_ICON[sync.state]}
                     <span className={compact ? 'hidden' : 'hidden md:inline'}>{syncStatusText(sync)}</span>

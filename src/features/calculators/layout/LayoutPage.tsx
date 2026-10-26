@@ -25,19 +25,19 @@ export default function LayoutPage() {
     return (
         <CalculatorShell def={layout} result={result} isDefault={isDefault} onReset={reset}
             aside={inJourney ? undefined : (
-                <SheetCard title="LIVE PREVIEW">
+                <SheetCard title="ผลคำนวณ">
                     <CalcField label="จำนวนผัง" value={outputs.points} digits={0} unit="ผัง" />
                     {LAYOUT_LIVE_PREVIEW.map(p => (
                         <CalcField key={p.output} label={p.label} value={outputs[p.output]} digits={0} unit={p.unit} />
                     ))}
                     <CalcField label="รวมค่าวัสดุ" value={outputs.materialTotal} unit="บาท" />
                     <CalcField label="ค่าแรง" value={outputs.labour} unit="บาท" />
-                    <CalcField label="รวม Step 04" value={outputs.total} unit="บาท" strong />
+                    <CalcField label="รวมงานวางผัง / ปักหมุด" value={outputs.total} unit="บาท" strong />
                 </SheetCard>
             )}>
             {inJourney ? <JourneyView calc={calc} /> : (
                 <>
-                    <SheetCard title="INPUT">
+                    <SheetCard title="ข้อมูลที่กรอก">
                         <InputNumberField label="จำนวนผัง (จุด)" value={input.points} digits={0} unit="จุด"
                             onChange={v => update({ points: v })} />
                         <InputNumberField label="จำนวนไม้ปักหมุด (ต้น)" value={input.stakes} digits={0} unit="ต้น"
@@ -54,7 +54,7 @@ export default function LayoutPage() {
                         </p>
                     </SheetCard>
 
-                    <SheetCard title="BOQ PREVIEW">
+                    <SheetCard title="ตัวอย่างรายการใน BOQ">
                         <div className="overflow-x-auto">
                             <table className="w-full border-collapse">
                                 <thead>
@@ -66,7 +66,7 @@ export default function LayoutPage() {
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td className={td}>ขั้นตอน 4</td>
+                                        <td className={td}>หมวด 4</td>
                                         <td className={td}>วางผัง / ปักหมุด</td>
                                         <td className={`${td} text-center`}>เหมา</td>
                                         <td className={tdNum}>1</td>
@@ -161,7 +161,7 @@ function JourneyView({ calc }: { calc: Calc }) {
                 </div>
             </SheetCard>
 
-            <AdvancedSection title="รายการวัสดุและค่าตั้งต้น" hint="สูตรวัสดุต่อจุดตั้งไว้ให้แล้ว">
+            <AdvancedSection title="รายการวัสดุและค่าตั้งต้น">
                 <Allowances calc={calc} />
                 <div className="mt-3">
                     <MaterialTable calc={calc} />

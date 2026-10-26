@@ -51,7 +51,7 @@ export default function PrecastSlabPage() {
             aside={(
                 <SheetCard title="ส่งเข้า BOQ หมวด 8 — 4) เหล็กล๊อคหัวแผ่นพื้นสำเร็จรูป">
                     {shearKeyRows.length === 0
-                        ? <p className="text-[12px] text-gray-500">ไม่มีเหล็ก Shear Key</p>
+                        ? <p className="text-[12px] text-gray-500">ไม่มีเหล็กล็อคหัวแผ่น</p>
                         : shearKeyRows.map(r => (
                             <div key={r.key}>
                                 <CalcField label={`${r.desc} (สุทธิ)`} value={r.qty} unit="กก." />
@@ -72,7 +72,7 @@ export default function PrecastSlabPage() {
                     <table className="w-full border-collapse">
                         <thead>
                             <tr>
-                                <th className={th}>ปริมาณเหล็ก Shear Key (กก.)</th>
+                                <th className={th}>ปริมาณเหล็กล็อคหัวแผ่น (กก.)</th>
                                 {REBAR_SIZES.map(s => <th key={s} className={th}>{s}</th>)}
                             </tr>
                         </thead>
@@ -101,17 +101,17 @@ export default function PrecastSlabPage() {
                         { kind: 'number', key: 'length', title: 'ยาว (ม.)', width: 70, get: r => r.length, set: (r, v) => ({ ...r, length: v }) },
                         { kind: 'calc', key: 'area', title: head('แผ่นพื้น', 'แผ่นพื้น (ตร.ม)'), width: 80, get: r => precastPanel(r).area },
                         { kind: 'calc', key: 'wiremesh', title: head('เหล็กไวร์เมช', 'ไวร์เมช (ตร.ม.)'), width: 80, get: r => precastPanel(r).wiremesh },
-                        { kind: 'select', key: 'keySize', title: head('เหล็ก Shear Key', 'ขนาด'), width: 90,
+                        { kind: 'select', key: 'keySize', title: head('เหล็กล็อคหัวแผ่น', 'ขนาด'), width: 90,
                             options: PS_BAR_SIZES.map(s => ({ value: s })), get: r => r.keySize, set: (r, v) => ({ ...r, keySize: v }) },
-                        { kind: 'number', key: 'keySpacing', title: head('เหล็ก Shear Key', 'ระยะห่าง (ม.)'), width: 70,
+                        { kind: 'number', key: 'keySpacing', title: head('เหล็กล็อคหัวแผ่น', 'ระยะห่าง (ม.)'), width: 70,
                             get: r => r.keySpacing, set: (r, v) => ({ ...r, keySpacing: v }) },
-                        { kind: 'number', key: 'keyBarLength', title: head('เหล็ก Shear Key', 'ความยาว /เส้น (ม.)'), width: 70,
+                        { kind: 'number', key: 'keyBarLength', title: head('เหล็กล็อคหัวแผ่น', 'ความยาว /เส้น (ม.)'), width: 70,
                             get: r => r.keyBarLength, set: (r, v) => ({ ...r, keyBarLength: v }) },
-                        { kind: 'calc', key: 'keyCount', title: head('เหล็ก Shear Key', 'จำนวน (เส้น)'), width: 70, digits: 0,
+                        { kind: 'calc', key: 'keyCount', title: head('เหล็กล็อคหัวแผ่น', 'จำนวน (เส้น)'), width: 70, digits: 0,
                             get: r => precastPanel(r).keyCount },
-                        { kind: 'calc', key: 'keyTotalLength', title: head('เหล็ก Shear Key', 'ความยาว รวม (ม.)'), width: 80,
+                        { kind: 'calc', key: 'keyTotalLength', title: head('เหล็กล็อคหัวแผ่น', 'ความยาว รวม (ม.)'), width: 80,
                             get: r => precastPanel(r).keyTotalLength },
-                        { kind: 'calc', key: 'keyWeight', title: head('เหล็ก Shear Key', 'น้ำหนัก (กก.)'), width: 80,
+                        { kind: 'calc', key: 'keyWeight', title: head('เหล็กล็อคหัวแผ่น', 'น้ำหนัก (กก.)'), width: 80,
                             get: r => precastPanel(r).keyWeight },
                         { kind: 'calc', key: 'perimeter', title: head('ไม้แบบ', 'ยาว (ม.)'), width: 70, get: r => precastPanel(r).perimeter },
                         { kind: 'calc', key: 'formwork', title: head('ไม้แบบ', 'ปริมาณ (ตร.ม.)'), width: 80, get: r => precastPanel(r).formwork },
@@ -123,12 +123,12 @@ export default function PrecastSlabPage() {
                 />
                 <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
                     <li>1 แถว = 1 แผง (กว้าง × ยาว) · ไวร์เมช = พื้นที่แผ่นพื้น</li>
-                    <li>เหล็ก Shear Key: จำนวน = ปัดขึ้น (2 × กว้าง ÷ ระยะห่าง), ยาวเส้นละ 0.80 ม. (ตาม Excel)</li>
+                    <li>เหล็กล็อคหัวแผ่น: จำนวน = ปัดขึ้น (2 × กว้าง ÷ ระยะห่าง), ยาวเส้นละ 0.80 ม. (ตาม Excel)</li>
                     <li>ไม้แบบ = เส้นรอบรูป 2 × (กว้าง + ยาว) × ความหนาคอนกรีตทับหน้า · คอนกรีตทับหน้า = พื้นที่ × หนา</li>
                     <li>
                         ส่งเข้า BOQ หมวด 10: พื้นสำเร็จรูป {formatNumber(outputs.area)} ตร.ม. (ไม้ค้ำยัน = 0.1 × พื้นที่ ลบ.ฟ. คิดใน BOQ),
                         ไวร์เมช {formatNumber(outputs.wiremesh)} ตร.ม., ไม้แบบ {formatNumber(outputs.formwork)} ตร.ม.,
-                        คอนกรีต {formatNumber(outputs.concrete, 4)} ลบ.ม. · เหล็ก Shear Key ส่งเข้าหมวด 8 (งานคานคอดิน)
+                        คอนกรีต {formatNumber(outputs.concrete, 4)} ลบ.ม. · เหล็กล็อคหัวแผ่น ส่งเข้าหมวด 8 (งานคานคอดิน)
                     </li>
                 </ul>
             </SheetCard>

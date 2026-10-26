@@ -15,7 +15,10 @@ import { RequireSignIn } from '../ui/common';
 export function AcceptInvitationPage({ token }: { token: string }) {
     const next = `/invite/${encodeURIComponent(token)}`;
     if (!acceptInvitationRequestSchema.safeParse({ token }).success) {
-        return <Result status="warning" title="ลิงก์เชิญไม่ถูกต้อง" subTitle="ตรวจว่าคัดลอกลิงก์มาครบ หรือขอลิงก์ใหม่จากผู้เชิญ" />;
+        return (
+            <Result status="warning" title="ลิงก์เชิญไม่ถูกต้อง" subTitle="ตรวจว่าคัดลอกลิงก์มาครบ หรือขอลิงก์ใหม่จากผู้เชิญ"
+                extra={<Link href="/journey"><Button>ไปหน้าจัดทำ BOQ</Button></Link>} />
+        );
     }
     return (
         <RequireSignIn next={next} title="คุณได้รับเชิญให้ทำ BOQ ร่วมกัน">

@@ -13,7 +13,7 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { NumberCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import {
-    CountStepper, EmptyState, Hint, LevelLink, ResultSummary, blankIfZero, levelTitle,
+    AddButton, CountStepper, Hint, LevelLink, ResultSummary, blankIfZero, levelTitle,
 } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
@@ -239,7 +239,7 @@ function CountLine({ line, hint, suggestion, onQty }: {
                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-sky-800">
                         <span>
                             <LevelLink levelId={offer.levelId} className="text-sky-700 hover:underline">ขั้นตอน{levelTitle(offer.levelId)}</LevelLink>
-นับ{offer.what}ได้ {formatNumber(offer.qty, 0)}
+                            {' '}นับ{offer.what} ได้ {formatNumber(offer.qty, 0)}
                         </span>
                         <Button size="small" onClick={() => onQty(offer.qty)}>ใช้ {formatNumber(offer.qty, 0)} {line.unit}</Button>
                     </div>
@@ -319,8 +319,11 @@ function JourneyPickList({
                 <SheetCard title={allowFreeText ? 'งานอื่นที่ไม่อยู่ในรายการ' : 'รายการเพิ่มเติม'}>
                     {otherLines.length === 0
                         ? (
-                            <EmptyState text="มีงานอื่นที่ไม่อยู่ในรายการด้านบนไหม? เพิ่มเองได้ พร้อมใส่ราคาต่อหน่วย"
-                                addLabel="เพิ่มงานอื่น" onAdd={addOther} />
+                            // Optional extras: a quiet add button, so the step's own "ยืนยัน" stays the one primary action.
+                            <>
+                                <p className="mb-2 text-[12px] text-gray-500">มีงานอื่นที่ไม่อยู่ในรายการด้านบน เพิ่มเองได้ พร้อมใส่ราคาต่อหน่วย</p>
+                                <AddButton label="เพิ่มงานอื่น" onClick={addOther} />
+                            </>
                         )
                         : (
                             <>
@@ -377,7 +380,7 @@ function JourneyPickList({
                 </SheetCard>
             )}
 
-            <AdvancedSection hint="ราคาตั้งต้นของแต่ละรายการ — ไม่ต้องแก้ก็ได้">
+            <AdvancedSection>
                 {priced.length === 0
                     ? <p className="text-[12px] text-gray-500">ใส่จำนวนรายการก่อน แล้วราคาต่อหน่วยจะแสดงที่นี่</p>
                     : (
@@ -405,12 +408,11 @@ function JourneyPickList({
                     )}
             </AdvancedSection>
 
+            {/* The split material / labour; the total is มูลค่าขั้นตอนนี้ in the bottom bar. */}
             <ResultSummary items={[
-                { label: 'จำนวนรายการ', value: outputs.rows, unit: 'รายการ', digits: 0 },
                 { label: 'ค่าวัสดุ', value: outputs.mat, unit: 'บาท', digits: 0 },
                 { label: 'ค่าแรง', value: outputs.lab, unit: 'บาท', digits: 0 },
-                { label: 'รวม', value: outputs.total, unit: 'บาท', digits: 0 },
-            ]} />
+            ]} empty="ใส่จำนวนตามแบบ ระบบจะคิดค่าวัสดุและค่าแรงให้" />
         </>
     );
 }

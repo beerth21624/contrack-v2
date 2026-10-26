@@ -18,10 +18,13 @@ export function fillState(filled: readonly boolean[], started: boolean = filled.
     return started ? 'missing' : 'empty';
 }
 
-/** Border + background classes of a card or row in a fill state. */
+/**
+ * Border + background classes of a card or row in a fill state. A half-filled card only gets a red edge: the
+ * "!" marker and its "ยังขาด: …" line already say what is missing, so no red wash over the fields being typed in.
+ */
 export const fillTone = (state: FillState): string =>
     state === 'done' ? 'border-green-200 bg-green-50/40'
-        : state === 'missing' ? 'border-red-300 bg-red-50/40'
+        : state === 'missing' ? 'border-red-300 bg-white'
             : 'border-gray-200 bg-white';
 
 /** The round marker in front of a card or row: a number while empty, a green tick when done, red "!" when missing. */

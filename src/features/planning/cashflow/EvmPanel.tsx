@@ -23,20 +23,20 @@ export function EvmPanel({ cf, input, onChange }: {
 }) {
     const e = cf.evm;
     const metrics: MetricRow[] = [
-        { label: 'Duration (Plan)', value: e.duration, unit: 'วัน', digits: 0, note: 'ระยะเวลาตามแผน S-Curve' },
-        { label: 'Budget (BAC)', value: e.bac, unit: 'บาท', note: `ต้นทุน × (1 + ค่าดำเนินงาน ${formatNumber(input.operatingCostRate * 100, 0)}%)` },
-        { label: 'Plan Value (PV)', value: e.pv, unit: 'บาท', note: `มูลค่างานตามแผนถึงสิ้น ${bucketLabel(cf.buckets[input.pvBuckets - 1])}` },
-        { label: 'Earned Value (EV)', value: e.ev, unit: 'บาท', note: 'มูลค่างานที่ทำได้จริง (% เสร็จ × สัดส่วนงาน × BAC)' },
-        { label: 'Actual Cost (AC)', value: e.ac, unit: 'บาท', note: 'เงินที่จ่ายไปจริง (กรอก)' },
-        { label: 'Schedule Variance', formula: 'EV-PV', value: e.sv, unit: 'บาท', note: 'ติดลบ = งานช้ากว่าแผน' },
-        { label: 'Cost Variance', formula: 'EV-AC', value: e.cv, unit: 'บาท', note: 'ติดลบ = ใช้เงินเกินมูลค่างาน' },
-        { label: 'Schedule Performance Index', formula: 'EV/PV', value: e.spi, digits: 3, note: 'น้อยกว่า 1 = ช้ากว่าแผน' },
-        { label: 'Cost Performance Index', formula: 'EV/AC', value: e.cpi, digits: 3, note: 'น้อยกว่า 1 = เกินงบ' },
-        { label: 'Estimated Time at Completion', formula: 'Duration/SPI', value: e.eacDays, unit: 'วัน', digits: 1 },
-        { label: 'Cost Estimate at Completion', formula: 'Budget/CPI', value: e.eacCost, unit: 'บาท' },
-        { label: 'Budget − EAC', value: e.vac, unit: 'บาท', note: 'Excel AA13 (ไม่มีชื่อ)' },
-        { label: 'Net Profit (Plan)', value: e.profitPlan, unit: 'บาท' },
-        { label: 'Net Profit (Forecasting)', value: e.profitForecast, unit: 'บาท', note: 'กำไรตามแผน + (Budget − EAC)' },
+        { label: 'ระยะเวลาตามแผน', value: e.duration, unit: 'วัน', digits: 0, note: 'ระยะเวลาตามแผน S-Curve' },
+        { label: 'งบประมาณ (BAC)', value: e.bac, unit: 'บาท', note: `ต้นทุน × (1 + ค่าดำเนินงาน ${formatNumber(input.operatingCostRate * 100, 0)}%)` },
+        { label: 'มูลค่างานตามแผน (PV)', value: e.pv, unit: 'บาท', note: `มูลค่างานตามแผนถึงสิ้น ${bucketLabel(cf.buckets[input.pvBuckets - 1])}` },
+        { label: 'มูลค่างานที่ทำได้ (EV)', value: e.ev, unit: 'บาท', note: 'มูลค่างานที่ทำได้จริง (% เสร็จ × สัดส่วนงาน × BAC)' },
+        { label: 'ต้นทุนจริง (AC)', value: e.ac, unit: 'บาท', note: 'เงินที่จ่ายไปจริง (กรอก)' },
+        { label: 'ส่วนต่างด้านเวลา (SV)', formula: 'EV-PV', value: e.sv, unit: 'บาท', note: 'ติดลบ = งานช้ากว่าแผน' },
+        { label: 'ส่วนต่างด้านต้นทุน (CV)', formula: 'EV-AC', value: e.cv, unit: 'บาท', note: 'ติดลบ = ใช้เงินเกินมูลค่างาน' },
+        { label: 'ดัชนีผลงานด้านเวลา (SPI)', formula: 'EV/PV', value: e.spi, digits: 3, note: 'น้อยกว่า 1 = ช้ากว่าแผน' },
+        { label: 'ดัชนีผลงานด้านต้นทุน (CPI)', formula: 'EV/AC', value: e.cpi, digits: 3, note: 'น้อยกว่า 1 = เกินงบ' },
+        { label: 'คาดการณ์เวลาเมื่อแล้วเสร็จ', formula: 'ระยะเวลา/SPI', value: e.eacDays, unit: 'วัน', digits: 1 },
+        { label: 'คาดการณ์ต้นทุนเมื่อแล้วเสร็จ (EAC)', formula: 'งบประมาณ/CPI', value: e.eacCost, unit: 'บาท' },
+        { label: 'งบประมาณ − EAC', value: e.vac, unit: 'บาท', note: 'Excel AA13 (ไม่มีชื่อ)' },
+        { label: 'กำไรสุทธิตามแผน', value: e.profitPlan, unit: 'บาท' },
+        { label: 'กำไรสุทธิคาดการณ์', value: e.profitForecast, unit: 'บาท', note: 'กำไรตามแผน + (งบประมาณ − EAC)' },
     ];
     const pvOptions = cf.buckets.map((b, i) => ({ value: i + 1, label: `${i + 1} สัปดาห์แรก (ถึงสิ้น ${bucketLabel(b)})` }));
 
@@ -44,10 +44,10 @@ export function EvmPanel({ cf, input, onChange }: {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
             <div className="flex flex-col gap-3 min-w-0">
                 <div>
-                    <InputNumberField label="Actual Cost (AC) — เงินที่จ่ายไปจริง" unit="บาท" value={input.actualCost}
+                    <InputNumberField label="ต้นทุนจริง (AC) — เงินที่จ่ายไปจริง" unit="บาท" value={input.actualCost}
                         onChange={v => onChange({ ...input, actualCost: v })} />
                     <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-center gap-2 py-1">
-                        <span className="text-[13px] text-gray-700">Plan Value (PV) นับถึง</span>
+                        <span className="text-[13px] text-gray-700">มูลค่างานตามแผน (PV) นับถึง</span>
                         <Select size="small" value={input.pvBuckets} options={pvOptions} aria-label="PV นับถึงสัปดาห์"
                             onChange={(v: number) => onChange({ ...input, pvBuckets: v })}
                             style={{ background: SHEET_COLORS.input, borderRadius: 3 }} variant="borderless" />

@@ -89,7 +89,7 @@ export function SlabOnGradeJourney({ input, outputs, onChange }: {
 
             <AddButton label="เพิ่มพื้นอีกผืน" onClick={add} />
 
-            <AdvancedSection title="ดินถมใต้พื้น และทรายรองพื้น" hint="ค่ามาตรฐาน ไม่ต้องแก้ก็ได้">
+            <AdvancedSection title="ดินถมใต้พื้น และทรายรองพื้น">
                 <EditableTable<SlabRow>
                     rows={rows}
                     onChange={onChange}

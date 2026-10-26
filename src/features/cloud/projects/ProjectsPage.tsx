@@ -60,7 +60,7 @@ const START_CHOICES: { start: ProjectStart; icon: React.ReactNode; title: string
 
 export function ProjectsPage() {
     return (
-        <RequireSignIn next="/projects" title="โครงการบน cloud">
+        <RequireSignIn next="/projects" title="โครงการบนคลาวด์">
             <ProjectsContent />
         </RequireSignIn>
     );
@@ -119,7 +119,7 @@ function ProjectsContent() {
     const confirmDelete = (p: ProjectDto) => {
         modal.confirm({
             title: `ลบโครงการ "${p.name}" ถาวร?`,
-            content: 'ข้อมูลทุกขั้นตอนและทุก Revision ของโครงการนี้จะหายไป กู้คืนไม่ได้ (ถ้าแค่ไม่ใช้แล้ว ให้ "เก็บถาวร" แทน)',
+            content: 'ข้อมูลทุกขั้นตอนและทุกฉบับแก้ไข ของโครงการนี้จะหายไป กู้คืนไม่ได้ (ถ้าแค่ไม่ใช้แล้ว ให้ "เก็บถาวร" แทน)',
             okText: 'ลบถาวร', okButtonProps: { danger: true }, cancelText: 'ยกเลิก',
             onOk: async () => {
                 if (p.id === openId) await closeCloudProject();
@@ -162,7 +162,7 @@ function ProjectsContent() {
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center gap-3">
                 <div className="flex-1 min-w-0">
                     <Title level={3} style={{ margin: 0 }}>โครงการทั้งหมด</Title>
-                    <Text type="secondary" className="text-[13px]">บันทึกบน cloud อัตโนมัติ เปิดจากเครื่องไหนก็ทำต่อได้</Text>
+                    <Text type="secondary" className="text-[13px]">บันทึกบนคลาวด์ อัตโนมัติ เปิดจากเครื่องไหนก็ทำต่อได้</Text>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <Select value={workspace.id} onChange={select} style={{ minWidth: 220 }} aria-label="พื้นที่ทำงาน"
@@ -187,8 +187,8 @@ function ProjectsContent() {
                 <div className="flex flex-wrap gap-2">
                     {openId !== null && <Button icon={<FolderOpenOutlined />} onClick={() => { void openLocal(); }}>เปิด</Button>}
                     {guestHasData && can(role, 'projects.create') && (
-                        <Button type="primary" ghost icon={<CloudUploadOutlined />} onClick={() => setUploadOpen(true)}>
-                            อัปโหลดโครงการในเครื่องขึ้น cloud
+                        <Button icon={<CloudUploadOutlined />} onClick={() => setUploadOpen(true)}>
+                            อัปโหลดโครงการในเครื่องขึ้นคลาวด์
                         </Button>
                     )}
                 </div>
@@ -287,7 +287,8 @@ function ProjectsContent() {
                                         showInfo={false} strokeColor="#fa8c16" className="flex-1 !mb-0" size="small" />
                                     <span className="text-[12px] text-gray-600 whitespace-nowrap tabular-nums">{p.summary.levelsDone}/{p.summary.levelsTotal} ขั้นตอน</span>
                                 </div>
-                                <Button type={p.id === openId ? 'default' : 'primary'} block icon={<FolderOpenOutlined />}
+                                {/* The whole card opens it: a quiet button, so "สร้างโครงการใหม่" stays the page's one primary action. */}
+                                <Button block icon={<FolderOpenOutlined />}
                                     loading={opening} disabled={!canOpen} onClick={own(activate)}>
                                     {p.id === openId ? 'ไปที่โครงการ' : p.archivedAt !== null ? 'กู้คืนก่อนเปิด' : 'เปิด'}
                                 </Button>
@@ -303,9 +304,9 @@ function ProjectsContent() {
                 onCreated={(id) => {
                     setUploadOpen(false);
                     modal.confirm({
-                        title: 'อัปโหลดขึ้น cloud แล้ว',
-                        content: 'โครงการในเครื่องนี้ยังอยู่เหมือนเดิม ต้องการเปิดโครงการบน cloud เพื่อทำต่อเลยไหม',
-                        okText: 'เปิดโครงการบน cloud', cancelText: 'ไว้ทีหลัง',
+                        title: 'อัปโหลดขึ้นคลาวด์ แล้ว',
+                        content: 'โครงการในเครื่องนี้ยังอยู่เหมือนเดิม ต้องการเปิดโครงการบนคลาวด์ เพื่อทำต่อเลยไหม',
+                        okText: 'เปิดโครงการบนคลาวด์', cancelText: 'ไว้ทีหลัง',
                         onOk: () => open(id),
                     });
                 }} />
@@ -346,12 +347,12 @@ function CreateProjectModal({ open, workspaceId, upload, onClose, onCreated }: {
 
     return (
         <Modal open={open} onCancel={onClose} destroyOnHidden
-            title={upload ? 'อัปโหลดโครงการในเครื่องขึ้น cloud' : 'สร้างโครงการใหม่'}
+            title={upload ? 'อัปโหลดโครงการในเครื่องขึ้นคลาวด์' : 'สร้างโครงการใหม่'}
             okText={upload ? 'อัปโหลด' : 'สร้างโครงการ'} cancelText="ยกเลิก"
             confirmLoading={create.isPending} onOk={() => { void submit().catch(() => undefined); }}>
             {upload && (
                 <p className="text-[13px] text-gray-600 mb-3">
-                    ข้อมูลทุกขั้นตอนที่กรอกไว้ในเครื่องนี้จะถูกคัดลอกขึ้น cloud — โครงการในเครื่องยังอยู่ ไม่ถูกลบ
+                    ข้อมูลทุกขั้นตอนที่กรอกไว้ในเครื่องนี้จะถูกคัดลอกขึ้นคลาวด์ — โครงการในเครื่องยังอยู่ ไม่ถูกลบ
                 </p>
             )}
             <Form form={form} layout="vertical" requiredMark={false} initialValues={{ name: defaultName }}>

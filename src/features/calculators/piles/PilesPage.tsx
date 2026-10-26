@@ -53,14 +53,14 @@ export default function PilesPage() {
                     <CalcField label="ค่าตัดหัวเสาเข็ม" value={cutHeads.total} unit="บาท" />
                 </SheetCard>
             )}>
-            <SheetCard title="Spec เสาเข็ม">
+            <SheetCard title="รายละเอียดเสาเข็ม">
                 <InputSelectField label="ชนิดเสาเข็ม" value={input.pileType} placeholder="เลือกชนิดเสาเข็ม"
                     options={PILE_TYPES.map(t => ({ value: t }))} onChange={v => update({ pileType: v })} />
                 <InputSelectField label="หน้าตัด/รูปทรง" value={input.section} placeholder="เลือกหน้าตัด"
                     options={PILE_SECTION_GROUPS.map(g => ({ label: g.label, options: g.options.map(o => ({ value: o })) }))}
                     onChange={v => update({ section: v })} />
                 <InputNumberField label="ความยาว" value={input.length} unit="ม." onChange={v => update({ length: v })} />
-                <InputTextField label="spec เพิ่มเติม (ไม่บังคับ)" value={input.extraSpec}
+                <InputTextField label="รายละเอียดเพิ่มเติม (ถ้ามี)" value={input.extraSpec}
                     placeholder="เช่น รับน้ำหนัก 15 ตัน/ต้น, ยี่ห้อ" onChange={v => update({ extraSpec: v })} />
 
                 <div className="mt-3 grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-center gap-2">
@@ -70,7 +70,7 @@ export default function PilesPage() {
                     </span>
                 </div>
                 {missing.length > 0 && (
-                    <Alert className="mt-3" type="warning" showIcon title="ต้องใส่ spec ให้ครบ"
+                    <Alert className="mt-3" type="warning" showIcon title="ต้องใส่รายละเอียดเสาเข็มให้ครบ"
                         description={`ยังไม่ระบุ: ${missing.join(', ')}`} />
                 )}
             </SheetCard>
