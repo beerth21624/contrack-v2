@@ -55,6 +55,17 @@ export interface OracleError { error: string; message?: string }
 export type OracleValue = number | string | boolean | null | OracleError;
 export type OracleInput = number | string | boolean | null;
 
+/**
+ * A formula typed into an input cell, as a user would (`=E6`, `=K7`, `=2.4+9.2+6.6`, `=(4.7+6.45)/COS(RADIANS(40))`),
+ * or `formula: null` to empty it. Unlike a plain value it may replace a cell's own formula: several yellow input
+ * cells hold a default link (Roofing E5 `=K7`, E12 `=E6`; Roof Structure E14 `='มุงหลังคา_Roofing'!K7`).
+ * References without a sheet resolve on the cell's own sheet.
+ */
+export interface OracleFormula { formula: string | null }
+/** What setInputs / replaceInputs accept for one cell. */
+export type OracleCellInput = OracleInput | OracleFormula;
+export const isOracleFormula = (v: OracleCellInput): v is OracleFormula => typeof v === 'object' && v !== null;
+
 export const isOracleError = (v: OracleValue): v is OracleError => typeof v === 'object' && v !== null;
 
 /** Why a cell is not evaluated live (it keeps the value cached in the workbook). */
@@ -843,17 +854,19 @@ export class ExcelOracle {
     /**
      * Types values into input cells, like a user in Excel. Keys are `Sheet!A1`. Refuses cells holding a formula
      * that reads other cells (a mapping mistake); a constant formula such as `=9.5+7` may be overwritten.
+     * An `OracleFormula` value (`{ formula: '=E6' }`, `{ formula: null }`) is typed / cleared on purpose and may
+     * replace any formula (a yellow cell's default link).
      */
-    setInputs(values: Record<string, OracleInput>): void {
+    setInputs(values: Record<string, OracleCellInput>): void {
         this.applyInputs(values, false);
     }
 
     /** reset() + setInputs(values) in one recalculation (faster when running many input sets). */
-    replaceInputs(values: Record<string, OracleInput>): void {
+    replaceInputs(values: Record<string, OracleCellInput>): void {
         this.applyInputs(values, true);
     }
 
-    private applyInputs(values: Record<string, OracleInput>, resetFirst: boolean): void {
+    private applyInputs(values: Record<string, OracleCellInput>, resetFirst: boolean): void {
         const changes = new Map<string, [SimpleCellAddress, RawCellContent]>();
         if (resetFirst) {
             for (const ref of this.touched) changes.set(ref, [this.address(ref), this.records.get(ref)?.baseline ?? null]);
@@ -861,12 +874,20 @@ export class ExcelOracle {
         }
         for (const [ref, v] of Object.entries(values)) {
             const rec = this.record(ref);
-            if (rec?.excelFormula !== undefined && /[A-Z]{1,3}\$?\d|!|:/.test(rec.excelFormula.replace(/"[^"]*"/g, ''))) {
+            const typed = isOracleFormula(v);
+            if (!typed && rec?.excelFormula !== undefined && /[A-Z]{1,3}\$?\d|!|:/.test(rec.excelFormula.replace(/"[^"]*"/g, ''))) {
                 throw new Error(`excel-oracle: ${ref} holds the formula =${rec.excelFormula}; it is not an input cell`);
+            }
+            let raw: RawCellContent;
+            if (!typed) raw = toRaw(v);
+            else if (v.formula === null) raw = null;
+            else {
+                raw = toHyperFormula(v.formula);
+                if (!this.hf.validateFormula(raw)) throw new Error(`excel-oracle: cannot parse the formula typed into ${ref}: ${v.formula}`);
             }
             const { sheet, row, col } = parseRef(ref);
             const key = refKey(sheet, row, col);
-            changes.set(key, [this.address(ref), toRaw(v)]);
+            changes.set(key, [this.address(ref), raw]);
             this.touched.add(key);
         }
         if (changes.size === 0) return;

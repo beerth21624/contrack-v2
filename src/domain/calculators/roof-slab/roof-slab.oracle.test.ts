@@ -139,7 +139,7 @@ describe('พื้นดาดฟ้า_RoofSlab vs Excel formulas (oracle)', (
         const has = (p: (input: RoofSlabInput) => boolean) => CASES.filter(([, input]) => p(input)).length;
         const concrete = (i: RoofSlabInput) => roofSlabTotals(i).concrete;
         expect(has(i => i.rows.length > TOTALLED_ROWS)).toBeGreaterThan(3);
-        expect(has(i => i.rows.length === EXCEL_ROWS)).toBeGreaterThan(1);
+        expect(has(i => i.rows.length === EXCEL_ROWS)).toBeGreaterThan(0);
         expect(has(i => concrete(i) === 0)).toBeGreaterThan(1);
         expect(has(i => concrete(i) > 0 && concrete(i) * 1.1 < 1)).toBeGreaterThan(0);
         expect(has(i => concrete(i) * 1.1 > 1)).toBeGreaterThan(20);

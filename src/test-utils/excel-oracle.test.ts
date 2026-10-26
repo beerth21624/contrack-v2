@@ -99,6 +99,19 @@ describe('Excel v5 oracle self-test: with no input changed, every formula reprod
             expect(() => { oracle.setInputs({ 'ก่ออิฐ_Brick!E5': 40 }); }).not.toThrow();   // =9.5+7+… is a typed value
             oracle.reset();
         });
+
+        it('a typed formula may replace a yellow cell\'s default link; formula null empties it', () => {
+            expect(() => { oracle.setInputs({ 'มุงหลังคา_Roofing!E5': 10 }); }).toThrow(/not an input cell/);   // E5 = K7
+            oracle.replaceInputs({ 'มุงหลังคา_Roofing!E5': { formula: '=K7*2' }, 'มุงหลังคา_Roofing!E6': { formula: '=1+2' } });
+            expect(oracle.num('มุงหลังคา_Roofing!E5')).toBeCloseTo((113 / Math.cos((40 * Math.PI) / 180)) * 2, 9);
+            expect(oracle.num('BOQ (Home)!E163')).toBe(Math.ceil(3 * 3.3));   // G6 = ROUNDUP(E6*C6)
+            oracle.replaceInputs({ 'มุงหลังคา_Roofing!E5': { formula: null } });
+            expect(oracle.get('มุงหลังคา_Roofing!E5')).toBeNull();
+            expect(oracle.num('BOQ (Home)!E162')).toBe(0);
+            expect(() => { oracle.setInputs({ 'มุงหลังคา_Roofing!E5': { formula: '=(1+' } }); }).toThrow(/cannot parse/);
+            oracle.reset();
+            expect(oracle.num('BOQ (Home)!E162')).toBe(1623);
+        });
     });
 });
 
