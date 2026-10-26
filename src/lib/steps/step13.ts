@@ -91,6 +91,7 @@ export function calcStep13(inp: Step13Input): StepResult {
     formwork_area: { qty: r2(strRes.fw_area_m2), uom: 'm²', label: 'ไม้แบบบันได (ท้อง + ลูกตั้ง + ข้าง)', sku: strRes.fw_sku },
     rebar_kg: {
       qty: r2(strRes.rb_gross_kg),
+      labQty: r2(strRes.rb_net_kg),
       uom: 'kg',
       label: inp.direct_rebar_kg ? 'เหล็กเสริมบันได (จาก Bar Schedule)' : `เหล็กเสริมบันได (${rebarKgPer} kg/m³)`
     },

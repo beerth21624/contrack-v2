@@ -22,7 +22,7 @@ export interface Step11Input {
   waste_percent: number;               // default 5
   structural_spec?: StructuralSpecParams; // Core specs 
   // optional
-  formwork_reuse_times?: number;       // default 3
+  formwork_reuse_times?: number;       // @deprecated ignored — Excel prices full contact area
   spacer_per_column?: number;          // default 4
   tie_wire_factor?: number;            // default 1.5
   concrete_pump_required?: boolean;
@@ -34,7 +34,6 @@ export interface Step11Input {
 // ─── STEP 11 — ทำเสาชั้น 1 ──────────────────────────────────────────────────
 export function calcStep11(inp: Step11Input): StepResult {
   const { columns, rebar_kg_per_m3, waste_percent } = inp;
-  const reuse = Math.max(1, inp.formwork_reuse_times ?? 3);
 
   let totalN = 0;
   let totalVol = 0;
@@ -47,7 +46,7 @@ export function calcStep11(inp: Step11Input): StepResult {
     const vol = w * d * h;
     totalVol += n * vol;
     const perimeter = 2 * (w + d);
-    totalFormwork += n * perimeter * h / reuse;
+    totalFormwork += n * perimeter * h; // Excel: จำนวน × 2(ก+ย) × สูง (ไม่หารใช้ซ้ำ)
     totalSurface += n * perimeter * h;
   }
 
@@ -75,9 +74,9 @@ export function calcStep11(inp: Step11Input): StepResult {
 
   const quantities: StepResult['quantities'] = {
     concrete_volume: { qty: r2(strRes.conc_gross_m3), uom: 'm³', label: `คอนกรีตเสา ${specParams.ksc} ksc (${typeSummary})`, sku: strRes.conc_sku },
-    formwork_area: { qty: r2(strRes.fw_area_m2), uom: 'm²', label: `แบบหล่อเสา (ใช้ซ้ำ ${reuse} ครั้ง)`, sku: strRes.fw_sku },
+    formwork_area: { qty: r2(strRes.fw_area_m2), uom: 'm²', label: 'แบบหล่อเสา', sku: strRes.fw_sku },
     pour_labor: { qty: r2(strRes.pour_labor_m3), uom: 'm³', label: `ค่าแรงเทคอนกรีตเสา`, sku: strRes.pour_labor_sku },
-    rebar_kg: { qty: r2(strRes.rb_gross_kg), uom: 'kg', label: inp.direct_rebar_kg ? 'เหล็กเสริมเสา (จาก Bar)' : `เหล็กเสริมเสา (${rebar_kg_per_m3} kg/m³)` },
+    rebar_kg: { qty: r2(strRes.rb_gross_kg), labQty: r2(strRes.rb_net_kg), uom: 'kg', label: inp.direct_rebar_kg ? 'เหล็กเสริมเสา (จาก Bar)' : `เหล็กเสริมเสา (${rebar_kg_per_m3} kg/m³)` },
     tie_wire: { qty: r2(strRes.rb_wire_kg), uom: 'kg', label: `ลวดผูกเหล็ก`, sku: 'RB-WIRE' },
   };
 

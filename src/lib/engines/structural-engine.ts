@@ -21,7 +21,7 @@ export interface StructuralResult {
     conc_admix_wp_m3?: number;
 
     // ── Labor (Pouring) ──
-    pour_labor_m3: number;
+    pour_labor_m3: number;  // net volume — Excel charges labour on the quantity without waste
     pour_labor_sku: string;
 
     // ── Formwork ──
@@ -31,9 +31,15 @@ export interface StructuralResult {
     // ── Rebar & Accessories ──
     rb_net_kg: number;
     rb_gross_kg: number;
-    rb_wire_kg: number;     // 0.026 kg / kg rebar
+    rb_wire_kg: number;     // 3% of gross rebar (Excel BOQ)
     rb_spacer_pcs: number;  // 4 pcs / m2 formwork
 }
+
+/** Excel BOQ: tie wire = 3% of rebar weight including waste */
+export const TIE_WIRE_RATIO = 0.03;
+/** Excel BOQ: formwork battens = 0.6 cu.ft. and nails = 0.25 kg per m² of formwork */
+export const FORMWORK_BATTEN_CUFT_PER_M2 = 0.6;
+export const FORMWORK_NAIL_KG_PER_M2 = 0.25;
 
 export function computeStructuralQuantities(
     inputs: StructuralInputs, 
@@ -41,7 +47,7 @@ export function computeStructuralQuantities(
 ): StructuralResult {
     
     // 1. Concrete Calculations
-    const concWaste = params.concrete_waste_percent ?? 5; // Default 5%
+    const concWaste = params.concrete_waste_percent ?? 10; // Excel BOQ default 10%
     const concGross = inputs.concrete_volume_m3 * (1 + concWaste / 100);
     
     // Determine Concrete SKU based on KSC
@@ -71,12 +77,11 @@ export function computeStructuralQuantities(
     const rbWaste = params.rebar_waste_percent ?? 10; // Default 10%
     const rbGross = inputs.rebar_weight_kg * (1 + rbWaste / 100);
     
-    // Standard rule: 26 kg of tie wire per 1 Ton (1000 kg) of rebar -> 0.026
-    const tieWireKg = rbGross * 0.026;
+    const tieWireKg = rbGross * TIE_WIRE_RATIO;
     
     // Standard rule: 4 spacers per sq.m. of formwork contact area
     // (If footing/ground, we still need spacers under the rebar)
-    let spacerPcs = inputs.formwork_area_m2 * 4;
+    const spacerPcs = inputs.formwork_area_m2 * 4;
     // Special case for SOG/Footing if formwork area is small but bottom area is large
     // Normally handled inside the Step by passing total contact area
     
@@ -86,7 +91,7 @@ export function computeStructuralQuantities(
         conc_sku: concSku,
         conc_admix_wp_m3: wpQty,
 
-        pour_labor_m3: concGross,
+        pour_labor_m3: inputs.concrete_volume_m3,
         pour_labor_sku: laborSku,
 
         fw_area_m2: inputs.formwork_area_m2,

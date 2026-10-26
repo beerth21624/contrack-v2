@@ -1,5 +1,5 @@
 import { type StepResult } from '@/types';
-import { r2 } from './helpers';
+import { r2, SAND_WASTE_FACTOR, SAND_BOQ_WASTE, PLASTIC_SHEET_WASTE } from './helpers';
 import { type ConcreteGrade } from '@/data/price-list';
 import { 
     computeStructuralQuantities, 
@@ -38,7 +38,6 @@ export interface Step9Input {
 export function calcStep9(inp: Step9Input): StepResult {
   const { slab_area_m2: A, slab_thickness_m: ts, sand_fill_thickness_m: Ts,
     plastic_sheet_area_factor: pf, waste_percent } = inp;
-  const wf = 1 + waste_percent / 100;
   const concreteVol = A * ts;
   
   // ─── Structural Engine Hook ────────────────────────────────
@@ -70,8 +69,9 @@ export function calcStep9(inp: Step9Input): StepResult {
   }, specParams);
 
   const quantities: StepResult['quantities'] = {
-    sand_volume:     { qty: r2(A * Ts * wf), uom: 'm³', label: `ทรายปรับระดับ (${Ts} ม., waste ${waste_percent}%)`, sku: 'SOG-SAND' },
-    plastic_area:    { qty: r2(A * pf),      uom: 'm²', label: `พลาสติกกันชื้น (overlap ×${pf})`, sku: 'SOG-PLASTIC' },
+    // Excel พื้นหล่อในที่: ทราย = พื้นที่ × หนา × 1.25 แล้วเผื่อ 30%; พลาสติก = พื้นที่ เผื่อ 30% (ค่าแรงคิดสุทธิ)
+    sand_volume:     { qty: r2(A * Ts * SAND_WASTE_FACTOR * (1 + SAND_BOQ_WASTE)), labQty: r2(A * Ts * SAND_WASTE_FACTOR), uom: 'm³', label: `ทรายปรับระดับ (${Ts} ม., ×${SAND_WASTE_FACTOR}, เผื่อ ${SAND_BOQ_WASTE * 100}%)`, sku: 'SOG-SAND' },
+    plastic_area:    { qty: r2(A * pf * (1 + PLASTIC_SHEET_WASTE)), labQty: r2(A * pf), uom: 'm²', label: `พลาสติกกันชื้น (เผื่อ ${PLASTIC_SHEET_WASTE * 100}%)`, sku: 'SOG-PLASTIC' },
     concrete_volume: { qty: r2(strRes.conc_gross_m3), uom: 'm³', label: `คอนกรีตพื้น ${specParams.ksc} ksc (${ts} ม., waste ${waste_percent}%)`, sku: strRes.conc_sku },
     pour_labor:      { qty: r2(strRes.pour_labor_m3), uom: 'm³', label: `ค่าแรงเทคอนกรีต พื้นบนดิน`, sku: strRes.pour_labor_sku },
   };
@@ -84,7 +84,7 @@ export function calcStep9(inp: Step9Input): StepResult {
   if (rebarType === 'wiremesh' && inp.wiremesh_kg_per_m2) {
       quantities.wiremesh_kg = { qty: r2(A * 1.15 * inp.wiremesh_kg_per_m2), uom: 'kg', label: `ไวร์เมช (${inp.wiremesh_kg_per_m2} kg/m² รวมเผื่อทาบ 15%)`, sku: 'SOG-MESH' };
   } else if (totalRebarKg > 0) {
-      quantities.rebar_kg = { qty: r2(strRes.rb_gross_kg), uom: 'kg', label: `เหล็กเสริมพื้น (${inp.rebar_weight_kg_per_m3} kg/m³)`, sku: 'SOG-REBAR' };
+      quantities.rebar_kg = { qty: r2(strRes.rb_gross_kg), labQty: r2(strRes.rb_net_kg), uom: 'kg', label: `เหล็กเสริมพื้น (${inp.rebar_weight_kg_per_m3} kg/m³)`, sku: 'SOG-REBAR' };
       quantities.tie_wire = { qty: r2(strRes.rb_wire_kg), uom: 'kg', label: `ลวดผูกเหล็ก`, sku: 'RB-WIRE' };
   }
 

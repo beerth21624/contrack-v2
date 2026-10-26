@@ -1,5 +1,5 @@
 import { type StepResult } from '@/types';
-import { r2, EXCAVATION_MARGIN, SAND_WASTE_FACTOR } from './helpers';
+import { r2, EXCAVATION_MARGIN, SAND_WASTE_FACTOR, LEAN_WASTE, SAND_BOQ_WASTE } from './helpers';
 import { type ConcreteGrade } from '@/data/price-list';
 import { 
     computeStructuralQuantities, 
@@ -80,6 +80,7 @@ export function calcStep6(inp: Step6Input): StepResult {
   }
 
   const concrete_volume = r2(totalConcreteVol * wf);
+  // net volumes; BOQ adds Excel waste on material only (lean 10%, sand 30%)
   const lean_volume = r2(totalLeanVol);
   const sand_volume = r2(totalSandVol);
 
@@ -121,8 +122,8 @@ export function calcStep6(inp: Step6Input): StepResult {
   // Re-apply Step specific UI quantity outputs 
   const quantities: StepResult['quantities'] = {
     footing_area:    { qty: r2(totalArea),   uom: 'm²', label: `พื้นที่ฐานรากรวม (${typeSummary})` },
-    lean_volume:     { qty: lean_volume,     uom: 'm³', label: `ลีน 1:3:5 ใต้ฐาน (หนา ${r2(Tlean * 100)} ซม.)`, sku: 'CON-LEAN' },
-    sand_volume:     { qty: sand_volume,     uom: 'm³', label: `ทรายรองใต้ฐาน (×${SAND_WASTE_FACTOR})`, sku: 'FTG-SAND' },
+    lean_volume:     { qty: r2(lean_volume * (1 + LEAN_WASTE)), labQty: lean_volume, uom: 'm³', label: `ลีน 1:3:5 ใต้ฐาน (หนา ${r2(Tlean * 100)} ซม., เผื่อ ${LEAN_WASTE * 100}%)`, sku: 'CON-LEAN' },
+    sand_volume:     { qty: r2(sand_volume * (1 + SAND_BOQ_WASTE)), labQty: sand_volume, uom: 'm³', label: `ทรายรองใต้ฐาน (×${SAND_WASTE_FACTOR}, เผื่อ ${SAND_BOQ_WASTE * 100}%)`, sku: 'FTG-SAND' },
     
     // Core engine mapped
     concrete_volume: { qty: r2(strRes.conc_gross_m3), uom: 'm³', label: `คอนกรีตฐานราก ${specParams.ksc} ksc (waste ${waste_percent}%)`, sku: strRes.conc_sku },
@@ -139,14 +140,15 @@ export function calcStep6(inp: Step6Input): StepResult {
     const excVol = r2(totalExcVol);
     quantities.excavation_volume = { qty: excVol, uom: 'm³', label: `ขุดดินฐานราก (ลึก ${inp.excavation_depth_m} ม.)`, sku: 'FTG-EXC' };
     const pedestal = inp.pedestal_volume_m3 ?? 0;
-    const concrete_core_vol = r2(strRes.conc_gross_m3);
+    // Excel: backfill = excavation − sand − lean − net footing concrete − pedestal
+    const concrete_core_vol = r2(strRes.conc_net_m3);
     const backfill = r2(Math.max(0, excVol - sand_volume - lean_volume - concrete_core_vol - pedestal));
     quantities.backfill_volume = { qty: backfill, uom: 'm³', label: 'ดินถมกลับ', sku: 'FTG-FILL' };
   }
 
   // ─── เหล็กเสริม ─────────────────────────────────────────
   if (totalRebarKg > 0) {
-    quantities.rebar_kg = { qty: r2(strRes.rb_gross_kg), uom: 'kg', label: `เหล็กเสริมฐานราก ${inp.direct_rebar_kg ? '(ตาม BS)' : `(${inp.rebar_weight_kg_per_m3} kg/m³)`} (รวม Waste)`, sku: 'FTG-REBAR' };
+    quantities.rebar_kg = { qty: r2(strRes.rb_gross_kg), labQty: r2(strRes.rb_net_kg), uom: 'kg', label: `เหล็กเสริมฐานราก ${inp.direct_rebar_kg ? '(ตาม BS)' : `(${inp.rebar_weight_kg_per_m3} kg/m³)`} (รวม Waste)`, sku: 'FTG-REBAR' };
     
     // Tie Wire
     if (inp.tie_wire_factor !== undefined) {
@@ -179,8 +181,10 @@ export function calcStep6(inp: Step6Input): StepResult {
   }
 
   // ─── เครื่องจี้คอนกรีต ──────────────────────────────────
-  const vibDays = inp.vibrator_days ?? Math.max(1, Math.ceil(totalN / 10));
-  quantities.vibrator = { qty: vibDays, uom: 'วัน', label: `เครื่องจี้คอนกรีต (Vibrator)`, sku: 'FTG-VIBRATOR' };
+  if (totalConcreteVol > 0) {
+    const vibDays = inp.vibrator_days ?? Math.max(1, Math.ceil(totalN / 10));
+    quantities.vibrator = { qty: vibDays, uom: 'วัน', label: `เครื่องจี้คอนกรีต (Vibrator)`, sku: 'FTG-VIBRATOR' };
+  }
 
   // ─── บ่มคอนกรีต ─────────────────────────────────────────
   const curing = inp.curing_method ?? 'water';

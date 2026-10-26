@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useCallback } from 'react';
+import React, { createContext, useContext, useCallback, useEffect } from 'react';
 import type { PriceItem, StepSaveMap } from '@/types';
 import { useLocalStorage } from '@/lib/hooks/useLocalStorage';
 import { INITIAL_PRICE_LIST } from '@/data/price-list';
@@ -35,6 +35,16 @@ export function GlobalStateProvider({ children }: { children: React.ReactNode })
     const [priceList, setPriceList, resetPriceList] = useLocalStorage<PriceItem[]>('boq-price-list', INITIAL_PRICE_LIST);
     const [stepSaves, setStepSaves, resetStepSaves] = useLocalStorage<StepSaveMap>('boq-step-saves', {});
     const [scheduleData, setScheduleData, resetScheduleData] = useLocalStorage<StepSchedule[]>('boq-schedule-data', INITIAL_SCHEDULE_DATA);
+
+    // A saved price list predates any codes added since; append the missing ones
+    // (keeping the user's own prices) so new BOQ rows don't silently disappear.
+    useEffect(() => {
+        setPriceList((prev: PriceItem[]) => {
+            const known = new Set(prev.map(p => p.code));
+            const missing = INITIAL_PRICE_LIST.filter(p => !known.has(p.code));
+            return missing.length > 0 ? [...prev, ...missing] : prev;
+        });
+    }, [setPriceList]);
 
     const handleUpdatePrice = useCallback((code: string, field: 'costMaterial' | 'costLabor', value: number) => {
         setPriceList((prev: PriceItem[]) => prev.map((p: PriceItem) => p.code === code ? { ...p, [field]: value } : p));

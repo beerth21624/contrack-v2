@@ -1,5 +1,5 @@
 import { type StepResult } from '@/types';
-import { r2 } from './helpers';
+import { r2, LEAN_WASTE } from './helpers';
 import { type ConcreteGrade } from '@/data/price-list';
 import { 
     computeStructuralQuantities, 
@@ -22,7 +22,7 @@ export interface Step8Input {
   sand_bedding_thickness_m?: number;     // ทรายรองใต้ลีน (default 0.05)
   excavation_extra_margin_m?: number;    // เผื่อขุดกว้าง/ด้าน (default 0.20)
   formwork_factor?: number;              // m²/ม.ยาว (override)
-  formwork_reuse_times?: number;         // ใช้แบบซ้ำ (default 3)
+  formwork_reuse_times?: number;         // @deprecated ignored — Excel prices full contact area
   tie_wire_factor?: number;              // ลวดผูก (% ต่อเหล็ก) default 1.5
   spacer_per_m?: number;                 // spacer ต่อ ม. ยาว (default 2)
   concrete_pump_required?: boolean;      // ปั๊มคอนกรีต
@@ -46,7 +46,10 @@ export function calcStep8(inp: Step8Input): StepResult {
   // ─── ลีน / ทราย ─────────────────────────────────────────
   const lean_width = bw + 0.10; // กว้างกว่าคาน 5 ซม. ต่อด้าน
   const sandT = inp.sand_bedding_thickness_m ?? 0.05;
-  const sand_volume = r2(Lb * lean_width * sandT * wf);
+  const sand_net = Lb * lean_width * sandT;
+  const sand_volume = r2(sand_net * wf);
+  // Excel คานคอดิน: ลีน = กว้างคาน × ยาว × หนา, เผื่อ 10% (ค่าแรงคิดปริมาณสุทธิ)
+  const lean_net = Lb * bw * Tlean;
 
   // ─── Structural Engine Hook ────────────────────────────────
   const kscMapping: Record<string, number> = { '180': 180, '210': 210, '240': 240, '280': 280, '300': 300, '320': 320, '350': 350 };
@@ -64,12 +67,12 @@ export function calcStep8(inp: Step8Input): StepResult {
   specParams.concrete_waste_percent = waste_percent;
 
   const concreteNetVol = Lb * bw * bh;
-  const reuse = Math.max(1, inp.formwork_reuse_times ?? 3);
+  // Excel: ไม้แบบ = 2 ข้าง × สูง × ยาว (ไม่หารจำนวนครั้งใช้ซ้ำ)
   let fwNetArea = 0;
   if (inp.formwork_factor) {
-    fwNetArea = (Lb * inp.formwork_factor) / reuse;
+    fwNetArea = Lb * inp.formwork_factor;
   } else {
-    fwNetArea = (Lb * 2 * bh) / reuse;
+    fwNetArea = Lb * 2 * bh;
   }
 
   let totalRebarKg = 0;
@@ -87,11 +90,11 @@ export function calcStep8(inp: Step8Input): StepResult {
 
   const quantities: StepResult['quantities'] = {
     beam_cross_area: { qty: r2(bw * bh), uom: 'm²', label: `หน้าตัดคาน (${bw}×${bh})` },
-    sand_volume:     { qty: sand_volume,  uom: 'm³', label: `ทรายรองใต้ลีน (${sandT} ม.)`, sku: 'GBM-SAND' },
-    lean_volume:     { qty: r2(Lb * lean_width * Tlean * wf), uom: 'm³', label: `ลีน 1:3:5 ใต้คาน`, sku: 'GBM-LEAN' },
+    sand_volume:     { qty: sand_volume,  labQty: r2(sand_net), uom: 'm³', label: `ทรายรองใต้ลีน (${sandT} ม.)`, sku: 'GBM-SAND' },
+    lean_volume:     { qty: r2(lean_net * (1 + LEAN_WASTE)), labQty: r2(lean_net), uom: 'm³', label: `ลีน 1:3:5 ใต้คาน (เผื่อ ${LEAN_WASTE * 100}%)`, sku: 'GBM-LEAN' },
     concrete_volume: { qty: r2(strRes.conc_gross_m3), uom: 'm³', label: `คอนกรีต ${specParams.ksc} ksc (waste ${waste_percent}%)`, sku: strRes.conc_sku },
     pour_labor:      { qty: r2(strRes.pour_labor_m3), uom: 'm³', label: `ค่าแรงเทคอนกรีต คานคอดิน`, sku: strRes.pour_labor_sku },
-    formwork_m2:     { qty: r2(strRes.fw_area_m2),    uom: 'm²', label: `ไม้แบบ (ใช้ซ้ำ ${reuse} ครั้ง)`, sku: strRes.fw_sku }
+    formwork_m2:     { qty: r2(strRes.fw_area_m2),    uom: 'm²', label: 'ไม้แบบคานคอดิน', sku: strRes.fw_sku }
   };
 
   if (strRes.conc_admix_wp_m3) {
@@ -111,14 +114,14 @@ export function calcStep8(inp: Step8Input): StepResult {
   };
 
   // ─── ดินถมกลับ (auto) ────────────────────────────────────
-  const backfill = r2((exc_vol - concreteNetVol - (Lb * lean_width * Tlean)) * 1.2); 
+  const backfill = r2((exc_vol - concreteNetVol - lean_net) * 1.2);
   if (backfill > 0) {
     quantities.backfill_volume = { qty: backfill, uom: 'm³', label: 'ดินถมกลับ (auto)', sku: 'GBM-FILL' };
   }
 
   // ─── เหล็กเสริม ─────────────────────────────────────────
   if (totalRebarKg > 0) {
-    quantities.rebar_kg = { qty: r2(strRes.rb_gross_kg), uom: 'kg', label: `เหล็กเสริมคานคอดิน ${inp.direct_rebar_kg ? '' : `(${inp.rebar_weight_kg_per_m3} kg/m³)`}`, sku: 'GBM-REBAR' };
+    quantities.rebar_kg = { qty: r2(strRes.rb_gross_kg), labQty: r2(strRes.rb_net_kg), uom: 'kg', label: `เหล็กเสริมคานคอดิน ${inp.direct_rebar_kg ? '' : `(${inp.rebar_weight_kg_per_m3} kg/m³)`}`, sku: 'GBM-REBAR' };
     
     // Tie Wire
     if (inp.tie_wire_factor !== undefined) {

@@ -43,7 +43,7 @@ export type UOM =
   | 'คน-วัน' | 'วัน' | 'จุด' | 'ชุด' | 'เที่ยว' | 'ชม.'
   | 'ตัว' | 'ตู้' | 'ต้น' | 'ลิตร' | 'ช่อง' | 'เดือน'
   | 'ป้าย' | 'อัน' | 'กระป๋อง' | 'ห้อง' | 'ถุง' | 'แผ่น' | 'ตร.ม.'
-  | 'บ่อ' | 'ม้วน' | 'ผืน' | 'หลอด' | 'วงจร' | 'แกลลอน' | 'ครั้ง' | 'เหมา' | 'วง' | 'ท่อน' | 'หลุม';
+  | 'บ่อ' | 'ม้วน' | 'ผืน' | 'หลอด' | 'วงจร' | 'แกลลอน' | 'ครั้ง' | 'เหมา' | 'วง' | 'ท่อน' | 'หลุม' | 'ลบ.ฟ.';
 
 export interface PriceItem {
   code: string;
@@ -90,7 +90,8 @@ export interface FootingCalculationResult {
 
 /** Shared result shape returned by every step's calc function */
 export interface StepResult {
-  quantities: Record<string, { qty: number; uom: string; label: string; sku?: string }>;
+  /** qty is the material quantity (incl. waste); labQty, when set, is the net quantity labour is charged on */
+  quantities: Record<string, { qty: number; uom: string; label: string; sku?: string; labQty?: number }>;
   warnings: string[];   // advisory notes (yellow)
   qc_flags: string[];   // must-check items (red / orange)
   warningFields?: string[]; // input field names that triggered warnings

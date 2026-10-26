@@ -43,20 +43,27 @@ export const BOQ_CATEGORIES: CategoryGroup[] = [
 ];
 
 import { PRICE_LIST_I18N } from '@/data/price-list-i18n';
+import { FORMWORK_BATTEN_CUFT_PER_M2, FORMWORK_NAIL_KG_PER_M2 } from '@/lib/engines/structural-engine';
 
+/**
+ * labQty: quantity labour is charged on. Excel charges material on the quantity
+ * including waste and labour on the net quantity; defaults to qty when omitted.
+ */
 export function makeRow(
     priceList: PriceItem[],
     code: string,
     qty: number,
     key: string,
+    labQty?: number,
 ): SectionRow | null {
     const p = priceList.find(x => x.code === code);
     const safeQty = Number.isFinite(qty) ? qty : 0;
 
     if (!p || safeQty <= 0) return null;
 
+    const safeLabQty = labQty !== undefined && Number.isFinite(labQty) ? labQty : safeQty;
     const mat = safeQty * p.costMaterial;
-    const lab = safeQty * p.costLabor;
+    const lab = safeLabQty * p.costLabor;
     const i18n = PRICE_LIST_I18N[p.code];
     return {
         key, code: p.code, name: p.name, nameEn: i18n?.nameEn, qty: safeQty, uom: p.uom, uomEn: i18n?.uomEn,
@@ -120,6 +127,18 @@ function explodeConcreteRows(
     }
     
     return [makeRow(priceList, sku, vol, baseWbs)];
+}
+
+/** Excel BOQ adds battens (ไม้คร่าว) and nails (ตะปู) under every formwork item. */
+function formworkAccessoryRows(
+    priceList: PriceItem[],
+    formworkM2: number,
+    baseWbs: string,
+): (SectionRow | null)[] {
+    return [
+        makeRow(priceList, 'FW-BATTEN', formworkM2 * FORMWORK_BATTEN_CUFT_PER_M2, `${baseWbs}.1`),
+        makeRow(priceList, 'FW-NAIL',   formworkM2 * FORMWORK_NAIL_KG_PER_M2,     `${baseWbs}.2`),
+    ];
 }
 
 export function buildBOQSections(
@@ -287,15 +306,16 @@ const build = (
                 const q = stepSaves[6]?.res.quantities;
                 return q ? [
                     makeRow(priceList, q.excavation_volume?.sku ?? 'FTG-EXC',    q.excavation_volume?.qty ?? 0,    '6.1'),
-                    makeRow(priceList, q.sand_volume?.sku ?? 'FTG-SAND',         q.sand_volume?.qty ?? 0,          '6.2'),
-                    makeRow(priceList, q.lean_volume?.sku ?? 'FTG-LEAN',         q.lean_volume?.qty ?? 0,          '6.3'),
+                    makeRow(priceList, q.sand_volume?.sku ?? 'FTG-SAND',         q.sand_volume?.qty ?? 0,          '6.2', q.sand_volume?.labQty),
+                    makeRow(priceList, q.lean_volume?.sku ?? 'FTG-LEAN',         q.lean_volume?.qty ?? 0,          '6.3', q.lean_volume?.labQty),
                     ...explodeConcreteRows(priceList, q.concrete_volume, 'FTG-CON', '6.4.1'),
                     makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP',q.waterproof_admix?.qty ?? 0,    '6.4.2'),
                     makeRow(priceList, q.pour_labor?.sku ?? 'LAB-POUR-GRND',     q.pour_labor?.qty ?? 0,          '6.4.3'),
-                    makeRow(priceList, q.rebar_kg?.sku ?? 'FTG-REBAR',           q.rebar_kg?.qty ?? 0,             '6.5'),
+                    makeRow(priceList, q.rebar_kg?.sku ?? 'FTG-REBAR',           q.rebar_kg?.qty ?? 0,             '6.5', q.rebar_kg?.labQty),
                     makeRow(priceList, q.tie_wire?.sku ?? 'FTG-WIRE',            q.tie_wire?.qty ?? 0,             '6.6'),
                     makeRow(priceList, q.spacer?.sku ?? 'FTG-SPACER',            q.spacer?.qty ?? 0,               '6.7'),
                     makeRow(priceList, q.formwork_m2?.sku ?? 'FTG-FORM',         q.formwork_m2?.qty ?? 0,          '6.8'),
+                    ...formworkAccessoryRows(priceList, q.formwork_m2?.qty ?? 0, '6.8'),
                     makeRow(priceList, q.backfill_volume?.sku ?? 'FTG-FILL',     q.backfill_volume?.qty ?? 0,      '6.9'),
                     makeRow(priceList, q.concrete_pump?.sku ?? 'FTG-PUMP',       q.concrete_pump?.qty ?? 0,        '6.10'),
                     makeRow(priceList, q.dewatering?.sku ?? 'FTG-DEWATER',       q.dewatering?.qty ?? 0,           '6.11'),
@@ -309,10 +329,11 @@ const build = (
                     ...explodeConcreteRows(priceList, q.concrete_volume, 'PDS-CON', '7.1.1'),
                     makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP',q.waterproof_admix?.qty ?? 0,  '7.1.2'),
                     makeRow(priceList, q.pour_labor?.sku ?? 'LAB-POUR-1FL',      q.pour_labor?.qty ?? 0,        '7.1.3'),
-                    makeRow(priceList, q.rebar_kg?.sku ?? 'PDS-REBAR',           q.rebar_kg?.qty ?? 0,          '7.2'),
+                    makeRow(priceList, q.rebar_kg?.sku ?? 'PDS-REBAR',           q.rebar_kg?.qty ?? 0,          '7.2', q.rebar_kg?.labQty),
                     makeRow(priceList, q.tie_wire?.sku ?? 'RB-WIRE',             q.tie_wire?.qty ?? 0,          '7.3'),
                     makeRow(priceList, q.spacer?.sku ?? 'RB-SPACER',             q.spacer?.qty ?? 0,            '7.4'),
                     makeRow(priceList, q.formwork_m2?.sku ?? 'PDS-FORM',         q.formwork_m2?.qty ?? 0,       '7.5'),
+                    ...formworkAccessoryRows(priceList, q.formwork_m2?.qty ?? 0, '7.5'),
                     makeRow(priceList, q.dowel_bar?.sku ?? 'PDS-DOWEL',          q.dowel_bar?.qty ?? 0,         '7.6'),
                     makeRow(priceList, q.concrete_pump?.sku ?? 'PDS-PUMP',       q.concrete_pump?.qty ?? 0,     '7.7'),
                     makeRow(priceList, q.vibrator?.sku ?? 'PDS-VIBRATOR',        q.vibrator?.qty ?? 0,          '7.8'),
@@ -323,15 +344,16 @@ const build = (
                 const q = stepSaves[8]?.res.quantities;
                 return q ? [
                     makeRow(priceList, q.excavation_volume?.sku ?? 'GBM-EXC',    q.excavation_volume?.qty ?? 0,   '8.1'),
-                    makeRow(priceList, q.sand_volume?.sku ?? 'GBM-SAND',         q.sand_volume?.qty ?? 0,         '8.2'),
-                    makeRow(priceList, q.lean_volume?.sku ?? 'GBM-LEAN',         q.lean_volume?.qty ?? 0,         '8.3'),
+                    makeRow(priceList, q.sand_volume?.sku ?? 'GBM-SAND',         q.sand_volume?.qty ?? 0,         '8.2', q.sand_volume?.labQty),
+                    makeRow(priceList, q.lean_volume?.sku ?? 'GBM-LEAN',         q.lean_volume?.qty ?? 0,         '8.3', q.lean_volume?.labQty),
                     ...explodeConcreteRows(priceList, q.concrete_volume, 'GBM-CON', '8.4.1'),
                     makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP',q.waterproof_admix?.qty ?? 0,    '8.4.2'),
                     makeRow(priceList, q.pour_labor?.sku ?? 'LAB-POUR-1FL',      q.pour_labor?.qty ?? 0,          '8.4.3'),
-                    makeRow(priceList, q.rebar_kg?.sku ?? 'GBM-REBAR',           q.rebar_kg?.qty ?? 0,            '8.5'),
+                    makeRow(priceList, q.rebar_kg?.sku ?? 'GBM-REBAR',           q.rebar_kg?.qty ?? 0,            '8.5', q.rebar_kg?.labQty),
                     makeRow(priceList, q.tie_wire?.sku ?? 'RB-WIRE',             q.tie_wire?.qty ?? 0,            '8.6'),
                     makeRow(priceList, q.spacer?.sku ?? 'RB-SPACER',             q.spacer?.qty ?? 0,              '8.7'),
                     makeRow(priceList, q.formwork_m2?.sku ?? 'GBM-FORM',         q.formwork_m2?.qty ?? 0,         '8.8'),
+                    ...formworkAccessoryRows(priceList, q.formwork_m2?.qty ?? 0, '8.8'),
                     makeRow(priceList, q.backfill_volume?.sku ?? 'GBM-FILL',     q.backfill_volume?.qty ?? 0,     '8.9'),
                     makeRow(priceList, q.dowel_length?.sku ?? 'GBM-DOWEL',       q.dowel_length?.qty ?? 0,        '8.10'),
                     makeRow(priceList, q.concrete_pump?.sku ?? 'GBM-PUMP',       q.concrete_pump?.qty ?? 0,       '8.11'),
@@ -343,10 +365,10 @@ const build = (
             build(9, 'งานพื้นหล่อในที่', 'Slab on Grade', () => {
                 const q = stepSaves[9]?.res.quantities;
                 return q ? [
-                    makeRow(priceList, q.sand_volume?.sku ?? 'SOG-SAND',         q.sand_volume?.qty ?? 0,          '9.1'),
-                    makeRow(priceList, q.plastic_area?.sku ?? 'SOG-PLASTIC',     q.plastic_area?.qty ?? 0,         '9.2'),
+                    makeRow(priceList, q.sand_volume?.sku ?? 'SOG-SAND',         q.sand_volume?.qty ?? 0,          '9.1', q.sand_volume?.labQty),
+                    makeRow(priceList, q.plastic_area?.sku ?? 'SOG-PLASTIC',     q.plastic_area?.qty ?? 0,         '9.2', q.plastic_area?.labQty),
                     makeRow(priceList, q.wiremesh_kg?.sku ?? 'SOG-MESH',         q.wiremesh_kg?.qty ?? 0,          '9.3.1'),
-                    makeRow(priceList, q.rebar_kg?.sku ?? 'SOG-REBAR',           q.rebar_kg?.qty ?? 0,             '9.3.2'),
+                    makeRow(priceList, q.rebar_kg?.sku ?? 'SOG-REBAR',           q.rebar_kg?.qty ?? 0,             '9.3.2', q.rebar_kg?.labQty),
                     makeRow(priceList, q.tie_wire?.sku ?? 'RB-WIRE',             q.tie_wire?.qty ?? 0,             '9.3.3'),
                     ...explodeConcreteRows(priceList, q.concrete_volume, 'SOG-CON', '9.4.1'),
                     makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP',q.waterproof_admix?.qty ?? 0,     '9.4.2'),
@@ -385,10 +407,11 @@ const build = (
                     ...explodeConcreteRows(priceList, q.concrete_volume, 'COL-CON', '11.1.1'),
                     makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP',   q.waterproof_admix?.qty ?? 0, '11.1.2'),
                     makeRow(priceList, q.pour_labor?.sku ?? 'LAB-POUR-1FL',         q.pour_labor?.qty ?? 0,       '11.1.3'),
-                    makeRow(priceList, q.rebar_kg?.sku ?? 'COL-REBAR',              q.rebar_kg?.qty ?? 0,         '11.2.1'),
+                    makeRow(priceList, q.rebar_kg?.sku ?? 'COL-REBAR',              q.rebar_kg?.qty ?? 0,         '11.2.1', q.rebar_kg?.labQty),
                     makeRow(priceList, q.tie_wire?.sku ?? 'RB-WIRE',                q.tie_wire?.qty ?? 0,         '11.2.2'),
                     makeRow(priceList, q.spacer?.sku ?? 'RB-SPACER',                q.spacer?.qty ?? 0,           '11.2.3'),
                     makeRow(priceList, q.formwork_area?.sku ?? 'COL-FORM',          q.formwork_area?.qty ?? 0,    '11.3'),
+                    ...formworkAccessoryRows(priceList, q.formwork_area?.qty ?? 0, '11.3'),
                     makeRow(priceList, q.concrete_pump?.sku ?? 'COL-PUMP',          q.concrete_pump?.qty ?? 0,    '11.4'),
                     makeRow(priceList, q.vibrator?.sku ?? 'COL-VIBRATOR',           q.vibrator?.qty ?? 0,         '11.5'),
                     makeRow(priceList, q.curing?.sku ?? 'COL-CURING',               q.curing?.qty ?? 0,           '11.6'),
@@ -402,10 +425,11 @@ const build = (
                     ...explodeConcreteRows(priceList, q.slope_concrete, 'BMS-CON', '12.1.3'),
                     makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP',q.waterproof_admix?.qty ?? 0, '12.1.4'),
                     makeRow(priceList, q.pour_labor?.sku ?? 'LAB-POUR-2FL',      q.pour_labor?.qty ?? 0,       '12.1.5'),
-                    makeRow(priceList, q.rebar_kg?.sku ?? 'BMS-REBAR',           q.rebar_kg?.qty ?? 0,         '12.2.1'),
+                    makeRow(priceList, q.rebar_kg?.sku ?? 'BMS-REBAR',           q.rebar_kg?.qty ?? 0,         '12.2.1', q.rebar_kg?.labQty),
                     makeRow(priceList, q.tie_wire?.sku ?? 'RB-WIRE',             q.tie_wire?.qty ?? 0,         '12.2.2'),
                     makeRow(priceList, q.spacer?.sku ?? 'RB-SPACER',             q.spacer?.qty ?? 0,           '12.2.3'),
                     makeRow(priceList, q.formwork_area?.sku ?? 'BMS-FORM',       q.formwork_area?.qty ?? 0,    '12.3'),
+                    ...formworkAccessoryRows(priceList, q.formwork_area?.qty ?? 0, '12.3'),
                     makeRow(priceList, q.shoring?.sku ?? 'BMS-SHORE',            q.shoring?.qty ?? 0,          '12.4'),
                     makeRow(priceList, q.waterproofing?.sku ?? 'BMS-WP',         q.waterproofing?.qty ?? 0,    '12.5'),
                     makeRow(priceList, q.roof_drain?.sku ?? 'BMS-DRAIN',         q.roof_drain?.qty ?? 0,       '12.6'),
@@ -420,10 +444,11 @@ const build = (
                     ...explodeConcreteRows(priceList, q.concrete_volume, 'STR-CON', '13.1.1'),
                     makeRow(priceList, q.waterproof_admix?.sku ?? 'CON-ADMIX-WP',   q.waterproof_admix?.qty ?? 0, '13.1.2'),
                     makeRow(priceList, q.pour_labor?.sku ?? 'LAB-POUR-1FL',         q.pour_labor?.qty ?? 0,       '13.1.3'),
-                    makeRow(priceList, q.rebar_kg?.sku ?? 'STR-REBAR',              q.rebar_kg?.qty ?? 0,         '13.2.1'),
+                    makeRow(priceList, q.rebar_kg?.sku ?? 'STR-REBAR',              q.rebar_kg?.qty ?? 0,         '13.2.1', q.rebar_kg?.labQty),
                     makeRow(priceList, q.tie_wire?.sku ?? 'RB-WIRE',                q.tie_wire?.qty ?? 0,         '13.2.2'),
                     makeRow(priceList, q.spacer?.sku ?? 'RB-SPACER',                q.spacer?.qty ?? 0,           '13.2.3'),
                     makeRow(priceList, q.formwork_area?.sku ?? 'STR-FORM',          q.formwork_area?.qty ?? 0,    '13.3'),
+                    ...formworkAccessoryRows(priceList, q.formwork_area?.qty ?? 0, '13.3'),
                     makeRow(priceList, q.shoring?.sku ?? 'STR-SHORE',               q.shoring?.qty ?? 0,          '13.4'),
                     makeRow(priceList, q.nosing?.sku ?? 'STR-NOSING',               q.nosing?.qty ?? 0,           '13.5'),
                     makeRow(priceList, q.concrete_pump?.sku ?? 'STR-PUMP',          q.concrete_pump?.qty ?? 0,    '13.6'),

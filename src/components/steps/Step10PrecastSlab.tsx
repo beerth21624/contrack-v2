@@ -13,7 +13,7 @@ const { Text } = Typography;
 interface Props { initialData?: Step10Input;  onBack: () => void; onSave: (inp: Step10Input, res: StepResult) => void; }
 
 const DEFAULTS: Step10Input = {
-    precast_area_m2: 0, topping_thickness_m: 0, waste_percent: 0,
+    precast_area_m2: 0, topping_thickness_m: 0, waste_percent: 10,
     shear_key_required: false, span_m: 0, concrete_pump_required: false,
     curing_method: 'plastic'
 };
@@ -66,7 +66,7 @@ export const Step10PrecastSlab: React.FC<Props> = ({ onBack, onSave, initialData
                             <div className="grid grid-cols-2 gap-2">
                                 <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wasteConc')}</Text>} style={{ margin: 0 }}>
                                     <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
-                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
+                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                                 </Form.Item>
                                 <Form.Item required layout="vertical" 
                                     label={<Text style={{ fontSize: 13 }}>{t('shearKey')}</Text>} 

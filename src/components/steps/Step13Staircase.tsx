@@ -16,7 +16,7 @@ const DEFAULTS: Step13Input = {
     stair_flight_count: 0, stair_width_m: 0,
     stair_rise_m: 0, stair_going_m: 0,
     steps_per_flight: 0, landing_area_m2: 0,
-    rebar_kg_per_m3: 0, waste_percent: 0,
+    rebar_kg_per_m3: 0, waste_percent: 10,
     nosing_required: false,
 };
 
@@ -110,7 +110,7 @@ export default function Step13Staircase({ initialData, onBack, onSave }: Props) 
                                 </Form.Item>
                                 <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
                                     <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
-                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
+                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                                 </Form.Item>
                             </div>
                         </Card>

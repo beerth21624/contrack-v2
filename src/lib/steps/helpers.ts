@@ -22,6 +22,11 @@ export const EXCAVATION_MARGIN = 0.40;
  */
 export const SAND_WASTE_FACTOR = 1.25;
 
+/** Excel BOQ material waste (labour is charged on the net quantity) */
+export const SAND_BOQ_WASTE = 0.30;       // ทรายหยาบ
+export const LEAN_WASTE = 0.10;           // คอนกรีตหยาบ 1:3:5
+export const PLASTIC_SHEET_WASTE = 0.30;  // พลาสติกกันชื้น
+
 /** Calculate rebar weight from bar type and total length */
 export function rebarWeight(barType: string, totalLength: number): number {
   const w = REBAR_WEIGHT_PER_M[barType];

@@ -25,7 +25,7 @@ const DEFAULTS: Step6Input = {
     footings: [createFooting(1)],
     lean_concrete_thickness_m: 0,
     sand_bedding_thickness_m: 0,
-    waste_percent: 0,
+    waste_percent: 10,
     excavation_depth_m: 0,
     rebar_weight_kg_per_m3: 0,
     dewatering_required: false,
@@ -168,7 +168,7 @@ export const Step6FootingForm: React.FC<Props> = ({ onBack, onSave, initialData 
                                 </Form.Item>
                                 <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wasteConc')}</Text>} style={{ margin: 0 }}>
                                     <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
-                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
+                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                                 </Form.Item>
                             </div>
                         </Card>

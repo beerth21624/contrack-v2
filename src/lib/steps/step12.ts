@@ -25,7 +25,7 @@ export interface Step12Input {
   structural_spec?: StructuralSpecParams; // Core specs 
   // optional
   floor_height_m?: number;             // ความสูงชั้น (ม.)
-  formwork_reuse_times?: number;       // default 3
+  formwork_reuse_times?: number;       // @deprecated ignored — Excel prices full contact area
   tie_wire_factor?: number;            // default 1.5
   spacer_per_m2?: number;              // default 4
   waterproofing_required?: boolean;
@@ -109,6 +109,7 @@ export function calcStep12(inp: Step12Input): StepResult {
   // ─── เหล็กเสริม ─────────────────────────────────────────
   quantities.rebar_kg = {
     qty: r2(strRes.rb_gross_kg),
+    labQty: r2(strRes.rb_net_kg),
     uom: 'kg',
     label: inp.direct_rebar_kg ? 'เหล็กเสริมคาน+พื้น (จาก Bar Schedule)' : `เหล็กเสริมคาน+พื้น (${inp.rebar_kg_per_m3} kg/m³)`,
     sku: 'BMS-REBAR' // mapping catch-all
@@ -122,8 +123,8 @@ export function calcStep12(inp: Step12Input): StepResult {
   quantities.spacer = { qty: Math.ceil(totalFormworkNet * spacerPerM2), uom: 'pcs', label: `Spacer คาน+พื้น (~${spacerPerM2}/ม²)`, sku: 'RB-SPACER' };
 
   // ─── ไม้แบบ ────────────────────────────────────────────
-  const reuse = Math.max(1, inp.formwork_reuse_times ?? 3);
-  quantities.formwork_area = { qty: r2(strRes.fw_area_m2 / reuse), uom: 'm²', label: `ไม้แบบคาน+พื้น (ใช้ซ้ำ ${reuse} ครั้ง)`, sku: strRes.fw_sku };
+  // Excel: ไม้แบบเต็มพื้นที่สัมผัส (ไม่หารจำนวนครั้งใช้ซ้ำ)
+  quantities.formwork_area = { qty: r2(strRes.fw_area_m2), uom: 'm²', label: 'ไม้แบบคาน+พื้น', sku: strRes.fw_sku };
 
   // ─── ค้ำยัน ──────────────────────────────────────────────
   const h = inp.floor_height_m ?? 3.0;

@@ -24,7 +24,7 @@ const createColumn = (index: number): ColumnEntry => ({
 const DEFAULTS: Step11Input = {
     columns: [createColumn(1)],
     rebar_kg_per_m3: 0,
-    waste_percent: 0,
+    waste_percent: 10,
     curing_method: 'plastic'
 };
 
@@ -142,7 +142,7 @@ export default function Step11Column({ initialData, onBack, onSave }: Props) {
                                 </Form.Item>
                                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
                                     <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
-                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
+                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                                 </Form.Item>
                             </div>
                         </Card>
@@ -156,10 +156,6 @@ export default function Step11Column({ initialData, onBack, onSave }: Props) {
         <div className="flex flex-col gap-4">
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('formworkSpecials')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-2 gap-2">
-                    <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('formworkReuse')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={1} placeholder={t('formworkReusePh')}
-                            value={inp.formwork_reuse_times} onChange={v => update({ formwork_reuse_times: v ?? undefined })} />
-                    </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('tieWire')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
                         <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={3} step={0.5} placeholder={t('tieWirePh')}
                             value={inp.tie_wire_factor} onChange={v => update({ tie_wire_factor: v ?? undefined })} />

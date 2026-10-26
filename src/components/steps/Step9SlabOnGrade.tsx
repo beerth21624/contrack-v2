@@ -14,7 +14,7 @@ interface Props { initialData?: Step9Input;  onBack: () => void; onSave: (inp: S
 
 const DEFAULTS: Step9Input = {
     slab_area_m2: 0, slab_thickness_m: 0, sand_fill_thickness_m: 0,
-    plastic_sheet_area_factor: 1, waste_percent: 0,
+    plastic_sheet_area_factor: 1, waste_percent: 10,
     control_joint_spacing_m: 0, concrete_pump_required: false,
     curing_method: 'plastic'
 };
@@ -87,7 +87,7 @@ export const Step9SlabOnGrade: React.FC<Props> = ({ onBack, onSave, initialData 
                                 </Form.Item>
                                 <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wasteConc')}</Text>} style={{ margin: 0 }}>
                                     <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
-                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
+                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                                 </Form.Item>
                             </div>
                         </Card>

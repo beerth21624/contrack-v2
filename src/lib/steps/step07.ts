@@ -31,7 +31,7 @@ export interface Step7Input {
   concrete_pump_required?: boolean;
   vibrator_days?: number;
   curing_method?: 'water' | 'plastic' | 'compound';
-  formwork_reuse_times?: number;       // default 3
+  formwork_reuse_times?: number;       // @deprecated ignored — Excel prices full contact area
   direct_rebar_kg?: number;            // น้ำหนักเหล็กตรงจาก Bar Schedule (bypass ratio)
   concrete_grade?: ConcreteGrade;      // @deprecated Legacy
 }
@@ -39,7 +39,6 @@ export interface Step7Input {
 // ─── STEP 7 — เสาตอม่อ ───────────────────────────────────────────────────────
 export function calcStep7(inp: Step7Input): StepResult {
   const { pedestals, waste_percent } = inp;
-  const reuse = Math.max(1, inp.formwork_reuse_times ?? 3);
 
   let totalN = 0;
   let totalConcreteVol = 0;
@@ -52,9 +51,9 @@ export function calcStep7(inp: Step7Input): StepResult {
     totalConcreteVol += n * W * L * H;
 
     if (inp.formwork_factor) {
-      totalFormwork += n * inp.formwork_factor / reuse;
+      totalFormwork += n * inp.formwork_factor;
     } else {
-      totalFormwork += n * 2 * (W + L) * H / reuse;
+      totalFormwork += n * 2 * (W + L) * H;
     }
 
     totalSurfaceArea += n * (2 * (W + L) * H + W * L); // ข้าง + หน้า
@@ -96,7 +95,7 @@ export function calcStep7(inp: Step7Input): StepResult {
     // Core engine mapped
     concrete_volume: { qty: r2(strRes.conc_gross_m3), uom: 'm³', label: `คอนกรีตเสาตอม่อ ${specParams.ksc} ksc (${typeSummary})`, sku: strRes.conc_sku },
     pour_labor:      { qty: r2(strRes.pour_labor_m3), uom: 'm³', label: `ค่าแรงเทคอนกรีต เสาตอม่อ`, sku: strRes.pour_labor_sku },
-    formwork_m2:     { qty: r2(strRes.fw_area_m2),    uom: 'm²', label: `ไม้แบบตอม่อ (ใช้ซ้ำ ${reuse} ครั้ง)`, sku: strRes.fw_sku },
+    formwork_m2:     { qty: r2(strRes.fw_area_m2),    uom: 'm²', label: 'ไม้แบบตอม่อ', sku: strRes.fw_sku },
   };
 
   if (strRes.conc_admix_wp_m3) {
@@ -111,7 +110,7 @@ export function calcStep7(inp: Step7Input): StepResult {
 
   // ─── เหล็กเสริม ─────────────────────────────────────────
   if (totalRebarKg > 0) {
-    quantities.rebar_kg = { qty: r2(strRes.rb_gross_kg), uom: 'kg', label: `เหล็กเสริมเสาตอม่อ ${inp.direct_rebar_kg ? '(ตาม BS)' : `(${inp.rebar_weight_kg_per_m3} kg/m³)`}`, sku: 'PDS-REBAR' };
+    quantities.rebar_kg = { qty: r2(strRes.rb_gross_kg), labQty: r2(strRes.rb_net_kg), uom: 'kg', label: `เหล็กเสริมเสาตอม่อ ${inp.direct_rebar_kg ? '(ตาม BS)' : `(${inp.rebar_weight_kg_per_m3} kg/m³)`}`, sku: 'PDS-REBAR' };
     
     // Tie Wire
     if (inp.tie_wire_factor !== undefined) {

@@ -26,7 +26,7 @@ const DEFAULTS: Step12Input = {
     slab_area_m2: 0,
     slab_thickness_m: 0,
     rebar_kg_per_m3: 0,
-    waste_percent: 0,
+    waste_percent: 10,
     waterproofing_required: false,
     slope_concrete_required: false,
     concrete_pump_required: false,
@@ -158,7 +158,7 @@ export default function Step12BeamSlab({ initialData, onBack, onSave }: Props) {
                                 </Form.Item>
                                 <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('waste')}</Text>} style={{ margin: 0 }}>
                                     <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
-                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
+                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                                 </Form.Item>
                             </div>
                         </Card>
@@ -172,10 +172,6 @@ export default function Step12BeamSlab({ initialData, onBack, onSave }: Props) {
         <div className="flex flex-col gap-4">
             <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('formworkShoring')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                 <div className="grid grid-cols-2 gap-2">
-                    <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('formworkReuse')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={1} placeholder={t('formworkReusePh')}
-                            value={inp.formwork_reuse_times} onChange={v => update({ formwork_reuse_times: v ?? undefined })} />
-                    </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('spacer')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
                         <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={8} step={1} placeholder={t('spacerPh')}
                             value={inp.spacer_per_m2} onChange={v => update({ spacer_per_m2: v ?? undefined })} />

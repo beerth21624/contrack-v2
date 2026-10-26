@@ -14,7 +14,7 @@ interface Props { initialData?: Step8Input;  onBack: () => void; onSave: (inp: S
 
 const DEFAULTS: Step8Input = {
     total_beam_length_m: 0, beam_width_m: 0, beam_height_m: 0,
-    lean_concrete_thickness_m: 0, waste_percent: 0,
+    lean_concrete_thickness_m: 0, waste_percent: 10,
     rebar_weight_kg_per_m3: 0, concrete_pump_required: false,
     excavation_extra_margin_m: 0, termite_protection_required: false,
 };
@@ -87,7 +87,7 @@ export const Step8GroundBeam: React.FC<Props> = ({ onBack, onSave, initialData }
                                 </Form.Item>
                                 <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wasteConc')}</Text>} style={{ margin: 0 }}>
                                     <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
-                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
+                                        value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                                 </Form.Item>
                             </div>
                         </Card>
@@ -137,10 +137,6 @@ export const Step8GroundBeam: React.FC<Props> = ({ onBack, onSave, initialData }
                     </Form.Item>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                    <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('formReuse')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={1} placeholder={t('formReusePh')}
-                            value={inp.formwork_reuse_times} onChange={v => update({ formwork_reuse_times: v ?? undefined })} />
-                    </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('spacerPerM')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
                         <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={5} step={1} placeholder={t('spacerPerMPh')}
                             value={inp.spacer_per_m} onChange={v => update({ spacer_per_m: v ?? undefined })} />

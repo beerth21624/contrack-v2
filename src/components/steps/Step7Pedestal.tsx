@@ -23,7 +23,7 @@ const createPedestal = (index: number): PedestalEntry => ({
 
 const DEFAULTS: Step7Input = {
     pedestals: [createPedestal(1)],
-    waste_percent: 0,
+    waste_percent: 10,
     rebar_weight_kg_per_m3: 0,
     main_bar_count: 0,
     dowel_bar_length_m: 0,
@@ -134,7 +134,7 @@ export const Step7Pedestal: React.FC<Props> = ({ onBack, onSave, initialData }) 
                         <Card title={<span style={{ whiteSpace: 'normal', lineHeight: '1.4' }}>{t('globalParams')}</span>} size="small" className="shadow-sm" styles={{ header: { minHeight: 'auto', padding: '8px 12px'  } }}>
                             <Form.Item required layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('wasteConc')}</Text>} style={{ margin: 0 }}>
                                 <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1}
-                                    value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 5 })} />
+                                    value={inp.waste_percent} onChange={v => update({ waste_percent: v ?? 10 })} />
                             </Form.Item>
                         </Card>
                     </div>
@@ -175,10 +175,6 @@ export const Step7Pedestal: React.FC<Props> = ({ onBack, onSave, initialData }) 
                     </Form.Item>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                    <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('formReuse')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={10} step={1} placeholder={t('formReusePh')}
-                            value={inp.formwork_reuse_times} onChange={v => update({ formwork_reuse_times: v ?? undefined })} />
-                    </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('spacer')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
                         <InputNumber onFocus={(e) => e.target.select()} style={{ width: '100%' }} min={0} max={20} step={1} placeholder={t('spacerPh')}
                             value={inp.spacer_per_pedestal} onChange={v => update({ spacer_per_pedestal: v ?? undefined })} />

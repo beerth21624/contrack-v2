@@ -180,6 +180,8 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   { code: 'FW-BLDG',    name: 'แบบหล่อคอนกรีต อาคารไม่เกิน 5 ชั้น', nameEn: 'Formwork (Bldg < 5F)', uom: 'm2', uomEn: 'sq.m.', costMaterial: 160, costLabor: 121, category: 'Structural Formwork' },
   { code: 'FW-BLDG-H',  name: 'แบบหล่อคอนกรีต อาคารเกิน 5 ชั้น', nameEn: 'Formwork (Bldg > 5F)',  uom: 'm2', uomEn: 'sq.m.', costMaterial: 160, costLabor: 139, category: 'Structural Formwork' },
   { code: 'FW-PRECAST', name: 'แบบหล่อชิ้นส่วนสำเร็จรูป (Precast)', nameEn: 'Formwork (Precast)',    uom: 'm2', uomEn: 'sq.m.', costMaterial: 50,  costLabor: 121, category: 'Structural Formwork' },
+  { code: 'FW-BATTEN',  name: 'ไม้คร่าวยึดแบบ', nameEn: 'Formwork Battens',   uom: 'ลบ.ฟ.', uomEn: 'cu.ft.', costMaterial: 350, costLabor: 0, category: 'Structural Formwork' },
+  { code: 'FW-NAIL',    name: 'ตะปูยึดแบบ', nameEn: 'Formwork Nails',         uom: 'kg', uomEn: 'kg',     costMaterial: 50,  costLabor: 0, category: 'Structural Formwork' },
 
   // 4. Rebar Standard Extras
   { code: 'RB-WIRE',    name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire for Rebar',         uom: 'kg', uomEn: 'kg', costMaterial: 26, costLabor: 0, category: 'Structural Rebar' },
