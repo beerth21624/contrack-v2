@@ -26,7 +26,7 @@
     "baseUrl": ".",
     "paths": {
       "@contrack/domain/*": ["../src/domain/*"],
-      "@contrack/contract": ["../src/shared/contract/index.ts"],
+      "@contrack/contract": ["../src/shared/contract"],
       "@contrack/contract/*": ["../src/shared/contract/*"],
       "@app/*": ["src/*"]
     }
