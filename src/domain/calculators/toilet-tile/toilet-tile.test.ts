@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { toiletTile, toiletTileArea, SAMPLE_OPENINGS, type ToiletTileInput } from '.';
+import {
+    toiletTile, toiletTileArea, SAMPLE_OPENINGS, bathroomGroups, bathroomPerimeter, newBathroomRows, nextBathroomName,
+    renameBathroom, setBathroomFloorSize, toiletRowKind, type ToiletTileInput,
+} from '.';
 import { computeProject, createProject } from '../../project';
 import golden from '../../boq/__tests__/golden.v5.json';
 import type { BoqItemRow } from '../../boq/types';
@@ -60,6 +63,56 @@ describe('ปูกระเบื้องห้องน้ำ_Toilet (sheet 1
         expect(out.R211).toBeCloseTo(23.14 + 16.84 + 16.8, 9);
         const { row } = section21(input);
         expect(row('R211')?.qty).toBeCloseTo(56.78, 9);
+    });
+
+    it('blank(): no bathrooms; every output finite and the BOQ lines 0', () => {
+        const input = toiletTile.blank?.();
+        expect(input).toEqual({ rows: [] });
+        if (!input) return;
+        const out = toiletTile.compute(input, ctx);
+        expect(Object.values(out).every(Number.isFinite)).toBe(true);
+        for (const l of toiletTile.boqLinks) expect(out[l.output], l.line).toBe(0);
+    });
+
+    it('bathroom view: the Excel sample reads as two bathrooms with floor + wall', () => {
+        const input = toiletTile.defaults();
+        expect(bathroomGroups(input)).toEqual([{ name: 'ห้องน้ำ 1', rows: [0, 2] }, { name: 'ห้องน้ำ 2', rows: [1, 3] }]);
+        expect(input.rows.map(toiletRowKind)).toEqual(['floor', 'floor', 'wall', 'wall']);
+        // The sample wall lengths are exactly 2 × (W + L) of the floor (O-12).
+        expect(bathroomPerimeter(input, 'ห้องน้ำ 1')).toBeCloseTo(input.rows[2]?.length ?? NaN, 12);
+        expect(bathroomPerimeter(input, 'ห้องน้ำ 2')).toBeCloseTo(input.rows[3]?.length ?? NaN, 12);
+        expect(nextBathroomName(input)).toBe('ห้องน้ำ 3');
+    });
+
+    it('a new bathroom: floor size fills the wall length; a typed wall length is kept', () => {
+        let input: ToiletTileInput = { rows: newBathroomRows('ห้องน้ำ 1') };
+        expect(toiletTile.compute(input, ctx).R210).toBe(0);
+        input = setBathroomFloorSize(input, 0, { width: 2 });
+        expect(input.rows[1]?.length).toBeUndefined();                  // L not known yet
+        input = setBathroomFloorSize(input, 0, { length: 3 });
+        expect(input.rows[1]?.length).toBe(10);                         // 2 × (2 + 3)
+        input = { rows: input.rows.map((r, i) => (i === 1 ? { ...r, height: 2.4, openings: 2.3 } : r)) };
+        let out = toiletTile.compute(input, ctx);
+        expect(out.R210).toBe(6);
+        expect(out.R211).toBeCloseTo(10 * 2.4 - 2.3, 9);
+        input = setBathroomFloorSize(input, 0, { length: 2.5 });       // still the old 2(W+L) → follows
+        expect(input.rows[1]?.length).toBe(9);
+        input = { rows: input.rows.map((r, i) => (i === 1 ? { ...r, length: 7 } : r)) };   // only part of the wall tiled
+        input = setBathroomFloorSize(input, 0, { width: 3 });
+        expect(input.rows[1]?.length).toBe(7);
+        out = toiletTile.compute(input, ctx);
+        expect(out.R210).toBe(7.5);
+        expect(out.R211).toBeCloseTo(7 * 2.4 - 2.3, 9);
+    });
+
+    it('rename moves every row of the bathroom; other bathrooms are untouched', () => {
+        const input = renameBathroom(toiletTile.defaults(), 'ห้องน้ำ 1', 'ห้องน้ำรวม');
+        expect(input.rows.map(r => r.location)).toEqual(['ห้องน้ำรวม', 'ห้องน้ำ 2', 'ห้องน้ำรวม', 'ห้องน้ำ 2']);
+        expect(toiletTile.compute(input, ctx)).toEqual(toiletTile.compute(toiletTile.defaults(), ctx));
+        // Following only happens inside the edited bathroom.
+        const resized = setBathroomFloorSize(toiletTile.defaults(), 0, { width: 2 });
+        expect(resized.rows[2]?.length).toBe(10);
+        expect(resized.rows[3]?.length).toBeCloseTo(7.6, 12);
     });
 
     it('links', () => {

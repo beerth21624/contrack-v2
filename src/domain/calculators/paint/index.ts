@@ -87,6 +87,26 @@ export function paintSuggestions(ctx: CalcContext): PaintSuggestions {
     };
 }
 
+const differs = (offered: number | undefined, current: number) =>
+    offered !== undefined && Math.abs(offered - current) >= 1e-9;
+
+/** Hand-typed lines (C10 ระแนง, each บัว run, C12 เชิงชาย length) whose source sheet offers another value. */
+export function pendingPaintSuggestions(input: PaintInput, s: PaintSuggestions): number {
+    return (differs(s.slatWallArea, input.slatWallArea) ? 1 : 0)
+        + input.mouldings.filter(m => differs(s.mouldingLength(m.size), m.length)).length
+        + (differs(s.fasciaLength, input.fasciaLength) ? 1 : 0);
+}
+
+/** Every "ใช้ค่าจาก …" at once: the source values replace the hand-typed ones where a source has one. */
+export function applyPaintSuggestions(input: PaintInput, s: PaintSuggestions): PaintInput {
+    return {
+        ...input,
+        slatWallArea: s.slatWallArea ?? input.slatWallArea,
+        mouldings: input.mouldings.map(m => ({ ...m, length: s.mouldingLength(m.size) ?? m.length })),
+        fasciaLength: s.fasciaLength ?? input.fasciaLength,
+    };
+}
+
 /** Which lines are currently taken from a calculator (true) or from Excel's cached number (false). */
 export function paintLinkedSources(ctx: CalcContext): Record<'plaster' | 'ceilingExterior' | 'ceilingInterior' | 'ceilingSlat', boolean> {
     return {
@@ -132,6 +152,18 @@ export const paint = defineCalculator<PaintInput>({
             { size: '0.1', girth: 0.3, length: 11 },
         ],
         fasciaLength: 63.2,
+        fasciaHeight: 0.23,
+    }),
+    // A real project: the numbers Excel types by hand (C10 ระแนง, C11 บัว lengths, C12 เชิงชาย length) start at 0
+    // until the user takes them from the source sheets (D20 not approved, so nothing is linked automatically).
+    // Kept: the two บัว runs with their girths (0.3×0.1 → 0.5 ม., 0.1×0.1 → 0.3 ม.) and the fascia height 0.23 ม.
+    blank: () => ({
+        slatWallArea: 0,
+        mouldings: [
+            { size: '0.3', girth: 0.5, length: 0 },
+            { size: '0.1', girth: 0.3, length: 0 },
+        ],
+        fasciaLength: 0,
         fasciaHeight: 0.23,
     }),
     compute: (input, ctx) => {

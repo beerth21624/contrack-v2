@@ -26,6 +26,24 @@ export const paintGroupLabel = (g: CeilingPaintGroup) => `ทาสีฝ้า 
 /** Paint-sheet output key for a group, e.g. `paint.ภายใน` (contract with the paint calculator). */
 export const paintKey = (g: CeilingPaintGroup) => `paint.${g}`;
 
+/**
+ * Paint group that goes with each ceiling type in the Excel sample (C1/C2 painted as interior, C3 eaves as
+ * exterior, C4 slats with wood stain). Used to pre-fill a row's แยกงานทาสี when its type is picked.
+ */
+export const CEILING_DEFAULT_PAINT: Record<CeilingCode, CeilingPaintGroup> = {
+    C1: 'ภายใน', C2: 'ภายใน', C3: 'ภายนอก', C4: 'ไม้ระแนง',
+};
+
+/**
+ * Picks a row's type (journey page). The paint group follows the type while it is empty or still the previous
+ * type's usual group; a group the user chose differently is kept.
+ */
+export function setCeilingCode(r: CeilingRow, code: CeilingCode | ''): CeilingRow {
+    const follows = r.paint === '' || (r.code !== '' && r.paint === CEILING_DEFAULT_PAINT[r.code]);
+    const paint = follows && code !== '' ? CEILING_DEFAULT_PAINT[code] : r.paint;
+    return { ...r, code, paint };
+}
+
 /** Excel rows 16–17 (sample rows 12–13) use `(D*E)/COS(RADIANS(40))` — the veranda ceiling under the 40° roof. */
 export const SLOPED_CEILING_DEG = 40;
 
@@ -101,6 +119,8 @@ export const ceiling = defineCalculator<CeilingInput>({
             row('C4', 1.5, 3, 'เฉลียงพักผ่อน (3)', 'ไม้ระแนง'),
         ],
     }),
+    // A real project: no rooms yet (the sheet has no prices or constants of its own — they sit in the BOQ).
+    blank: () => ({ rows: [] }),
     compute: input => {
         const c1 = ceilingAreaByCode(input, 'C1');
         const c2 = ceilingAreaByCode(input, 'C2');

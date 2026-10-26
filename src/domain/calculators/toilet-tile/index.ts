@@ -51,6 +51,96 @@ export function toiletTileTotal(input: ToiletTileInput, code: string): number {
 /** Excel sample openings of each bathroom wall row: door 0.7 × 2 + window 0.5 × 1.8 = 2.3 m². */
 export const SAMPLE_OPENINGS = 0.7 * 2 + 0.5 * 1.8;
 
+// ─── Bathroom view (journey page): the rows of one ตำแหน่ง read as one bathroom ───
+
+export type ToiletRowKind = 'floor' | 'wall' | 'other';
+
+/** F3 rows are the floor, P3 rows the wall (by the BOQ key, like the SUMIF); anything else is shown as is. */
+export function toiletRowKind(r: ToiletTileRow): ToiletRowKind {
+    const code = r.code.trim().toUpperCase();
+    return code === 'F3' ? 'floor' : code === 'P3' ? 'wall' : 'other';
+}
+
+/** A new floor (F3) or wall (P3) row of a bathroom, dimensions blank. */
+export function newToiletRow(kind: 'floor' | 'wall', location: string): ToiletTileRow {
+    return kind === 'floor'
+        ? { code: 'F3', surface: 'พื้น', item: TOILET_TILE_ITEMS[0], location }
+        : { code: 'P3', surface: 'ผนัง', item: TOILET_TILE_ITEMS[1], location };
+}
+
+/** A new bathroom: one floor row and one wall row. */
+export const newBathroomRows = (location: string): ToiletTileRow[] =>
+    [newToiletRow('floor', location), newToiletRow('wall', location)];
+
+export interface BathroomGroup {
+    /** ตำแหน่ง shared by the rows (trimmed; '' = rows without a location). */
+    name: string;
+    /** Indexes into `input.rows`, in row order. */
+    rows: number[];
+}
+
+/** Rows grouped by ตำแหน่ง, in order of first appearance. */
+export function bathroomGroups(input: ToiletTileInput): BathroomGroup[] {
+    const groups: BathroomGroup[] = [];
+    input.rows.forEach((r, i) => {
+        const name = r.location.trim();
+        const g = groups.find(x => x.name === name);
+        if (g) g.rows.push(i);
+        else groups.push({ name, rows: [i] });
+    });
+    return groups;
+}
+
+/** Wall length of a rectangular room: 2 × (W + L); undefined until both are filled. */
+export function roomPerimeter(r: Pick<ToiletTileRow, 'width' | 'length'>): number | undefined {
+    return filled(r.width) && filled(r.length) ? 2 * (r.width + r.length) : undefined;
+}
+
+/** The perimeter offered to a bathroom's wall rows: from its floor row, when it has exactly one. */
+export function bathroomPerimeter(input: ToiletTileInput, name: string): number | undefined {
+    const floors = input.rows.filter(r => r.location.trim() === name && toiletRowKind(r) === 'floor');
+    return floors.length === 1 && floors[0] ? roomPerimeter(floors[0]) : undefined;
+}
+
+const same = (a: number | undefined, b: number | undefined) =>
+    a !== undefined && b !== undefined && Math.abs(a - b) < 1e-9;
+
+/**
+ * Changes a floor row's width / length. Wall rows of the same bathroom whose length is still blank or still the
+ * old 2 × (W + L) follow the new size (a length the user typed differently is kept).
+ */
+export function setBathroomFloorSize(
+    input: ToiletTileInput, index: number, patch: Partial<Pick<ToiletTileRow, 'width' | 'length'>>,
+): ToiletTileInput {
+    const floor = input.rows[index];
+    if (!floor) return input;
+    const name = floor.location.trim();
+    const oldPerimeter = bathroomPerimeter(input, name);
+    const next = input.rows.map((r, i) => (i === index ? { ...r, ...patch } : r));
+    const newPerimeter = bathroomPerimeter({ rows: next }, name);
+    return {
+        rows: next.map(r => (
+            toiletRowKind(r) === 'wall' && r.location.trim() === name && newPerimeter !== undefined
+                && (r.length === undefined || same(r.length, oldPerimeter))
+                ? { ...r, length: newPerimeter }
+                : r
+        )),
+    };
+}
+
+/** Renames a bathroom: every row of that ตำแหน่ง. */
+export function renameBathroom(input: ToiletTileInput, from: string, to: string): ToiletTileInput {
+    return { rows: input.rows.map(r => (r.location.trim() === from ? { ...r, location: to } : r)) };
+}
+
+/** A name not used yet: ห้องน้ำ 1, ห้องน้ำ 2, … */
+export function nextBathroomName(input: ToiletTileInput): string {
+    const used = new Set(input.rows.map(r => r.location.trim()));
+    let n = bathroomGroups(input).length + 1;
+    while (used.has(`ห้องน้ำ ${n}`)) n++;
+    return `ห้องน้ำ ${n}`;
+}
+
 export const toiletTile = defineCalculator<ToiletTileInput>({
     id: 'toilet-tile',
     sheetName: 'ปูกระเบื้องห้องน้ำ_Toilet',
@@ -68,6 +158,8 @@ export const toiletTile = defineCalculator<ToiletTileInput>({
             { code: 'P3', surface: 'ผนัง', item: 'กรุกระเบื้องแกรนิตโต้', length: 2 * (1.8 + 2), height: 2.4, openings: SAMPLE_OPENINGS, location: 'ห้องน้ำ 2' },
         ],
     }),
+    // A real project: no bathrooms yet (prices sit in the BOQ, the sheet has no constants of its own).
+    blank: () => ({ rows: [] }),
     compute: (input) => {
         const floorArea = toiletTileTotal(input, 'F3');
         const wallArea = toiletTileTotal(input, 'P3');

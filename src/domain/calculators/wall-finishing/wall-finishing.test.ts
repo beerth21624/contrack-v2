@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-    wallFinishing, wallFinishingArea, wallFinishingLength, MOULDING_0_1, MOULDING_0_3, SLAT_WALL, type WallFinishingInput,
+    wallFinishing, wallFinishingArea, wallFinishingKind, wallFinishingLength, newMouldingRow, newSlatRow, replaceRowsOfKind,
+    setMouldingLength,
+    MOULDING_0_1, MOULDING_0_3, SLAT_WALL, type WallFinishingInput,
 } from '.';
 import { computeProject, createProject } from '../../project';
 import golden from '../../boq/__tests__/golden.v5.json';
@@ -73,6 +75,42 @@ describe('ตกแต่งผนัง_Wall Finishing (sheet 18)', () => {
         expect(out.mouldingPaintArea).toBeCloseTo(0.5 * 6.5 + 0.3 * 15.5, 9);
         const { row } = section22(input);
         expect(row('R220')?.qty).toBeCloseTo(13.1, 9);
+    });
+
+    it('blank(): no rows; every output finite, BOQ lines and paint-sheet contract 0', () => {
+        const input = wallFinishing.blank?.();
+        expect(input).toEqual({ rows: [] });
+        if (!input) return;
+        const out = wallFinishing.compute(input, ctx);
+        expect(Object.values(out).every(Number.isFinite)).toBe(true);
+        for (const l of wallFinishing.boqLinks) expect(out[l.output], l.line).toBe(0);
+        for (const k of ['slatWallArea', 'moulding.0.3', 'moulding.0.1', 'mouldingPaintArea']) expect(out[k], k).toBe(0);
+    });
+
+    it('journey rows: kinds, new rows, a moulding length typed as one number', () => {
+        expect(wallFinishing.defaults().rows.map(wallFinishingKind)).toEqual(['moulding', 'moulding', 'slat', 'slat']);
+        expect(wallFinishingKind({ code: '', item: '', width: 0, length: 0, location: '' })).toBe('other');
+        const m = setMouldingLength({ ...newMouldingRow(MOULDING_0_1), width: 0.5, length: 4 }, 9);
+        expect(wallFinishingLength(m)).toBe(9);
+        const input: WallFinishingInput = { rows: [setMouldingLength(newMouldingRow(), 13), m, { ...newSlatRow(), width: 1.5, length: 2 }] };
+        const out = wallFinishing.compute(input, ctx);
+        expect(out.R218).toBe(13);
+        expect(out.R219).toBe(9);
+        expect(out.R220).toBe(3);
+        expect(out.slatWallArea).toBe(3);
+    });
+
+    it('replaceRowsOfKind edits one kind in place (add, delete, change) and keeps the others', () => {
+        const input = wallFinishing.defaults();
+        const slats = input.rows.filter(r => wallFinishingKind(r) === 'slat');
+        // delete the first slat row, edit the second, add one
+        const next = [{ ...slats[1] ?? newSlatRow(), width: 2 }, { ...newSlatRow(), width: 1, length: 1 }];
+        const out = replaceRowsOfKind(input, 'slat', next);
+        expect(out.rows.map(r => [wallFinishingKind(r), r.width, r.length])).toEqual([
+            ['moulding', 0, 13], ['moulding', 0, 11], ['slat', 2, 4], ['slat', 1, 1],
+        ]);
+        expect(replaceRowsOfKind(input, 'moulding', [])).toEqual({ rows: input.rows.slice(2) });
+        expect(replaceRowsOfKind(input, 'other', [])).toEqual(input);
     });
 
     it('links', () => {

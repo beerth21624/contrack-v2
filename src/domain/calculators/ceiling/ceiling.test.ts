@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ceiling, ceilingRowArea, type CeilingInput, type CeilingRow } from '.';
+import { ceiling, ceilingRowArea, setCeilingCode, CEILING_DEFAULT_PAINT, type CeilingInput, type CeilingRow } from '.';
 import golden from '../../boq/__tests__/golden.v5.json';
 
 const ctx = { outputs: () => undefined };
@@ -59,5 +59,29 @@ describe('ฝ้าเพดาน_Ceiling (sheet 15)', () => {
         expect(out.R199).toBeCloseTo(72.25 - 9, 9);
         expect(out.R200).toBeCloseTo(20.29055467 - 4.568925513 + 3.5 + 9, 8);
         expect(ceilingRowArea({ code: 'C1', width: 1, length: 1, location: '', paint: '', slope: 90 })).toBe(0);
+    });
+
+    it('blank(): no rooms; every output finite, BOQ lines and paint totals 0', () => {
+        const input = ceiling.blank?.();
+        expect(input).toEqual({ rows: [] });
+        if (!input) return;
+        const out = ceiling.compute(input, ctx);
+        expect(Object.values(out).every(Number.isFinite)).toBe(true);
+        for (const l of ceiling.boqLinks) expect(out[l.output], l.line).toBe(0);
+        for (const k of ['paint.ภายนอก', 'paint.ภายใน', 'paint.ไม้ระแนง']) expect(out[k], k).toBe(0);
+    });
+
+    it('setCeilingCode: paint group follows the type until the user picks another one', () => {
+        const empty: CeilingRow = { code: '', width: 3, length: 4, location: 'ห้องนอน', paint: '' };
+        const c1 = setCeilingCode(empty, 'C1');
+        expect(c1).toEqual({ ...empty, code: 'C1', paint: 'ภายใน' });
+        expect(setCeilingCode(c1, 'C3').paint).toBe('ภายนอก');             // still the usual group → follows
+        expect(setCeilingCode(c1, 'C4').paint).toBe('ไม้ระแนง');
+        const custom: CeilingRow = { ...c1, paint: 'ภายนอก' };               // user's own choice → kept
+        expect(setCeilingCode(custom, 'C2').paint).toBe('ภายนอก');
+        expect(setCeilingCode(c1, '').paint).toBe('ภายใน');
+        for (const r of ceiling.defaults().rows) {
+            if (r.code !== '') expect(CEILING_DEFAULT_PAINT[r.code], r.location).toBe(r.paint);   // matches the sample
+        }
     });
 });

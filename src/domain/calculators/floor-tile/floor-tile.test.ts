@@ -37,4 +37,14 @@ describe('ปูกระเบื้องพื้น_Floor Tile (sheet 16)', 
         expect(out.R207).toBeCloseTo(19.5 + 5, 9);
         expect(out.total).toBeCloseTo(72.25 + 41.07 - 4.455 + 4.95 + 19.5 + 5 + 9, 9);
     });
+
+    it('blank(): no rooms; every output finite and the BOQ lines 0', () => {
+        const input = floorTile.blank?.();
+        expect(input).toEqual({ rows: [] });
+        if (!input) return;
+        const out = floorTile.compute(input, ctx);
+        expect(Object.values(out).every(Number.isFinite)).toBe(true);
+        for (const l of floorTile.boqLinks) expect(out[l.output], l.line).toBe(0);
+        expect(out.total).toBe(0);
+    });
 });

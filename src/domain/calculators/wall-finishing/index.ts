@@ -58,6 +58,38 @@ export function wallFinishingArea(r: WallFinishingRow): number | null {
     return isSlat(r.item) ? num(r.width) * num(r.length) : null;
 }
 
+export type WallFinishingKind = 'moulding' | 'slat' | 'other';
+
+/** What a row is, by its item (journey page shows mouldings and slat walls apart). */
+export function wallFinishingKind(r: WallFinishingRow): WallFinishingKind {
+    return isMoulding(r.item) ? 'moulding' : isSlat(r.item) ? 'slat' : 'other';
+}
+
+/** New rows of the journey page, with the sample's codes (P2 บัว, P4 ระแนง — not used by any formula). */
+export const newMouldingRow = (item: string = MOULDING_0_3): WallFinishingRow =>
+    ({ code: 'P2', item, width: 0, length: 0, location: '' });
+export const newSlatRow = (): WallFinishingRow => ({ code: 'P4', item: SLAT_WALL, width: 0, length: 0, location: '' });
+
+/** Sets a moulding row's whole length (F = D + E): typed into E, D cleared, so F equals what was typed. */
+export const setMouldingLength = (r: WallFinishingRow, length: number): WallFinishingRow => ({ ...r, width: 0, length });
+
+/**
+ * Replaces the rows of one kind by `next` (an edited copy of just those rows), leaving the other rows where they
+ * are: kept rows take the old slots in order, extra rows go to the end, missing ones drop out.
+ */
+export function replaceRowsOfKind(input: WallFinishingInput, kind: WallFinishingKind, next: WallFinishingRow[]): WallFinishingInput {
+    let k = 0;
+    const rows: WallFinishingRow[] = [];
+    for (const r of input.rows) {
+        if (wallFinishingKind(r) !== kind) rows.push(r);
+        else {
+            const n = next[k++];
+            if (n) rows.push(n);
+        }
+    }
+    return { rows: [...rows, ...next.slice(k)] };
+}
+
 /** `SUMIF(WF!C:C, item, WF!F:F)` — total length of one moulding item. */
 export function mouldingLength(input: WallFinishingInput, item: string): number {
     return input.rows.reduce((s, r) => s + (r.item.trim() === item ? (wallFinishingLength(r) ?? 0) : 0), 0);
@@ -83,6 +115,8 @@ export const wallFinishing = defineCalculator<WallFinishingInput>({
             { code: 'P4', item: SLAT_WALL, width: 1.2, length: 4, location: 'ผนังเฉลียง 2' },
         ],
     }),
+    // A real project: no mouldings or slat walls yet (prices sit in the BOQ; paint girths live on the paint sheet).
+    blank: () => ({ rows: [] }),
     compute: (input) => {
         const out: Record<string, number> = {};
         let mouldingPaintArea = 0;

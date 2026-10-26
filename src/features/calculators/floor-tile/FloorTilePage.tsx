@@ -1,18 +1,106 @@
 'use client';
 
+import { Button } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import {
     floorTile, floorTileRowArea, FLOOR_TILE_CODES, FLOOR_TILE_DESCRIPTIONS, FLOOR_TILE_DESCRIPTION_ORDER,
-    type FloorTileCode, type FloorTileRow,
+    type FloorTileCode, type FloorTileInput, type FloorTileRow,
 } from '@/domain/calculators/floor-tile';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
+import { formatNumber } from '@/components/sheet/NumberCell';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
 
 const isCode = (v: string): v is FloorTileCode => (FLOOR_TILE_CODES as readonly string[]).includes(v);
 
+/** Journey: short floor-finish names, with where the sample house uses each one. */
+const PLAIN_TYPE: Record<FloorTileCode, string> = {
+    F1: 'กระเบื้องแกรนิตโต้ (ห้องทั่วไป)',
+    F3: 'กระเบื้องแกรนิตโต้ กันลื่น (เฉลียง, บันได)',
+    F4: 'ปรับระดับ ทำกันซึม (ดาดฟ้า)',
+};
+
+const newJourneyRow = (): FloorTileRow => ({ code: 'F1', width: 0, length: 0, location: '' });
+
+/** Journey mode: one row per room, read off the floor plan; results reduced to the totals. */
+function FloorTileJourney({ input, onChange, outputs }: {
+    input: FloorTileInput; onChange: (rows: FloorTileRow[]) => void; outputs: Record<string, number>;
+}) {
+    const add = () => onChange([...input.rows, newJourneyRow()]);
+    const usedTypes = FLOOR_TILE_CODES.filter(c => (outputs[c] ?? 0) !== 0);
+    return (
+        <>
+            <SheetCard title="ห้องและชนิดพื้น">
+                {input.rows.length === 0
+                    ? (
+                        <div className="flex flex-col items-center gap-3 py-8 text-center">
+                            <div className="text-[14px] text-gray-600">
+                                ยังไม่มีห้อง — เปิดแปลนพื้น แล้วเพิ่มทีละห้อง (ชื่อห้อง ชนิดพื้น กว้าง × ยาว)
+                            </div>
+                            <div className="text-[12px] text-gray-500">ห้องน้ำไม่ต้องใส่ที่นี่ — มีด่านกระเบื้องห้องน้ำแยกต่างหาก</div>
+                            <Button type="primary" size="large" icon={<PlusOutlined />} onClick={add}>เพิ่มห้อง</Button>
+                        </div>
+                    )
+                    : (
+                        <>
+                            <div className="overflow-x-auto">
+                                <div style={{ minWidth: 720 }}>
+                                    <EditableTable<FloorTileRow>
+                                        rows={input.rows}
+                                        onChange={onChange}
+                                        columns={[
+                                            { kind: 'text', key: 'location', title: 'ห้อง / ตำแหน่ง', width: 170, placeholder: 'เช่น ห้องนอน 1',
+                                                get: r => r.location, set: (r, v) => ({ ...r, location: v }) },
+                                            { kind: 'select', key: 'code', title: 'ชนิดพื้น', width: 270,
+                                                options: FLOOR_TILE_CODES.map(c => ({ value: c, label: PLAIN_TYPE[c] })),
+                                                get: r => r.code, set: (r, v) => ({ ...r, code: isCode(v) ? v : '' }) },
+                                            { kind: 'number', key: 'width', title: 'กว้าง (ม.)', width: 90,
+                                                get: r => r.width, set: (r, v) => ({ ...r, width: v }) },
+                                            { kind: 'number', key: 'length', title: 'ยาว (ม.)', width: 90,
+                                                get: r => r.length, set: (r, v) => ({ ...r, length: v }) },
+                                            { kind: 'calc', key: 'area', title: 'พื้นที่ (ตร.ม.)', width: 100, get: r => floorTileRowArea(r) },
+                                        ]}
+                                    />
+                                </div>
+                            </div>
+                            <Button type="dashed" icon={<PlusOutlined />} className="mt-3" onClick={add}>เพิ่มห้อง</Button>
+                            <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
+                                <li>ห้องที่เป็นรูปตัว L ให้แบ่งเป็น 2 แถว เช่น ห้องนอน 1 (1) และ ห้องนอน 1 (2)</li>
+                                <li>บันได: กว้าง = ความกว้างบันได, ยาว = ลูกนอน + ลูกตั้ง (เช่น 0.9 + 0.45 = 1.35 ม. พิมพ์ 0.9+0.45 ได้)</li>
+                                <li>ห้องน้ำไม่ต้องใส่ที่นี่ — มีด่านกระเบื้องห้องน้ำแยกต่างหาก</li>
+                            </ul>
+                        </>
+                    )}
+            </SheetCard>
+
+            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+                <div className="text-[12px] font-semibold text-green-800 mb-1">สรุปพื้นที่ปูพื้น</div>
+                <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-gray-700">
+                    {usedTypes.map(c => (
+                        <span key={c}>{PLAIN_TYPE[c]} <b className="tabular-nums">{formatNumber(outputs[c])}</b> ตร.ม.</span>
+                    ))}
+                    <span className="font-semibold text-gray-900">
+                        รวม <b className="tabular-nums text-[15px]">{formatNumber(outputs.total)}</b> ตร.ม.
+                    </span>
+                </div>
+            </div>
+        </>
+    );
+}
+
 export default function FloorTilePage() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(floorTile);
+    const inJourney = useJourneyMode();
+
+    if (inJourney) {
+        return (
+            <CalculatorShell def={floorTile} result={result} isDefault={isDefault} onReset={reset}>
+                <FloorTileJourney input={input} outputs={outputs} onChange={rows => update({ rows })} />
+            </CalculatorShell>
+        );
+    }
 
     return (
         <CalculatorShell def={floorTile} result={result} isDefault={isDefault} onReset={reset}>

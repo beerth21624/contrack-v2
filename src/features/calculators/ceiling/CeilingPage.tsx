@@ -1,11 +1,16 @@
 'use client';
 
+import { Button } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import {
-    ceiling, ceilingRowArea, CEILING_CODES, CEILING_DESCRIPTIONS, CEILING_DESCRIPTION_ORDER, CEILING_PAINT_GROUPS,
-    paintGroupLabel, paintKey, SLOPED_CEILING_DEG, type CeilingCode, type CeilingPaintGroup, type CeilingRow,
+    ceiling, ceilingRowArea, setCeilingCode, CEILING_CODES, CEILING_DEFAULT_PAINT, CEILING_DESCRIPTIONS,
+    CEILING_DESCRIPTION_ORDER, CEILING_PAINT_GROUPS, paintGroupLabel, paintKey, SLOPED_CEILING_DEG,
+    type CeilingCode, type CeilingInput, type CeilingPaintGroup, type CeilingRow,
 } from '@/domain/calculators/ceiling';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
+import { formatNumber } from '@/components/sheet/NumberCell';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
 
@@ -15,8 +20,104 @@ const isPaint = (v: string): v is CeilingPaintGroup => (CEILING_PAINT_GROUPS as 
 /** Scroll the table sideways instead of letting the รายการ dropdown squeeze the number columns. */
 const TABLE_MIN_WIDTH = 1240;
 
+/** Journey: short type names, with where the sample house uses each one. */
+const PLAIN_TYPE: Record<CeilingCode, string> = {
+    C1: 'ยิปซัมบอร์ด 9 มม. (ห้องทั่วไป)',
+    C2: 'ยิปซัมบอร์ดกันชื้น 9 มม. (ห้องน้ำ, เฉลียง)',
+    C3: 'ไฟเบอร์ซีเมนต์ 4 มม. (ชายคาภายนอก)',
+    C4: 'ระแนงไม้ไฟเบอร์ซีเมนต์ 4 นิ้ว',
+};
+const PLAIN_PAINT: Record<CeilingPaintGroup, string> = {
+    ภายใน: 'สีภายใน', ภายนอก: 'สีภายนอก', ไม้ระแนง: 'สีย้อมไม้ (ระแนง)',
+};
+
+const newJourneyRow = (): CeilingRow => ({ code: 'C1', width: 0, length: 0, location: '', paint: CEILING_DEFAULT_PAINT.C1 });
+
+/** Journey mode: one row per room, read off the ceiling plan; results reduced to the totals. */
+function CeilingJourney({ input, onChange, outputs }: {
+    input: CeilingInput; onChange: (rows: CeilingRow[]) => void; outputs: Record<string, number>;
+}) {
+    const add = () => onChange([...input.rows, newJourneyRow()]);
+    const usedTypes = CEILING_CODES.filter(c => (outputs[c] ?? 0) !== 0);
+    return (
+        <>
+            <SheetCard title="ห้องและชนิดฝ้า">
+                {input.rows.length === 0
+                    ? (
+                        <div className="flex flex-col items-center gap-3 py-8 text-center">
+                            <div className="text-[14px] text-gray-600">
+                                ยังไม่มีห้อง — เปิดแปลนฝ้าเพดาน แล้วเพิ่มทีละห้อง (ชื่อห้อง ชนิดฝ้า กว้าง × ยาว)
+                            </div>
+                            <Button type="primary" size="large" icon={<PlusOutlined />} onClick={add}>เพิ่มห้อง</Button>
+                        </div>
+                    )
+                    : (
+                        <>
+                            <div className="overflow-x-auto">
+                                <div style={{ minWidth: 900 }}>
+                                    <EditableTable<CeilingRow>
+                                        rows={input.rows}
+                                        onChange={onChange}
+                                        columns={[
+                                            { kind: 'text', key: 'location', title: 'ห้อง / ตำแหน่ง', width: 160, placeholder: 'เช่น ห้องนอน 1',
+                                                get: r => r.location, set: (r, v) => ({ ...r, location: v }) },
+                                            { kind: 'select', key: 'code', title: 'ชนิดฝ้า', width: 260,
+                                                options: CEILING_CODES.map(c => ({ value: c, label: PLAIN_TYPE[c] })),
+                                                get: r => r.code, set: (r, v) => setCeilingCode(r, isCode(v) ? v : '') },
+                                            { kind: 'number', key: 'width', title: 'กว้าง (ม.)', width: 80,
+                                                get: r => r.width, set: (r, v) => ({ ...r, width: v }) },
+                                            { kind: 'number', key: 'length', title: 'ยาว (ม.)', width: 80,
+                                                get: r => r.length, set: (r, v) => ({ ...r, length: v }) },
+                                            { kind: 'number', key: 'slope', title: 'ลาดเอียง (องศา)', width: 80, digits: 0,
+                                                get: r => r.slope ?? 0, set: (r, v) => ({ ...r, slope: v }) },
+                                            { kind: 'calc', key: 'area', title: 'พื้นที่ (ตร.ม.)', width: 90, get: r => ceilingRowArea(r) },
+                                            { kind: 'select', key: 'paint', title: 'ทาสีฝ้า', width: 150,
+                                                options: CEILING_PAINT_GROUPS.map(g => ({ value: g, label: PLAIN_PAINT[g] })),
+                                                get: r => r.paint, set: (r, v) => ({ ...r, paint: isPaint(v) ? v : '' }) },
+                                        ]}
+                                    />
+                                </div>
+                            </div>
+                            <Button type="dashed" icon={<PlusOutlined />} className="mt-3" onClick={add}>เพิ่มห้อง</Button>
+                            <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
+                                <li>ห้องที่เป็นรูปตัว L ให้แบ่งเป็น 2 แถว เช่น ห้องนอน 1 (1) และ ห้องนอน 1 (2)</li>
+                                <li>ฝ้าเรียบใส่ลาดเอียง 0 · ฝ้าใต้หลังคาลาด (เช่น เฉลียง) ใส่องศาหลังคา เช่น {SLOPED_CEILING_DEG}</li>
+                                <li>ชายคาภายนอก: กว้าง = ระยะยื่นชายคา, ยาว = ความยาวรอบชายคา</li>
+                                <li>ทาสีฝ้าเลือกให้ตามชนิดฝ้าแล้ว เปลี่ยนได้ — พื้นที่นี้ส่งต่อไปด่านทาสี</li>
+                            </ul>
+                        </>
+                    )}
+            </SheetCard>
+
+            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+                <div className="text-[12px] font-semibold text-green-800 mb-1">สรุปพื้นที่ฝ้า</div>
+                <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-gray-700">
+                    {usedTypes.map(c => (
+                        <span key={c}>{PLAIN_TYPE[c]} <b className="tabular-nums">{formatNumber(outputs[c])}</b> ตร.ม.</span>
+                    ))}
+                    <span className="font-semibold text-gray-900">
+                        รวม <b className="tabular-nums text-[15px]">{formatNumber(outputs.total)}</b> ตร.ม.
+                    </span>
+                </div>
+                <div className="mt-1 text-[12px] text-gray-600">
+                    ส่งต่อด่านทาสี: {CEILING_PAINT_GROUPS.map(g => `${PLAIN_PAINT[g]} ${formatNumber(outputs[paintKey(g)])}`).join(' · ')} ตร.ม.
+                </div>
+            </div>
+        </>
+    );
+}
+
 export default function CeilingPage() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(ceiling);
+    const inJourney = useJourneyMode();
+
+    if (inJourney) {
+        return (
+            <CalculatorShell def={ceiling} result={result} isDefault={isDefault} onReset={reset}>
+                <CeilingJourney input={input} outputs={outputs} onChange={rows => update({ rows })} />
+            </CalculatorShell>
+        );
+    }
 
     return (
         <CalculatorShell def={ceiling} result={result} isDefault={isDefault} onReset={reset}>

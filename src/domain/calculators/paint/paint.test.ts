@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { paint, paintAreas, paintLinkedSources, paintSuggestions, PAINT_LINES } from '.';
+import {
+    paint, paintAreas, paintLinkedSources, paintSuggestions, applyPaintSuggestions, pendingPaintSuggestions, PAINT_LINES,
+} from '.';
 import { plaster } from '../plaster';
 import { roofing } from '../roofing';
+import { ceiling } from '../ceiling';
+import { wallFinishing } from '../wall-finishing';
 import type { CalcContext } from '../types';
 import { computeProject, createProject } from '../../project';
 import golden from '../../boq/__tests__/golden.v5.json';
@@ -118,4 +122,61 @@ describe('ทาสี_Paint (sheet 19)', () => {
         // Defaults stay Excel's 63.2 even when roofing says 62.3.
         expect(paint.compute(paint.defaults(), ctx).R230).toBeCloseTo(14.536, 9);
     });
+
+    it('blank(): hand-typed areas 0, girths and fascia height kept; with empty sources every BOQ line is 0', () => {
+        const input = paint.blank?.();
+        expect(input).toBeDefined();
+        if (!input) return;
+        expect(input).toEqual({
+            slatWallArea: 0,
+            mouldings: [{ size: '0.3', girth: 0.5, length: 0 }, { size: '0.1', girth: 0.3, length: 0 }],
+            fasciaLength: 0,
+            fasciaHeight: 0.23,
+        });
+        // Sources of a blank project: ceiling / wall-finishing blanks, plaster with no walls yet.
+        const sources: Record<string, Record<string, number> | undefined> = {
+            plaster: { exterior: 0, interior: 0 },
+            ceiling: ceiling.compute(must2(ceiling.blank?.()), none),
+            'wall-finishing': wallFinishing.compute(must2(wallFinishing.blank?.()), none),
+        };
+        const ctx: CalcContext = { outputs: id => sources[id] };
+        const out = paint.compute(input, ctx);
+        expect(Object.values(out).every(Number.isFinite)).toBe(true);
+        for (const l of paint.boqLinks) expect(out[l.output], l.line).toBe(0);
+        expect(pendingPaintSuggestions(input, paintSuggestions(ctx))).toBe(0);
+    });
+
+    it('a blank project: every finishes-level BOQ line (§19–23, 25, 31) is 0', () => {
+        const { calcOutputs, boq } = computeProject(createProject('blank'));
+        for (const l of paint.boqLinks) expect(calcOutputs.paint?.[l.output], l.line).toBe(0);
+        for (const no of [19, 20, 22, 23, 25, 31]) expect(boq.sections.find(s => s.no === no)?.total, `§${no}`).toBe(0);
+        for (const k of ['R210', 'R211']) expect(calcOutputs['toilet-tile']?.[k], k).toBe(0);
+    });
+
+    it('applyPaintSuggestions takes every source value at once (and only where a source has one)', () => {
+        const input = must2(paint.blank?.());
+        const roofOut = roofing.compute(roofing.defaults(), none);
+        const ctx: CalcContext = {
+            outputs: id => (id === 'roofing' ? roofOut
+                : id === 'wall-finishing' ? { slatWallArea: 8.1, 'moulding.0.3': 13, 'moulding.0.1': 11 } : undefined),
+        };
+        const s = paintSuggestions(ctx);
+        expect(pendingPaintSuggestions(input, s)).toBe(4);
+        const applied = applyPaintSuggestions({ ...input, mouldings: [...input.mouldings, { size: '', girth: 0.4, length: 5 }] }, s);
+        expect(applied.slatWallArea).toBe(8.1);
+        expect(applied.mouldings.map(m => m.length)).toEqual([13, 11, 5]);
+        expect(applied.fasciaLength).toBeCloseTo(62.3, 9);
+        expect(pendingPaintSuggestions(applied, s)).toBe(0);
+        const out = paint.compute(applied, ctx);
+        expect(out.R228).toBe(8.1);
+        expect(out.R229).toBeCloseTo(9.8 + 2, 9);
+        expect(out.R230).toBeCloseTo(62.3 * 0.23, 9);
+        // No sources → nothing changes.
+        expect(applyPaintSuggestions(input, paintSuggestions(none))).toEqual(input);
+    });
 });
+
+function must2<T>(v: T | undefined): T {
+    if (v === undefined) throw new Error('missing blank()');
+    return v;
+}

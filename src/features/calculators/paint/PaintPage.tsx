@@ -1,15 +1,21 @@
 'use client';
 
+import Link from 'next/link';
 import { Button } from 'antd';
+import { CheckOutlined } from '@ant-design/icons';
 import {
-    paint, paintLinkedSources, paintSuggestions, mouldingArea, PAINT_LINES, type MouldingRun, type PaintLineKey,
+    paint, paintLinkedSources, paintSuggestions, applyPaintSuggestions, pendingPaintSuggestions, mouldingArea, PAINT_LINES,
+    type MouldingRun, type PaintInput, type PaintLineKey, type PaintSuggestions,
 } from '@/domain/calculators/paint';
 import type { CalcContext } from '@/domain/calculators/types';
+import { getLevel } from '@/domain/journey';
+import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, InputNumberField, SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber, SHEET_COLORS } from '@/components/sheet/NumberCell';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
-import { useCalculator } from '../useCalculator';
+import { useCalculator, type UseCalculator } from '../useCalculator';
 
 const th = 'border border-gray-200 px-2 py-1 text-[12px] font-semibold text-gray-700 bg-gray-50 text-center';
 const td = 'border border-gray-200 px-2 py-1 text-[13px] align-middle';
@@ -38,11 +44,177 @@ function SourceHint({ sheet, value, current, unit, onUse }: {
     );
 }
 
+// ─── Journey mode: a review of the areas earlier levels gave, plus the three numbers to confirm ───
+
+/** A journey level's title and link (for "จากด่าน …"). */
+function levelRef(id: string) {
+    return { title: getLevel(id)?.title ?? id, href: `/journey/${id}` };
+}
+
+/** Where each line's area comes from, in plain words. */
+const JOURNEY_SOURCE: Partial<Record<PaintLineKey, { level: string; what: string }>> = {
+    wallExterior: { level: 'plaster', what: 'ผนังฉาบภายนอก' },
+    wallInterior: { level: 'plaster', what: 'ผนังฉาบภายใน' },
+    ceilingExterior: { level: 'ceiling', what: 'ฝ้าที่เลือกทาสีภายนอก' },
+    ceilingInterior: { level: 'ceiling', what: 'ฝ้าที่เลือกทาสีภายใน' },
+    ceilingSlat: { level: 'ceiling', what: 'ฝ้าระแนง (สีย้อมไม้)' },
+    skim: { level: 'plaster', what: 'ผนังฉาบภายนอก + ภายใน' },
+};
+
+/** "ใช้ค่าจากด่าน …" in journey mode: a primary button while the source offers another number. */
+function UseFromLevel({ level, value, current, unit, onUse }: {
+    level: string; value: number | undefined; current: number; unit: string; onUse: (v: number) => void;
+}) {
+    const ref = levelRef(level);
+    if (value === undefined) return <span className="text-[12px] text-gray-400">ด่าน{ref.title}ยังไม่มีค่านี้</span>;
+    if (Math.abs(value - current) < 1e-9) {
+        return <span className="text-[12px] text-green-700"><CheckOutlined /> ตรงกับด่าน{ref.title}</span>;
+    }
+    return (
+        <Button type="primary" size="small" onClick={() => onUse(value)}>
+            ใช้ค่าจากด่าน{ref.title}: {formatNumber(value)} {unit}
+        </Button>
+    );
+}
+
+function PaintJourney({ input, update, outputs, linked, suggest }: {
+    input: PaintInput; update: UseCalculator<PaintInput>['update']; outputs: Record<string, number>;
+    linked: ReturnType<typeof paintLinkedSources>; suggest: PaintSuggestions;
+}) {
+    const pending = pendingPaintSuggestions(input, suggest);
+    const isLinked = (key: PaintLineKey) =>
+        key === 'ceilingExterior' || key === 'ceilingInterior' || key === 'ceilingSlat' ? linked[key] : linked.plaster;
+    const fromLevels = PAINT_LINES.filter(l => JOURNEY_SOURCE[l.key] !== undefined);
+    const setMoulding = (i: number, patch: Partial<MouldingRun>) => update(p => ({
+        ...p, mouldings: p.mouldings.map((m, j) => (j === i ? { ...m, ...patch } : m)),
+    }));
+    const sum = (keys: PaintLineKey[]) => keys.reduce((s, k) => s + (outputs[k] ?? 0), 0);
+
+    return (
+        <>
+            <SheetCard title="พื้นที่ทาสีมาจากด่านก่อนหน้า">
+                <p className="text-[12px] text-gray-500 mb-2">ไม่ต้องกรอก — ตรวจดูว่าครบ ถ้ายังเป็น 0 ให้กลับไปกรอกด่านนั้น</p>
+                <div className="divide-y divide-gray-100">
+                    {fromLevels.map(l => {
+                        const src = JOURNEY_SOURCE[l.key];
+                        if (!src) return null;
+                        const ref = levelRef(src.level);
+                        const area = outputs[l.key] ?? 0;
+                        return (
+                            <div key={l.key} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-1.5">
+                                <span className="text-[13px] text-gray-800 min-w-[200px]">{l.label}</span>
+                                <span className="tabular-nums px-2 py-0.5 rounded-sm min-w-[110px] text-right" style={{ background: SHEET_COLORS.calc }}>
+                                    {formatNumber(area)} ตร.ม.
+                                </span>
+                                <span className="text-[12px] text-gray-500">
+                                    {isLinked(l.key)
+                                        ? <>จาก<Link href={ref.href} className="mx-1">ด่าน{ref.title}</Link>({src.what})</>
+                                        : <>ค่าตัวอย่าง (ยังไม่มีด่าน{ref.title})</>}
+                                </span>
+                                {area === 0 && (
+                                    <Link href={ref.href} className="text-[12px] text-orange-600">ยังเป็น 0 — กลับไปด่าน{ref.title}</Link>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </SheetCard>
+
+            <SheetCard title="พื้นที่ที่ต้องยืนยัน">
+                {pending > 0 && (
+                    <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-orange-200 bg-orange-50 px-3 py-2">
+                        <span className="text-[13px] text-gray-800">ด่านก่อนหน้ามีค่าให้ใช้ {pending} รายการ</span>
+                        <Button type="primary" onClick={() => update(p => applyPaintSuggestions(p, suggest))}>
+                            ใช้ค่าจากด่านก่อนหน้าทั้งหมด
+                        </Button>
+                    </div>
+                )}
+
+                <div className="flex flex-col gap-3">
+                    <div>
+                        <div className="text-[13px] font-semibold text-gray-800">ทาสีผนังไม้ระแนง</div>
+                        <InputNumberField label="พื้นที่ผนังไม้ระแนง" unit="ตร.ม." value={input.slatWallArea}
+                            onChange={v => update({ slatWallArea: v })} />
+                        <UseFromLevel level="wall-finishing" value={suggest.slatWallArea} current={input.slatWallArea}
+                            unit="ตร.ม." onUse={v => update({ slatWallArea: v })} />
+                    </div>
+
+                    <div>
+                        <div className="text-[13px] font-semibold text-gray-800">ทาสีบัวผนัง</div>
+                        {input.mouldings.length === 0 && <div className="text-[12px] text-gray-500 py-1">ไม่มีบัว</div>}
+                        {input.mouldings.map((m, i) => (
+                            <div key={i}>
+                                <InputNumberField label={m.size.trim() === '' ? `ความยาวบัว ${i + 1}` : `ความยาวบัว ${m.size} ม.`}
+                                    unit="ม." value={m.length} onChange={v => setMoulding(i, { length: v })}
+                                    hint={`ทาสี ${formatNumber(mouldingArea(m))} ตร.ม.`} />
+                                {m.size.trim() !== '' && (
+                                    <UseFromLevel level="wall-finishing" value={suggest.mouldingLength(m.size)} current={m.length}
+                                        unit="ม." onUse={v => setMoulding(i, { length: v })} />
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div>
+                        <div className="text-[13px] font-semibold text-gray-800">ทาสีเชิงชาย</div>
+                        <InputNumberField label="ความยาวเชิงชาย" unit="ม." value={input.fasciaLength}
+                            onChange={v => update({ fasciaLength: v })}
+                            hint={`สูง ${formatNumber(input.fasciaHeight)} ม. → ${formatNumber(outputs.fascia)} ตร.ม.`} />
+                        <UseFromLevel level="roofing" value={suggest.fasciaLength} current={input.fasciaLength}
+                            unit="ม." onUse={v => update({ fasciaLength: v })} />
+                    </div>
+                </div>
+            </SheetCard>
+
+            <AdvancedSection title="ขนาดบัวและเชิงชาย" hint="ค่าตั้งต้น — ไม่ต้องแก้ก็ได้">
+                <EditableTable<MouldingRun>
+                    rows={input.mouldings}
+                    onChange={mouldings => update({ mouldings })}
+                    lockedRows={FIXED_MOULDINGS}
+                    newRow={() => ({ size: '', girth: 0, length: 0 })}
+                    addLabel="+ เพิ่มบัว"
+                    columns={[
+                        { kind: 'text', key: 'size', title: 'ขนาดบัว (ม.)', width: 90, placeholder: 'เช่น 0.3',
+                            get: r => r.size, set: (r, v) => ({ ...r, size: v.trim() }) },
+                        { kind: 'number', key: 'girth', title: 'ความกว้างรอบรูปที่ทาสี (ม.)', width: 140,
+                            get: r => r.girth, set: (r, v) => ({ ...r, girth: v }) },
+                    ]}
+                />
+                <p className="mt-1 mb-3 text-[12px] text-gray-500">
+                    ความกว้างรอบรูป = หน้าบัว + 2 × ความหนา (บัว 0.3 × 0.1 → 0.5 ม., บัว 0.1 × 0.1 → 0.3 ม.)
+                </p>
+                <InputNumberField label="ความสูงไม้เชิงชาย" unit="ม." value={input.fasciaHeight}
+                    onChange={v => update({ fasciaHeight: v })} />
+                <p className="mt-1 text-[12px] text-gray-500">ราคาสีต่อ ตร.ม. ของแต่ละรอบ แก้ได้ที่หน้า BOQ</p>
+            </AdvancedSection>
+
+            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+                <div className="text-[12px] font-semibold text-green-800 mb-1">สรุปพื้นที่ทาสี (คิด 3 รอบ: รองพื้น, รอบที่ 1, รอบสุดท้าย)</div>
+                <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-gray-700">
+                    <span>ผนัง <b className="tabular-nums text-[15px]">{formatNumber(sum(['wallExterior', 'wallInterior']))}</b> ตร.ม.</span>
+                    <span>ฝ้า <b className="tabular-nums text-[15px]">{formatNumber(sum(['ceilingExterior', 'ceilingInterior']))}</b> ตร.ม.</span>
+                    <span>ระแนง บัว เชิงชาย <b className="tabular-nums text-[15px]">{formatNumber(sum(['ceilingSlat', 'wallSlat', 'moulding', 'fascia']))}</b> ตร.ม.</span>
+                    <span>ฉาบบาง (สกิมโค้ท) <b className="tabular-nums text-[15px]">{formatNumber(outputs.skim)}</b> ตร.ม.</span>
+                </div>
+            </div>
+        </>
+    );
+}
+
 export default function PaintPage() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(paint);
+    const inJourney = useJourneyMode();
     const ctx: CalcContext = { outputs: id => result.calcOutputs[id] };
     const linked = paintLinkedSources(ctx);
     const suggest = paintSuggestions(ctx);
+
+    if (inJourney) {
+        return (
+            <CalculatorShell def={paint} result={result} isDefault={isDefault} onReset={reset}>
+                <PaintJourney input={input} update={update} outputs={outputs} linked={linked} suggest={suggest} />
+            </CalculatorShell>
+        );
+    }
 
     const fromExcel = (sheet: string) => `ค่าจาก Excel (ยังไม่มีชีต ${sheet})`;
     const source: Record<PaintLineKey, string> = {

@@ -78,6 +78,8 @@ export const floorTile = defineCalculator<FloorTileInput>({
             row('F4', 1.5, 3, 'ดาดฟ้า ค.ส.ล. (1)'),
         ],
     }),
+    // A real project: no rooms yet (prices sit in the BOQ, the sheet has no constants of its own).
+    blank: () => ({ rows: [] }),
     compute: input => {
         const f1 = floorTileAreaByCode(input, 'F1');
         const f3 = floorTileAreaByCode(input, 'F3');
