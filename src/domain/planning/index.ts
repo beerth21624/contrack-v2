@@ -9,6 +9,7 @@ import { PLAN_TASKS } from './tasks';
 
 export * from './calendar';
 export * from './cashflow';
+export * from './crew-calendar';
 export * from './manday';
 export * from './schedule';
 export * from './tasks';
