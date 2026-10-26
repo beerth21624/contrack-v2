@@ -7,6 +7,7 @@ import type {
 } from './boq/types';
 import { calculatorsInOrder } from './calculators/registry';
 import type { CalculatorDef, SlotRow } from './calculators/types';
+import { computePlanning, resolvePlanningInput, type PlanningInput, type PlanningResult } from './planning';
 
 /** Gives slot rows project-unique keys (`${calc}:${slot}:${key}`), rewriting references between them. */
 function prefixSlotRows(rows: SlotRow[], prefix: string, excelRow: number): (BoqItemTemplate | BoqHeadingTemplate)[] {
@@ -41,6 +42,8 @@ export interface Project {
     calculators: Record<string, unknown>;
     /** Edits made on the BOQ (Home) page. */
     boqOverrides: Record<BoqLineKey, BoqLineOverride>;
+    /** Man-Day / S-Curve / CashFlow inputs. Missing parts = the Excel sample (see resolvePlanningInput). */
+    planning?: Partial<PlanningInput>;
 }
 
 export const DEFAULT_PROJECT_META: ProjectMeta = {
@@ -72,6 +75,8 @@ export interface ProjectResult {
     /** Outputs of every calculator, by calculator id. */
     calcOutputs: Record<string, Record<string, number>>;
     boq: BoqResult;
+    /** Man-Day_Basic, S-Curve_Plan_Basic and CashFLOW_Basic, computed from the BOQ. */
+    planning: PlanningResult;
 }
 
 export function computeProject(project: Project, calculators?: CalculatorDef[]): ProjectResult {
@@ -101,5 +106,6 @@ export function computeProject(project: Project, calculators?: CalculatorDef[]):
     }
 
     const boq = computeBoq({ sections: BOQ_TEMPLATE_V5, overrides: project.boqOverrides, linked, slots });
-    return { calcOutputs, boq };
+    const planning = computePlanning(resolvePlanningInput(project.planning), boq);
+    return { calcOutputs, boq, planning };
 }

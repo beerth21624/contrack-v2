@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { BoqLineKey, BoqLineOverride } from '@/domain/boq/types';
+import type { PlanningInput } from '@/domain/planning';
 import { createProject, PROJECT_SCHEMA_VERSION, type Project, type ProjectMeta } from '@/domain/project';
 
 /** Field of a BOQ line the user can edit on the BOQ (Home) page. */
@@ -18,6 +19,8 @@ interface ProjectState {
     resetBoqSection: (keys: BoqLineKey[]) => void;
     /** Replace a calculator's whole input (undefined = back to the Excel sample). */
     setCalculatorInput: (id: string, input: unknown) => void;
+    /** Merge planning inputs per sheet (manday / schedule / cashflow); a sheet set to undefined goes back to the Excel sample. */
+    setPlanning: (patch: { [K in keyof PlanningInput]?: PlanningInput[K] | undefined }) => void;
     resetProject: () => void;
 }
 
@@ -50,6 +53,13 @@ export const useProjectStore = create<ProjectState>()(
                 const others = Object.entries(s.project.calculators).filter(([k]) => k !== id);
                 const calculators = Object.fromEntries(input === undefined ? others : [...others, [id, input]]);
                 return { project: { ...s.project, calculators } };
+            }),
+            setPlanning: (patch) => set(s => {
+                const merged: Record<string, unknown> = { ...s.project.planning, ...patch };
+                const planning = Object.fromEntries(
+                    Object.entries(merged).filter(([, v]) => v !== undefined),
+                ) as Partial<PlanningInput>;
+                return { project: { ...s.project, planning } };
             }),
             resetProject: () => set({ project: createProject() }),
         }),
