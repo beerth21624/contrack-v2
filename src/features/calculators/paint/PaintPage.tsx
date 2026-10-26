@@ -8,11 +8,12 @@ import {
 } from '@/domain/calculators/paint';
 import type { CalcContext } from '@/domain/calculators/types';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
-import { LevelLink, ResultSummary, levelTitle } from '@/components/sheet/journey';
+import { JNumber, LevelLink, ResultSummary, levelTitle } from '@/components/sheet/journey';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, InputNumberField, SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber, SHEET_COLORS } from '@/components/sheet/NumberCell';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
+import { useProjectStore } from '@/store/project-store';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
 
@@ -83,11 +84,14 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
         ...p, mouldings: p.mouldings.map((m, j) => (j === i ? { ...m, ...patch } : m)),
     }));
     const sum = (keys: PaintLineKey[]) => keys.reduce((s, k) => s + (outputs[k] ?? 0), 0);
+    // The wall-finishing level was marked "ไม่มีงานนี้" and nothing was typed here: no slat or moulding paint.
+    const finishingSkipped = useProjectStore(s => s.project.journey?.['wall-finishing'] === 'skipped');
+    const noFinishing = finishingSkipped && input.slatWallArea === 0 && input.mouldings.every(m => m.length === 0);
 
     return (
         <>
             <SheetCard title="พื้นที่ทาสีมาจากด่านก่อนหน้า">
-                <p className="text-[12px] text-gray-500 mb-2">ไม่ต้องกรอก — ตรวจดูว่าครบ ถ้ายังเป็น 0 ให้กลับไปกรอกด่านนั้น</p>
+                <p className="text-[12px] text-gray-500 mb-2">ไม่ต้องกรอก — ตรวจดูว่าครบ ถ้ารายการไหนยังไม่มีแต่แบบมี ให้กลับไปกรอกด่านนั้น</p>
                 <div className="divide-y divide-gray-100">
                     {fromLevels.map(l => {
                         const src = JOURNEY_SOURCE[l.key];
@@ -97,7 +101,7 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                             <div key={l.key} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-1.5">
                                 <span className="text-[13px] text-gray-800 min-w-[200px]">{l.label}</span>
                                 <span className="tabular-nums px-2 py-0.5 rounded-sm min-w-[110px] text-right" style={{ background: SHEET_COLORS.calc }}>
-                                    {formatNumber(area)} ตร.ม.
+                                    {area === 0 ? 'ไม่มี' : `${formatNumber(area)} ตร.ม.`}
                                 </span>
                                 <span className="text-[12px] text-gray-500">
                                     {isLinked(l.key)
@@ -106,7 +110,7 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                                 </span>
                                 {area === 0 && (
                                     <LevelLink levelId={src.level} className="text-[12px] text-orange-600">
-                                        ยังเป็น 0 — กลับไปด่าน{levelTitle(src.level)}
+                                        ถ้าแบบมี กรอกที่ด่าน{levelTitle(src.level)}
                                     </LevelLink>
                                 )}
                             </div>
@@ -126,9 +130,14 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                 )}
 
                 <div className="flex flex-col gap-3">
+                    {noFinishing ? (
+                        <div className="text-[13px] text-gray-600">
+                            ทาสีผนังไม้ระแนงและบัวผนัง: ไม่มี (<LevelLink levelId="wall-finishing" /> กด &quot;ไม่มีงานนี้&quot;)
+                        </div>
+                    ) : (<>
                     <div>
                         <div className="text-[13px] font-semibold text-gray-800">ทาสีผนังไม้ระแนง</div>
-                        <InputNumberField label="พื้นที่ผนังไม้ระแนง" unit="ตร.ม." value={input.slatWallArea}
+                        <JNumber label="พื้นที่ผนังไม้ระแนง" unit="ตร.ม." value={input.slatWallArea}
                             onChange={v => update({ slatWallArea: v })} />
                         <UseFromLevel level="wall-finishing" value={suggest.slatWallArea} current={input.slatWallArea}
                             unit="ตร.ม." onUse={v => update({ slatWallArea: v })} />
@@ -139,9 +148,9 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                         {input.mouldings.length === 0 && <div className="text-[12px] text-gray-500 py-1">ไม่มีบัว</div>}
                         {input.mouldings.map((m, i) => (
                             <div key={i}>
-                                <InputNumberField label={m.size.trim() === '' ? `ความยาวบัว ${i + 1}` : `ความยาวบัว ${m.size} ม.`}
+                                <JNumber label={m.size.trim() === '' ? `ความยาวบัว ${i + 1}` : `ความยาวบัว ${m.size} ม.`}
                                     unit="ม." value={m.length} onChange={v => setMoulding(i, { length: v })}
-                                    hint={`ทาสี ${formatNumber(mouldingArea(m))} ตร.ม.`} />
+                                    hint={mouldingArea(m) === 0 ? undefined : `ทาสี ${formatNumber(mouldingArea(m))} ตร.ม.`} />
                                 {m.size.trim() !== '' && (
                                     <UseFromLevel level="wall-finishing" value={suggest.mouldingLength(m.size)} current={m.length}
                                         unit="ม." onUse={v => setMoulding(i, { length: v })} />
@@ -149,12 +158,13 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                             </div>
                         ))}
                     </div>
+                    </>)}
 
                     <div>
                         <div className="text-[13px] font-semibold text-gray-800">ทาสีเชิงชาย</div>
-                        <InputNumberField label="ความยาวเชิงชาย" unit="ม." value={input.fasciaLength}
+                        <JNumber label="ความยาวเชิงชาย" unit="ม." value={input.fasciaLength}
                             onChange={v => update({ fasciaLength: v })}
-                            hint={`สูง ${formatNumber(input.fasciaHeight)} ม. → ${formatNumber(outputs.fascia)} ตร.ม.`} />
+                            hint={(outputs.fascia ?? 0) === 0 ? undefined : `สูง ${formatNumber(input.fasciaHeight)} ม. → ${formatNumber(outputs.fascia)} ตร.ม.`} />
                         <UseFromLevel level="roofing" value={suggest.fasciaLength} current={input.fasciaLength}
                             unit="ม." onUse={v => update({ fasciaLength: v })} />
                     </div>

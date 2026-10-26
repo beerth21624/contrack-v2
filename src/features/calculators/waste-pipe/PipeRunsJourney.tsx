@@ -15,7 +15,7 @@ import { EditableTable, type SheetColumn } from '@/components/sheet/EditableTabl
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { formatNumber } from '@/components/sheet/NumberCell';
-import { EmptyState, ResultSummary } from '@/components/sheet/journey';
+import { EmptyState, ResultSummary, blankIfZero } from '@/components/sheet/journey';
 
 const NO_DEPS = { outputs: () => undefined };
 const EMPTY_RUN: PipeRun = { label: '', size: '', horizontal: 0, vertical: 0 };
@@ -32,7 +32,7 @@ const lengthColumns: SheetColumn<PipeRun>[] = [
         get: r => r.horizontal, set: (r, v) => ({ ...r, horizontal: v }) },
     { kind: 'number', key: 'vertical', title: colTitle('แนวดิ่ง (ม.)', 'ท่อขึ้น-ลงผนัง/พื้น'), width: 110,
         get: r => r.vertical, set: (r, v) => ({ ...r, vertical: v }) },
-    { kind: 'calc', key: 'length', title: colTitle('รวม (ม.)', 'ระบบคิดให้'), width: 100, get: r => runLength(r) },
+    { kind: 'calc', key: 'length', title: colTitle('รวม (ม.)', 'ระบบคิดให้'), width: 100, get: r => blankIfZero(runLength(r)) },
 ];
 
 export function PipeRunsJourney({ def, input, onChange, result, items, sizes, lines, plain, noun }: {
@@ -104,7 +104,7 @@ export function PipeRunsJourney({ def, input, onChange, result, items, sizes, li
                     ]}
                 />
                 <p className="mt-2 text-[12px] text-gray-500">
-                    แถวท่อหลักลบไม่ได้ เพราะแต่ละแถวคือท่อ 1 ขนาดที่ตั้งราคาไว้แล้ว — ถ้าแบบไม่มีท่อชนิดนั้น ปล่อยเป็น 0
+                    แถวท่อหลักลบไม่ได้ เพราะแต่ละแถวคือท่อ 1 ขนาดที่ตั้งราคาไว้แล้ว — ถ้าแบบไม่มีท่อชนิดนั้น ปล่อยว่างไว้
                 </p>
                 {mismatches.map(m => (
                     <div key={m.index} className="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-orange-50 border border-orange-200 px-3 py-2 text-[13px] text-orange-700">

@@ -42,11 +42,13 @@ function Dim({ label, hint, value, onCommit, extra }: {
 }
 
 function AreaOf({ row }: { row: ToiletTileRow }) {
+    const area = toiletTileArea(row) ?? 0;
+    if (area === 0) return null;
     return (
         <div className="flex flex-col gap-0.5 ml-auto text-right">
             <span className="text-[12px] text-gray-500">พื้นที่</span>
             <span className="tabular-nums px-2 py-0.5 rounded-sm" style={{ background: SHEET_COLORS.calc }}>
-                {formatNumber(toiletTileArea(row) ?? 0)} ตร.ม.
+                {formatNumber(area)} ตร.ม.
             </span>
         </div>
     );

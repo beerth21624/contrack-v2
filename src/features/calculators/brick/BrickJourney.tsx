@@ -11,7 +11,7 @@ import type { CalcContext } from '@/domain/calculators/types';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber } from '@/components/sheet/NumberCell';
-import { EmptyState, FromLevel, ResultSummary, SumInput } from '@/components/sheet/journey';
+import { EmptyState, FromLevel, ResultSummary, SumInput, blankIfZero } from '@/components/sheet/journey';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
 import { parseWallType, wallTypeOptions, wallTypeValue } from './wallType';
@@ -88,11 +88,16 @@ export default function BrickJourney() {
                                     get: (r, i) => <SumInput value={r.length} ariaLabel="ความยาวผนัง (ม.)" onChange={length => setWall(i, { length })} /> },
                                 { kind: 'number', key: 'height', title: 'ความสูง (ม.)', width: 85,
                                     get: r => r.height, set: (r, v) => ({ ...r, height: v }) },
-                                { kind: 'calc', key: 'openings', title: 'หักประตู-หน้าต่าง (ตร.ม.)', width: 100, get: (_, i) => rows[i]?.openings ?? null },
-                                { kind: 'calc', key: 'net', title: 'พื้นที่ก่อ (ตร.ม.)', width: 95, get: (_, i) => rows[i]?.net ?? null },
+                                { kind: 'calc', key: 'openings', title: 'หักประตู-หน้าต่าง (ตร.ม.)', width: 100, get: (_, i) => blankIfZero(rows[i]?.openings ?? null) },
+                                { kind: 'calc', key: 'net', title: 'พื้นที่ก่อ (ตร.ม.)', width: 95, get: (_, i) => blankIfZero(rows[i]?.net ?? null) },
                             ]}
                         />
                     )}
+
+                {rows.some(r => r.net < 0) && (
+                    <Alert className="mt-3" type="warning" showIcon
+                        title="ผนังบางแนวมีพื้นที่ติดลบ — กรอกความยาวและความสูงผนัง (ตอนนี้หักประตู-หน้าต่างมากกว่าพื้นที่ผนัง)" />
+                )}
 
                 {unmatched.length > 0 && (
                     <Alert className="mt-3" type="warning" showIcon

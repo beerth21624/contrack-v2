@@ -8,7 +8,7 @@ import {
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
-import { EmptyState, ResultSummary, rebarSummaryItem } from '@/components/sheet/journey';
+import { EmptyState, ResultSummary, rebarSummaryItem, blankIfZero } from '@/components/sheet/journey';
 
 const nameOptions = ROOF_SLAB_NAMES.map(v => ({ value: v }));
 const sizeOptions = ROOF_SLAB_BAR_SIZES.map(v => ({ value: v }));
@@ -49,8 +49,8 @@ export function RoofSlabJourney({ input, outputs, onChange }: {
                                     { kind: 'number', key: 'spacing', title: 'ระยะห่างเหล็ก (ม.)', width: 80,
                                         get: r => r.spacing, set: (r, v) => ({ ...r, spacing: v }) },
                                     { kind: 'calc', key: 'concrete', title: 'คอนกรีต (ลบ.ม.)', width: 85, digits: 3,
-                                        get: r => roofSlabRow(r).concrete },
-                                    { kind: 'calc', key: 'kg', title: 'เหล็ก (กก.)', width: 85, get: r => roofSlabRow(r).kg },
+                                        get: r => blankIfZero(roofSlabRow(r).concrete) },
+                                    { kind: 'calc', key: 'kg', title: 'เหล็ก (กก.)', width: 85, get: r => blankIfZero(roofSlabRow(r).kg) },
                                 ]}
                             />
                             <p className="mt-2 text-[12px] text-gray-500">

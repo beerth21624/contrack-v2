@@ -168,7 +168,7 @@ function JourneyPipe({ calc }: { calc: Calc }) {
                     <div className="font-semibold text-gray-700 mb-1">วิธีกรอก (1 แถว = 1 วงจร = 1 เบรกเกอร์ในตู้ไฟ)</div>
                     <ul className="list-disc pl-5 space-y-0.5">
                         <li><b>ท่อสายเมน</b>: วัดตามแนวท่อบนฝ้า จากตู้ไฟผ่านทุกจุดของวงจร</li>
-                        <li><b>ท่อแยกเข้าโคม</b>: ท่อที่แยกจากสายเมนเข้าดวงโคมแต่ละดวง (วงจรไฟแสงสว่าง) ถ้าไม่มีใส่ 0</li>
+                        <li><b>ท่อแยกเข้าโคม</b>: ท่อที่แยกจากสายเมนเข้าดวงโคมแต่ละดวง (วงจรไฟแสงสว่าง) ถ้าไม่มีเว้นว่าง</li>
                         <li><b>จุดท่อลงผนัง</b>: นับสวิตช์ (วงจรไฟ) หรือเต้ารับ (วงจรเต้ารับ) — ระบบคิดท่อแนวดิ่งให้เอง</li>
                     </ul>
                     <div className="mt-1 text-gray-500">
@@ -213,7 +213,7 @@ function JourneyPipe({ calc }: { calc: Calc }) {
                                             const points = r.points ?? 0;
                                             return (
                                                 <div className="flex items-center gap-1">
-                                                    <NumberCell value={points} digits={digitsOf(points)} ariaLabel="จำนวนจุดท่อลงผนัง"
+                                                    <NumberCell value={points} digits={digitsOf(points)} ariaLabel="จำนวนจุดท่อลงผนัง" blankZero
                                                         onCommit={v => setRow(i, setPoints(r, v ?? 0))} />
                                                     {label && <span className="text-[11px] text-gray-500 whitespace-nowrap">{label}</span>}
                                                 </div>

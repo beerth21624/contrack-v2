@@ -13,9 +13,17 @@ export interface SummaryItem {
     detail?: ReactNode;
 }
 
+/** A computed cell of a journey table: empty instead of "0.00" while the row is not filled yet. */
+export const blankIfZero = (v: number | null | undefined): number | null =>
+    (v === null || v === undefined || v === 0 ? null : v);
+
+/** A result value: plain "0" (not "0.00") while nothing is filled yet. */
+const shown = (value: number | null | undefined, digits = 2): string =>
+    formatNumber(value ?? 0, (value ?? 0) === 0 ? 0 : digits);
+
 /** "คอนกรีต 3.25 ลบ.ม. · เหล็ก 412.00 กก." */
 export function resultText(items: SummaryItem[]): string {
-    return items.map(i => `${i.label} ${formatNumber(i.value ?? 0, i.digits ?? 2)} ${i.unit}`).join(' · ');
+    return items.map(i => `${i.label} ${shown(i.value, i.digits)} ${i.unit}`).join(' · ');
 }
 
 /**
@@ -40,7 +48,7 @@ export function ResultSummary({ items, minor, note, empty }: {
                             <div key={`${i}-${it.label}`} className="min-w-0">
                                 <div className="text-[12px] text-gray-600 truncate" title={it.label}>{it.label}</div>
                                 <div className="text-[18px] font-bold tabular-nums text-gray-900 leading-tight">
-                                    {formatNumber(it.value ?? 0, it.digits ?? 2)}{' '}
+                                    {shown(it.value, it.digits)}{' '}
                                     <span className="text-[12px] font-normal text-gray-500">{it.unit}</span>
                                 </div>
                                 {it.detail !== undefined && <div className="text-[11px] text-gray-500 tabular-nums">{it.detail}</div>}

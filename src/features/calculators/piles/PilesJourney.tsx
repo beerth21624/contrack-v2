@@ -29,11 +29,11 @@ export function PilesJourney({ input, update }: { input: PilesInput; update: (pa
                         hint="นับจากแปลนฐานราก (ทุกฐานรวมกัน)" />
                 </JGroup>
                 <JGroup title="ไม่บังคับ">
-                    <JText wide label="spec เพิ่มเติม" value={input.extraSpec} placeholder="เช่น รับน้ำหนัก 15 ตัน/ต้น, ยี่ห้อ"
+                    <JText wide label="รายละเอียดเพิ่มเติม" value={input.extraSpec} placeholder="เช่น รับน้ำหนัก 15 ตัน/ต้น, ยี่ห้อ"
                         onChange={v => update({ extraSpec: v })} />
                 </JGroup>
                 {count > 0 && missing.length > 0 && (
-                    <div className="mt-3 text-[12px] text-orange-600">ราคาเหมาต้องระบุ spec ให้ครบ — ยังไม่ได้เลือก: {missing.join(', ')}</div>
+                    <div className="mt-3 text-[12px] text-orange-600">ราคาเหมาต้องระบุรายละเอียดเข็มให้ครบ — ยังไม่ได้เลือก: {missing.join(', ')}</div>
                 )}
             </div>
 
@@ -49,7 +49,7 @@ export function PilesJourney({ input, update }: { input: PilesInput; update: (pa
                 { label: 'ราคาเหมา', value: price, unit: 'บาท/ต้น', digits: 0 },
                 { label: 'รวม', value: count * price, unit: 'บาท', digits: 0 },
             ]} note={<>
-                {spec ? <>รายการใน BOQ: {spec}</> : 'ยังไม่ได้ระบุ spec เสาเข็ม'}
+                {spec ? <>รายการใน BOQ: {spec}</> : 'ยังไม่ได้เลือกชนิดและหน้าตัดเสาเข็ม'}
                 {count > 0 && <> · ค่าตัดหัวเสาเข็ม {formatNumber(count, 0)} ต้น คิดให้เองในด่านฐานราก</>}
             </>} />
         </div>

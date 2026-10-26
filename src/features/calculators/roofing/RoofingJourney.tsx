@@ -5,13 +5,13 @@ import {
     roofing, withRoofSlope, ROOFING_BOQ_UNITS, ROOFING_FACTOR_UNITS, ROOFING_ITEMS, type RoofingRow,
 } from '@/domain/calculators/roofing';
 import { EditableTable } from '@/components/sheet/EditableTable';
-import { CalcField, InputNumberField, SheetCard } from '@/components/sheet/SheetFields';
-import { NumberCell } from '@/components/sheet/NumberCell';
-import { LengthsCell } from '@/components/sheet/LengthsCell';
+import { SheetCard } from '@/components/sheet/SheetFields';
+import { NumberCell, SHEET_COLORS, TextCell, formatNumber } from '@/components/sheet/NumberCell';
+import { LengthsCell, formatLengths, parseLengths } from '@/components/sheet/LengthsCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { Hint, LabelWithHint, ResultSummary } from '@/components/sheet/journey';
+import { Hint, JNumber, LabelWithHint, ResultSummary, blankIfZero } from '@/components/sheet/journey';
 
 /** What to measure on the roof plan for each material row (by the row's stable key). */
 const MEASURE_HINTS: Record<string, string> = {
@@ -43,6 +43,18 @@ export default function RoofingJourney() {
         const t = r.takeoff;
         switch (t.kind) {
             case 'lengths':
+                // Points are counted, not measured: a count example instead of a sum of lengths.
+                if (r.takeoffUnit === 'จุด') {
+                    return (
+                        <div style={{ background: SHEET_COLORS.input, borderRadius: 3 }}>
+                            <TextCell value={formatLengths(t.lengths)} ariaLabel={`${r.item} (${r.takeoffUnit})`} placeholder="เช่น 4"
+                                onCommit={v => {
+                                    const parsed = parseLengths(v ?? '');
+                                    if (parsed) setRow(i, { takeoff: { kind: 'lengths', lengths: parsed } });
+                                }} />
+                        </div>
+                    );
+                }
                 return <LengthsCell lengths={t.lengths} ariaLabel={`${r.item} (${r.takeoffUnit})`}
                     onChange={lengths => setRow(i, { takeoff: { kind: 'lengths', lengths } })} />;
             case 'rake':
@@ -58,12 +70,17 @@ export default function RoofingJourney() {
     return (
         <CalculatorShell def={roofing} result={result} isDefault={isDefault} onReset={reset}>
             <SheetCard title="ขนาดหลังคา">
-                <div className="max-w-xl">
-                    <InputNumberField label="พื้นที่หลังคาตามแนวราบ (มองจากด้านบน รวมชายคา)" value={input.planArea} unit="ตร.ม."
-                        onChange={v => update({ planArea: v })} />
-                    <InputNumberField label="ความชันหลังคา" value={input.slopeDeg} unit="องศา" digits={0} hint="ดูจากรูปตัด"
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 items-start">
+                    <JNumber label="พื้นที่หลังคาตามแนวราบ" value={input.planArea} unit="ตร.ม."
+                        hint="มองจากด้านบน รวมชายคา" onChange={v => update({ planArea: v })} />
+                    <JNumber label="ความชันหลังคา" value={input.slopeDeg} unit="องศา" digits={0} hint="ดูจากรูปตัด"
                         onChange={v => update(p => withRoofSlope(p, v))} />
-                    <CalcField label="พื้นที่หลังคาตามแนวลาดเอียง" value={outputs.slopeArea} unit="ตร.ม." strong />
+                    {(outputs.slopeArea ?? 0) > 0 && (
+                        <div className="flex flex-col gap-1">
+                            <span className="text-[12px] text-gray-600 leading-tight">พื้นที่หลังคาตามแนวลาดเอียง</span>
+                            <span className="text-[14px] font-semibold tabular-nums">{formatNumber(outputs.slopeArea)} ตร.ม.</span>
+                        </div>
+                    )}
                 </div>
                 {input.planArea > 0 && input.slopeDeg === 0 && (
                     <Alert className="mt-2" type="warning" showIcon title="ยังไม่ได้กรอกความชันหลังคา — พื้นที่ตามแนวลาดจะเท่ากับพื้นที่แนวราบ" />
@@ -83,7 +100,7 @@ export default function RoofingJourney() {
                             { kind: 'label', key: 'measure', title: 'วัดจากแบบ', width: 200, get: (r, i) => measure(r, i) },
                             { kind: 'label', key: 'takeoffUnit', title: 'หน่วย', width: 60,
                                 get: r => <span className="px-1 text-gray-600">{r.takeoffUnit}</span> },
-                            { kind: 'calc', key: 'qty', title: 'ต้องใช้', width: 80, digits: 0, get: (_, i) => outputs[`qty.${i}`] ?? 0 },
+                            { kind: 'calc', key: 'qty', title: 'ต้องใช้', width: 80, digits: 0, get: (_, i) => blankIfZero(outputs[`qty.${i}`] ?? 0) },
                             { kind: 'label', key: 'unit', title: '', width: 50, get: r => <span className="px-1 text-gray-600">{r.unit}</span> },
                         ]}
                     />

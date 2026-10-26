@@ -63,6 +63,9 @@ export function LevelPage({ levelId }: { levelId: string }) {
         goNext();
     };
     const total = levelTotal(level, result);
+    // Pre-construction costs (land inspection) sit outside the construction total, as in the BOQ.
+    const levelSections = result.boq.sections.filter(s => level.sections.includes(s.no));
+    const outsideConstruction = levelSections.length > 0 && levelSections.every(s => !s.inConstructionTotal);
 
     return (
         <div className="flex flex-col gap-4 max-w-6xl mx-auto w-full pb-24">
@@ -118,6 +121,9 @@ export function LevelPage({ levelId }: { levelId: string }) {
                         <div className="min-w-0">
                             <div className="text-[11px] text-gray-500 leading-tight">ด่านนี้คิดเป็น</div>
                             <div className="text-[18px] font-bold tabular-nums leading-tight">{formatNumber(mark === 'skipped' ? 0 : total, 0)} บาท</div>
+                            {outsideConstruction && (
+                                <div className="text-[11px] text-gray-500 leading-tight">ค่าใช้จ่ายก่อนเริ่มงาน ไม่รวมในราคาค่าก่อสร้าง</div>
+                            )}
                         </div>
                     )}
                     <div className="hidden sm:block min-w-0 pl-3 border-l border-gray-200">

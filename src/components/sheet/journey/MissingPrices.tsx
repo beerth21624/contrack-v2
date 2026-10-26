@@ -1,0 +1,53 @@
+'use client';
+
+import { ExclamationCircleOutlined } from '@ant-design/icons';
+import type { BoqItemRow } from '@/domain/boq/types';
+import { useProjectStore } from '@/store/project-store';
+import { NumberCell, formatNumber } from '@/components/sheet/NumberCell';
+
+/**
+ * Rows a level fills that have a quantity but no price in the standard price list (e.g. fill soil): without a
+ * price the level would come to 0 บาท. The price typed here is the same one as on the BOQ page.
+ */
+export function MissingPrices({ rows }: { rows: BoqItemRow[] }) {
+    const overrides = useProjectStore(s => s.project.boqOverrides);
+    const setOverride = useProjectStore(s => s.setBoqOverride);
+    const shown = rows.filter(r => {
+        const ov = overrides[r.key];
+        const priced = ov?.mat !== undefined || ov?.lab !== undefined;
+        return r.qty > 0 && (priced || (r.matUnit === 0 && r.labUnit === 0 && !r.fromCalc.mat && !r.fromCalc.lab));
+    });
+    if (shown.length === 0) return null;
+    const missing = shown.some(r => r.total === 0);
+    return (
+        <div className={`rounded-lg border px-4 py-3 ${missing ? 'border-orange-200 bg-orange-50' : 'border-gray-200 bg-white'}`}>
+            <div className={`flex items-center gap-2 text-[13px] font-semibold ${missing ? 'text-orange-800' : 'text-gray-700'}`}>
+                {missing && <ExclamationCircleOutlined />} ราคาต่อหน่วย (ไม่มีราคามาตรฐาน ใส่เอง)
+            </div>
+            <div className="text-[12px] text-gray-600 mb-2">
+                {missing
+                    ? 'ใส่ราคาวัสดุและ/หรือค่าแรงต่อหน่วย ไม่อย่างนั้นรายการนี้จะคิดเป็น 0 บาท'
+                    : 'แก้ได้ที่นี่หรือในหน้า BOQ (ค่าเดียวกัน)'}
+            </div>
+            <div className="flex flex-col gap-2">
+                {shown.map(r => (
+                    <div key={r.key} className="grid grid-cols-2 sm:grid-cols-[minmax(0,1fr)_120px_120px] items-center gap-x-3 gap-y-1">
+                        <div className="col-span-2 sm:col-span-1 text-[13px] text-gray-800">
+                            {r.desc} <span className="text-gray-500 tabular-nums">({formatNumber(r.grossQty ?? r.qty)} {r.unit})</span>
+                        </div>
+                        <label className="flex flex-col gap-0.5">
+                            <span className="text-[11px] text-gray-500">ค่าวัสดุ/{r.unit} (บาท)</span>
+                            <NumberCell value={r.matUnit} blankZero ariaLabel={`${r.desc} ค่าวัสดุ`}
+                                onCommit={v => setOverride(r.key, 'mat', v)} />
+                        </label>
+                        <label className="flex flex-col gap-0.5">
+                            <span className="text-[11px] text-gray-500">ค่าแรง/{r.unit} (บาท)</span>
+                            <NumberCell value={r.labUnit} blankZero ariaLabel={`${r.desc} ค่าแรง`}
+                                onCommit={v => setOverride(r.key, 'lab', v)} />
+                        </label>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}

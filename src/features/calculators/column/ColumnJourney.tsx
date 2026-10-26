@@ -9,7 +9,7 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { formatNumber } from '@/components/sheet/NumberCell';
-import { EmptyState, ResultSummary, rebarSummaryItem } from '@/components/sheet/journey';
+import { EmptyState, ResultSummary, rebarSummaryItem, blankIfZero } from '@/components/sheet/journey';
 
 const nameOptions = COLUMN_NAMES.map(v => ({ value: v }));
 const sizeOptions = COLUMN_BAR_SIZES.map(v => ({ value: v }));
@@ -52,9 +52,9 @@ export function ColumnJourney({ input, outputs, onChange }: {
                                         get: r => r.stirrupSize, set: (r, v) => ({ ...r, stirrupSize: v }) },
                                     { kind: 'number', key: 'stirrupSpacing', title: 'ปลอกห่าง (ม.)', width: 75,
                                         get: r => r.stirrupSpacing, set: (r, v) => ({ ...r, stirrupSpacing: v }) },
-                                    { kind: 'calc', key: 'concrete', title: 'คอนกรีต (ลบ.ม.)', width: 85, get: r => columnRowCalc(r).concrete },
+                                    { kind: 'calc', key: 'concrete', title: 'คอนกรีต (ลบ.ม.)', width: 85, get: r => blankIfZero(columnRowCalc(r).concrete) },
                                     { kind: 'calc', key: 'weight', title: 'เหล็ก (กก.)', width: 85,
-                                        get: r => { const c = columnRowCalc(r); return c.mainWeight + c.stirrupWeight; } },
+                                        get: r => { const c = columnRowCalc(r); return blankIfZero(c.mainWeight + c.stirrupWeight); } },
                                 ]}
                             />
                             <p className="mt-2 text-[12px] text-gray-500">

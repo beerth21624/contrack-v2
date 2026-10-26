@@ -102,7 +102,8 @@ export function JourneyMapPage() {
                                             <div className={`text-[14px] font-semibold leading-tight ${state === 'locked' ? 'text-gray-400' : 'text-gray-800'}`}>{level.title}</div>
                                             <div className="text-[12px] text-gray-500 tabular-nums">
                                                 {state === 'skipped' ? 'ไม่มีงานนี้'
-                                                    : state === 'done' ? `${formatNumber(levelTotal(level, result), 0)} บาท`
+                                                    : state === 'done'
+                                                        ? (level.kind.type === 'meta' ? 'ผ่านแล้ว' : `${formatNumber(levelTotal(level, result), 0)} บาท`)
                                                         : state === 'current' ? 'ด่านถัดไป' : 'ยังล็อกอยู่'}
                                             </div>
                                         </div>

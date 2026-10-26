@@ -10,13 +10,13 @@ import { roofing } from '@/domain/calculators/roofing';
 import { calculatorInput } from '@/domain/project';
 import { useProjectStore } from '@/store/project-store';
 import { EditableTable } from '@/components/sheet/EditableTable';
-import { CalcField, InputNumberField, SheetCard } from '@/components/sheet/SheetFields';
+import { SheetCard } from '@/components/sheet/SheetFields';
 import { NumberCell, TextCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 import { LengthsCell } from '@/components/sheet/LengthsCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { EmptyState, FromLevel, Hint, ResultSummary } from '@/components/sheet/journey';
+import { EmptyState, FromLevel, Hint, JNumber, ResultSummary, blankIfZero } from '@/components/sheet/journey';
 
 const th = 'border border-gray-200 px-2 py-1 text-[12px] font-semibold text-gray-700 bg-gray-50 text-center';
 const td = 'border border-gray-200 px-1 py-0.5 text-[13px] align-middle';
@@ -43,7 +43,7 @@ function LengthLine({ label, hint, lengths, total, onChange }: {
             </div>
             <LengthsCell lengths={lengths} ariaLabel={label} onChange={onChange} />
             <span className="text-right tabular-nums px-1 rounded-sm text-[13px]" style={{ background: SHEET_COLORS.calc }}>
-                {formatNumber(total)} ม.
+                {(total ?? 0) === 0 ? '' : `${formatNumber(total)} ม.`}
             </span>
         </div>
     );
@@ -59,7 +59,7 @@ export default function RoofStructureJourney() {
     }
     const setParts = (parts: KingPostPart[]) => update(p => ({ ...p, kingPosts: { ...p.kingPosts, parts } }));
     const newPart = (parts: KingPostPart[]): KingPostPart =>
-        ({ desc: `- ดั้ง-${parts.length + 1}`, c: parts[parts.length - 1]?.c ?? 2, length: 0, count: 1 });
+        ({ desc: `ดั้ง ${parts.length + 1}`, c: parts[parts.length - 1]?.c ?? 2, length: 0, count: 1 });
     const addPart = () => update(p => ({ ...p, kingPosts: { ...p.kingPosts, parts: [...p.kingPosts.parts, newPart(p.kingPosts.parts)] } }));
     const parts = input.kingPosts.parts;
 
@@ -125,7 +125,7 @@ export default function RoofStructureJourney() {
                                 { kind: 'text', key: 'desc', title: 'ชื่อ', width: 140, get: p => p.desc, set: (p, v) => ({ ...p, desc: v }) },
                                 { kind: 'number', key: 'length', title: 'ความสูง/ความยาว (ม.)', width: 120, get: p => p.length, set: (p, v) => ({ ...p, length: v }) },
                                 { kind: 'number', key: 'count', title: 'จำนวน (ต้น)', width: 90, digits: 0, get: p => p.count, set: (p, v) => ({ ...p, count: v }) },
-                                { kind: 'calc', key: 'total', title: 'ความยาวรวม (ม.)', width: 110, get: p => partTotal(p) },
+                                { kind: 'calc', key: 'total', title: 'ความยาวรวม (ม.)', width: 110, get: p => blankIfZero(partTotal(p)) },
                             ]}
                         />
                     )}
@@ -133,20 +133,22 @@ export default function RoofStructureJourney() {
 
             <SheetCard title="ตะเข้ราง">
                 <Hint>ถ้าหลังคาไม่มีตะเข้ (รางน้ำระหว่างหลังคา 2 ผืน) ปล่อยว่างได้</Hint>
-                <div className="max-w-xl mt-1">
-                    <InputNumberField label="ระยะตามแนวราบ ด้านที่ 1" value={input.valley.runA} unit="ม." onChange={runA => set('valley', { runA })} />
-                    <InputNumberField label="ระยะตามแนวราบ ด้านที่ 2" value={input.valley.runB} unit="ม." onChange={runB => set('valley', { runB })} />
-                    <InputNumberField label="จำนวนตะเข้" value={input.valley.count} unit="เส้น" digits={0} onChange={count => set('valley', { count })} />
-                    <InputNumberField label="ความชันหลังคา" value={input.valley.deg} unit="องศา" digits={0} onChange={deg => set('valley', { deg })} />
-                    {roofSlope > 0 && input.valley.deg !== roofSlope && (
-                        <div className="flex justify-end">
-                            <Button size="small" onClick={() => set('valley', { deg: roofSlope })}>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3 mt-2 items-start">
+                    <JNumber label="ระยะตามแนวราบ ด้านที่ 1" value={input.valley.runA} unit="ม." onChange={runA => set('valley', { runA })} />
+                    <JNumber label="ระยะตามแนวราบ ด้านที่ 2" value={input.valley.runB} unit="ม." onChange={runB => set('valley', { runB })} />
+                    <JNumber label="จำนวนตะเข้" value={input.valley.count} unit="เส้น" digits={0} onChange={count => set('valley', { count })} />
+                    <JNumber label="ความชันหลังคา" value={input.valley.deg} unit="องศา" digits={0} onChange={deg => set('valley', { deg })}
+                        hint={roofSlope > 0 && input.valley.deg !== roofSlope && (
+                            <Button size="small" type="link" className="!px-0" onClick={() => set('valley', { deg: roofSlope })}>
                                 ใช้ความชันเดียวกับหลังคา ({formatNumber(roofSlope, 0)}°)
                             </Button>
-                        </div>
-                    )}
-                    <CalcField label="ความยาวตะเข้ต่อเส้น" value={outputs['valley.length']} unit="ม." strong />
+                        )} />
                 </div>
+                {(outputs['valley.length'] ?? 0) > 0 && (
+                    <div className="mt-2 text-[13px] text-gray-700">
+                        ความยาวตะเข้ต่อเส้น <b className="tabular-nums">{formatNumber(outputs['valley.length'])} ม.</b>
+                    </div>
+                )}
             </SheetCard>
 
             <AdvancedSection title="ขนาดเหล็กและระยะห่าง" hint="สเปกตามแบบมาตรฐาน — ไม่ต้องแก้ก็ได้">

@@ -10,7 +10,7 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { formatNumber } from '@/components/sheet/NumberCell';
-import { EmptyState, ResultSummary } from '@/components/sheet/journey';
+import { EmptyState, ResultSummary, blankIfZero } from '@/components/sheet/journey';
 
 const sizeOptions = PS_BAR_SIZES.map(v => ({ value: v }));
 
@@ -39,9 +39,9 @@ export function PrecastSlabJourney({ input, outputs, onChange }: {
                                 columns={[
                                     { kind: 'number', key: 'width', title: 'กว้าง (ม.)', width: 90, get: r => r.width, set: (r, v) => ({ ...r, width: v }) },
                                     { kind: 'number', key: 'length', title: 'ยาว (ม.)', width: 90, get: r => r.length, set: (r, v) => ({ ...r, length: v }) },
-                                    { kind: 'calc', key: 'area', title: 'พื้นที่ (ตร.ม.)', width: 90, get: r => precastPanel(r).area },
+                                    { kind: 'calc', key: 'area', title: 'พื้นที่ (ตร.ม.)', width: 90, get: r => blankIfZero(precastPanel(r).area) },
                                     { kind: 'calc', key: 'concrete', title: 'คอนกรีตทับหน้า (ลบ.ม.)', width: 100, digits: 3,
-                                        get: r => precastPanel(r).concrete },
+                                        get: r => blankIfZero(precastPanel(r).concrete) },
                                 ]}
                             />
                             <p className="mt-2 text-[12px] text-gray-500">

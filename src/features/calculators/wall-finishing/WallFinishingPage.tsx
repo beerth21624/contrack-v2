@@ -9,7 +9,7 @@ import {
 } from '@/domain/calculators/wall-finishing';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
-import { EmptyState, ResultSummary } from '@/components/sheet/journey';
+import { EmptyState, ResultSummary, blankIfZero } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
@@ -83,7 +83,7 @@ function WallFinishingJourney({ input, onChange, outputs }: {
                                         get: r => r.width, set: (r, v) => ({ ...r, width: v }) },
                                     { kind: 'number', key: 'length', title: 'สูง (ม.)', width: 100,
                                         get: r => r.length, set: (r, v) => ({ ...r, length: v }) },
-                                    { kind: 'calc', key: 'area', title: 'พื้นที่ (ตร.ม.)', width: 100, get: r => wallFinishingArea(r) },
+                                    { kind: 'calc', key: 'area', title: 'พื้นที่ (ตร.ม.)', width: 100, get: r => blankIfZero(wallFinishingArea(r)) },
                                 ]}
                             />
                         </div>

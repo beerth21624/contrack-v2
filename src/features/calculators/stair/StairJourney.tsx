@@ -9,7 +9,7 @@ import {
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
-import { EmptyState, ResultSummary, rebarSummaryItem } from '@/components/sheet/journey';
+import { EmptyState, ResultSummary, rebarSummaryItem, blankIfZero } from '@/components/sheet/journey';
 
 const nameOptions = STAIR_NAMES.map(v => ({ value: v }));
 const sizeOptions = STAIR_BAR_SIZES.map(v => ({ value: v }));
@@ -56,7 +56,7 @@ export function StairJourney({ input, outputs, onChange }: {
                                     { kind: 'number', key: 'rise', title: 'สูงรวม (ม.)', width: 75, get: r => r.rise, set: (r, v) => ({ ...r, rise: v }) },
                                     { kind: 'number', key: 'run', title: 'ยาวแนวราบ (ม.)', width: 75, get: r => r.run, set: (r, v) => ({ ...r, run: v }) },
                                     { kind: 'calc', key: 'concrete', title: 'คอนกรีต (ลบ.ม.)', width: 85, digits: 3,
-                                        get: r => stairRow(r).concrete },
+                                        get: r => blankIfZero(stairRow(r).concrete) },
                                 ]}
                             />
                             <p className="mt-2 text-[12px] text-gray-500">
@@ -89,7 +89,7 @@ export function StairJourney({ input, outputs, onChange }: {
                                 get: r => r.stepMainSpacing, set: (r, v) => ({ ...r, stepMainSpacing: v }) },
                             { kind: 'select', key: 'stepTempSize', title: 'ลูกบันได เหล็กกันร้าว', width: 85, options: sizeOptions,
                                 get: r => r.stepTempSize, set: (r, v) => ({ ...r, stepTempSize: v }) },
-                            { kind: 'calc', key: 'kg', title: 'เหล็กรวม (กก.)', width: 85, get: r => rowKg(r) },
+                            { kind: 'calc', key: 'kg', title: 'เหล็กรวม (กก.)', width: 85, get: r => blankIfZero(rowKg(r)) },
                         ]}
                     />
                     <p className="mt-2 text-[12px] text-gray-500">

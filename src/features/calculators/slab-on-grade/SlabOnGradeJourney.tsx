@@ -9,7 +9,7 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { formatNumber } from '@/components/sheet/NumberCell';
-import { EmptyState, ResultSummary, rebarSummaryItem } from '@/components/sheet/journey';
+import { EmptyState, ResultSummary, rebarSummaryItem, blankIfZero } from '@/components/sheet/journey';
 
 const nameOptions = SLAB_NAMES.map(v => ({ value: v }));
 const sizeOptions = SLAB_BAR_SIZES.map(v => ({ value: v }));
@@ -48,8 +48,8 @@ export function SlabOnGradeJourney({ input, outputs, onChange }: {
                                         get: r => String(r.layers), set: (r, v) => ({ ...r, layers: Number(v) }) },
                                     { kind: 'number', key: 'spacing', title: 'ระยะห่างเหล็ก (ม.)', width: 80,
                                         get: r => r.spacing, set: (r, v) => ({ ...r, spacing: v }) },
-                                    { kind: 'calc', key: 'concrete', title: 'คอนกรีต (ลบ.ม.)', width: 85, get: r => slabRowCalc(r).concrete },
-                                    { kind: 'calc', key: 'weight', title: 'เหล็ก (กก.)', width: 85, get: r => slabRowCalc(r).weight },
+                                    { kind: 'calc', key: 'concrete', title: 'คอนกรีต (ลบ.ม.)', width: 85, get: r => blankIfZero(slabRowCalc(r).concrete) },
+                                    { kind: 'calc', key: 'weight', title: 'เหล็ก (กก.)', width: 85, get: r => blankIfZero(slabRowCalc(r).weight) },
                                 ]}
                             />
                             <p className="mt-2 text-[12px] text-gray-500">
@@ -73,10 +73,10 @@ export function SlabOnGradeJourney({ input, outputs, onChange }: {
                                     get: r => `${r.name} ${formatNumber(r.width)} × ${formatNumber(r.length)} ม.` },
                                 { kind: 'number', key: 'fillDepth', title: 'ดินถมกลับใต้พื้น ลึก (ม.)', width: 110,
                                     get: r => r.fillDepth, set: (r, v) => ({ ...r, fillDepth: v }) },
-                                { kind: 'calc', key: 'backfill', title: 'ดินถม (ลบ.ม.)', width: 90, get: r => slabRowCalc(r).backfill },
+                                { kind: 'calc', key: 'backfill', title: 'ดินถม (ลบ.ม.)', width: 90, get: r => blankIfZero(slabRowCalc(r).backfill) },
                                 { kind: 'number', key: 'sandThickness', title: 'ทรายหยาบรองพื้น หนา (ม.)', width: 110,
                                     get: r => r.sandThickness, set: (r, v) => ({ ...r, sandThickness: v }) },
-                                { kind: 'calc', key: 'sand', title: 'ทราย (ลบ.ม.)', width: 90, get: r => slabRowCalc(r).sand },
+                                { kind: 'calc', key: 'sand', title: 'ทราย (ลบ.ม.)', width: 90, get: r => blankIfZero(slabRowCalc(r).sand) },
                             ]}
                         />
                     )}

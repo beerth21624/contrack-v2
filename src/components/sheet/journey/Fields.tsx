@@ -80,7 +80,8 @@ export function JBar({ label, size, onSize, amount, onAmount, amountUnit = 'เ�
                         placeholder="ขนาด" value={size === '' ? undefined : size} options={sizeOptions} onChange={v => onSize(v)} />
                 </span>
                 <span className="w-[64px] shrink-0">
-                    <NumberCell value={amount} digits={amountDigits} ariaLabel={`${label} ${amountUnit}`} onCommit={v => onAmount(v ?? 0)} />
+                    <NumberCell value={amount} digits={amountDigits} ariaLabel={`${label} ${amountUnit}`} blankZero
+                        onCommit={v => onAmount(v ?? 0)} />
                 </span>
                 <span className="text-[12px] text-gray-500 whitespace-nowrap">{amountUnit}</span>
             </span>

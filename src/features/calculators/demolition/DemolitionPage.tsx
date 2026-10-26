@@ -7,7 +7,7 @@ import {
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { TextCell, formatNumber } from '@/components/sheet/NumberCell';
-import { ResultSummary } from '@/components/sheet/journey';
+import { ResultSummary, blankIfZero } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -83,7 +83,7 @@ function JourneyView({ calc, cell }: {
         <>
             <SheetCard title="งานรื้อถอนในที่ดิน">
                 <p className="mb-2 text-[12px] text-gray-500">
-                    กรอกเฉพาะงานที่มีจริง งานที่ไม่มีปล่อยเป็น 0 — ค่ารื้อต่อหน่วยรวมค่าแรง เครื่องมือ และค่าใช้จ่ายเบื้องต้น
+                    กรอกเฉพาะงานที่มีจริง งานที่ไม่มีปล่อยว่างไว้ — ค่ารื้อต่อหน่วยรวมค่าแรง เครื่องมือ และค่าใช้จ่ายเบื้องต้น
                 </p>
                 <EditableTable<DemolitionLine>
                     rows={input.items}
@@ -104,7 +104,7 @@ function JourneyView({ calc, cell }: {
                         { kind: 'number', key: 'qty', title: 'ปริมาณ', width: 100, get: r => r.qty, set: (r, v) => ({ ...r, qty: v }) },
                         { kind: 'label', key: 'unit', title: 'หน่วย', width: 80, get: (r, i) => cell('unit', 'หน่วย', r, i) },
                         { kind: 'number', key: 'rate', title: 'ค่ารื้อต่อหน่วย (บาท)', width: 130, get: r => r.rate, set: (r, v) => ({ ...r, rate: v }) },
-                        { kind: 'calc', key: 'total', title: 'รวม (บาท)', width: 120, get: r => lineTotal(r) },
+                        { kind: 'calc', key: 'total', title: 'รวม (บาท)', width: 120, get: r => blankIfZero(lineTotal(r)) },
                     ]}
                 />
             </SheetCard>

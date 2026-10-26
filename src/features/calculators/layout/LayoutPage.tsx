@@ -7,7 +7,7 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, InputNumberField, SheetCard } from '@/components/sheet/SheetFields';
 import { NumberCell, SHEET_COLORS, TextCell, formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
-import { ResultSummary } from '@/components/sheet/journey';
+import { JNumber, ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -153,10 +153,12 @@ function JourneyView({ calc }: { calc: Calc }) {
     return (
         <>
             <SheetCard title="จุดวางผังและหมุด">
-                <InputNumberField label="จำนวนจุดวางผัง" value={input.points} digits={0} unit="จุด"
-                    hint="นับจุดตั้งผังไม้ตามแนวเสา/แนวกริดรอบอาคาร" onChange={v => update({ points: v })} />
-                <InputNumberField label="จำนวนหมุด" value={input.stakes} digits={0} unit="ต้น"
-                    hint="ปกติเท่ากับจำนวนเสาเข็ม" onChange={v => update({ stakes: v })} />
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 max-w-xl">
+                    <JNumber label="จำนวนจุดวางผัง" value={input.points} digits={0} unit="จุด"
+                        hint="นับจุดตั้งผังไม้ตามแนวเสา/แนวกริดรอบอาคาร" onChange={v => update({ points: v })} />
+                    <JNumber label="จำนวนหมุด" value={input.stakes} digits={0} unit="ต้น"
+                        hint="ปกติเท่ากับจำนวนเสาเข็ม" onChange={v => update({ stakes: v })} />
+                </div>
             </SheetCard>
 
             <AdvancedSection title="รายการวัสดุและค่าตั้งต้น" hint="สูตรวัสดุต่อจุดตั้งไว้ให้แล้ว">
@@ -171,7 +173,8 @@ function JourneyView({ calc }: { calc: Calc }) {
                     ? LAYOUT_LIVE_PREVIEW.map(p => ({ label: p.label, value: outputs[p.output], unit: p.unit, digits: 0 }))
                     : []}
                 empty="กรอกจำนวนจุดวางผังและจำนวนหมุด ระบบจะคิดไม้ที่ต้องสั่งให้"
-                note={<>ค่าวางผัง / ปักหมุด คิดเป็นเหมา <b className="tabular-nums">{formatNumber(lumpSum, 0)}</b> บาท (ปรับราคาได้ที่หน้า BOQ)</>} />
+                note={<>ค่าวางผัง / ปักหมุด เหมา <b className="tabular-nums">{formatNumber(lumpSum, 0)}</b> บาท
+                    คิดรวมในราคาทั้งหลังแล้ว (ปรับราคาได้ที่หน้า BOQ)</>} />
         </>
     );
 }

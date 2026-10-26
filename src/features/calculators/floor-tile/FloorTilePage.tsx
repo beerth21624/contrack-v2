@@ -8,7 +8,7 @@ import {
 } from '@/domain/calculators/floor-tile';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
-import { EmptyState, ResultSummary } from '@/components/sheet/journey';
+import { EmptyState, ResultSummary, blankIfZero } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
@@ -56,7 +56,7 @@ function FloorTileJourney({ input, onChange, outputs }: {
                                                 get: r => r.width, set: (r, v) => ({ ...r, width: v }) },
                                             { kind: 'number', key: 'length', title: 'ยาว (ม.)', width: 90,
                                                 get: r => r.length, set: (r, v) => ({ ...r, length: v }) },
-                                            { kind: 'calc', key: 'area', title: 'พื้นที่ (ตร.ม.)', width: 100, get: r => floorTileRowArea(r) },
+                                            { kind: 'calc', key: 'area', title: 'พื้นที่ (ตร.ม.)', width: 100, get: r => blankIfZero(floorTileRowArea(r)) },
                                         ]}
                                     />
                                 </div>

@@ -10,7 +10,7 @@ import {
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber } from '@/components/sheet/NumberCell';
-import { EmptyState, ResultSummary } from '@/components/sheet/journey';
+import { EmptyState, ResultSummary, blankIfZero } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
@@ -67,7 +67,7 @@ function CeilingJourney({ input, onChange, outputs }: {
                                                 get: r => r.length, set: (r, v) => ({ ...r, length: v }) },
                                             { kind: 'number', key: 'slope', title: 'ลาดเอียง (องศา)', width: 80, digits: 0,
                                                 get: r => r.slope ?? 0, set: (r, v) => ({ ...r, slope: v }) },
-                                            { kind: 'calc', key: 'area', title: 'พื้นที่ (ตร.ม.)', width: 90, get: r => ceilingRowArea(r) },
+                                            { kind: 'calc', key: 'area', title: 'พื้นที่ (ตร.ม.)', width: 90, get: r => blankIfZero(ceilingRowArea(r)) },
                                             { kind: 'select', key: 'paint', title: 'ทาสีฝ้า', width: 150,
                                                 options: CEILING_PAINT_GROUPS.map(g => ({ value: g, label: PLAIN_PAINT[g] })),
                                                 get: r => r.paint, set: (r, v) => ({ ...r, paint: isPaint(v) ? v : '' }) },
@@ -78,7 +78,7 @@ function CeilingJourney({ input, onChange, outputs }: {
                             <Button type="dashed" icon={<PlusOutlined />} className="mt-3" onClick={add}>เพิ่มห้อง</Button>
                             <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
                                 <li>ห้องที่เป็นรูปตัว L ให้แบ่งเป็น 2 แถว เช่น ห้องนอน 1 (1) และ ห้องนอน 1 (2)</li>
-                                <li>ฝ้าเรียบใส่ลาดเอียง 0 · ฝ้าใต้หลังคาลาด (เช่น เฉลียง) ใส่องศาหลังคา เช่น {SLOPED_CEILING_DEG}</li>
+                                <li>ฝ้าเรียบเว้นช่องลาดเอียงว่างไว้ · ฝ้าใต้หลังคาลาด (เช่น เฉลียง) ใส่องศาหลังคา เช่น {SLOPED_CEILING_DEG}</li>
                                 <li>ชายคาภายนอก: กว้าง = ระยะยื่นชายคา, ยาว = ความยาวรอบชายคา</li>
                                 <li>ทาสีฝ้าเลือกให้ตามชนิดฝ้าแล้ว เปลี่ยนได้ — พื้นที่นี้ส่งต่อไปด่านทาสี</li>
                             </ul>
@@ -91,7 +91,10 @@ function CeilingJourney({ input, onChange, outputs }: {
                     ...usedTypes.map(c => ({ label: PLAIN_TYPE[c], value: outputs[c], unit: 'ตร.ม.' })),
                     { label: 'พื้นที่ฝ้ารวม', value: outputs.total, unit: 'ตร.ม.' },
                 ]}
-                note={<>ส่งต่อด่านทาสี: {CEILING_PAINT_GROUPS.map(g => `${PLAIN_PAINT[g]} ${formatNumber(outputs[paintKey(g)])}`).join(' · ')} ตร.ม.</>} />
+                note={CEILING_PAINT_GROUPS.some(g => (outputs[paintKey(g)] ?? 0) !== 0)
+                    ? <>ส่งต่อด่านทาสี: {CEILING_PAINT_GROUPS.filter(g => (outputs[paintKey(g)] ?? 0) !== 0)
+                        .map(g => `${PLAIN_PAINT[g]} ${formatNumber(outputs[paintKey(g)])} ตร.ม.`).join(' · ')}</>
+                    : 'พื้นที่ฝ้าที่ทาสีจะส่งต่อไปด่านทาสีให้อัตโนมัติ'} />
         </>
     );
 }

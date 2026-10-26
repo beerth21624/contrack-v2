@@ -9,7 +9,7 @@ import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { FromLevel, LabelWithHint, ResultSummary, SumInput } from '@/components/sheet/journey';
+import { FromLevel, LabelWithHint, ResultSummary, SumInput, blankIfZero } from '@/components/sheet/journey';
 import { isStructural, PlasterTable } from './PlasterTable';
 
 const SIDE_OPTIONS = [
@@ -71,12 +71,12 @@ export default function PlasterJourney() {
                                     onChange={manualArea => setRow(i, { manualArea })} />
                                 : (
                                     <div className="text-right tabular-nums px-1" style={{ background: SHEET_COLORS.calc }}>
-                                        {r.wallPart.trim() ? formatNumber(brickNet(r.wallPart)) : ''}
+                                        {r.wallPart.trim() && brickNet(r.wallPart) !== 0 ? formatNumber(brickNet(r.wallPart)) : ''}
                                     </div>
                                 )) },
                         { kind: 'select', key: 'sides', title: 'ฉาบกี่ด้าน', width: 100, options: SIDE_OPTIONS,
                             get: r => String(r.sides), set: (r, v) => ({ ...r, sides: Number(v) }) },
-                        { kind: 'calc', key: 'total', title: 'พื้นที่ฉาบ (ตร.ม.)', width: 110, get: r => plasterRowArea(r, ctx) },
+                        { kind: 'calc', key: 'total', title: 'พื้นที่ฉาบ (ตร.ม.)', width: 110, get: r => blankIfZero(plasterRowArea(r, ctx)) },
                     ]}
                 />
                 <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">

@@ -5,7 +5,7 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, InputNumberField, InputTextField, SheetCard } from '@/components/sheet/SheetFields';
 import { NumberCell, formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
-import { ResultSummary } from '@/components/sheet/journey';
+import { JNumber, ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -155,14 +155,16 @@ function JourneyView({ calc, setPrice }: { calc: Calc; setPrice: (key: keyof Tem
     return (
         <>
             <SheetCard title="น้ำ-ไฟที่ใช้ระหว่างก่อสร้าง">
-                <InputNumberField label="ระยะเดินสายไฟ จากมิเตอร์ถึงหน้างาน" value={input.powerDistance} unit="ม."
-                    onChange={v => update({ powerDistance: v })} />
-                <InputNumberField label="ระยะเดินท่อน้ำ จากมิเตอร์ถึงหน้างาน" value={input.waterDistance} unit="ม."
-                    onChange={v => update({ waterDistance: v })} />
-                <InputNumberField label="จำนวนจุดใช้น้ำ" value={input.waterPoints} digits={0} unit="จุด" hint="ก๊อกน้ำ / จุดล้าง"
-                    onChange={v => update({ waterPoints: v })} />
-                <InputNumberField label="จำนวนจุดไฟ / ปลั๊ก" value={input.powerPoints} digits={0} unit="ชุด" hint="หลอดไฟ + ปลั๊ก 1 ชุด"
-                    onChange={v => update({ powerPoints: v })} />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
+                    <JNumber label="ระยะเดินสายไฟ จากมิเตอร์ถึงหน้างาน" value={input.powerDistance} unit="ม."
+                        onChange={v => update({ powerDistance: v })} />
+                    <JNumber label="ระยะเดินท่อน้ำ จากมิเตอร์ถึงหน้างาน" value={input.waterDistance} unit="ม."
+                        onChange={v => update({ waterDistance: v })} />
+                    <JNumber label="จำนวนจุดใช้น้ำ" value={input.waterPoints} digits={0} unit="จุด" hint="ก๊อกน้ำ / จุดล้าง"
+                        onChange={v => update({ waterPoints: v })} />
+                    <JNumber label="จำนวนจุดไฟ / ปลั๊ก" value={input.powerPoints} digits={0} unit="ชุด" hint="หลอดไฟ + ปลั๊ก 1 ชุด"
+                        onChange={v => update({ powerPoints: v })} />
+                </div>
             </SheetCard>
 
             <AdvancedSection hint="ตั้งไว้ให้แล้ว ไม่ต้องแก้ก็ได้">

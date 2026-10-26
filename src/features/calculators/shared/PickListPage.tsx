@@ -12,7 +12,7 @@ import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { NumberCell, SHEET_COLORS } from '@/components/sheet/NumberCell';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
-import { EmptyState, ResultSummary } from '@/components/sheet/journey';
+import { EmptyState, ResultSummary, blankIfZero } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -87,22 +87,22 @@ function UnitCell({ row, units, catalogue, onChange }: {
     );
 }
 
-function QtyCell({ row, catalogue, onChange, ariaLabel }: {
-    row: PickRow; catalogue: Catalogue; onChange: (qty: number) => void; ariaLabel?: string;
+function QtyCell({ row, catalogue, onChange, ariaLabel, blankZero }: {
+    row: PickRow; catalogue: Catalogue; onChange: (qty: number) => void; ariaLabel?: string; blankZero?: boolean;
 }) {
     return (
-        <NumberCell value={row.qty} digits={qtyDigits(row.qty, pickRowCalc(row, catalogue).unit)}
+        <NumberCell value={row.qty} digits={qtyDigits(row.qty, pickRowCalc(row, catalogue).unit)} blankZero={blankZero}
             onCommit={v => onChange(v ?? 0)} ariaLabel={ariaLabel ?? 'จำนวน'} />
     );
 }
 
 /** Material / labour price per unit: green = catalogue price, yellow = typed for this project. */
-function PriceCell({ row, field, catalogue, onChange, highlight }: {
-    row: PickRow; field: 'mat' | 'lab'; catalogue: Catalogue; onChange: (row: PickRow) => void; highlight?: boolean;
+function PriceCell({ row, field, catalogue, onChange, highlight, blankZero }: {
+    row: PickRow; field: 'mat' | 'lab'; catalogue: Catalogue; onChange: (row: PickRow) => void; highlight?: boolean; blankZero?: boolean;
 }) {
     const typed = row[field];
     const cell = (
-        <NumberCell value={pickRowCalc(row, catalogue)[field]} edited={typed !== null}
+        <NumberCell value={pickRowCalc(row, catalogue)[field]} edited={typed !== null} blankZero={blankZero}
             tone={typed === null ? 'calc' : 'input'}
             onCommit={v => onChange({ ...row, [field]: v ?? null })}
             ariaLabel={field === 'mat' ? 'ค่าวัสดุต่อหน่วย' : 'ค่าแรงต่อหน่วย'} />
@@ -267,7 +267,7 @@ function JourneyPickList({ catalogue, options, units = [], allowFreeText, journe
                                         },
                                         {
                                             kind: 'label', key: 'qty', title: 'จำนวน', width: 90,
-                                            get: l => <QtyCell row={l.row} catalogue={catalogue} onChange={qty => setRow(l.index, { ...l.row, qty })} />,
+                                            get: l => <QtyCell row={l.row} catalogue={catalogue} blankZero onChange={qty => setRow(l.index, { ...l.row, qty })} />,
                                         },
                                         {
                                             kind: 'label', key: 'unit', title: 'หน่วย', width: 90,
@@ -277,17 +277,17 @@ function JourneyPickList({ catalogue, options, units = [], allowFreeText, journe
                                             kind: 'label', key: 'mat', title: 'ค่าวัสดุ / หน่วย (บาท)', width: 120,
                                             get: l => (
                                                 <PriceCell row={l.row} field="mat" catalogue={catalogue} onChange={row => setRow(l.index, row)}
-                                                    highlight={needsPrice(l.row, catalogue)} />
+                                                    highlight={needsPrice(l.row, catalogue)} blankZero />
                                             ),
                                         },
                                         {
                                             kind: 'label', key: 'lab', title: 'ค่าแรง / หน่วย (บาท)', width: 120,
                                             get: l => (
                                                 <PriceCell row={l.row} field="lab" catalogue={catalogue} onChange={row => setRow(l.index, row)}
-                                                    highlight={needsPrice(l.row, catalogue)} />
+                                                    highlight={needsPrice(l.row, catalogue)} blankZero />
                                             ),
                                         },
-                                        { kind: 'calc', key: 'total', title: 'เป็นเงิน (บาท)', width: 110, get: l => pickRowCalc(l.row, catalogue).total },
+                                        { kind: 'calc', key: 'total', title: 'เป็นเงิน (บาท)', width: 110, get: l => blankIfZero(pickRowCalc(l.row, catalogue).total) },
                                     ]}
                                 />
                                 <Button type="dashed" icon={<PlusOutlined />} className="mt-2" onClick={addOther}>เพิ่มงานอื่น</Button>
@@ -331,9 +331,9 @@ function JourneyPickList({ catalogue, options, units = [], allowFreeText, journe
 
             <ResultSummary items={[
                 { label: 'จำนวนรายการ', value: outputs.rows, unit: 'รายการ', digits: 0 },
-                { label: 'ค่าวัสดุ', value: outputs.mat, unit: 'บาท' },
-                { label: 'ค่าแรง', value: outputs.lab, unit: 'บาท' },
-                { label: 'รวม', value: outputs.total, unit: 'บาท' },
+                { label: 'ค่าวัสดุ', value: outputs.mat, unit: 'บาท', digits: 0 },
+                { label: 'ค่าแรง', value: outputs.lab, unit: 'บาท', digits: 0 },
+                { label: 'รวม', value: outputs.total, unit: 'บาท', digits: 0 },
             ]} />
         </>
     );

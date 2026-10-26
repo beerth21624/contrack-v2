@@ -43,7 +43,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'land-inspection', title: 'ตรวจสอบที่ดิน', kind: calc('land-inspection'), sections: [0],
-                planHint: 'ดูโฉนด/ระวางที่ดิน และผังบริเวณ: ขนาดที่ดิน หมุดเขต และสิ่งที่ต้องตรวจก่อนเริ่มงาน',
+                planHint: 'ดูโฉนดและผังบริเวณ แล้วเดินตรวจที่ดินจริง: ตำแหน่ง ทางเข้า แนวเขต หมุดอ้างอิง และจำนวนวัน/เที่ยวที่ใช้ตรวจ',
             },
             {
                 id: 'demolition', title: 'รื้อถอน', kind: calc('demolition'), sections: [1], optional: true,
@@ -59,7 +59,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'site-camp', title: 'แคมป์คนงาน', kind: calc('site-camp'), sections: [3],
-                planHint: 'จำนวนห้องพักคนงาน ห้องน้ำ ห้องอาบน้ำ และสโตร์ที่ต้องสร้างในไซต์',
+                planHint: 'ไม่มีในแบบ — ตามแผนงานของผู้รับเหมา: จำนวนห้องพักคนงาน ห้องน้ำ ห้องอาบน้ำ และสโตร์ที่ต้องสร้างในไซต์ ถ้าไม่สร้างปล่อยว่าง',
             },
             {
                 id: 'layout', title: 'วางผัง / ปักหมุด', kind: calc('layout'), sections: [4], extraRows: ['R32'],
@@ -83,7 +83,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'ground-beam', title: 'คานคอดิน', kind: calc('ground-beam'), sections: [8],
-                planHint: 'ดูแปลนคานคอดิน (GB): ขนาดคาน ความยาวแต่ละช่วง และเหล็กเสริม',
+                planHint: 'ดูแปลนคานคอดิน (GB): ขนาดคาน ความยาวรวมทุกช่วงของคานแต่ละแบบ และเหล็กเสริม',
             },
         ],
     },
@@ -111,7 +111,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'stair', title: 'บันได', kind: calc('stair'), sections: [13], optional: true,
-                planHint: 'ดูรูปขยายบันได: จำนวนลูกตั้ง ความกว้าง และเหล็กเสริมแม่บันได',
+                planHint: 'ดูรูปขยายบันได: ความกว้าง จำนวนขั้น ลูกตั้ง ลูกนอน ความหนาท้องบันได และเหล็กเสริม ถ้าไม่มีบันไดกด "ไม่มีงานนี้"',
             },
             {
                 id: 'column-plates', title: 'เพลทหัวเสา', kind: { type: 'boq', sections: [14] }, sections: [14],
@@ -123,11 +123,11 @@ export const JOURNEY: JourneyPhase[] = [
         id: 'roof', title: 'หลังคา', levels: [
             {
                 id: 'roofing', title: 'วัสดุมุงหลังคา', kind: calc('roofing'), sections: [16],
-                planHint: 'ดูแปลนหลังคาและรูปด้าน: ขนาดหลังคาแต่ละด้าน ความชัน และความยาวเชิงชาย',
+                planHint: 'ดูแปลนหลังคาและรูปตัด: พื้นที่หลังคาตามแนวราบ (รวมชายคา) ความชัน ความยาวสันหลังคา ขอบจั่ว และเชิงชาย',
             },
             {
                 id: 'roof-structure', title: 'โครงหลังคา', kind: calc('roof-structure'), sections: [15], extraRows: ['R158'],
-                planHint: 'ดูแปลนโครงหลังคา: ขนาดเหล็กจันทัน แป อะเส และความยาวแต่ละชิ้น',
+                planHint: 'ดูแปลนและรูปตัดโครงหลังคา: ความยาวอะเส อกไก่ ความสูงดั้ง และตะเข้ราง (จันทันกับแปคิดจากพื้นที่หลังคาให้เอง)',
             },
         ],
     },
@@ -143,7 +143,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'plaster', title: 'ฉาบปูน', kind: calc('plaster'), sections: [18],
-                planHint: 'พื้นที่ฉาบมาจากผนังที่ก่อ ตรวจผนังที่ไม่ฉาบ (เช่น ผนังโชว์อิฐ) และสันขอบ',
+                planHint: 'พื้นที่ฉาบมาจากผนังที่ก่อให้แล้ว ตรวจว่าผนังไหนไม่ฉาบ (เช่น ผนังโชว์อิฐ) และใส่ผิวเสา-คานที่ต้องฉาบเพิ่ม',
             },
         ],
     },
@@ -195,7 +195,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'toilet-tile', title: 'กระเบื้องห้องน้ำ', kind: calc('toilet-tile'), sections: [21],
-                planHint: 'ดูแปลนห้องน้ำ: ขนาดห้อง ความสูงบุผนัง และช่องเปิด',
+                planHint: 'ดูแปลนห้องน้ำ: ขนาดห้อง ความสูงที่กรุกระเบื้องผนัง และขนาดประตู-หน้าต่างในห้องน้ำ',
             },
             {
                 id: 'wall-finishing', title: 'ตกแต่งผนัง', kind: calc('wall-finishing'), sections: [22], optional: true,

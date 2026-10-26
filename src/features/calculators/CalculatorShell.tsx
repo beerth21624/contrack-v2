@@ -6,6 +6,8 @@ import { Button, Collapse, Popconfirm, Tag, Typography } from 'antd';
 import { ArrowLeftOutlined, UndoOutlined } from '@ant-design/icons';
 import type { CalculatorDef } from '@/domain/calculators/types';
 import type { ProjectResult } from '@/domain/project';
+import type { BoqItemRow } from '@/domain/boq/types';
+import { MissingPrices } from '@/components/sheet/journey/MissingPrices';
 import { formatNumber, SHEET_COLORS } from '@/components/sheet/NumberCell';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 
@@ -15,10 +17,11 @@ const td = 'border border-gray-200 px-2 py-1 text-[13px]';
 const tdNum = `${td} text-right tabular-nums whitespace-nowrap`;
 
 /** The BOQ (Home) rows of the given sections, as they stand with the current input. */
-export function BoqPreview({ result, sections, highlight, highlightPrefix }: {
+export function BoqPreview({ result, sections, highlight, highlightPrefix, title = 'ส่งเข้า BOQ (Home)' }: {
     result: ProjectResult; sections: number[]; highlight?: Set<string>;
     /** Rows whose key starts with this (slot rows `${calcId}:…`) are highlighted too. */
     highlightPrefix?: string;
+    title?: string;
 }) {
     const isHighlighted = (key: string) =>
         (highlight?.has(key) ?? false) || (highlightPrefix !== undefined && key.startsWith(highlightPrefix));
@@ -26,7 +29,7 @@ export function BoqPreview({ result, sections, highlight, highlightPrefix }: {
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
             <div className="px-4 py-2 border-b border-gray-100 font-semibold text-[14px] text-gray-800">
-                ส่งเข้า BOQ (Home)
+                {title}
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
@@ -74,12 +77,19 @@ export function CalculatorShell({ def, result, isDefault, onReset, children, asi
 }) {
     const highlight = new Set(def.boqLinks.map(l => l.line));
     const inJourney = useJourneyMode();
-    const preview = <BoqPreview result={result} sections={def.sections} highlight={highlight} highlightPrefix={`${def.id}:`} />;
+    const preview = (
+        <BoqPreview result={result} sections={def.sections} highlight={highlight} highlightPrefix={`${def.id}:`}
+            title={inJourney ? 'รายการใน BOQ ของหมวดนี้ (แถวสีเขียวมาจากด่านนี้)' : undefined} />
+    );
     if (inJourney) {
         // The level page shows title, plan hint and navigation; here only the inputs, with the BOQ detail folded.
+        // Linked lines only: slot rows (rebar, doors …) get their price from the calculator itself.
+        const ownRows = result.boq.sections.flatMap(s => s.rows.filter((r): r is BoqItemRow =>
+            r.type === 'item' && highlight.has(r.key)));
         return (
             <div className="flex flex-col gap-4">
                 {children}
+                <MissingPrices rows={ownRows} />
                 {aside}
                 <Collapse
                     size="small"
