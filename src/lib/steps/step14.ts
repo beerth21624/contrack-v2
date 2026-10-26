@@ -28,8 +28,8 @@ export function calcStep14(inp: Step14Input): StepResult {
 
   // ─── แผ่นเหล็กเพลท ────────────────────────────────────────
   // พื้นที่ผิวเพลท (m²) และ น้ำหนักเพลทโดยประมาณ (ความหนาแน่นเหล็ก ~7850 kg/m³)
-  const area_m2 = r2((w / 1000) * (d / 1000));
-  const total_area_m2 = r2(n * area_m2 * wf);
+  const area_m2 = (w / 1000) * (d / 1000);
+  const total_area_m2 = n * area_m2 * wf;
   const total_kg = r2(total_area_m2 * (t / 1000) * 7850);
 
   const quantities: StepResult['quantities'] = {
@@ -44,7 +44,7 @@ export function calcStep14(inp: Step14Input): StepResult {
 
   // ─── ไม้แบบเจาะรูประคอง Bolt (Template) ───────────────────
   // ผรม. ต้องทำไม้แบบไม้อัด+ไม้จ๊อยเจาะรูตามระยะ Bolt เพื่อประคองตอนเทคอนกรีตไม่ให้ขยับ
-  if (inp.bolt_template_required == false) {
+  if (inp.bolt_template_required !== false) {
     quantities.bolt_template = { qty: n, uom: 'จุด', label: 'แพทเทิร์นประคอง J-Bolt (ไม้แบบเจาะรู)' };
   }
 
@@ -68,7 +68,7 @@ export function calcStep14(inp: Step14Input): StepResult {
   }
 
   // ─── สีกันสนิมเพลท ─────────────────────────────────────────
-  if (inp.anti_rust_paint_required == false) {
+  if (inp.anti_rust_paint_required !== false) {
     // คิดพื้นที่ผิว 2 ด้าน + ชิ้นส่วนที่โผล่
     const paintArea = r2(n * area_m2 * 2.5 * wf);
     quantities.anti_rust_paint = { qty: paintArea, uom: 'm²', label: 'ทาสีกันสนิม แผ่นเพลท+รอยเชื่อม' };

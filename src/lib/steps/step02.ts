@@ -83,7 +83,7 @@ export function calcStep2(inp: Step2Input): StepResult {
     if (inp.water_meter_type === '1/2') quantities.meter_w15 = { qty: 1, uom: 'ชุด', label: 'มิเตอร์น้ำ 1/2 นิ้ว' };
     if (inp.water_meter_type === '3/4') quantities.meter_w20 = { qty: 1, uom: 'ชุด', label: 'มิเตอร์น้ำ 3/4 นิ้ว' };
   }
-  if (inp.permit_required == false) {
+  if (inp.permit_required === true) {
     quantities.permit = { qty: 1, uom: 'ชุด', label: 'ค่าธรรมเนียมขออนุญาต' };
   }
 
@@ -112,7 +112,7 @@ export function calcStep2(inp: Step2Input): StepResult {
     warnings.push('เลือกใช้ท่อ PVC สำหรับประปาชั่วคราว หากไม่ฝังดิน ระวังท่อแตกเมื่อถูกเหยียบหรือคนงานเดินเตะ แนะนำพิจารณาท่อ PE');
   }
 
-  if (inp.water_tank_liters && distance_to_water_source_m > 50) {
+  if (!inp.water_tank_liters && distance_to_water_source_m > 50) {
     warnings.push('ไม่ได้ระบุถังสำรองน้ำ ถ้าระยะแหล่งน้ำ > 50 ม. น้ำอาจไหลอ่อนหรือประปาไม่ขยับ ควรมีถังพักน้ำอย่างน้อย 1,000 ลิตร');
   }
 

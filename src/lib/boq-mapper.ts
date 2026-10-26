@@ -51,10 +51,10 @@ export function makeRow(
     key: string,
 ): SectionRow | null {
     const p = priceList.find(x => x.code === code);
-    const safeQty = isNaN(qty) ? 0 : qty;
-    
+    const safeQty = Number.isFinite(qty) ? qty : 0;
+
     if (!p || safeQty <= 0) return null;
-    
+
     const mat = safeQty * p.costMaterial;
     const lab = safeQty * p.costLabor;
     const i18n = PRICE_LIST_I18N[p.code];
@@ -78,9 +78,9 @@ export function makeRowGrade(
     grade?: ConcreteGrade,
 ): SectionRow | null {
     const p = priceList.find(x => x.code === code);
-    const safeQty = isNaN(qty) ? 0 : qty;
+    const safeQty = Number.isFinite(qty) ? qty : 0;
     if (!p || safeQty <= 0) return null;
-    
+
     const matUnit = grade ? CONCRETE_GRADE_COST[grade] : p.costMaterial;
     const mat = safeQty * matUnit;
     const lab = safeQty * p.costLabor;
@@ -180,6 +180,7 @@ const build = (
                     makeRow(priceList, 'UTIL-METER-W15', q.meter_w15?.qty ?? 0,          '2.9.5'),
                     makeRow(priceList, 'UTIL-METER-W20', q.meter_w20?.qty ?? 0,          '2.9.6'),
                     makeRow(priceList, 'UTIL-PERMIT',  q.permit?.qty ?? 0,             '2.10'),
+                    makeRow(priceList, 'UTIL-LIGHT-PLUG', (q.outlet_boxes?.qty ?? 0) + (q.light_points?.qty ?? 0), '2.11'),
                 ] : [];
             }),
             build(3, 'เตรียมพื้นที่หน้างาน', 'Site Preparation', () => {
@@ -477,10 +478,24 @@ const build = (
             build(17, 'งานก่ออิฐ', 'Brickwork', () => {
                 const q = stepSaves[17]?.res.quantities;
                 if (!q) return [];
-                const inp = stepSaves[17]?.inp as { brick_type?: string } | undefined;
-                const brickCode = inp?.brick_type === 'aac' ? 'BRK-AAC' : 'BRK-CLAY';
+                const inp = stepSaves[17]?.inp as { brick_type?: string; aac_thickness_cm?: number } | undefined;
+                if (inp?.brick_type === 'aac') {
+                    // AAC SKUs are priced per m² of wall including laying labour,
+                    // so the clay-brick mortar row is not added on top.
+                    const aacCodeByThickness: Record<string, string> = {
+                        '7.5': 'BRK-AAC', '10': 'BRK-AAC-10', '12.5': 'BRK-AAC-12',
+                        '15': 'BRK-AAC-15', '17.5': 'BRK-AAC-17', '20': 'BRK-AAC-20',
+                    };
+                    const th = inp.aac_thickness_cm;
+                    const aacKey = th ? `aac_${String(th).replace('.', '')}` : '';
+                    const aacArea = q[aacKey]?.qty ?? q.net_wall_area?.qty ?? 0;
+                    return [
+                        makeRow(priceList, aacCodeByThickness[String(th)] ?? 'BRK-AAC', aacArea, '17.1'),
+                        makeRow(priceList, 'BRK-LINTEL', q.lintel_length?.qty ?? 0, '17.3'),
+                    ];
+                }
                 return [
-                    makeRow(priceList, brickCode, q.bricks_required?.qty ?? 0, '17.1'),
+                    makeRow(priceList, 'BRK-CLAY', q.bricks_required?.qty ?? 0, '17.1'),
                     makeRow(priceList, 'BRK-MORTAR', q.net_wall_area?.qty ?? 0, '17.2'),
                     makeRow(priceList, 'BRK-LINTEL', q.lintel_length?.qty ?? 0, '17.3'),
                 ];
@@ -497,6 +512,11 @@ const build = (
                 const q = stepSaves[19]?.res.quantities;
                 return q ? [
                     makeRow(priceList, 'CLG-PANEL', q.ceiling_area?.qty ?? 0, '19.1'),
+                    makeRow(priceList, 'CLG-PANEL-MOIST', q.ceiling_area_moist?.qty ?? 0, '19.1.2'),
+                    makeRow(priceList, 'CLG-PANEL-FIRE', q.ceiling_area_fire?.qty ?? 0, '19.1.3'),
+                    makeRow(priceList, 'CLG-FIBER', q.ceiling_area_fiber?.qty ?? 0, '19.1.4'),
+                    makeRow(priceList, 'CLG-FIBER-6', q.ceiling_area_fiber6?.qty ?? 0, '19.1.5'),
+                    makeRow(priceList, 'CLG-CALCIUM', q.ceiling_area_calcium?.qty ?? 0, '19.1.6'),
                     makeRow(priceList, 'CLG-FRAME', q.c_line_frame?.qty ?? 0, '19.2'),
                     makeRow(priceList, 'CLG-CORNICE', q.cornice?.qty ?? 0, '19.3'),
                 ] : [];
@@ -549,6 +569,7 @@ const build = (
                 const q = stepSaves[25]?.res.quantities;
                 return q ? [
                     makeRow(priceList, 'PNT-INT',      q.interior_paint?.qty ?? 0,  '25.1'),
+                    makeRow(priceList, 'PNT-INT',      q.ceiling_paint?.qty ?? 0,   '25.1.2'),
                     makeRow(priceList, 'PNT-ACCENT',   q.accent_paint?.qty ?? 0,    '25.2'),
                     makeRow(priceList, 'PNT-EXT',      q.exterior_paint?.qty ?? 0,  '25.3'),
                     makeRow(priceList, 'PNT-WOOD',     q.wood_stain?.qty ?? 0,      '25.4'),

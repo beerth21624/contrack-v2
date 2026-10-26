@@ -84,10 +84,10 @@ export function calcStep17(inp: Step17Input): StepResult {
     if (doors_windows_area_m2 >= total_wall_area_m2) {
       warnings.push('ข้อสังเกต: พื้นที่ช่องเปิด (ประตู/หน้าต่าง) ที่ระบุมีขนาดมากกว่าหรือเท่ากับพื้นที่ผนังรวม กรุณาตรวจสอบความถูกต้อง กรุณาตรวจสอบตัวเลขอีกครั้ง');
     }
-    if (doors_windows_area_m2 > 0 && (inp.lintel_length_m || inp.lintel_length_m === 0)) {
+    if (doors_windows_area_m2 > 0 && !inp.lintel_length_m) {
       warnings.push('ข้อควรระวังเชิงโครงสร้าง: มีช่องเปิดผนังแต่ไม่มีการระบุเสาเอ็น-ทับหลัง การละเว้นโครงสร้างส่วนนี้อาจส่งผลให้เกิดรอยแตกร้าวเฉียงบริเวณมุมช่องเปิดในอนาคต');
     }
-    if (doors_windows_area_m2 === 0 && total_wall_area_m2 > 12 && (inp.lintel_length_m || inp.lintel_length_m === 0)) {
+    if (doors_windows_area_m2 === 0 && total_wall_area_m2 > 12 && !inp.lintel_length_m) {
       warnings.push('แม้จะไม่มีช่องประตู/หน้าต่าง แต่ผนังก่อที่ผืนใหญ่กว่า 9-12 ตร.ม. จำเป็นต้องหล่อ "เสาเอ็น/ทับหลัง" คาดกลางเพื่อกันกำแพงล้มหรือผนังร้าวครับ');
     }
     if (waste_percent === 0) {

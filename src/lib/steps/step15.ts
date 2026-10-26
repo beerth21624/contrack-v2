@@ -35,8 +35,9 @@ export function calcStep15(inp: Step15Input): StepResult {
   };
 
   // ระยะต่างๆ
-  const purlin_sp = inp.purlin_spacing_m ?? 1.00; // ปกติเมทัลชีท 1.00m, ซีแพค 0.32m
-  const rafter_sp = inp.rafter_spacing_m ?? 1.00; // ระยะจันทัน
+  // ค่า ≤0 (ฟอร์มตั้งต้นเป็น 0) ถือว่าไม่ได้ระบุ → ใช้ค่า default กันหารด้วย 0
+  const purlin_sp = inp.purlin_spacing_m && inp.purlin_spacing_m > 0 ? inp.purlin_spacing_m : 1.00; // ปกติเมทัลชีท 1.00m, ซีแพค 0.32m
+  const rafter_sp = inp.rafter_spacing_m && inp.rafter_spacing_m > 0 ? inp.rafter_spacing_m : 1.00; // ระยะจันทัน
 
   // ─── โครงสร้างเหล็ก (ดั้ง อะเส จันทัน ตะเข้) ─────────────────────
   if (roof_type === 'steel') {

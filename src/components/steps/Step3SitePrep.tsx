@@ -13,7 +13,7 @@ interface Props { initialData?: Step3Input;  onSave: (inp: Step3Input, res: Step
 
 const DEFAULT: Step3Input = {
     site_width_m: 0, site_length_m: 0, number_of_workers: 0, waste_percent: 0,
-    gate_width_m: 0, fence_type: 'zinc', site_sign: false,
+    fence_type: 'zinc', site_sign: false,
 };
 
 export const Step3SitePrep: React.FC<Props> = ({ onSave, onBack, initialData }) => {

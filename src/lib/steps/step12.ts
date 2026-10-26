@@ -64,7 +64,7 @@ export function calcStep12(inp: Step12Input): StepResult {
   const typeSummary = beams.map(b => `${b.label} ${b.count} ตัว`).join(', ');
 
   // ─── Structural Engine ──────────────
-  const specParams: StructuralSpecParams = inp.structural_spec ?? {
+  const specParams: StructuralSpecParams = inp.structural_spec ? { ...inp.structural_spec } : {
     ksc: 240,
     waterproof: false,
     workLevel: '2FL', // คานและพื้นมักเป็นชั้น 2 ขึ้นไป
@@ -99,16 +99,11 @@ export function calcStep12(inp: Step12Input): StepResult {
   };
 
   if (slopeGrossVol > 0) {
-      quantities.slope_concrete = { qty: slopeGrossVol, uom: 'm³', label: 'คอนกรีตเทปรับสโลปดาดฟ้า', sku: strRes.conc_sku };
+      quantities.slope_concrete = { qty: slopeGrossVol, uom: 'm³', label: 'คอนกรีตเทปรับสโลปดาดฟ้า (หนาเฉลี่ย 5 ซม.)', sku: strRes.conc_sku };
   }
 
   if (strRes.conc_admix_wp_m3) {
       quantities.waterproof_admix = { qty: r2(strRes.conc_admix_wp_m3), uom: 'm³', label: `น้ำยากันซึม`, sku: 'CON-ADMIX-WP' };
-  }
-
-  // ─── Slope concrete ─────────────────────────────────────
-  if (inp.slope_concrete_required) {
-    quantities.slope_concrete = { qty: r2(sa * 0.05 * wf), uom: 'm³', label: 'คอนกรีตเทปรับสโลปดาดฟ้า (หนาเฉลี่ย 5 ซม.)' };
   }
 
   // ─── เหล็กเสริม ─────────────────────────────────────────
@@ -146,10 +141,12 @@ export function calcStep12(inp: Step12Input): StepResult {
   }
 
   // ─── ปั๊ม / จี้ / บ่ม ─────────────────────────────────────
-  if (inp.concrete_pump_required == false) {
+  if (inp.concrete_pump_required) {
     quantities.concrete_pump = { qty: Math.max(1, Math.ceil(totalVolGross / 30)), uom: 'วัน', label: 'ปั๊มคอนกรีต (ชั้นดาดฟ้า)', sku: 'BMS-PUMP' };
   }
-  quantities.vibrator = { qty: inp.vibrator_days ?? Math.max(1, Math.ceil(totalVolGross / 15)), uom: 'วัน', label: 'เครื่องจี้คอนกรีต', sku: 'BMS-VIBRATOR' };
+  if (totalVolNet > 0) {
+    quantities.vibrator = { qty: inp.vibrator_days ?? Math.max(1, Math.ceil(totalVolGross / 15)), uom: 'วัน', label: 'เครื่องจี้คอนกรีต', sku: 'BMS-VIBRATOR' };
+  }
 
   const curing = inp.curing_method ?? 'water';
   if (curing === 'plastic' || curing === 'compound') {
@@ -167,7 +164,7 @@ export function calcStep12(inp: Step12Input): StepResult {
       warnings.push('ข้อสังเกตเชิงวิศวกรรม: เหล็กคานทะลุ 250 kg/m³ ซึ่งเกินจำเป็นไปมากและจะดึงกำไรโครงการหายไปกับค่าตึก โปรดตรวจสอบรายการปริมาณในแบบขยายอีกครั้ง');
       warningFields.push('rebar_kg_per_m3');
   }
-  if (totalVolGross > 12 && inp.concrete_pump_required === false) warnings.push(`เทคอนกรีตที่ความสูงระดับชั้นดาดฟ้า (วอลลุ่ม ${r2(totalVolGross)} ม³) การใช้รอกยกถังจะช้าและเกิดรอยต่อปูน (Cold Joint) แน่นอน บังคับให้เช่า "ปั๊มคอนกรีตพ่วงท่อ"`);
+  if (totalVolGross > 12 && !inp.concrete_pump_required) warnings.push(`เทคอนกรีตที่ความสูงระดับชั้นดาดฟ้า (วอลลุ่ม ${r2(totalVolGross)} ม³) การใช้รอกยกถังจะช้าและเกิดรอยต่อปูน (Cold Joint) แน่นอน บังคับให้เช่า "ปั๊มคอนกรีตพ่วงท่อ"`);
 
   if (sa > 0) {
     if (st < 0.12) warnings.push('พื้นดาดฟ้า (Roof Slab) บางกว่า 0.12 ม. (12 ซม.) มีโอกาสเกิดรอยแตกร้าวทะลุจากความร้อนสะสมและน้ำฝนขัง แนะนำให้เทที่ความหนา 12-15 ซม. เป็นมาตรฐาน');

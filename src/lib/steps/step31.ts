@@ -86,7 +86,7 @@ export function calcStep31(inp: Step31Input): StepResult {
     if (frame_type === 'engineered' && totalWindowCount > 0) {
       warnings.push('ข้อควรระวัง: ไม้ Engineered ไม่เหมาะสำหรับการใช้งานเป็นหน้าต่างภายนอก เนื่องจากความต้านทานต่อความชื้นต่ำและเสี่ยงต่อการบวมหลุดร่อน แนะนำพิจารณาเปลี่ยนเป็นไม้เนื้อแข็ง อะลูมิเนียม หรือ UPVC');
     }
-    if (has_door_lock && totalDoorCount > 0) {
+    if (!has_door_lock && totalDoorCount > 0) {
       warnings.push('ข้อควรระวัง: ระบุรายการประตูแต่ไม่ได้เลือกชุดอุปกรณ์ลูกบิด/กุญแจ อาจทำให้ตกหล่นค่าวัสดุและค่าแรงติดตั้งอุปกรณ์ฮาร์ดแวร์ใน BOQ');
     }
     if (inp.waste_percent === 0) {

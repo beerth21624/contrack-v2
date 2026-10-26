@@ -75,7 +75,7 @@ export function calcStep18(inp: Step18Input): StepResult {
       if (r.width_m === 0 || r.length_m === 0) warnings.push(`ห้อง ${r.label} มีด้านใดด้านหนึ่งยาว 0 ม. ส่งผลให้ผืนผนังหายไปด้านหนึ่ง`);
     }
 
-    if (totalExterior > 0 && hasExteriorOpening) {
+    if (totalExterior > 0 && !hasExteriorOpening) {
       warnings.push('ข้อสังเกต: มีการระบุผนังภายนอกแต่ไม่มีการหักพื้นที่ช่องเปิด อาจทำให้ประมาณการวัสดุปูนฉาบไว้สูงกว่าความเป็นจริง');
     }
 

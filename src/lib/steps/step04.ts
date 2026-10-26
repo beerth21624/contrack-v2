@@ -63,11 +63,14 @@ export function calcStep4(inp: Step4Input): StepResult {
   // หมุดปูน
   const concrete_markers = inp.concrete_marker_count ?? number_of_columns;
 
+  // ไม่มีเสา / ไม่มีขนาดอาคาร → ไม่มีงานวางผัง ไม่คิดขั้นต่ำ
+  const has_layout = number_of_columns > 0 && building_width_m > 0 && building_length_m > 0;
+
   // สีสเปรย์
-  const spray_cans = inp.spray_paint_can_count ?? Math.max(2, Math.ceil(number_of_columns / 10));
+  const spray_cans = inp.spray_paint_can_count ?? (has_layout ? Math.max(2, Math.ceil(number_of_columns / 10)) : 0);
 
   // ค่าแรงสำรวจ (1 ชุด ทำได้ ~15-20 เสา/วัน)
-  const survey_days = inp.survey_crew_days ?? Math.max(1, Math.ceil(number_of_columns / 15));
+  const survey_days = inp.survey_crew_days ?? (has_layout ? Math.max(1, Math.ceil(number_of_columns / 15)) : 0);
 
   const quantities: StepResult['quantities'] = {
     perimeter:           { qty: perimeter,           uom: 'm',    label: 'เส้นรอบอาคาร (Perimeter)' },
@@ -90,7 +93,7 @@ export function calcStep4(inp: Step4Input): StepResult {
     const error = r2(Math.abs(measured_diagonal_m - expected_diagonal));
     quantities.diagonal_error = { qty: error, uom: 'm', label: 'ค่าคลาดเคลื่อนทแยงมุม' };
     if (error > 0.01) {
-
+      warnings.push(`⚠ ทแยงมุมคลาดเคลื่อน ${(error * 1000).toFixed(0)} มม. — ค่าแนวทแยงคลาดเคลื่อนเกินเกณฑ์ ตรวจสอบการวางผังอีกครั้ง`);
     } else {
       warnings.push(`✓ ทแยงมุมคลาดเคลื่อน ${(error * 1000).toFixed(0)} มม. — อยู่ในเกณฑ์`);
     }

@@ -163,7 +163,7 @@ export function calcStep1(inp: Step1Input): StepResult {
     warnings.push('ค่าเผื่อสูญเสีย (Waste) < 5% อาจน้อยเกินไป ปกติควรเผื่อดินร่วงหล่นระหว่างขนส่ง 5-15%');
   }
 
-  if (inp.soil_test_required && total_area > 200) {
+  if (!inp.soil_test_required && total_area > 200) {
     warnings.push('พื้นที่รวม > 200 ม² แต่ไม่ได้ตั้งงบเพื่อทำ Field Density Test ระวังความเสี่ยงพื้นทรุดตัวและงานแก้ที่แพงกว่าค่าทดสอบ');
   }
 

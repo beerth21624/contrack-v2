@@ -72,7 +72,7 @@ export function calcStep27(inp: Step27Input): StepResult {
 
   // 4. ข้อต่อ / วาล์ว
   const totalPoints = bathroom_count + kitchen_count + laundryPts;
-  const valveCount = inp.valve_count_override ?? (totalPoints * 2 + 2); // 2 วาล์ว/จุด + main stop
+  const valveCount = inp.valve_count_override ?? (totalPoints > 0 ? totalPoints * 2 + 2 : 0); // 2 วาล์ว/จุด + main stop
   quantities.valve_fitting = {
     qty: valveCount, uom: 'ตัว',
     label: 'วาล์ว/ข้อต่อ (stop valve + gate valve)'
@@ -92,12 +92,12 @@ export function calcStep27(inp: Step27Input): StepResult {
   };
 
   // 7. Cleanout
-  const co = inp.cleanout_count ?? Math.max(1, Math.ceil((supplyLen + drainLen) / 15));
+  const co = inp.cleanout_count ?? (totalPoints > 0 ? Math.max(1, Math.ceil((supplyLen + drainLen) / 15)) : 0);
   quantities.cleanout = { qty: co, uom: 'จุด', label: 'Cleanout Box' };
 
   // ─── Warnings ──────────────────────────────────────────
   const warnings: string[] = [];
-  if (bathroom_count === 0 && kitchen_count === 0 && laundry_point) {
+  if (bathroom_count === 0 && kitchen_count === 0 && !laundry_point) {
     warnings.push('ข้อสังเกต: ยังไม่ได้ระบุจำนวนจุดอุปโภคบริโภค (ห้องน้ำ/ครัว/ซักล้าง) ระบบอาจไม่สามารถประเมินความยาวท่อโดยประมาณได้อย่างแม่นยำ');
   } else {
     if (has_hot_water && hot_water_type === 'electric' && bathroom_count >= 3) {

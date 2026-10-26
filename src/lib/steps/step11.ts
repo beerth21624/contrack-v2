@@ -58,7 +58,7 @@ export function calcStep11(inp: Step11Input): StepResult {
     : r2(totalVol * rebar_kg_per_m3);
 
   // ─── Structural Engine ──────────────
-  const specParams: StructuralSpecParams = inp.structural_spec ?? {
+  const specParams: StructuralSpecParams = inp.structural_spec ? { ...inp.structural_spec } : {
     ksc: 240,
     waterproof: false,
     workLevel: '1FL',
@@ -93,7 +93,9 @@ export function calcStep11(inp: Step11Input): StepResult {
   if (inp.concrete_pump_required) {
     quantities.concrete_pump = { qty: Math.max(1, Math.ceil(strRes.conc_gross_m3 / 20)), uom: 'วัน', label: 'ปั๊มคอนกรีต', sku: 'COL-PUMP' };
   }
-  quantities.vibrator = { qty: inp.vibrator_days ?? Math.max(1, Math.ceil(totalN / 10)), uom: 'วัน', label: 'เครื่องจี้คอนกรีต', sku: 'COL-VIBRATOR' };
+  if (totalVol > 0) {
+    quantities.vibrator = { qty: inp.vibrator_days ?? Math.max(1, Math.ceil(totalN / 10)), uom: 'วัน', label: 'เครื่องจี้คอนกรีต', sku: 'COL-VIBRATOR' };
+  }
 
   const curing = inp.curing_method ?? 'water';
   if (curing === 'plastic' || curing === 'compound') {
@@ -112,7 +114,7 @@ export function calcStep11(inp: Step11Input): StepResult {
     if (c.width_m < 0.15 || c.depth_m < 0.15) warnings.push(`เสา ${c.label} หน้าตัดเล็กกว่า 15 ซม. หากเป็นเสาโครงสร้างหลักให้ระมัดระวังช่องเหล็กแคบจนคอนกรีตและหัวจี้ (Vibrator) ลงไม่ได้`);
   }
 
-  if (totalVol > 10 && inp.concrete_pump_required) {
+  if (totalVol > 10 && !inp.concrete_pump_required) {
     warnings.push(`ปริมาณคอนกรีตเสาเทรวมกันรอบเดียวสูงถึง ${r2(totalVol)} ม³ หากใช้คนงานหิ้วถัง จะเหนื่อยล้าล่าช้า และทำให้เกิดรอยต่อปูน (Cold Joint) แนะนำให้ใช้ปั๊มคอนกรีตช่วยเท`);
   }
 

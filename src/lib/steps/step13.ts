@@ -70,7 +70,7 @@ export function calcStep13(inp: Step13Input): StepResult {
     : r2(totalConcVolNet * rebarKgPer);
 
   // ─── Structural Engine ──────────────
-  const specParams: StructuralSpecParams = inp.structural_spec ?? {
+  const specParams: StructuralSpecParams = inp.structural_spec ? { ...inp.structural_spec } : {
     ksc: 240,
     waterproof: false,
     workLevel: '1FL',
@@ -112,7 +112,8 @@ export function calcStep13(inp: Step13Input): StepResult {
   quantities.spacer = { qty: Math.ceil(fwBottomNet * spacerPerM2), uom: 'pcs', label: `Spacer ท้องบันได (~${spacerPerM2}/ม²)`, sku: 'RB-SPACER' };
 
   // ─── จมูกบันไดกันลื่น (Nosing) ──────────────────────────
-  if (inp.nosing_required == false) {
+  // สอดคล้องกับ UI: Switch แสดง ON เมื่อ nosing_required !== false
+  if (inp.nosing_required !== false) {
     const nosingLen = r2(n * s * w); // จำนวนขั้น × ความกว้าง
     const material = inp.nosing_material ?? 'pvc';
     quantities.nosing = { qty: nosingLen, uom: 'm', label: `จมูกบันไดกันลื่น (${material.toUpperCase()})` };
@@ -124,8 +125,10 @@ export function calcStep13(inp: Step13Input): StepResult {
   }
 
   // ─── เครื่องจี้ ──────────────────────────────────────────
-  const vibDays = inp.vibrator_days ?? 1;
-  quantities.vibrator = { qty: vibDays, uom: 'วัน', label: 'เครื่องจี้คอนกรีต', sku: 'COL-VIBRATOR' };
+  if (totalConcVolNet > 0) {
+    const vibDays = inp.vibrator_days ?? 1;
+    quantities.vibrator = { qty: vibDays, uom: 'วัน', label: 'เครื่องจี้คอนกรีต', sku: 'COL-VIBRATOR' };
+  }
 
   // ─── บ่ม ──────────────────────────────────────────────────
   const curing = inp.curing_method ?? 'water';
@@ -142,11 +145,11 @@ export function calcStep13(inp: Step13Input): StepResult {
     const treadPitch = (2 * r) + g;
     if (Math.abs(treadPitch - 0.63) > 0.05) warnings.push(`สัดส่วนก้าวเดินสูตร 2R+G = ${r2(treadPitch)} ถือว่าไม่อยู่ในระยะมาตรฐาน 60-65 ซม. ส่งผลให้ระยะก้าวเดินไม่สอดคล้องกับสรีระ`);
     
-    if (inp.landing_area_m2) warnings.push('ไม่ระบุพื้นที่ชานพัก — บันไดที่มีลูกตั้งเกิน 15 ขั้น กฎหมายบังคับให้ต้องมีชานพักพักเหนื่อย');
+    if (!inp.landing_area_m2) warnings.push('ไม่ระบุพื้นที่ชานพัก — บันไดที่มีลูกตั้งเกิน 15 ขั้น กฎหมายบังคับให้ต้องมีชานพักพักเหนื่อย');
 
     if (inp.rebar_kg_per_m3 < 120) warnings.push('ปริมาณเหล็กเสริมน้อยกว่า 120 kg/m³ บันไดถือเป็นโครงสร้างที่รับแรงกระทำแบบไดนามิก (แรงกระแทกจากการเดินลงน้ำหนัก) ถ้าระบุเหล็กน้อยเกินไป บันไดจะสูญเสียเสถียรภาพและเกิดการแอ่นตัว');
 
-    if (totalConcVolNet * wf > 5 && inp.concrete_pump_required) warnings.push('ปริมาณคอนกรีตเกิน 5 ม³ การให้คนงานหิ้วถังเทบันไดจะสูญเสียวัสดุ และคอนกรีตอาจถอดรอยต่อเย็น (Cold Joint) ควรพิจารณาใช้ปั๊มเทจากบนลงล่าง');
+    if (totalConcVolNet * wf > 5 && !inp.concrete_pump_required) warnings.push('ปริมาณคอนกรีตเกิน 5 ม³ การให้คนงานหิ้วถังเทบันไดจะสูญเสียวัสดุ และคอนกรีตอาจถอดรอยต่อเย็น (Cold Joint) ควรพิจารณาใช้ปั๊มเทจากบนลงล่าง');
 
     if (waste_percent < 10) warnings.push('งานเทบันได คอนกรีตมักจะหกล้นออกทางลูกตั้งและร่วงลงพื้นล่าง แนะนำให้เผื่อ Waste อย่างน้อย 10%');
   }

@@ -52,7 +52,7 @@ export function calcStep8(inp: Step8Input): StepResult {
   const kscMapping: Record<string, number> = { '180': 180, '210': 210, '240': 240, '280': 280, '300': 300, '320': 320, '350': 350 };
   const legacyKsc = inp.concrete_grade ? (kscMapping[inp.concrete_grade] ?? 240) : 240;
   
-  const specParams: StructuralSpecParams = inp.structural_spec ?? {
+  const specParams: StructuralSpecParams = inp.structural_spec ? { ...inp.structural_spec } : {
     ksc: legacyKsc,
     waterproof: false,
     workLevel: '1FL',
@@ -145,8 +145,10 @@ export function calcStep8(inp: Step8Input): StepResult {
   }
 
   // ─── เครื่องจี้ ──────────────────────────────────────────
-  const vibDays = inp.vibrator_days ?? Math.max(1, Math.ceil(strRes.conc_gross_m3 / 10));
-  quantities.vibrator = { qty: vibDays, uom: 'วัน', label: 'เครื่องจี้คอนกรีต', sku: 'GBM-VIBRATOR' };
+  if (concreteNetVol > 0) {
+    const vibDays = inp.vibrator_days ?? Math.max(1, Math.ceil(strRes.conc_gross_m3 / 10));
+    quantities.vibrator = { qty: vibDays, uom: 'วัน', label: 'เครื่องจี้คอนกรีต', sku: 'GBM-VIBRATOR' };
+  }
 
   // ─── บ่ม ──────────────────────────────────────────────────
   const curing = inp.curing_method ?? 'water';
@@ -163,8 +165,8 @@ export function calcStep8(inp: Step8Input): StepResult {
   const warnings: string[] = [];
   const warningFields: string[] = [];
   if (Tlean < 0.05) warnings.push('คอนกรีตหยาบ (ลีน) ต่ำกว่า 0.05 ม. จะบางเกินไปจนไม่สามารถป้องความชื้นดินสัมผัสเหล็กคานได้');
-  if (bh > 0.60 && inp.shoring_required) warnings.push('คานมีความลึกสูง > 0.60 ม. เสี่ยงต่อแรงดันคอนกรีตทำไม้แบบระเบิด/ปลิ้นตอนเทปูน ขอแนะนำให้ตั้งงบ "ไม้ค้ำยัน (Shoring)" เพื่อหนุนข้างคาน');
-  if (strRes.conc_gross_m3 > 20 && inp.concrete_pump_required) warnings.push(`ปริมาตรคอนกรีตคานคอดินสูงถึง ${r2(strRes.conc_gross_m3)} ม³ หากทอดสายเทตรงหรือใช้คนหิ้ว คอนกรีตจะแห้งไม่ทันและเกิด Cold Joint ควรเช่าปั๊มคอนกรีตเพื่อเทแบบต่อเนื่อง`);
+  if (bh > 0.60 && !inp.shoring_required) warnings.push('คานมีความลึกสูง > 0.60 ม. เสี่ยงต่อแรงดันคอนกรีตทำไม้แบบระเบิด/ปลิ้นตอนเทปูน ขอแนะนำให้ตั้งงบ "ไม้ค้ำยัน (Shoring)" เพื่อหนุนข้างคาน');
+  if (strRes.conc_gross_m3 > 20 && !inp.concrete_pump_required) warnings.push(`ปริมาตรคอนกรีตคานคอดินสูงถึง ${r2(strRes.conc_gross_m3)} ม³ หากทอดสายเทตรงหรือใช้คนหิ้ว คอนกรีตจะแห้งไม่ทันและเกิด Cold Joint ควรเช่าปั๊มคอนกรีตเพื่อเทแบบต่อเนื่อง`);
   if (waste_percent < 10) warnings.push('การเทคานคอดิน (Ground Beam) มักมีการขุดร่องพิงดิน โอกาสดินพังทับหรือเทคอนกรีตล้นแนวก่อมีสูงมาก แนะนำให้ตั้งเปอร์เซ็นต์ Waste อย่างน้อย 10%');
   if (bw < 0.20) warnings.push('คานมีความกว้างน้อยกว่า 0.20 ม. ให้ระวังช่องว่างระหว่างเหล็กเสริม จะทำให้หัวจี้คอนกรีต (Vibrator) แหย่ไม่ลง');
   if (inp.rebar_weight_kg_per_m3) {

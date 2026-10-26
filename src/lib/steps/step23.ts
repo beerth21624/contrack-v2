@@ -108,10 +108,10 @@ export function calcStep23(inp: Step23Input): StepResult {
     if (primer_type_exterior === 'acrylic') {
       warnings.push('ภายนอก: ผนังปูนฉาบใหม่ต้องใช้ "สีรองพื้นปูนใหม่กันด่าง" เช่นกันครับ หากใช้อะคริลิกทั่วไปอาจส่งผลให้ความคงทนของฟิล์มสีภายนอกลดลงก่อนกำหนด');
     }
-    if (exterior_area_m2 > 0 && primer_type_exterior == 'elastomeric' && use_sealer_crack) {
+    if (exterior_area_m2 > 0 && primer_type_exterior !== 'elastomeric' && !use_sealer_crack) {
       warnings.push('งานภายนอกมักเจอแดดและปูนแตกลายงา (Hairline crack) แนะนำให้ใช้สีรองพื้นตระกูล เปลือกส้ม/Elastomeric หรือต้องอุดรอยร้าวเสมอครับ');
     }
-    if (surface_prep_required) {
+    if (!surface_prep_required) {
       warnings.push('คุณติ๊กปิด "ขัดผิว/ลบรอยปูน" งานทาสี 80% อาจส่งผลกระทบต่อคุณภาพของงานสี พื้นผิวจะขาดความสม่ำเสมอและเกิดการลอกล่อน ไม่แนะนำให้ประหยัดค่าแรงส่วนนี้เด็ดขาด');
     }
     if (waste_percent === 0) {

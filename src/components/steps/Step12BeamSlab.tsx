@@ -244,7 +244,7 @@ export default function Step12BeamSlab({ initialData, onBack, onSave }: Props) {
                             ]} />
                     </Form.Item>
                     <Form.Item layout="vertical" label={<Text style={{ fontSize: 13 }}>{t('concretePump')}</Text>} style={{ margin: 0, marginBottom: 12 }}>
-                        <Switch checked={inp.concrete_pump_required !== false}
+                        <Switch checked={!!inp.concrete_pump_required}
                             onChange={v => update({ concrete_pump_required: v })}
                             checkedChildren={t('pumpYes')} unCheckedChildren={t('pumpNo')} />
                     </Form.Item>

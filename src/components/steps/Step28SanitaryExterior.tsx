@@ -23,7 +23,7 @@ export default function Step28SanitaryExterior({ initialData, onBack, onSave }: 
         setInp(prev => ({ ...prev, ...patch }));
     }, []);
 
-    const septicEst = inp.septic_size_override_m3 ?? (inp.resident_count * 0.2 + 0.6);
+    const septicEst = inp.septic_size_override_m3 ?? Math.max(1.0, Math.round(inp.resident_count * 0.5 * 100) / 100); // same as step28.ts septicSize()
 
     const result = useMemo(() => {
         try {

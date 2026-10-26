@@ -345,7 +345,10 @@
     "vibratorDays": "เครื่องจี้ (วัน)",
     "shoring": "ค้ำยันคาน (Shoring)",
     "shoringYes": "ใช้ค้ำยัน",
-    "shoringNo": "ไม่ใช้"
+    "shoringNo": "ไม่ใช้",
+    "termite": "ระบบป้องกันปลวก",
+    "termiteYes": "วางท่อตามแนวคาน",
+    "termiteNo": "ไม่ใช้"
   },
   "step9": {
     "specTitle": "สเปคพื้น (Slab Specifications)",

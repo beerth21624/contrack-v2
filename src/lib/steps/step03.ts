@@ -15,14 +15,14 @@ export interface Step3Input {
   // ─── cost-related (ใหม่) ────────────────────────────────
   fence_type?: 'zinc' | 'mesh' | 'concrete_block';  // ประเภทรั้ว (default zinc)
   fence_height_m?: number;             // ความสูงรั้ว (default 2.0 ม.)
-  gate_count?: number;                 // จำนวนประตูทางเข้า (default 1)
+  gate_count?: number;                 // จำนวนประตูทางเข้า (default 1 เมื่อมีรั้ว)
   gate_width_m?: number;               // ความกว้างประตู (default 4 ม.)
   toilet_count?: number;               // ห้องน้ำเคลื่อนที่ (default: 1 ต่อ 15 คน)
   access_road_length_m?: number;       // ทางเข้ารถ (ม.)
   access_road_width_m?: number;        // ความกว้างทางเข้า (default 4 ม.)
   rebar_work_area_m2?: number;         // พื้นที่ดัดเหล็ก/ผูกเหล็ก (ม²)
   site_sign?: boolean;                 // ป้ายโครงการ (default true)
-  safety_signs_count?: number;         // จำนวนป้ายความปลอดภัย (default 4)
+  safety_signs_count?: number;         // จำนวนป้ายความปลอดภัย (default 0 — คิดเฉพาะเมื่อระบุ)
   construction_duration_months?: number; // ระยะเวลาก่อสร้าง (เดือน) — ใช้คำนวณค่าเช่า
   mobilization_trips?: number;         // ค่าขนย้ายเครื่องจักรเข้า (ครั้ง)
   demobilization_trips?: number;       // ค่าขนย้ายเครื่องจักรออก (ครั้ง)
@@ -40,13 +40,15 @@ export function calcStep3(inp: Step3Input): StepResult {
   const w      = 1 + waste_percent / 100;
 
   const fence_h = inp.fence_height_m ?? 2.0;
-  const gate_w  = inp.gate_width_m   ?? 4.0;
-  const gates   = inp.gate_count     ?? 1;
+  // 0 = ไม่ได้ระบุ → ใช้ค่า default 4 ม.
+  const gate_w  = inp.gate_width_m && inp.gate_width_m > 0 ? inp.gate_width_m : 4.0;
 
   // ─── Core calculations ───────────────────────────────────
   const site_area              = r2(site_width_m * site_length_m);
   const perimeter              = r2(2 * (site_width_m + site_length_m));
-  const fence_length           = r2((perimeter - (gates * gate_w)) * w);
+  // ประตู default 1 ช่องเฉพาะเมื่อมีรั้ว (มีขนาดไซต์) — ถ้าไม่มีรั้วคิดเฉพาะเมื่อผู้ใช้ระบุเอง
+  const gates   = inp.gate_count ?? (perimeter > 0 ? 1 : 0);
+  const fence_length           = r2(Math.max(0, perimeter - (gates * gate_w)) * w);
   const fence_area             = r2(fence_length * fence_h);
   const camp_area              = r2(number_of_workers * apw);
   const storage_area           = r2(site_area * stoRat);
@@ -96,10 +98,10 @@ export function calcStep3(inp: Step3Input): StepResult {
   }
 
   // ป้ายโครงการ + ป้ายความปลอดภัย
-  if (inp.site_sign == false) {
+  if (inp.site_sign === true) {
     quantities.site_sign = { qty: 1, uom: 'ป้าย', label: 'ป้ายโครงการ (ชื่อ+ผู้รับเหมา+ใบอนุญาต)' };
   }
-  const safety_signs = inp.safety_signs_count ?? 4;
+  const safety_signs = inp.safety_signs_count ?? 0;
   if (safety_signs > 0) {
     quantities.safety_signs = { qty: safety_signs, uom: 'ป้าย', label: 'ป้ายความปลอดภัย (สวมหมวก/รองเท้า/ระวังอันตราย)' };
   }
@@ -132,7 +134,7 @@ export function calcStep3(inp: Step3Input): StepResult {
   // ─── Warnings ─────────────────────────────────────────────
   const warnings: string[] = [];
 
-  if (gate_w < 5.0) {
+  if (gates > 0 && inp.gate_width_m && inp.gate_width_m > 0 && gate_w < 5.0) {
     warnings.push(`ความกว้างประตูเข้าไซต์ ${gate_w} ม. แคบเกินไป ยานพาหนะหนักเพื่อการก่อสร้างอาจประสบปัญหาในการเข้า-ออกพื้นที่ แนะนำอย่างน้อย 5.0-6.0 ม.`);
   }
 
@@ -161,7 +163,7 @@ export function calcStep3(inp: Step3Input): StepResult {
     warnings.push(`คนงาน ${number_of_workers} คน ควรมีห้องน้ำ ≥ 2 ห้อง (ปกติ 1 ห้อง / 15 คน)`);
   }
 
-  if (inp.access_road_length_m && site_area > 200) {
+  if (!inp.access_road_length_m && site_area > 200) {
     warnings.push('ไม่ได้ระบุทางเข้ารถ — ถ้าไซต์ใหญ่ ควรเตรียมทางรถบรรทุกเข้าถึงเพื่อป้องกันรถติดหล่ม');
   }
 

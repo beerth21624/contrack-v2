@@ -64,7 +64,7 @@ export function calcStep7(inp: Step7Input): StepResult {
   const kscMapping: Record<string, number> = { '180': 180, '210': 210, '240': 240, '280': 280, '300': 300, '320': 320, '350': 350 };
   const legacyKsc = inp.concrete_grade ? (kscMapping[inp.concrete_grade] ?? 240) : 240;
   
-  const specParams: StructuralSpecParams = inp.structural_spec ?? {
+  const specParams: StructuralSpecParams = inp.structural_spec ? { ...inp.structural_spec } : {
     ksc: legacyKsc,
     waterproof: false,
     workLevel: '1FL',
@@ -133,7 +133,9 @@ export function calcStep7(inp: Step7Input): StepResult {
   if (inp.concrete_pump_required) {
     quantities.concrete_pump = { qty: Math.max(1, Math.ceil(strRes.conc_gross_m3 / 30)), uom: 'วัน', label: 'ปั๊มคอนกรีต', sku: 'PDS-PUMP' };
   }
-  quantities.vibrator = { qty: inp.vibrator_days ?? Math.max(1, Math.ceil(totalN / 15)), uom: 'วัน', label: 'เครื่องจี้คอนกรีต', sku: 'PDS-VIBRATOR' };
+  if (totalConcreteVol > 0) {
+    quantities.vibrator = { qty: inp.vibrator_days ?? Math.max(1, Math.ceil(totalN / 15)), uom: 'วัน', label: 'เครื่องจี้คอนกรีต', sku: 'PDS-VIBRATOR' };
+  }
 
   const curing = inp.curing_method ?? 'water';
   if (curing === 'plastic' || curing === 'compound') {
@@ -155,7 +157,7 @@ export function calcStep7(inp: Step7Input): StepResult {
     }
   }
 
-  if (inp.main_bar_count) {
+  if (!inp.main_bar_count) {
     warnings.push('ยังไม่ได้ระบุจำนวนเหล็กยืนเสาตอม่อ ระบบจะไม่สามารถคำนวณเหล็กหนวดกุ้ง (Dowel Bar) ที่ต้องเสียบรอเสาชั้น 1 ได้ โปรดเช็คแบบวิศวกรรม');
   }
 

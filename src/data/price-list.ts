@@ -55,20 +55,16 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
   { code: 'UTIL-METER-W15', name: 'มิเตอร์น้ำชั่วคราว 1/2 นิ้ว', nameEn: 'Temp Water Meter 1/2"',        uom: 'ชุด', uomEn: 'set',  costMaterial: 1200, costLabor: 0,    category: 'Temp Utilities' },
   { code: 'UTIL-METER-W20', name: 'มิเตอร์น้ำชั่วคราว 3/4 นิ้ว', nameEn: 'Temp Water Meter 3/4"',        uom: 'ชุด', uomEn: 'set',  costMaterial: 2500, costLabor: 0,    category: 'Temp Utilities' },
   { code: 'UTIL-PERMIT',    name: 'ค่าธรรมเนียมขออนุญาตเขต', nameEn: 'District Permit Feeds',         uom: 'ชุด', uomEn: 'set',  costMaterial: 2000, costLabor: 0,    category: 'Temp Utilities' },
+  { code: 'UTIL-LIGHT-PLUG', name: 'หลอดไฟ + ปลั๊กไฟชั่วคราว', nameEn: 'Temp Light + Socket Point',   uom: 'ชุด', uomEn: 'set',  costMaterial: 200,  costLabor: 0,    category: 'Temp Utilities' },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 3 : Site Preparation
   // ═══════════════════════════════════════════════════════════════════════════
   { code: 'SITE-FENCE-ZINC', name: 'รั้วชั่วคราวสังกะสีลูกฟูก', nameEn: 'Zinc Corrugated Fence',         uom: 'm2', uomEn: 'sq.m.',  costMaterial: 120,  costLabor: 40,   category: 'Site Prep' },
   { code: 'SITE-FENCE-MESH', name: 'รั้วชั่วคราวตาข่ายเหล็กถัก', nameEn: 'Wire Mesh Fence',       uom: 'm2', uomEn: 'sq.m.',  costMaterial: 150,  costLabor: 45,   category: 'Site Prep' },
-  { code: 'SITE-FENCE-BLK',  name: 'รั้วบล็อกคอนกรีต', nameEn: 'Conc. Block Temp Fence',                uom: 'm2', uomEn: 'sq.m.',  costMaterial: 250,  costLabor: 120,  category: 'Site Prep' },
-  { code: 'SITE-GATE',    name: 'ประตูทางเข้าไซต์', nameEn: 'Temp Entrance Gate',                  uom: 'ช่อง', uomEn: 'set', costMaterial: 1500, costLabor: 500,  category: 'Site Prep' },
   { code: 'SITE-CAMP',    name: 'ห้องพักคนงาน / สโตร์', nameEn: 'Worker Camp / Store',             uom: 'm2', uomEn: 'sq.m.',  costMaterial: 800,  costLabor: 200,  category: 'Site Prep' },
   { code: 'SITE-DRAIN',   name: 'รางระบายน้ำชั่วคราว', nameEn: 'Temp Drainage Channel',              uom: 'm', uomEn: 'm',   costMaterial: 80,   costLabor: 30,   category: 'Site Prep' },
   { code: 'SITE-TOILET',  name: 'ห้องน้ำเคลื่อนที่ (ค่าเช่า/เดือน)', nameEn: 'Mobile Toilet Rental',  uom: 'เดือน', uomEn: 'month', costMaterial: 2500, costLabor: 0,    category: 'Site Prep' },
-  { code: 'SITE-ROAD',    name: 'ทางเข้ารถลูกรังอัดแน่น', nameEn: 'Temp Access Road (Laterite)',            uom: 'm3', uomEn: 'cu.m.',  costMaterial: 350,  costLabor: 80,   category: 'Site Prep' },
-  { code: 'SITE-SIGN',    name: 'ป้ายโครงการ', nameEn: 'Project Signboard',                       uom: 'ป้าย', uomEn: 'pcs', costMaterial: 3000, costLabor: 500,  category: 'Site Prep' },
-  { code: 'SITE-SAFETY',  name: 'ป้ายความปลอดภัย', nameEn: 'Safety Warning Sign',                  uom: 'ป้าย', uomEn: 'pcs', costMaterial: 250,  costLabor: 50,   category: 'Site Prep' },
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Step 4 : Site Layout
@@ -187,7 +183,7 @@ export const INITIAL_PRICE_LIST: PriceItem[] = [
 
   // 4. Rebar Standard Extras
   { code: 'RB-WIRE',    name: 'ลวดผูกเหล็ก', nameEn: 'Tie Wire for Rebar',         uom: 'kg', uomEn: 'kg', costMaterial: 26, costLabor: 0, category: 'Structural Rebar' },
-  { code: 'RB-SPACER',  name: 'ลูกปูนรองกั้นเหล็กเทซ멘ต์ (Spacer)', nameEn: 'Concrete Spacer', uom: 'pcs', uomEn: 'pcs', costMaterial: 5, costLabor: 0, category: 'Structural Rebar' },
+  { code: 'RB-SPACER',  name: 'ลูกปูนรองเหล็ก (Spacer)', nameEn: 'Concrete Spacer', uom: 'pcs', uomEn: 'pcs', costMaterial: 5, costLabor: 0, category: 'Structural Rebar' },
 
 
   // ═══════════════════════════════════════════════════════════════════════════

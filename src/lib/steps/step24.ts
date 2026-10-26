@@ -82,13 +82,13 @@ export function calcStep24(inp: Step24Input): StepResult {
     warnings.push('ยังไม่ได้เพิ่มรายการประตูหน้าต่าง เข้าไปดูแปลน (Door & Window Schedule) เพื่อมากดเพิ่มได้เลยครับ');
   } else {
     for (const item of items) {
-      if (item.width_m || item.height_m || item.count) {
+      if (!item.width_m || !item.height_m || !item.count) {
          warnings.push(`มีหน้าต่าง/ประตูรหัส ${item.label} ที่ไม่ได้ระบุขนาดความกว้าง, สูง หรือจำนวน ระวังคิดราคาตกหล่น อาจส่งผลให้การประมาณการงบประมาณผิดพลาดได้`);
          break;
       }
     }
 
-    if (inp.glass_thickness_mm === undefined) {
+    if (!inp.glass_thickness_mm) {
       warnings.push('ยังไม่ได้ระบุ "ความหนากระจก" ส่งผลต่อราคามากๆ ครับ (กระจก 5 มม. กับ 8 มม. ราคาต่างกันมากกว่า 30%)');
     } else if (inp.glass_thickness_mm < 6) {
       warnings.push(`สเปคกระจกภายนอก ${inp.glass_thickness_mm} มม.ค่อนข้างบางต้านแรงปะทะลม (Wind load) และเสียงรบกวนได้น้อย แนะนำ 6 มม. ขึ้นไปสำหรับงานมาตรฐาน`);
@@ -98,7 +98,7 @@ export function calcStep24(inp: Step24Input): StepResult {
       warnings.push('คุณไม่ได้เผื่อเศษอลูมิเนียมเลย (Waste 0%) อลูมิเนียมมาเป็นเส้น 6 เมตร ตอนตัดทำกรอบมักจะเหลือเศษเส้นสั้นๆ ที่เอาไปประกอบต่อไม่ได้เสมอ แนะนำเผื่อสัก 5-10% ครับ');
     }
 
-    if (inp.sealant_length_m) {
+    if (!inp.sealant_length_m) {
       warnings.push('ระบบกำลังประเมินระยะทาง ซีลยาแนวกรอบ (Silicone/PU) อัตโนมัติจากเส้นรอบรูปทั้งหมดที่กรอกมา.. กรุณารีเช็คอีกครั้ง เพราะงานอลูมิเนียมถ้ายิงซิลิโคนไม่ดี น้ำรั่วเข้าบ้านแก้ปัญหายากมาก');
     }
   }

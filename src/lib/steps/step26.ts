@@ -108,7 +108,7 @@ export function calcStep26(inp: Step26Input): StepResult {
   }
 
   // 12. HVAC
-  const hvacCount = inp.hvac_install_count ?? ac_circuit_count;
+  const hvacCount = inp.hvac_install_count ?? 0;
   if (hvacCount > 0) {
     quantities.hvac_install = { qty: hvacCount, uom: 'ชุด', label: `ติดตั้งแอร์ Wall Type (${hvacCount} เครื่อง)` };
     const copper = inp.hvac_copper_pipe_m ?? (hvacCount * 10);
@@ -137,7 +137,7 @@ export function calcStep26(inp: Step26Input): StepResult {
     if (inp.ev_charger && phase === '1phase') {
       warnings.push('ติดตั้ง EV Charger แบบ Wall Box ควรพิจารณาอัพเกรดเป็นไฟ 3 เฟส มิฉะนั้นเวลาชาร์จรถตอนกลางคืนอาจเปิดแอร์หรือน้ำอุ่นพร้อมกันไม่ได้ครับ');
     }
-    if (inp.ground_rod_count || inp.ground_rod_count === 0) {
+    if (!inp.ground_rod_count) {
       warnings.push('ข้อกำหนดทางไฟฟ้า: ไม่มีการระบุระบบกราวด์ร็อด (Ground Rod) ซึ่งเป็นข้อบังคับมาตรฐานความปลอดภัยทางไฟฟ้าขั้นพื้นฐาน');
     }
   }

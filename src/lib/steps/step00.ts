@@ -91,7 +91,7 @@ export function calcStep0(inp: Step0Input): StepResult {
     };
   }
 
-  if (inp.equipment_type && inp.equipment_type == 'none') {
+  if (inp.equipment_type && inp.equipment_type !== 'none') {
     const eqLabel: Record<string, string> = {
       total_station: 'กล้อง Total Station',
       gps_rtk: 'GPS RTK',
@@ -113,7 +113,7 @@ export function calcStep0(inp: Step0Input): StepResult {
   }
 
   const warnings: string[] = [];
-  if (inp.topo_required && land_area_m2 > 400) {
+  if (!inp.topo_required && land_area_m2 > 400) {
     warnings.push('ที่ดิน > 400 ม² ควรทำ Topo Survey เพื่อคำนวณดินถม Step 1 ได้แม่นยำ');
   }
   if (benchmark_count < 2) {

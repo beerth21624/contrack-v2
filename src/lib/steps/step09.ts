@@ -45,7 +45,7 @@ export function calcStep9(inp: Step9Input): StepResult {
   const kscMapping: Record<string, number> = { '180': 180, '210': 210, '240': 240, '280': 280, '300': 300, '320': 320, '350': 350 };
   const legacyKsc = inp.concrete_grade ? (kscMapping[inp.concrete_grade] ?? 240) : 240;
   
-  const specParams: StructuralSpecParams = inp.structural_spec ?? {
+  const specParams: StructuralSpecParams = inp.structural_spec ? { ...inp.structural_spec } : {
     ksc: legacyKsc,
     waterproof: false,
     workLevel: 'GRND',
@@ -101,12 +101,12 @@ export function calcStep9(inp: Step9Input): StepResult {
     const side = Math.sqrt(A);
     const joints_per_dir = Math.floor(side / sp);
     const total_joint_m = r2(joints_per_dir * 2 * side); // ทั้ง 2 ทิศ
-    quantities.control_joint = { qty: total_joint_m, uom: 'm', label: `ร่องตัด Control Joint @${sp} ม.`, sku: 'SOG-JOINT-CTRL' };
+    quantities.control_joint = { qty: total_joint_m, uom: 'm', label: `ร่องตัด Control Joint @${sp} ม.`, sku: 'SOG-CJOINT' };
   }
 
   // ─── Expansion Joint ────────────────────────────────────
   if (inp.expansion_joint_length_m) {
-    quantities.expansion_joint = { qty: inp.expansion_joint_length_m, uom: 'm', label: 'Expansion Joint (วัสดุยาแนว)', sku: 'SOG-JOINT-EXP' };
+    quantities.expansion_joint = { qty: inp.expansion_joint_length_m, uom: 'm', label: 'Expansion Joint (วัสดุยาแนว)', sku: 'SOG-EJOINT' };
   }
 
   // ─── ปั๊มคอนกรีต ────────────────────────────────────────
@@ -116,8 +116,10 @@ export function calcStep9(inp: Step9Input): StepResult {
   }
 
   // ─── เครื่องจี้ / เกรียงปาด ──────────────────────────────
-  const vibDays = inp.vibrator_days ?? Math.max(1, Math.ceil(A / 100)); // 100 ม² / วัน
-  quantities.vibrator = { qty: vibDays, uom: 'วัน', label: 'เครื่องจี้ + ปาดผิว (Vibrating screed)', sku: 'SOG-VIBRATOR' };
+  if (concreteVol > 0) {
+    const vibDays = inp.vibrator_days ?? Math.max(1, Math.ceil(A / 100)); // 100 ม² / วัน
+    quantities.vibrator = { qty: vibDays, uom: 'วัน', label: 'เครื่องจี้ + ปาดผิว (Vibrating screed)', sku: 'SOG-VIBRATOR' };
+  }
 
   // ─── บ่ม ──────────────────────────────────────────────────
   const curing = inp.curing_method ?? 'water';
@@ -140,15 +142,15 @@ export function calcStep9(inp: Step9Input): StepResult {
   if (ts < 0.10) warnings.push('ความหนาพื้น < 0.10 ม. บางเกินไปสำหรับ Slab on Grade จะรับน้ำหนักไม่ได้และนำไปสู่การแตกร้าวของโครงสร้าง แนะนำพื้นบ้านปกติที่ 0.10–0.15 ม.');
   if (Ts < 0.05) warnings.push('ทรายรองบาง < 0.05 ม. ไม่เพียงพอต่อการปรับระดับและลดแรงเสียดทานระหว่างดินกับคอนกรีต');
   
-  if (A > 16 && inp.control_joint_spacing_m) {
+  if (A > 16 && !inp.control_joint_spacing_m) {
     warnings.push('พื้นที่พื้นใหญ่กว่า 16 ม² แต่ไม่ได้ระบุ "ระยะตัด Control Joint" คอนกรีตจะหดตัวและร้าว (Crack) แบบสะเปะสะปะ แนะนำให้ตัด Joint ทุกๆ ระยะ 3–4 ม.');
   }
 
-  if (concreteVol > 20 && inp.concrete_pump_required) {
+  if (concreteVol > 20 && !inp.concrete_pump_required) {
     warnings.push(`คอนกรีตพื้นปริมาณ ${r2(concreteVol)} ม³ หากใช้คนงานหิ้วถังเท จะปาดหน้าและปั่นหน้าไม่ทัน จนเกิดรอยต่อและรอยร้าว แนะนำให้จ้าง "ปั๊มคอนกรีตพ่วงท่อ"`);
   }
 
-  if (A > 100 && (inp.slope_percent || inp.slope_percent === 0)) {
+  if (A > 100 && !inp.slope_percent) {
     warnings.push('พื้นกว้าง > 100 ม² แต่ไม่มีความลาดเอียง (Slope) เวลาฝนตกหรือล้างพื้น น้ำจะขังเป็นแอ่ง แนะนำเผื่อ Slope 0.5–1.0%');
   }
 

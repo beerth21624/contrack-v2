@@ -28,7 +28,7 @@ export function calcStep22(inp: Step22Input): StepResult {
   };
 
   // ถ้าเลือก paint_only ไม่ต้องคำนวณวัสดุเพิ่มเพราะจะถูกจัดการใน Step 25 (ทาสี)
-  if (finish_type == 'paint_only') {
+  if (finish_type !== 'paint_only') {
     quantities.facade_material = {
       qty: r2(facade_area_m2 * wf),
       uom: 'm²',
@@ -62,14 +62,14 @@ export function calcStep22(inp: Step22Input): StepResult {
   }
 
   const warnings: string[] = [];
-  if (facade_area_m2 === 0 && finish_type == 'paint_only') {
+  if (facade_area_m2 === 0 && finish_type !== 'paint_only') {
     warnings.push('พื้นที่ตกแต่งผนังภายนอกเป็น 0 ม. กรุณาระบุพื้นที่ครับ');
   } else if (facade_area_m2 > 0) {
     if (finish_type === 'paint_only') {
       warnings.push('เลือก "สีทาอย่างเดียว" — ระบบจะไม่คำนวณราคาวัสดุที่นี่ เพราะต้องไปคิดรวมกับพื้นที่ทาสีทั้งหมดใน "Step 25 (ทาสี)" ครับ');
     }
 
-    if ((finish_type === 'tile' || finish_type === 'stone_cladding') && (inp.sealant_length_m || inp.sealant_length_m === 0)) {
+    if ((finish_type === 'tile' || finish_type === 'stone_cladding') && !inp.sealant_length_m) {
       warnings.push('คุณกรุวัสดุแผ่นแข็งภายนอก แต่ไม่มี "ซีลยาแนว (PU Sealant)" บริเวณขอบที่ชนกับหน้าต่างหรือปูนฉาบ น้ำฝนจะซึมเข้าหลังแผ่นจนกำแพงข้างในอาจส่งผลให้เกิดความเสียหายจากความชื้นหรือน้ำรั่วซึมได้');
     }
 
@@ -77,7 +77,7 @@ export function calcStep22(inp: Step22Input): StepResult {
       warnings.push('กรุหิน/กระเบื้องผนังภายนอกที่สูงหรือพื้นที่เยอะ จำเป็นต้องพิจารณาใช้ระบบประกอบยึดเชิงกล (Mechanical Anchor) หรือการตอกลวดกรงไก่เพื่อความปลอดภัย');
     }
 
-    if (finish_type == 'paint_only' && waste_percent === 0) {
+    if (finish_type !== 'paint_only' && waste_percent === 0) {
       warnings.push('เปอร์เซ็นต์เผื่อเสีย (Waste) เป็น 0% งานกรุผนังช่างต้องตัดมุมเข้าขอบหน้าต่าง/ซอกเสาเยอะมาก แนะนำเผื่อหิน/กระเบื้องที่ 10-15% และไม้ฝาที่ 7% ขั้นต่ำครับ');
     }
   }

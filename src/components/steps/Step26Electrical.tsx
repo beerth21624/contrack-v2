@@ -14,7 +14,7 @@ const DEFAULTS: Step26Input = {
     lighting_count: 0, single_socket_count: 0, double_socket_count: 0,
     switch_count: 0, ac_circuit_count: 0, water_heater_circuit: false,
     main_breaker_amp: 50, phase: '1phase',
-    waste_percent: 0, ground_rod_count: 0, outdoor_socket_count: 0,
+    waste_percent: 0, ground_rod_count: 1, outdoor_socket_count: 0,
     avg_cable_run_m: 0,
 };
 
