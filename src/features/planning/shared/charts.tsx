@@ -140,7 +140,7 @@ export function SCurveChart({ buckets, plan, actual, actualUntil, planWeekly }: 
                 { label: 'ผลงานจริง (สะสม)', color: CHART_COLORS.actual, kind: 'line' },
             ]} />
             <div className="overflow-x-auto">
-                <div className="relative min-w-[640px]">
+                <div className="relative min-w-[600px]">
                     <svg viewBox={`0 0 ${W} ${h}`} width="100%" role="img" aria-label="กราฟ S-Curve แผนงานเทียบผลงานสะสม">
                         <rect x={0} y={0} width={W} height={h} fill={CHART_COLORS.surface} />
                         {ticks.map(t => (
@@ -213,7 +213,7 @@ export function CashFlowChart({ buckets, income, outflow, cumulative, min }: {
                 { label: 'เงินสดสะสม (Cash FLOW)', color: CHART_COLORS.line, kind: 'line' },
             ]} />
             <div className="overflow-x-auto">
-                <div className="relative min-w-[640px]">
+                <div className="relative min-w-[600px]">
                     <svg viewBox={`0 0 ${W} ${h}`} width="100%" role="img" aria-label="กราฟกระแสเงินสดรายสัปดาห์">
                         <rect x={0} y={0} width={W} height={h} fill={CHART_COLORS.surface} />
                         {ticks.map(t => (

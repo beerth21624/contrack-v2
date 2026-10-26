@@ -44,15 +44,6 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
         { key: 'cashflow', icon: <MoneyCollectOutlined />, label: tNav('cashflow'), onClick: () => router.push('/cashflow') },
     ];
 
-    const [isMobile, setIsMobile] = React.useState(false);
-
-    React.useEffect(() => {
-        const updateSize = () => setIsMobile(window.innerWidth < 768);
-        updateSize();
-        window.addEventListener('resize', updateSize);
-        return () => window.removeEventListener('resize', updateSize);
-    }, []);
-
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             const target = e.target as HTMLElement;
@@ -72,14 +63,16 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
 
     return (
         <Layout className="min-h-screen">
-            <Header style={{
+            {/* Breakpoints are CSS (no window-width state), so the first paint already has the right header.
+                The horizontal menu needs ~1240px next to the badge and account menu: below xl it lives in the drawer. */}
+            <Header className="gap-2" style={{
                 display: 'flex', alignItems: 'center',
                 background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2e 100%)',
                 borderBottom: '2px solid #fa8c16',
-                padding: isMobile ? '0 12px' : '0 28px', height: 64,
+                padding: '0 28px', height: 64,
                 boxShadow: '0 2px 8px rgba(0,0,0,.15)',
             }}>
-                <div style={{ marginRight: isMobile ? 'auto' : 32, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="shrink-0 mr-auto xl:mr-4" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{
                         background: 'linear-gradient(135deg, #fa8c16, #ffa940)',
                         padding: 7, borderRadius: 8, display: 'flex',
@@ -87,29 +80,29 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
                     }}>
                         <CalculatorOutlined style={{ fontSize: 18, color: '#fff' }} />
                     </div>
-                    <Title level={5} style={{ margin: 0, lineHeight: '1.2', color: '#fff', letterSpacing: 0.5 }}>{tApp('title')}</Title>
+                    <Title level={5} style={{ margin: 0, lineHeight: '1.2', color: '#fff', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{tApp('title')}</Title>
                 </div>
 
-                <div className="hidden md:flex flex-1">
+                <div className="hidden xl:flex flex-1 min-w-0">
                     <Menu
                         mode="horizontal" theme="dark"
                         selectedKeys={[activeKey]}
                         items={menuItems}
-                        style={{ flex: 1, borderBottom: 'none', background: 'transparent' }}
+                        style={{ flex: 1, minWidth: 0, borderBottom: 'none', background: 'transparent' }}
                     />
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', marginRight: 8 }}>
-                    <ProjectBadge compact={isMobile} />
+                <div className="min-w-0" style={{ display: 'flex', alignItems: 'center' }}>
+                    <ProjectBadge />
                 </div>
 
-                <LanguageSwitcher />
+                <div className="shrink-0"><LanguageSwitcher /></div>
 
-                <div style={{ marginLeft: 8, display: 'flex', alignItems: 'center' }}>
-                    <AccountMenu compact={isMobile} />
+                <div className="shrink-0" style={{ display: 'flex', alignItems: 'center' }}>
+                    <AccountMenu />
                 </div>
 
-                <div className="md:hidden">
+                <div className="xl:hidden shrink-0">
                     <Button
                         type="text"
                         icon={<MenuOutlined style={{ fontSize: 22, color: '#fff' }} />}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useMemo } from 'react';
+import { Suspense, useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button, Popconfirm, Progress, Result, Spin, Tag, Typography } from 'antd';
@@ -24,6 +24,9 @@ const { Title, Text } = Typography;
 
 const spinner = <div className="flex justify-center p-20"><Spin size="large" /></div>;
 
+/** Bottom bar height before it is measured (one row on desktop). */
+const BAR_HEIGHT_GUESS = 72;
+
 /** One journey level: what to read from the plan, the inputs, and the way on to the next level. */
 export function LevelPage({ levelId }: { levelId: string }) {
     const router = useRouter();
@@ -31,6 +34,14 @@ export function LevelPage({ levelId }: { levelId: string }) {
     const setLevelMark = useProjectStore(s => s.setLevelMark);
     const result = useMemo(() => computeProject(project), [project]);
     const level = getLevel(levelId);
+    // The fixed bottom bar wraps to two rows on phones: the page keeps that much room below its content.
+    const [barHeight, setBarHeight] = useState(BAR_HEIGHT_GUESS);
+    const barRef = useCallback((el: HTMLDivElement | null) => {
+        if (!el) return undefined;
+        const observer = new ResizeObserver(() => setBarHeight(el.offsetHeight));
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
 
     if (!level) return <Result status="404" title="ไม่พบด่านนี้" extra={<Link href="/journey"><Button>กลับแผนที่ด่าน</Button></Link>} />;
 
@@ -69,7 +80,7 @@ export function LevelPage({ levelId }: { levelId: string }) {
     const outsideConstruction = levelSections.length > 0 && levelSections.every(s => !s.inConstructionTotal);
 
     return (
-        <div className="flex flex-col gap-4 max-w-6xl mx-auto w-full pb-24">
+        <div className="flex flex-col gap-4 max-w-6xl mx-auto w-full" style={{ paddingBottom: barHeight + 24 }}>
             <div className="flex items-center gap-3">
                 <Link href="/journey"><Button icon={<AppstoreOutlined />}>แผนที่ด่าน</Button></Link>
                 <Text type="secondary" className="text-[13px] whitespace-nowrap">{phase?.title} · ด่าน {index + 1}/{JOURNEY_LEVELS.length}</Text>
@@ -115,13 +126,15 @@ export function LevelPage({ levelId }: { levelId: string }) {
                     </JourneyModeContext.Provider>
                 )}
 
-            <div className="fixed bottom-0 left-0 right-0 z-20 bg-white/95 backdrop-blur border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,.05)]">
-                <div className="max-w-6xl mx-auto px-3 py-3 flex items-center gap-3">
+            <div ref={barRef}
+                className="fixed bottom-0 left-0 right-0 z-20 bg-white/95 backdrop-blur border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,.05)] pb-[env(safe-area-inset-bottom)]">
+                {/* On a phone the buttons wrap under the total instead of squeezing it. */}
+                <div className="max-w-6xl mx-auto px-3 py-2.5 sm:py-3 flex flex-wrap items-center gap-x-3 gap-y-2">
                     {prev
                         ? <Link href={`/journey/${prev.id}`}><Button icon={<ArrowLeftOutlined />} aria-label="ด่านก่อนหน้า" /></Link>
                         : <Button icon={<ArrowLeftOutlined />} disabled aria-label="ด่านก่อนหน้า" />}
                     {level.kind.type !== 'meta' && (
-                        <div className="min-w-0">
+                        <div className="min-w-[140px] flex-1 sm:flex-none sm:min-w-0">
                             <div className="text-[11px] text-gray-500 leading-tight">ด่านนี้คิดเป็น</div>
                             <div className="text-[18px] font-bold tabular-nums leading-tight">{formatNumber(mark === 'skipped' ? 0 : total, 0)} บาท</div>
                             {outsideConstruction && (
@@ -135,7 +148,7 @@ export function LevelPage({ levelId }: { levelId: string }) {
                             {formatNumber(result.boq.constructionTotal, 0)} บาท
                         </div>
                     </div>
-                    <div className="ml-auto flex items-center gap-2">
+                    <div className="ml-auto flex flex-wrap justify-end items-center gap-2">
                         {level.optional && mark === undefined && (
                             <Popconfirm title="โครงการนี้ไม่มีงานนี้?" description="ระบบจะไม่คิดเงินในด่านนี้ (กลับมาแก้ได้)"
                                 okText="ไม่มีงานนี้" cancelText="ยกเลิก" onConfirm={skip}>

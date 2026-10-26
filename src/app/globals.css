@@ -65,6 +65,16 @@ input.ant-input, .ant-select-selector {
     background-color: #fff;
 }
 
+/* ── Sheet text cells (TextCell): one line that grows to show the whole text instead of cutting it off ── */
+.sheet-text {
+    display: block;
+    resize: none;
+    overflow: hidden;
+    field-sizing: content;
+    overflow-wrap: anywhere;
+    vertical-align: middle;
+}
+
 /* ── Responsive Utilities ── */
 
 /* Horizontal scrollable table container */
@@ -83,6 +93,10 @@ input.ant-input, .ant-select-selector {
 .ant-modal-wrap,
 .ant-modal-mask {
     z-index: 1050 !important;
+}
+/* A drawer sized for desktop (e.g. 420px) never runs off a phone screen */
+.ant-drawer-content-wrapper {
+    max-width: 100vw;
 }
 
 /* ── Card utility class ── */
@@ -126,8 +140,31 @@ input.ant-input, .ant-select-selector {
         min-height: 40px;
     }
     .ant-btn-sm {
-        min-height: 32px;
+        min-height: 40px;
         padding: 4px 10px !important;
+    }
+    /* (small icon buttons keep their width: they sit inside table cells next to an input) */
+    .ant-btn-icon-only:not(.ant-btn-sm) {
+        min-width: 40px;
+    }
+
+    /* Sheet cells (yellow/green inputs, small dropdowns) — at least ~40px tall to tap */
+    .sheet-cell,
+    .sheet-text {
+        min-height: 40px;
+    }
+    .sheet-text {
+        /* keeps one line vertically centred in the taller box */
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+    }
+    .ant-select-sm {
+        min-height: 40px;
+    }
+
+    /* Dropdown menus (account, project, row actions) */
+    .ant-dropdown-menu-item {
+        min-height: 40px;
     }
 
     /* Collapse panel header */

@@ -46,7 +46,7 @@ export function ResultSummary({ items, minor, note, empty }: {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2">
                         {items.map((it, i) => (
                             <div key={`${i}-${it.label}`} className="min-w-0">
-                                <div className="text-[12px] text-gray-600 truncate" title={it.label}>{it.label}</div>
+                                <div className="text-[12px] text-gray-600 leading-snug [overflow-wrap:anywhere]">{it.label}</div>
                                 <div className="text-[18px] font-bold tabular-nums text-gray-900 leading-tight">
                                     {shown(it.value, it.digits)}{' '}
                                     <span className="text-[12px] font-normal text-gray-500">{it.unit}</span>

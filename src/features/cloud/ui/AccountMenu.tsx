@@ -22,8 +22,8 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
     if (status === 'guest' || !user) {
         return (
             <Button type="primary" ghost size="small" icon={<LoginOutlined />} onClick={() => router.push('/login')}
-                style={{ height: 32 }}>
-                {compact ? null : 'เข้าสู่ระบบ'}
+                aria-label="เข้าสู่ระบบ" className="!h-10 !min-w-10 md:!h-8">
+                {compact ? null : <span className="hidden md:inline">เข้าสู่ระบบ</span>}
             </Button>
         );
     }
@@ -32,9 +32,9 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
         {
             key: 'who', disabled: true,
             label: (
-                <div className="py-1">
-                    <div className="font-semibold text-gray-900">{user.displayName}</div>
-                    <div className="text-[12px] text-gray-500">{user.email}</div>
+                <div className="py-1 max-w-[min(280px,calc(100vw-128px))]">
+                    <div className="font-semibold text-gray-900 truncate" title={user.displayName}>{user.displayName}</div>
+                    <div className="text-[12px] text-gray-500 truncate" title={user.email}>{user.email}</div>
                 </div>
             ),
         },
@@ -44,10 +44,11 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
             children: workspaces.map(w => ({
                 key: `ws:${w.id}`,
                 icon: w.id === workspace?.id ? <CheckOutlined className="text-orange-500" /> : <span className="inline-block w-[14px]" />,
+                // A long workspace name is cut short (full name on hover) so the menu fits a phone.
                 label: (
-                    <span>
-                        {w.kind === 'personal' ? 'ส่วนตัว' : w.name}
-                        <span className="text-[12px] text-gray-400"> · {ROLE_LABEL[w.role]}</span>
+                    <span className="flex min-w-0 max-w-[min(260px,calc(100vw-152px))]" title={w.kind === 'personal' ? undefined : w.name}>
+                        <span className="truncate">{w.kind === 'personal' ? 'ส่วนตัว' : w.name}</span>
+                        <span className="shrink-0 whitespace-pre text-[12px] text-gray-400"> · {ROLE_LABEL[w.role]}</span>
                     </span>
                 ),
             })),
@@ -75,10 +76,12 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
     return (
         <Dropdown menu={{ items, onClick }} trigger={['click']} placement="bottomRight">
             <button type="button" aria-label="บัญชีผู้ใช้"
-                className="flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/20 transition pl-1 pr-2 py-1 cursor-pointer border-0">
-                <Avatar size={26} style={{ background: '#fa8c16', fontSize: 12 }}>{initials(user.displayName)}</Avatar>
+                title={workspace?.kind === 'company' ? workspace.name : user.displayName}
+                className="flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/20 transition pl-1 pr-2 py-1 min-h-10 md:min-h-0 cursor-pointer border-0">
+                <Avatar size={26} style={{ background: '#fa8c16', fontSize: 12, flexShrink: 0 }}>{initials(user.displayName)}</Avatar>
+                {/* The name needs room the horizontal menu takes at xl: shown beside the drawer (lg) and on wide screens. */}
                 {!compact && (
-                    <span className="hidden lg:block text-[13px] text-white/90 max-w-[140px] truncate">
+                    <span className="hidden lg:max-xl:block min-[1440px]:block text-[13px] text-white/90 max-w-[140px] truncate">
                         {workspace?.kind === 'company' ? workspace.name : user.displayName}
                     </span>
                 )}

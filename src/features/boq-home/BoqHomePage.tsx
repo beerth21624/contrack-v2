@@ -18,6 +18,14 @@ const { Title, Text } = Typography;
 
 const cell = 'border border-gray-200 px-1 py-0.5 align-middle';
 const num = `${cell} text-right tabular-nums whitespace-nowrap`;
+// When the table scrolls sideways (tablet / small laptop) No., step and description stay in view. Not on phones,
+// where the description column would take most of the screen.
+const stick = 'sm:sticky sm:z-[1]';
+const STICKY = {
+    no: { className: `${stick} sm:left-0`, style: { width: 36, minWidth: 36 } },
+    step: { className: `${stick} sm:left-[36px]`, style: { width: 44, minWidth: 44 } },
+    desc: { className: `${stick} sm:left-[80px] sm:shadow-[1px_0_0_#e5e7eb]` },
+} as const;
 
 function CalcValue({ value, digits = 2, tip }: { value: number | null; digits?: number; tip?: string }) {
     const content = <span>{formatNumber(value, digits)}</span>;
@@ -62,9 +70,9 @@ export function BoqHomePage() {
         const qtyTip = r.qtySource === 'calc' ? t('fromCalc') : r.qtySource === 'line' || r.qtySource === 'sumLines' ? t('fromLine') : undefined;
         return (
             <tr key={r.key} className="hover:bg-orange-50/40">
-                <td className={cell} />
-                <td className={`${cell} text-center text-gray-500`}>{r.itemNo}</td>
-                <td className={`${cell} min-w-[260px]`}>{r.desc}</td>
+                <td className={`${cell} bg-white ${STICKY.no.className}`} />
+                <td className={`${cell} text-center text-gray-500 bg-white ${STICKY.step.className}`}>{r.itemNo}</td>
+                <td className={`${cell} min-w-[260px] bg-white ${STICKY.desc.className}`}>{r.desc}</td>
                 <td className={num} style={{ background: r.editable.qty ? undefined : SHEET_COLORS.calc, minWidth: 90 }}>
                     {r.editable.qty
                         ? <Tooltip title={qtyTip}>
@@ -106,7 +114,7 @@ export function BoqHomePage() {
         return (
             <tbody key={s.no} id={`boq-section-${s.no}`}>
                 <tr style={{ background: SHEET_COLORS.header }}>
-                    <td className={`${cell} text-center font-bold`}>{s.no}</td>
+                    <td className={`${cell} text-center font-bold ${STICKY.no.className}`} style={{ background: SHEET_COLORS.header }}>{s.no}</td>
                     <td className={`${cell} font-bold`} colSpan={12}>
                         <div className="flex items-center gap-2">
                             <Button type="text" size="small" aria-label={s.title}
@@ -140,8 +148,8 @@ export function BoqHomePage() {
                 {!isCollapsed && s.rows.map(r => r.type === 'heading'
                     ? (
                         <tr key={r.key}>
-                            <td className={cell} />
-                            <td className={`${cell} text-center text-gray-500`}>{r.itemNo}</td>
+                            <td className={`${cell} bg-white ${STICKY.no.className}`} />
+                            <td className={`${cell} text-center text-gray-500 bg-white ${STICKY.step.className}`}>{r.itemNo}</td>
                             <td className={`${cell} font-medium`} colSpan={11}>{r.desc}</td>
                         </tr>
                     )
@@ -211,9 +219,9 @@ export function BoqHomePage() {
                 <table className="w-full border-collapse text-[13px]">
                     <thead className="sticky top-0 z-10 bg-gray-100">
                         <tr>
-                            <th className={cell} rowSpan={2}>{t('colNo')}</th>
-                            <th className={cell} rowSpan={2}>{t('colStep')}</th>
-                            <th className={cell} rowSpan={2}>{t('colDesc')}</th>
+                            <th className={`${cell} bg-gray-100 ${STICKY.no.className}`} style={STICKY.no.style} rowSpan={2}>{t('colNo')}</th>
+                            <th className={`${cell} bg-gray-100 ${STICKY.step.className}`} style={STICKY.step.style} rowSpan={2}>{t('colStep')}</th>
+                            <th className={`${cell} bg-gray-100 ${STICKY.desc.className}`} rowSpan={2}>{t('colDesc')}</th>
                             <th className={cell} rowSpan={2}>{t('colQty')}</th>
                             <th className={cell} rowSpan={2}>{t('colUnit')}</th>
                             <th className={cell} rowSpan={2}>{t('colWaste')}</th>

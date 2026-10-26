@@ -208,7 +208,7 @@ function ProjectsContent() {
                                 <div className="flex items-start gap-2">
                                     <div className="flex-1 min-w-0">
                                         <button type="button" onClick={own(activate)} disabled={!canOpen} title={p.name}
-                                            className="block w-full text-left font-semibold text-[15px] text-gray-900 truncate bg-transparent border-0 p-0 cursor-pointer hover:text-orange-600 disabled:cursor-default disabled:hover:text-gray-900">
+                                            className="block w-full text-left font-semibold text-[15px] text-gray-900 line-clamp-2 [overflow-wrap:anywhere] bg-transparent border-0 p-0 cursor-pointer hover:text-orange-600 disabled:cursor-default disabled:hover:text-gray-900">
                                             {p.name}
                                         </button>
                                         <div className="text-[12px] text-gray-500">แก้ล่าสุด {formatDateTime(p.updatedAt)}</div>

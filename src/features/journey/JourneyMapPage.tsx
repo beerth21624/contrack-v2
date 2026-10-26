@@ -48,12 +48,12 @@ export function JourneyMapPage() {
         <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full">
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center gap-4">
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                        <Text className="text-[11px] font-bold tracking-widest text-orange-500 uppercase">ทำ BOQ ทีละด่าน</Text>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Text className="text-[11px] font-bold tracking-widest text-orange-500 uppercase whitespace-nowrap">ทำ BOQ ทีละด่าน</Text>
                         {project.start !== 'blank' && <Tag className="!text-[11px]">บ้านตัวอย่าง Excel v5</Tag>}
                         <span className="ml-auto"><NewProjectButton /></span>
                     </div>
-                    <Title level={3} style={{ margin: '2px 0 4px' }}>{title}</Title>
+                    <Title level={3} style={{ margin: '2px 0 4px', overflowWrap: 'anywhere' }}>{title}</Title>
                     <Text type="secondary" className="text-[13px]">
                         เปิดแบบแปลนไว้ข้างตัว แล้วกรอกตามที่แต่ละด่านถาม ผ่านครบทุกด่านได้ BOQ ทั้งหลังทันที
                     </Text>
@@ -69,9 +69,9 @@ export function JourneyMapPage() {
                     </div>
                     {next
                         ? (
-                            <Link href={`/journey/${next.id}`}>
-                                <Button type="primary" size="large" icon={<CaretRightFilled />} className="mt-2">
-                                    {passed === 0 ? 'เริ่มด่านแรก' : 'ทำด่านต่อไป'}: {next.title}
+                            <Link href={`/journey/${next.id}`} className="inline-flex max-w-full">
+                                <Button type="primary" size="large" icon={<CaretRightFilled />} className="mt-2 max-w-full">
+                                    <span className="truncate min-w-0">{passed === 0 ? 'เริ่มด่านแรก' : 'ทำด่านต่อไป'}: {next.title}</span>
                                 </Button>
                             </Link>
                         )
@@ -99,13 +99,13 @@ export function JourneyMapPage() {
                                 const state = states[level.id] ?? 'locked';
                                 const style = NODE_STYLE[state];
                                 const body = (
-                                    <div className={`flex items-center gap-3 rounded-lg border-2 px-3 py-2 h-full w-full transition
+                                    <div className={`flex items-center gap-2 sm:gap-3 rounded-lg border-2 px-2.5 sm:px-3 py-2 min-h-[52px] h-full w-full transition
                                         ${style.ring} ${state === 'locked' ? 'cursor-not-allowed' : 'hover:shadow-md cursor-pointer'}
                                         ${state === 'current' ? 'bg-orange-50 ring-2 ring-orange-200' : 'bg-white'}`}>
                                         <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[13px] ${style.bg} ${style.fg}`}>
                                             <NodeIcon state={state} n={n} />
                                         </div>
-                                        <div className="min-w-0">
+                                        <div className="min-w-0 flex-1">
                                             <div className={`text-[14px] font-semibold leading-tight ${state === 'locked' ? 'text-gray-400' : 'text-gray-800'}`}>{level.title}</div>
                                             <div className="text-[12px] text-gray-500 tabular-nums">
                                                 {state === 'skipped' ? 'ไม่มีงานนี้'
@@ -133,9 +133,9 @@ export function JourneyMapPage() {
                 );
             })}
 
-            <section className={`rounded-xl p-5 border-2 border-dashed flex items-center gap-4 ${complete ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
+            <section className={`rounded-xl p-5 border-2 border-dashed flex flex-wrap items-center gap-4 ${complete ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-gray-50'}`}>
                 <FlagFilled className={`text-[28px] ${complete ? 'text-green-500' : 'text-gray-300'}`} />
-                <div className="flex-1">
+                <div className="flex-1 min-w-[200px]">
                     <div className="font-semibold text-[15px]">{complete ? 'ครบทุกด่านแล้ว — ได้ BOQ ทั้งหลัง' : 'เส้นชัย: BOQ ทั้งหลัง'}</div>
                     <Text type="secondary" className="text-[13px]">
                         {complete ? 'ตรวจทาน ปรับราคา และพิมพ์/ส่งออก BOQ ได้เลย' : 'ผ่านทุกด่าน (หรือกด "ไม่มีงานนี้") เพื่อปลดล็อก'}

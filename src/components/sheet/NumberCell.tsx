@@ -35,6 +35,14 @@ interface NumberCellProps {
 
 interface CellFormat { digits?: number; percent?: boolean; blankZero?: boolean }
 
+/**
+ * Inputs take the surrounding font (as `font: inherit` would), spelled out per property: React warns when the
+ * `font` shorthand is mixed with `fontWeight` in one style object.
+ */
+const INHERIT_FONT = {
+    fontFamily: 'inherit', fontSize: 'inherit', fontStyle: 'inherit', lineHeight: 'inherit', letterSpacing: 'inherit',
+} as const;
+
 /** What a number cell shows while it is not being edited. */
 export function numberCellText(value: number, { digits = 2, percent, blankZero }: CellFormat = {}): string {
     const shown = percent ? value * 100 : value;
@@ -99,9 +107,9 @@ export function NumberCell({
             style={{
                 width: '100%', minWidth: 0, textAlign: 'right', border: '1px solid transparent',
                 background: tone === 'calc' ? SHEET_COLORS.calc : SHEET_COLORS.input, padding: '2px 4px', borderRadius: 3,
-                fontWeight: edited ? 700 : 400, font: 'inherit',
+                ...INHERIT_FONT, fontWeight: edited ? 700 : 400,
             }}
-            className="focus:outline-none focus:border-orange-400"
+            className="sheet-cell focus:outline-none focus:border-orange-400"
         />
     );
 }
@@ -125,22 +133,26 @@ export function TextCell({ value, onCommit, edited, placeholder, ariaLabel }: Te
         onCommit(text.trim() === '' ? undefined : text);
         setText(null);
     };
+    // A one-line textarea that grows with its text (`.sheet-text` → field-sizing: content), so a long item name
+    // wraps inside its cell instead of being cut off. It still edits like a one-line input: Enter commits, and
+    // pasted line breaks become spaces.
     return (
-        <input
+        <textarea
+            rows={1}
             aria-label={ariaLabel}
             value={text ?? value}
             placeholder={placeholder}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => setText(e.target.value.replace(/\r?\n/g, ' '))}
             onBlur={commit}
             onKeyDown={(e) => {
-                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                if (e.key === 'Escape') { cancelled.current = true; setText(null); (e.target as HTMLInputElement).blur(); }
+                if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); }
+                if (e.key === 'Escape') { cancelled.current = true; setText(null); e.currentTarget.blur(); }
             }}
             style={{
                 width: '100%', minWidth: 0, border: '1px solid transparent', background: 'transparent',
-                padding: '2px 4px', borderRadius: 3, fontWeight: edited ? 700 : 400, font: 'inherit',
+                padding: '2px 4px', borderRadius: 3, ...INHERIT_FONT, fontWeight: edited ? 700 : 400,
             }}
-            className="focus:outline-none focus:border-orange-400 focus:bg-white"
+            className="sheet-text focus:outline-none focus:border-orange-400 focus:bg-white"
         />
     );
 }

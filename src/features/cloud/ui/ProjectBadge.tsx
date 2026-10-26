@@ -30,13 +30,15 @@ export function ProjectBadge({ compact = false }: { compact?: boolean }) {
     const sync = useCloud(s => s.syncStatus);
     const opening = useCloud(s => s.opening);
 
-    const pill = 'flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 h-8 text-[12px] text-white/85 max-w-[260px]';
+    // Icon only on phones (or when `compact`); the label shrinks and truncates before anything else in the header.
+    const label = compact ? 'hidden' : 'hidden md:block truncate min-w-0';
+    const pill = 'flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 h-10 md:h-8 min-w-0 text-[12px] text-white/85 max-w-[260px] xl:max-[1439px]:max-w-[220px]';
 
     if (binding.kind === 'guest') {
         const body = (
             <span className={pill}>
-                {opening ? <LoadingOutlined /> : <LaptopOutlined />}
-                {!compact && <span className="truncate">{opening ? 'กำลังเปิดโครงการ…' : LOCAL_PROJECT_TEXT}</span>}
+                <span className="shrink-0 flex">{opening ? <LoadingOutlined /> : <LaptopOutlined />}</span>
+                <span className={label}>{opening ? 'กำลังเปิดโครงการ…' : LOCAL_PROJECT_TEXT}</span>
             </span>
         );
         return (
@@ -59,12 +61,13 @@ export function ProjectBadge({ compact = false }: { compact?: boolean }) {
 
     return (
         <Dropdown menu={{ items, onClick }} trigger={['click']} placement="bottomRight">
-            <button type="button" className={`${pill} cursor-pointer hover:bg-white/10`} aria-label="โครงการที่เปิดอยู่">
-                <CloudOutlined />
-                {!compact && <span className="truncate font-semibold">{project?.name ?? 'โครงการ cloud'}</span>}
-                <span className="flex items-center gap-1 whitespace-nowrap text-white/70">
+            <button type="button" className={`${pill} cursor-pointer hover:bg-white/10`} aria-label="โครงการที่เปิดอยู่"
+                title={project?.name}>
+                <span className="shrink-0 flex"><CloudOutlined /></span>
+                <span className={`${label} font-semibold`}>{project?.name ?? 'โครงการ cloud'}</span>
+                <span className="flex shrink-0 items-center gap-1 whitespace-nowrap text-white/70">
                     {STATUS_ICON[sync.state]}
-                    {!compact && syncStatusText(sync)}
+                    <span className={compact ? 'hidden' : 'hidden md:inline'}>{syncStatusText(sync)}</span>
                 </span>
             </button>
         </Dropdown>
