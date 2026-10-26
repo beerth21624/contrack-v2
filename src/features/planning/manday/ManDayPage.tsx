@@ -2,16 +2,21 @@
 
 // Man-Day_Basic (Excel v5 sheet 02), planning columns O..U: crew per work block → daily wage → calculated
 // days S (hint) → typed days T (→ S-Curve duration) and budget U (→ S-Curve budget).
-import { Button, Popconfirm, Tooltip } from 'antd';
-import { DeleteOutlined, PlusOutlined, UndoOutlined } from '@ant-design/icons';
+// Layout: summary tiles across the top, then two tabs: แผนคน-วัน (the plan table) and อัตราค่าแรง (the wage sets
+// as one table row each), so the page stays tidy with 2 wage sets or 20.
+import { Button, Popconfirm, Segmented, Tooltip } from 'antd';
+import { UndoOutlined } from '@ant-design/icons';
 import { EditableTable, type SheetColumn } from '@/components/sheet/EditableTable';
-import { NumberCell, SHEET_COLORS, TextCell, formatNumber } from '@/components/sheet/NumberCell';
-import { InputNumberField, SheetCard } from '@/components/sheet/SheetFields';
+import { NumberCell, formatNumber } from '@/components/sheet/NumberCell';
+import { SheetCard } from '@/components/sheet/SheetFields';
 import {
-    WAGE_SET_LIMITS, addWageSet, isBuiltInWageSet, removeWageSet, updateWageSet, wageSetLabel, wageSetUsage,
-    type ManDayBlockInput, type ManDayBlockResult, type ManDayInput, type WageSet, type WageSetId,
+    wageSetLabel, type ManDayBlockInput, type ManDayBlockResult, type ManDayInput, type WageSet,
 } from '@/domain/planning';
-import { CalcText, NoBoqYet, PlanningHeader, StatTile, SummaryBanner, formatDate, money, usePlanning } from '../shared/planning-ui';
+import { isReadOnly, useProjectStore } from '@/store/project-store';
+import { CalcText, NoBoqYet, PlanningHeader, StatTile, formatDate, money, usePlanning } from '../shared/planning-ui';
+import { useCompanyLibrary } from './CompanyWageSets';
+import { useManDayTab } from './manday-tab';
+import { WageSetTable } from './WageSetTable';
 
 interface Row {
     id: string;
@@ -27,39 +32,16 @@ function basisNote(r: ManDayBlockResult, share: number): string | null {
     return null;
 }
 
-/** One wage set in the "ค่าแรงต่อวัน" card: name, ช่าง and คนงาน per day; user sets can be deleted. */
-function WageSetFields({ set, usedBy, onChange, onRemove }: {
-    set: WageSet; usedBy: number; onChange: (patch: Partial<Omit<WageSet, 'id'>>) => void; onRemove: () => void;
-}) {
-    const builtIn = isBuiltInWageSet(set.id);
-    return (
-        <div className="border-t border-gray-100 first:border-t-0 pt-2 first:pt-0 mt-2 first:mt-0">
-            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
-                <span className="text-[12px] text-gray-500 whitespace-nowrap">ชุด {set.id}</span>
-                <div className="rounded" style={{ background: SHEET_COLORS.input }}>
-                    <TextCell value={set.name} placeholder="ตั้งชื่อชุด" ariaLabel={`ชื่อชุดค่าแรง ${set.id}`}
-                        onCommit={v => onChange({ name: (v ?? '').slice(0, WAGE_SET_LIMITS.maxNameLength) })} />
-                </div>
-                {builtIn ? <span className="w-6" /> : (
-                    <Popconfirm title={`ลบชุดค่าแรง ${set.id}?`} okText="ลบ" cancelText="ยกเลิก" okButtonProps={{ danger: true }}
-                        description={usedBy > 0 ? `มี ${String(usedBy)} งานใช้ชุดนี้ จะเปลี่ยนไปใช้ชุด A` : undefined}
-                        onConfirm={onRemove}>
-                        <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label={`ลบชุดค่าแรง ${set.id}`} />
-                    </Popconfirm>
-                )}
-            </div>
-            <InputNumberField label="ช่าง" unit="บาท/วัน" digits={0} value={set.skilled} onChange={v => onChange({ skilled: v })} />
-            <InputNumberField label="คนงาน" unit="บาท/วัน" digits={0} value={set.labourer} onChange={v => onChange({ labourer: v })} />
-        </div>
-    );
-}
-
 export function ManDayPage() {
     const { planning, input, stored, setPlanning, result } = usePlanning();
     const md = input.manday;
     const res = planning.manday;
     const sched = planning.schedule;
     const save = (next: ManDayInput) => setPlanning({ manday: next });
+    // Cloud projects: the company rate-card library (pick a card in, save a user set out). Viewers can't edit the project.
+    const library = useCompanyLibrary();
+    const readOnly = useProjectStore(s => isReadOnly(s.binding));
+    const [tab, setTab] = useManDayTab();
 
     const rows: Row[] = res.blocks.map(b => ({
         id: b.id,
@@ -74,7 +56,6 @@ export function ManDayPage() {
     const applyAllSuggested = () => saveRows(rows.map(r => (
         r.result.suggestedDays === null ? r : { ...r, input: { ...r.input, days: r.result.suggestedDays } }
     )));
-    const setWage = (id: WageSetId, patch: Partial<Omit<WageSet, 'id'>>) => save(updateWageSet(md, id, patch));
     const rates = (s: WageSet) => `${formatNumber(s.skilled, 0)}/${formatNumber(s.labourer, 0)}`;
 
     const columns: SheetColumn<Row>[] = [
@@ -157,55 +138,43 @@ export function ManDayPage() {
                 isDefault={stored.manday === undefined} onReset={() => setPlanning({ manday: undefined })} />
             <NoBoqYet constructionTotal={result.boq.constructionTotal} />
 
-            {/* The totals (days, budget, project duration) are the tiles below: the banner says what they mean. */}
-            <SummaryBanner headline={<>จัดคน {rows.length} งาน</>}>
-                <span>
-                    &quot;รวมเวลา&quot; คือผลรวมวันของทุกงาน บางงานทำพร้อมกัน ระยะเวลาโครงการจริงจึงสั้นกว่า (ดูได้ในหน้า S-Curve)
-                </span>
-                <span>กรอกจำนวนช่าง/คนงาน ระบบคำนวณวันจากค่าแรงใน BOQ ให้ แล้วใส่วันที่คิดว่าจะใช้จริงในช่อง &quot;วันที่ใช้จริง&quot;</span>
-            </SummaryBanner>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-                <SheetCard title="ค่าแรงต่อวัน">
-                    {md.wageSets.map(s => (
-                        <WageSetFields key={s.id} set={s} usedBy={wageSetUsage(md, s.id).length}
-                            onChange={patch => setWage(s.id, patch)} onRemove={() => save(removeWageSet(md, s.id))} />
-                    ))}
-                    {md.wageSets.length < WAGE_SET_LIMITS.maxSets && (
-                        <Button type="dashed" size="small" icon={<PlusOutlined />} className="mt-2"
-                            onClick={() => save(addWageSet(md).input)}>เพิ่มชุดค่าแรง</Button>
-                    )}
-                    <div className="border-t border-gray-100 mt-3 pt-2">
-                        <InputNumberField label="งานเหมา: ค่าแรง % ของยอดรวม" percent value={md.subcontractLabourShare}
-                            onChange={v => save({ ...md, subcontractLabourShare: v })} />
-                    </div>
-                </SheetCard>
-                <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <StatTile label="รวมเวลา (ผลรวมวันทุกงาน)" value={formatNumber(res.totalDays, 0)} unit="วัน" />
+            <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <StatTile label="รวมเวลา (ผลรวมวันทุกงาน)" value={formatNumber(res.totalDays, 0)} unit="วัน"
+                        hint="บางงานทำพร้อมกัน ระยะโครงการจริงจึงสั้นกว่า" />
                     <StatTile label="ระยะเวลาโครงการ (S-Curve)" value={sched.durationDays} unit="วัน"
                         hint={sched.start && sched.finish ? `${formatDate(sched.start)} – ${formatDate(sched.finish)}` : undefined} />
-                    <StatTile label="รวมงบประมาณ" value={money(res.totalBudget)} unit="บาท" />
-                    <div className="col-span-2 sm:col-span-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-[13px] text-gray-700 flex flex-wrap items-center gap-2">
-                        {differs.length === 0
-                            ? <span>วันประเมินทุกงานเท่ากับค่าที่คำนวณ (ปัดเศษ)</span>
-                            : (
-                                <>
-                                    <span>วันประเมิน {differs.length} งาน ต่างจากค่าที่คำนวณ (ปัดเศษ)</span>
-                                    <Popconfirm title="ตั้งวันประเมินทุกงาน = ค่าที่คำนวณ (ปัดเศษ)?" okText="ตั้งค่า" cancelText="ยกเลิก"
-                                        onConfirm={applyAllSuggested}>
-                                        <Button size="small" icon={<UndoOutlined />}>ใช้ค่าที่คำนวณทุกงาน</Button>
-                                    </Popconfirm>
-                                </>
-                            )}
+                    <div className="col-span-2 sm:col-span-1 min-w-0">
+                        <StatTile label="งบประมาณรวม" value={money(res.totalBudget)} unit="บาท" hint={`จัดคน ${String(rows.length)} งาน`} />
                     </div>
                 </div>
+                {differs.length > 0 && (
+                    <div className="rounded-control border border-gray-200 bg-white px-3 py-1.5 text-[13px] text-gray-700 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span>วันประเมิน {differs.length} งาน ต่างจากค่าที่คำนวณ (ปัดเศษ)</span>
+                        <Popconfirm title="ตั้งวันประเมินทุกงาน = ค่าที่คำนวณ (ปัดเศษ)?" okText="ตั้งค่า" cancelText="ยกเลิก"
+                            onConfirm={applyAllSuggested}>
+                            <Button size="small" icon={<UndoOutlined />}>ใช้ค่าที่คำนวณทุกงาน</Button>
+                        </Popconfirm>
+                    </div>
+                )}
             </div>
 
-            <SheetCard title="วางแผน Man-Day และงบประมาณ">
-                <EditableTable rows={rows} columns={columns} onChange={saveRows} canDelete={false} footer={footer} />
-                <div className="text-[12px] text-gray-500 mt-2">
-                    ช่องเหลือง = กรอกเอง · ช่องเขียว = ระบบคำนวณ · ปุ่ม <UndoOutlined /> ข้างวันประเมิน = ใช้ค่าที่คำนวณ (ปัดเศษ)
-                </div>
+            {/* The page tabs sit in the card header (as ตารางงาน | ปฏิทิน on /schedule). */}
+            <SheetCard title={(
+                <Segmented value={tab} onChange={v => setTab(v === 'rates' ? 'rates' : 'plan')}
+                    options={[{ label: 'แผนคน-วัน', value: 'plan' }, { label: `อัตราค่าแรง (${String(md.wageSets.length)} ชุด)`, value: 'rates' }]} />
+            )}>
+                {tab === 'plan' ? (
+                    <>
+                        <EditableTable rows={rows} columns={columns} onChange={saveRows} canDelete={false} footer={footer} />
+                        <div className="text-[12px] text-gray-500 mt-2">
+                            กรอกจำนวนช่าง/คนงาน ระบบคำนวณวันจากค่าแรงใน BOQ แล้วใส่วันที่คิดว่าจะใช้จริง ·
+                            ช่องเหลือง = กรอกเอง · ช่องเขียว = ระบบคำนวณ · ปุ่ม <UndoOutlined /> = ใช้ค่าที่คำนวณ (ปัดเศษ)
+                        </div>
+                    </>
+                ) : (
+                    <WageSetTable md={md} save={save} library={library} readOnly={readOnly} />
+                )}
             </SheetCard>
         </div>
     );
