@@ -14,37 +14,5 @@
   "noData": "No data",
   "language": "Language",
   "thai": "ไทย",
-  "english": "English",
-  "stepForm": {
-    "stepLabel": "STEP",
-    "requiredInfo": "Required Information",
-    "requiredTag": "Required",
-    "optionalInfo": "Optional Data",
-    "previewQty": "Quantity (Live Preview)",
-    "fillLeft": "Fill in the form to calculate",
-    "previewCost": "Cost Estimate Preview",
-    "warnings": "Warnings & Precautions",
-    "saveToBoq": "Save to BOQ",
-    "colDesc": "Description",
-    "colQty": "Qty",
-    "colUnit": "Unit",
-    "colItem": "Item",
-    "colTotal": "Total (THB)"
-  },
-  "projectSettings": {
-    "title": "Project Settings",
-    "metaTitle": "Project Metadata",
-    "projectName": "Project Name",
-    "projectNamePh": "e.g. 2-Story House",
-    "clientName": "Client Name",
-    "clientNamePh": "e.g. John Doe",
-    "location": "Location",
-    "locationPh": "e.g. Bangkok",
-    "documentDate": "Quotation Date",
-    "financeTitle": "Financial Configuration",
-    "overhead": "Overhead",
-    "profit": "Profit",
-    "vat": "VAT",
-    "contingency": "Contingency"
-  }
+  "english": "English"
 }

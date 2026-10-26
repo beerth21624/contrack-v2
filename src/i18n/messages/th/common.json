@@ -14,37 +14,5 @@
   "noData": "ไม่มีข้อมูล",
   "language": "ภาษา",
   "thai": "ไทย",
-  "english": "English",
-  "stepForm": {
-    "stepLabel": "STEP",
-    "requiredInfo": "ข้อมูลที่ต้องกรอก",
-    "requiredTag": "Required",
-    "optionalInfo": "ข้อมูลเพิ่มเติม (ไม่บังคับ)",
-    "previewQty": "ปริมาณงาน (Live Preview)",
-    "fillLeft": "กรอกข้อมูลด้านซ้ายเพื่อคำนวณ",
-    "previewCost": "ประมาณราคา (Cost Preview)",
-    "warnings": "คำเตือน & ข้อควรระวัง",
-    "saveToBoq": "บันทึกลง BOQ",
-    "colDesc": "รายการ (Description)",
-    "colQty": "ปริมาณ",
-    "colUnit": "หน่วย",
-    "colItem": "รายการ",
-    "colTotal": "รวม (บาท)"
-  },
-  "projectSettings": {
-    "title": "ตั้งค่าโครงการ (Project Settings)",
-    "metaTitle": "ข้อมูลโครงการ (Project Metadata)",
-    "projectName": "ชื่อโครงการ",
-    "projectNamePh": "เช่น บ้านพักอาศัย 2 ชั้น",
-    "clientName": "ชื่อลูกค้า",
-    "clientNamePh": "เช่น คุณสมชาย",
-    "location": "สถานที่ก่อสร้าง",
-    "locationPh": "เช่น กรุงเทพมหานคร",
-    "documentDate": "วันที่เสนอราคา",
-    "financeTitle": "การตั้งค่าการเงิน (Financial Configuration)",
-    "overhead": "ค่าดำเนินการ (Overhead)",
-    "profit": "กำไร (Profit)",
-    "vat": "ภาษี (VAT)",
-    "contingency": "เงินสำรอง (Contingency)"
-  }
+  "english": "English"
 }

@@ -31,7 +31,6 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
     else if (pathname.includes('/man-day')) activeKey = 'man-day';
     else if (pathname.includes('/cashflow')) activeKey = 'cashflow';
 
-    // Old-model pages (summary, timeline, price list, productivity) are off the menu; removed in P7.
     const menuItems = [
         { key: 'journey', icon: <FlagOutlined />, label: tNav('journey'), onClick: () => router.push('/journey') },
         { key: 'boq', icon: <CalculatorOutlined />, label: tNav('boqHome'), onClick: () => router.push('/boq') },
