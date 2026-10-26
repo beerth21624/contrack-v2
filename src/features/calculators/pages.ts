@@ -28,4 +28,5 @@ export const CALCULATOR_PAGES: Record<string, LazyExoticComponent<ComponentType>
     'toilet-tile': lazy(() => import('./toilet-tile/ToiletTilePage')),
     'wall-finishing': lazy(() => import('./wall-finishing/WallFinishingPage')),
     'paint': lazy(() => import('./paint/PaintPage')),
+    'structure-summary': lazy(() => import('./structure-summary/StructureSummaryPage')),
 };

@@ -26,6 +26,7 @@ import { floorTile } from './floor-tile';
 import { toiletTile } from './toilet-tile';
 import { wallFinishing } from './wall-finishing';
 import { paint } from './paint';
+import { structureSummary } from './structure-summary';
 
 export const CALCULATORS: CalculatorDef[] = [
     landInspection,
@@ -54,6 +55,7 @@ export const CALCULATORS: CalculatorDef[] = [
     toiletTile,
     wallFinishing,
     paint,
+    structureSummary,
 ];
 
 export function getCalculator(id: string): CalculatorDef | undefined {

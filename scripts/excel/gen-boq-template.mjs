@@ -45,7 +45,7 @@ const SHEET_TO_CALC = {
 // Calculator pages each section links to (design doc §4).
 const SECTION_CALCS = {
     0: ['land-inspection'], 1: ['demolition', 'fill'], 2: ['temp-utilities'], 3: ['site-camp'], 4: ['layout'],
-    5: ['piles'], 6: ['footing', 'pedestal', 'column'], 7: ['pedestal'], 8: ['ground-beam', 'precast-slab', 'pedestal'], 9: ['slab-on-grade', 'waste-pipe'],
+    5: ['piles'], 6: ['footing', 'pedestal', 'column', 'structure-summary'], 7: ['pedestal'], 8: ['ground-beam', 'precast-slab', 'pedestal'], 9: ['slab-on-grade', 'waste-pipe'],
     10: ['precast-slab'], 11: ['column'], 12: ['roof-beam', 'roof-slab'], 13: ['stair'], 14: [],
     15: ['roof-structure'], 16: ['roofing'], 17: ['brick', 'electrical-pipe'], 18: ['plaster', 'door-window', 'electrical-cable'],
     19: ['ceiling'], 20: ['floor-tile'], 21: ['toilet-tile', 'water-pipe'], 22: ['wall-finishing'], 23: ['paint'],

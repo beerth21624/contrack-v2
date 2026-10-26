@@ -381,7 +381,8 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
     "calculators": [
       "footing",
       "pedestal",
-      "column"
+      "column",
+      "structure-summary"
     ],
     "inConstructionTotal": true,
     "lines": [
