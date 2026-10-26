@@ -9,7 +9,6 @@ import {
     MoneyCollectOutlined,
 } from '@ant-design/icons';
 import { useTranslations } from 'next-intl';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useProjectStore } from '@/store/project-store';
 import { CloudRuntime } from '@/features/cloud/CloudRuntime';
 import { AccountMenu } from '@/features/cloud/ui/AccountMenu';
@@ -99,8 +98,6 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
                 <div className="min-w-0" style={{ display: 'flex', alignItems: 'center' }}>
                     <ProjectBadge />
                 </div>
-
-                <div className="shrink-0"><LanguageSwitcher /></div>
 
                 <div className="shrink-0" style={{ display: 'flex', alignItems: 'center' }}>
                     <AccountMenu />

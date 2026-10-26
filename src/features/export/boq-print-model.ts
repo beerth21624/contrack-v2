@@ -210,9 +210,15 @@ function detailItem(r: BoqItemRow): PrintDetailRow {
     };
 }
 
+/**
+ * The printed rows of a section. Rows with nothing to price are left out, so the numbered rows ("1)", "2)" …) are
+ * numbered again in print order: a form must not jump from 1) to 3). Un-numbered sub-items keep their blank number.
+ */
 function detailRows(s: BoqSectionResult): PrintDetailRow[] {
     const out: PrintDetailRow[] = [];
     let pending: BoqHeadingRow | null = null;
+    let n = 0;
+    const renumber = (itemNo: string | undefined) => ((itemNo ?? '').trim() === '' ? '' : `${++n})`);
     for (const r of s.rows) {
         if (r.type === 'heading') {
             pending = r;
@@ -221,10 +227,10 @@ function detailRows(s: BoqSectionResult): PrintDetailRow[] {
         if (r.itemNo !== undefined && r.itemNo !== '') pending = null;   // a numbered item ends the heading's group
         if (!isPrintableItem(r)) continue;
         if (pending !== null) {
-            out.push({ type: 'heading', key: pending.key, itemNo: (pending.itemNo ?? '').trim(), desc: pending.desc });
+            out.push({ type: 'heading', key: pending.key, itemNo: renumber(pending.itemNo), desc: pending.desc });
             pending = null;
         }
-        out.push(detailItem(r));
+        out.push({ ...detailItem(r), itemNo: renumber(r.itemNo) });
     }
     return out;
 }

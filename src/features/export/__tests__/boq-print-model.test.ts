@@ -174,3 +174,20 @@ describe('print formatting', () => {
         expect(fmtQty(null)).toBe('');
     });
 });
+
+describe('printed item numbers', () => {
+    it('numbered rows count 1), 2) … in print order in every section, with no gaps from left-out rows', () => {
+        for (const s of [...model.details, ...model.preConstructionDetails]) {
+            const numbers = s.rows.map(r => r.itemNo).filter(no => no !== '');
+            expect(numbers).toEqual(numbers.map((_, i) => `${i + 1})`));
+        }
+        // section 1 of the sample leaves out its empty first item: the fill is printed as 1), not 2)
+        const fill = model.details.find(s => s.no === 1);
+        expect(fill?.rows[0]?.itemNo).toBe('1)');
+    });
+
+    it('un-numbered sub-items (e.g. "- เหล็ก RB9") keep a blank number', () => {
+        const footing = model.details.find(s => s.no === 6);
+        expect(footing?.rows.some(r => r.itemNo === '' && r.desc.trim().startsWith('-'))).toBe(true);
+    });
+});

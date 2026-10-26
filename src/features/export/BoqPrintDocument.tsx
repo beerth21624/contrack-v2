@@ -17,6 +17,7 @@
 // Type sizes: Google Sarabun draws Thai about 1.35× larger than TH Sarabun New at the same point size, so 12 pt here
 // reads like the official 16 pt TH Sarabun New body text, and the 10.5 pt tables like 14 pt.
 
+import type { ReactNode } from 'react';
 import {
     fmtMoney, fmtQty, PRINT_TEXT as T,
     type BoqPrintModel, type PrintDetailRow, type PrintDetailSection, type PrintPageHeader, type PrintPart,
@@ -72,6 +73,7 @@ const CSS = `
 .boqp-pr5 .boqp-table { font-size: 11pt; }
 .boqp-table thead { display: table-header-group; }
 .boqp-table tr { break-inside: avoid; page-break-inside: avoid; }
+.boqp-table tbody.boqp-keep { break-inside: avoid; page-break-inside: avoid; }
 .boqp-table th, .boqp-table td { border: ${RULE}; padding: 0.8mm 1.5mm; vertical-align: top; overflow-wrap: break-word; }
 .boqp-table th { background: #e6e6e6; font-weight: 700; text-align: center; vertical-align: middle; line-height: 1.2; }
 .boqp-num { text-align: right; white-space: nowrap; }
@@ -246,19 +248,48 @@ function AmountsRow({ className, label, mat, lab, total }: {
     );
 }
 
-function DetailSection({ s }: { s: PrintDetailSection }) {
+/** Rows a section's title stays with: up to and including its first priced item (a heading alone is not enough). */
+function leadCount(rows: PrintDetailRow[]): number {
+    const i = rows.findIndex(r => r.type === 'item');
+    return i < 0 ? rows.length : i + 1;
+}
+
+/**
+ * One section as up to three <tbody> blocks. Chrome ignores `break-after: avoid` between table rows, but keeps a
+ * whole <tbody> with `break-inside: avoid` on one page: the title (and `lead`, e.g. the pre-construction band) stays
+ * with the first item, and the "รวมหมวดที่ n" sub-total with the last row, so neither is left alone on a page.
+ */
+function DetailSection({ s, lead }: { s: PrintDetailSection; lead?: ReactNode }) {
     const outside = s.inConstructionTotal ? '' : ` (${T.preConstructionNote})`;
+    const head = Math.min(leadCount(s.rows), s.rows.length);
+    const tailFrom = Math.max(head, s.rows.length - 1);
+    const subtotal = (
+        <AmountsRow className="boqp-sub" label={`${s.subtotalLabel}${outside}`}
+            mat={s.matTotal} lab={s.labTotal} total={s.total} />
+    );
+    const together = tailFrom <= head;   // short section: title, rows and sub-total in one block
     return (
-        <tbody>
-            <tr className="boqp-sec">
-                <td className="boqp-c">{s.no}</td>
-                <td>{s.title}</td>
-                <td /><td /><td /><td /><td /><td /><td /><td />
-            </tr>
-            {s.rows.map(r => <DetailRow key={r.key} r={r} />)}
-            <AmountsRow className="boqp-sub" label={`${s.subtotalLabel}${outside}`}
-                mat={s.matTotal} lab={s.labTotal} total={s.total} />
-        </tbody>
+        <>
+            <tbody className="boqp-keep">
+                {lead}
+                <tr className="boqp-sec">
+                    <td className="boqp-c">{s.no}</td>
+                    <td>{s.title}</td>
+                    <td /><td /><td /><td /><td /><td /><td /><td />
+                </tr>
+                {s.rows.slice(0, together ? s.rows.length : head).map(r => <DetailRow key={r.key} r={r} />)}
+                {together && subtotal}
+            </tbody>
+            {!together && (
+                <>
+                    {tailFrom > head && <tbody>{s.rows.slice(head, tailFrom).map(r => <DetailRow key={r.key} r={r} />)}</tbody>}
+                    <tbody className="boqp-keep">
+                        {s.rows.slice(tailFrom).map(r => <DetailRow key={r.key} r={r} />)}
+                        {subtotal}
+                    </tbody>
+                </>
+            )}
+        </>
     );
 }
 
@@ -306,12 +337,12 @@ function DetailForm({ model }: { model: BoqPrintModel }) {
                     <AmountsRow className="boqp-total" label={T.constructionTotal}
                         mat={model.constructionMat} lab={model.constructionLab} total={model.constructionTotal} />
                 </tbody>
-                {model.preConstructionDetails.length > 0 && (
-                    <tbody>
-                        <tr className="boqp-band"><td colSpan={DETAIL_COLS}>{T.preConstruction}</td></tr>
-                    </tbody>
-                )}
-                {model.preConstructionDetails.map(s => <DetailSection key={s.no} s={s} />)}
+                {/* The band heads the first pre-construction section's block, so it never ends a page on its own. */}
+                {model.preConstructionDetails.map((s, i) => (
+                    <DetailSection key={s.no} s={s} lead={i === 0
+                        ? <tr className="boqp-band"><td colSpan={DETAIL_COLS}>{T.preConstruction}</td></tr>
+                        : undefined} />
+                ))}
             </table>
         </section>
     );

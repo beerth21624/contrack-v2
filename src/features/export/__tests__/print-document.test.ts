@@ -92,3 +92,27 @@ describe('BoqPrintDocument', () => {
         expect(out).toContain('แบบสรุปผลการประมาณราคาค่าก่อสร้าง');
     });
 });
+
+describe('ปร.4 page breaks', () => {
+    const detail = render('detail');
+
+    it('every sub-total row sits in a kept-together block with the row above it', () => {
+        const blocks = detail.split('<tbody').slice(1).map(b => b.split('</tbody>')[0] ?? '');
+        const withSubtotal = blocks.filter(b => b.includes('boqp-sub'));
+        expect(withSubtotal.length).toBe(model.details.length + model.preConstructionDetails.length);
+        for (const b of withSubtotal) {
+            expect(b.startsWith(' class="boqp-keep"')).toBe(true);
+            expect(b.split('<tr').length - 1).toBeGreaterThanOrEqual(2);
+        }
+    });
+
+    it('the pre-construction band opens the block of its first section', () => {
+        const band = detail.split('<tbody').slice(1).find(b => b.includes('boqp-band')) ?? '';
+        expect(band.startsWith(' class="boqp-keep"')).toBe(true);
+        expect(band).toContain('boqp-sec');
+    });
+
+    it('print CSS keeps those blocks whole', () => {
+        expect(detail).toContain('tbody.boqp-keep { break-inside: avoid;');
+    });
+});
