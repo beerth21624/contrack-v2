@@ -38,17 +38,18 @@ Max-Age = refresh TTL.
 | GET | `/workspaces/:workspaceId/projects?archived=true\|false` | → `ProjectDto[]` (default: not archived, newest update first) | `projects.read` |
 | POST | `/workspaces/:workspaceId/projects` | `CreateProjectRequest` → `ProjectDetailDto` (201) | `projects.create`; optional `docs` = upload of a guest project (all validated) |
 | GET | `/projects/:projectId` | → `ProjectDetailDto` | `projects.read` |
-| PATCH | `/projects/:projectId` | `UpdateProjectRequest` → `ProjectDto` | rename `projects.edit`; archive/restore `projects.archive` |
-| DELETE | `/projects/:projectId` | → 204 | `projects.delete` |
-| PUT | `/projects/:projectId/docs/:docKey` | `PutDocRequest` → `PutDocResponse` | `projects.edit`; `version_conflict` 409 with `VersionConflictDetails`; bad key/data or project stops computing → 422; archived → 409 `conflict` |
+| PATCH | `/projects/:projectId` | `UpdateProjectRequest` → `ProjectDto` | rename `projects.edit`; archive/restore `projects.archive`; renaming an archived project → 409 `conflict` unless the same request restores it (`archived: false`); an unchanged value is a no-op (no activity, no event) |
+| DELETE | `/projects/:projectId` | → 204 | `projects.delete`; viewers receive `project.deleted` |
+| PUT | `/projects/:projectId/docs/:docKey` | `PutDocRequest` → `PutDocResponse` | `projects.edit`; `version_conflict` 409 with `VersionConflictDetails`; a bad `docKey` (fails `docKeySchema` or names no calculator / BOQ line / sheet), invalid or oversize data (> `MAX_DOC_BYTES`), or a project that stops computing → 422 `unprocessable`; archived → 409 `conflict` |
 | GET | `/projects/:projectId/revisions` | → `RevisionDto[]` (newest first) | `projects.read` |
 | POST | `/projects/:projectId/revisions` | `CreateRevisionRequest` → `RevisionDto` (201) | `revisions.create`; label unique per project (`conflict`) |
 | GET | `/projects/:projectId/revisions/:revisionId` | → `RevisionDetailDto` | `projects.read` |
 | GET | `/projects/:projectId/assignments` | → `LevelAssignmentDto[]` | `projects.read` |
-| PUT | `/projects/:projectId/assignments/:levelId` | `PutAssignmentRequest` → `LevelAssignmentDto \| null` | `levels.assign`; level id must exist in the journey; assignee must be a member |
+| PUT | `/projects/:projectId/assignments/:levelId` | `PutAssignmentRequest` → `LevelAssignmentDto \| null` | `levels.assign`; a level id not in the journey → 422 `unprocessable`; an assignee who is not a member of the workspace → 422 `unprocessable`; `userId: null` removes it (answers JSON `null`) |
 | GET | `/projects/:projectId/activity?before=<id>&limit=50` | → `ActivityDto[]` (newest first) | `projects.read` |
 
 ## realtime (Socket.IO namespace `/realtime`, `io(url + '/realtime', { auth: { token } })`)
 Events and payloads: `../src/shared/contract/realtime.ts`. A bad/missing token → the server disconnects.
 `project.join` checks `projects.read`; after joining the client receives `presence.state`, then live
-`doc.updated` / `project.updated` / `assignment.updated` / `presence.state` for that project.
+`doc.updated` / `project.updated` / `project.deleted` / `assignment.updated` / `presence.state` for that project.
+`project.deleted` `{ projectId }` is sent after the delete committed: clients leave the project and drop queued edits.

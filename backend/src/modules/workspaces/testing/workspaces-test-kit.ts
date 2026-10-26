@@ -39,10 +39,12 @@ export class FakeUserDirectory extends UserDirectory {
 /** Stand-in for projects' MemberAssignmentCleanup: records every call. */
 export class FakeMemberAssignmentCleanup extends MemberAssignmentCleanup {
     readonly calls: { workspaceId: WorkspaceId; userId: UserId }[] = [];
+    /** How many after-commit steps ran (they must run only for removals that committed). */
+    published = 0;
 
-    removeUser(workspaceId: WorkspaceId, userId: UserId): Promise<void> {
+    removeUser(workspaceId: WorkspaceId, userId: UserId): Promise<() => Promise<void>> {
         this.calls.push({ workspaceId, userId });
-        return Promise.resolve();
+        return Promise.resolve(() => { this.published += 1; return Promise.resolve(); });
     }
 }
 

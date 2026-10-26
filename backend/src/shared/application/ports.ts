@@ -81,10 +81,11 @@ export abstract class RealtimePublisher {
 
 /**
  * Provided by projects: forgets a user's level assignments in a workspace when they leave it or are removed.
- * Called by workspaces inside the same transaction as the membership removal.
+ * Called by workspaces inside the same transaction as the membership removal. Returns the step to run after the
+ * transaction committed (realtime notices about the cleared assignments).
  */
 export abstract class MemberAssignmentCleanup {
-    abstract removeUser(workspaceId: WorkspaceId, userId: UserId): Promise<void>;
+    abstract removeUser(workspaceId: WorkspaceId, userId: UserId): Promise<() => Promise<void>>;
 }
 
 /** Provided by identity: checks an access token. */

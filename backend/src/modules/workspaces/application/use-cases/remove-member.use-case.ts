@@ -35,7 +35,9 @@ export class RemoveMemberUseCase {
         const workspace = await this.workspaces.findById(input.workspaceId);
         if (workspace === undefined) return err(WorkspaceErrors.workspaceNotFound());
 
-        return this.uow.run(() => this.memberships.withLockedMembers(workspace.id, async (members): Promise<Result<undefined, DomainError>> => {
+        // Realtime notices about the cleared assignments go out only after the transaction committed.
+        let afterCommit: () => Promise<void> = () => Promise.resolve();
+        const result = await this.uow.run(() => this.memberships.withLockedMembers(workspace.id, async (members): Promise<Result<undefined, DomainError>> => {
             const actor = members.find(m => m.userId === input.actorId);
             if (actor === undefined) return err(WorkspaceErrors.workspaceNotFound());
             const target = members.find(m => m.userId === input.targetUserId);
@@ -49,8 +51,10 @@ export class RemoveMemberUseCase {
             if (!allowed.ok) return allowed;
             await this.memberships.delete(workspace.id, target.userId);
             // Same transaction: a removed member keeps no level assignments in this workspace.
-            await this.assignments.removeUser(workspace.id, target.userId);
+            afterCommit = await this.assignments.removeUser(workspace.id, target.userId);
             return okVoid();
         }));
+        if (result.ok) await afterCommit();
+        return result;
     }
 }
