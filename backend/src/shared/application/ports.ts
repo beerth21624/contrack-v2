@@ -2,7 +2,7 @@
 // Abstract classes double as Nest DI tokens (type-safe, no string tokens). A module depends only on these
 // abstractions; the module that owns the data provides the implementation (exported from its Nest module).
 import type {
-    AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDocDto, ProjectUpdatedEvent, Role,
+    AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDeletedEvent, ProjectDocDto, ProjectUpdatedEvent, Role,
 } from '@contrack/contract';
 import type { ProjectId, UserId, WorkspaceId } from '../domain/ids';
 
@@ -76,6 +76,15 @@ export abstract class RealtimePublisher {
     abstract docUpdated(event: DocUpdatedEvent): Promise<void>;
     abstract projectUpdated(event: ProjectUpdatedEvent): Promise<void>;
     abstract assignmentUpdated(event: AssignmentUpdatedEvent): Promise<void>;
+    abstract projectDeleted(event: ProjectDeletedEvent): Promise<void>;
+}
+
+/**
+ * Provided by projects: forgets a user's level assignments in a workspace when they leave it or are removed.
+ * Called by workspaces inside the same transaction as the membership removal.
+ */
+export abstract class MemberAssignmentCleanup {
+    abstract removeUser(workspaceId: WorkspaceId, userId: UserId): Promise<void>;
 }
 
 /** Provided by identity: checks an access token. */

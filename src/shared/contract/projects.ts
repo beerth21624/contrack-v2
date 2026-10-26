@@ -57,7 +57,10 @@ export const projectDetailDtoSchema = z.object({
 });
 export type ProjectDetailDto = z.infer<typeof projectDetailDtoSchema>;
 
-export const initialDocSchema = z.object({ docKey: docKeySchema, data: z.unknown() });
+/** A document's data: any JSON value, but the field must be present (only null means eset). */
+const presentData = z.unknown().refine(v => v !== undefined, { message: 'data is required (null resets the document)' });
+
+export const initialDocSchema = z.object({ docKey: docKeySchema, data: presentData });
 export type InitialDoc = z.infer<typeof initialDocSchema>;
 
 export const createProjectRequestSchema = z.object({
@@ -80,7 +83,7 @@ export const listProjectsQuerySchema = z.object({
 
 export const putDocRequestSchema = z.object({
     /** null = reset to default. */
-    data: z.unknown().nullable(),
+    data: presentData,
     /** Version the client edited (0 when the document does not exist yet). */
     baseVersion: z.number().int().nonnegative(),
 });

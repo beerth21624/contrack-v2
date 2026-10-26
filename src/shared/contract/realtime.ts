@@ -38,7 +38,9 @@ export const assignmentUpdatedEventSchema = z.object({
     levelId: levelIdSchema,
     assignment: levelAssignmentDtoSchema.nullable(),
 });
+export const projectDeletedEventSchema = z.object({ projectId: uuidSchema });
 export type DocUpdatedEvent = z.infer<typeof docUpdatedEventSchema>;
+export type ProjectDeletedEvent = z.infer<typeof projectDeletedEventSchema>;
 export type ProjectUpdatedEvent = z.infer<typeof projectUpdatedEventSchema>;
 export type PresenceStateEvent = z.infer<typeof presenceStateEventSchema>;
 export type AssignmentUpdatedEvent = z.infer<typeof assignmentUpdatedEventSchema>;
@@ -46,6 +48,8 @@ export type AssignmentUpdatedEvent = z.infer<typeof assignmentUpdatedEventSchema
 export interface ServerToClientEvents {
     'doc.updated': (e: DocUpdatedEvent) => void;
     'project.updated': (e: ProjectUpdatedEvent) => void;
+    /** The project was deleted: clients leave it (and drop any queued edits). */
+    'project.deleted': (e: ProjectDeletedEvent) => void;
     'presence.state': (e: PresenceStateEvent) => void;
     'assignment.updated': (e: AssignmentUpdatedEvent) => void;
 }

@@ -1,5 +1,5 @@
 {
-  "id": "b9a40044-28da-4901-864d-8baf98b3f2db",
+  "id": "34698332-753a-49b1-b0af-8be61aec1de1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -76,15 +76,17 @@
         }
       },
       "foreignKeys": {
-        "activity_log_project_id_projects_id_fk": {
-          "name": "activity_log_project_id_projects_id_fk",
+        "activity_log_project_tenant_fk": {
+          "name": "activity_log_project_tenant_fk",
           "tableFrom": "activity_log",
           "tableTo": "projects",
           "columnsFrom": [
-            "project_id"
+            "project_id",
+            "workspace_id"
           ],
           "columnsTo": [
-            "id"
+            "id",
+            "workspace_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -296,19 +298,6 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "level_assignments_project_id_projects_id_fk": {
-          "name": "level_assignments_project_id_projects_id_fk",
-          "tableFrom": "level_assignments",
-          "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "level_assignments_user_id_users_id_fk": {
           "name": "level_assignments_user_id_users_id_fk",
           "tableFrom": "level_assignments",
@@ -318,6 +307,21 @@
           ],
           "columnsTo": [
             "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "level_assignments_project_tenant_fk": {
+          "name": "level_assignments_project_tenant_fk",
+          "tableFrom": "level_assignments",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id",
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id",
+            "workspace_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -481,15 +485,17 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "project_docs_project_id_projects_id_fk": {
-          "name": "project_docs_project_id_projects_id_fk",
+        "project_docs_project_tenant_fk": {
+          "name": "project_docs_project_tenant_fk",
           "tableFrom": "project_docs",
           "tableTo": "projects",
           "columnsFrom": [
-            "project_id"
+            "project_id",
+            "workspace_id"
           ],
           "columnsTo": [
-            "id"
+            "id",
+            "workspace_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -619,15 +625,17 @@
         }
       },
       "foreignKeys": {
-        "project_revisions_project_id_projects_id_fk": {
-          "name": "project_revisions_project_id_projects_id_fk",
+        "project_revisions_project_tenant_fk": {
+          "name": "project_revisions_project_tenant_fk",
           "tableFrom": "project_revisions",
           "tableTo": "projects",
           "columnsFrom": [
-            "project_id"
+            "project_id",
+            "workspace_id"
           ],
           "columnsTo": [
-            "id"
+            "id",
+            "workspace_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -730,6 +738,27 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "projects_id_workspace_key": {
+          "name": "projects_id_workspace_key",
+          "columns": [
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}

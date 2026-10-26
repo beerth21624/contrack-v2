@@ -2,8 +2,9 @@
 // Every tenant-owned table carries workspace_id; repositories always filter by it.
 import { sql } from 'drizzle-orm';
 import {
-    bigserial, check, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid,
+    bigserial, check, foreignKey, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid,
 } from 'drizzle-orm/pg-core';
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import type { ProjectSummary } from '@contrack/contract';
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
@@ -86,11 +87,22 @@ export const projects = pgTable('projects', {
     archivedAt: timestamp('archived_at', { withTimezone: true }),
 }, t => [
     index('projects_workspace_idx').on(t.workspaceId, t.archivedAt),
+    // Target of the (project_id, workspace_id) foreign keys: a child row can only name its project's own workspace.
+    uniqueIndex('projects_id_workspace_key').on(t.id, t.workspaceId),
     check('projects_start_check', sql`${t.start} in ('blank', 'sample')`),
 ]);
 
+/** Child rows reference (project_id, workspace_id) together, so their workspace always equals the project's. */
+function tenantFk(table: string, t: { projectId: AnyPgColumn; workspaceId: AnyPgColumn }) {
+    return foreignKey({
+        name: `${table}_project_tenant_fk`,
+        columns: [t.projectId, t.workspaceId],
+        foreignColumns: [projects.id, projects.workspaceId],
+    }).onDelete('cascade');
+}
+
 export const projectDocs = pgTable('project_docs', {
-    projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id').notNull(),
     workspaceId: uuid('workspace_id').notNull(),
     docKey: text('doc_key').notNull(),
     /** null = reset to default (row kept so the version keeps increasing). */
@@ -100,12 +112,13 @@ export const projectDocs = pgTable('project_docs', {
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, t => [
     primaryKey({ columns: [t.projectId, t.docKey] }),
+    tenantFk('project_docs', t),
     check('project_docs_version_check', sql`${t.version} >= 1`),
 ]);
 
 export const projectRevisions = pgTable('project_revisions', {
     id: uuid('id').primaryKey(),
-    projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id').notNull(),
     workspaceId: uuid('workspace_id').notNull(),
     label: text('label').notNull(),
     note: text('note'),
@@ -115,27 +128,28 @@ export const projectRevisions = pgTable('project_revisions', {
     createdAt: createdAt(),
 }, t => [
     uniqueIndex('project_revisions_label_key').on(t.projectId, t.label),
+    tenantFk('project_revisions', t),
     index('project_revisions_project_idx').on(t.projectId, t.createdAt),
 ]);
 
 export const levelAssignments = pgTable('level_assignments', {
-    projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id').notNull(),
     workspaceId: uuid('workspace_id').notNull(),
     levelId: text('level_id').notNull(),
     userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
     assignedBy: uuid('assigned_by').notNull(),
     assignedAt: timestamp('assigned_at', { withTimezone: true }).notNull().defaultNow(),
-}, t => [primaryKey({ columns: [t.projectId, t.levelId] })]);
+}, t => [primaryKey({ columns: [t.projectId, t.levelId] }), tenantFk('level_assignments', t)]);
 
 export const activityLog = pgTable('activity_log', {
     id: bigserial('id', { mode: 'bigint' }).primaryKey(),
     workspaceId: uuid('workspace_id').notNull(),
-    projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id').notNull(),
     userId: uuid('user_id').notNull(),
     action: text('action').notNull(),
     docKey: text('doc_key'),
     at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
-}, t => [index('activity_log_project_idx').on(t.projectId, t.id)]);
+}, t => [index('activity_log_project_idx').on(t.projectId, t.id), tenantFk('activity_log', t)]);
 
 export const schema = {
     users, refreshTokens, workspaces, memberships, invitations, projects, projectDocs, projectRevisions,
