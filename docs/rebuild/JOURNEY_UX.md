@@ -1,5 +1,21 @@
 # Guided journey: UX brief for calculator agents
 
+## Design principles (owner, 2026-10-26) — restraint first
+Design like a top product team: the goal is a calm screen where the next action is obvious, not more features.
+1. **Every addition must earn its place.** Add a control, hint or indicator only if, without it, a contractor would
+   hesitate, make a likely mistake, or repeat tedious work on a typical house. If in doubt, leave it out.
+2. **One clear primary action per screen.** Secondary things recede (muted, folded, or on hover).
+3. **Progress only where there is real volume** — a list of many repeated items (≈5+ rooms, openings, circuits),
+   not a handful of fields. Never a progress bar for a short form.
+4. **Hints only where people hesitate**, one short line, never restating the label. Most fields need none.
+5. **Quick-pick chips only for truly standard values** (bar sizes, standard thickness / spacing). Not on every number.
+6. **Warnings only for likely unit / magnitude mistakes** (e.g. 3 m thick footing, 0.012 m slab). Quiet styling,
+   never blocking.
+7. **No duplicate information** (a result shown in the card does not need repeating in a badge and a summary).
+8. **Colour means state**: green done, red problem, grey not yet — used sparingly. No decorative badges or icons.
+9. **Prefer removing to adding.** Fold rarely-used settings, cut words, keep Thai copy short and professional.
+10. **Consistency over novelty**: the same pattern for the same situation on every step.
+
 ## Product goal (owner, 2026-10-25)
 Making a BOQ must feel easy. The user has the house plan in hand, walks through our levels in order, fills
 only what each level asks, each passed level unlocks the next, and at the end the BOQ is done. Hide complexity.
