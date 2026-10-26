@@ -8,11 +8,13 @@ Every route needs `Authorization: Bearer <accessToken>` unless marked **public**
 |---|---|---|---|
 | POST | `/auth/register` **public** | `RegisterRequest` → `AuthResponse` (201) | creates the user + personal workspace (owner); sets refresh cookie. `email_taken` 409 |
 | POST | `/auth/login` **public** | `LoginRequest` → `AuthResponse` | `invalid_credentials` 401 (same answer for unknown e-mail and wrong password) |
-| POST | `/auth/refresh` **public** | cookie `contrack_rt` → `AuthResponse` | rotates the refresh token; reuse of a rotated token revokes the family → `invalid_token` 401 |
+| POST | `/auth/refresh` **public** | cookie `contrack_rt` → `AuthResponse` | rotates the refresh token; a token rotated ≤ 30 s ago (another tab refreshing at the same moment) gets a sibling token in the same family; reuse of a rotated token after that revokes the family → `invalid_token` 401 (the cookie is cleared) |
 | POST | `/auth/logout` **public** | cookie → 204 | revokes the token family, clears the cookie |
 | GET | `/me` | → `MeResponse` | user + workspaces with roles |
 
-Refresh cookie: `contrack_rt`, httpOnly, SameSite=Lax, Secure when `COOKIE_SECURE`, Path=`/auth`, Max-Age = refresh TTL.
+Refresh cookie: `contrack_rt`, httpOnly, SameSite=Lax, Secure when `COOKIE_SECURE`, Path=`REFRESH_COOKIE_PATH` (default `/api/auth`,
+the path the browser sees through the Next rewrite `/api/*` → backend; `/auth` when the browser calls the API directly),
+Max-Age = refresh TTL.
 
 ## workspaces
 | Method | Path | Body → Response | Permission |

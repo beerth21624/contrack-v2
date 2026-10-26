@@ -16,6 +16,8 @@ const envSchema = z.object({
     CORS_ORIGINS: z.string().default('http://localhost:3000')
         .transform(v => v.split(',').map(s => s.trim()).filter(s => s !== '')),
     COOKIE_SECURE: bool.default('false'),
+    /** Path of the refresh cookie as the browser sees it (the web app reaches the API through `/api/*`). */
+    REFRESH_COOKIE_PATH: z.string().startsWith('/').default('/api/auth'),
 }).superRefine((env, ctx) => {
     if (env.PERSISTENCE === 'postgres' && env.DATABASE_URL === undefined) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['DATABASE_URL'], message: 'required when PERSISTENCE=postgres' });
