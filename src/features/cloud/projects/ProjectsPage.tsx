@@ -191,17 +191,34 @@ function ProjectsContent() {
                     {list.map(p => {
                         const pendingCount = savedPendingCount(p.id);
                         const items = menuFor(p).items ?? [];
+                        const canOpen = p.archivedAt === null || p.id === openId;
+                        const activate = () => {
+                            if (!canOpen || opening) return;
+                            if (p.id === openId) router.push('/journey');
+                            else void open(p.id);
+                        };
+                        // The whole card opens the project; its own buttons stop the click from reaching the card
+                        // (React events bubble through the menu's portal too).
+                        const own = (fn?: () => void) => (e: React.MouseEvent) => { e.stopPropagation(); fn?.(); };
                         return (
-                            <div key={p.id} className={`bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-2 ${p.id === openId ? 'border-orange-400 ring-2 ring-orange-100' : 'border-gray-200'}`}>
+                            <div key={p.id} onClick={activate}
+                                className={`bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-2 transition
+                                    ${canOpen ? 'cursor-pointer hover:shadow-md hover:border-orange-300' : ''}
+                                    ${p.id === openId ? 'border-orange-400 ring-2 ring-orange-100' : 'border-gray-200'}`}>
                                 <div className="flex items-start gap-2">
                                     <div className="flex-1 min-w-0">
-                                        <div className="font-semibold text-[15px] text-gray-900 truncate" title={p.name}>{p.name}</div>
+                                        <button type="button" onClick={own(activate)} disabled={!canOpen} title={p.name}
+                                            className="block w-full text-left font-semibold text-[15px] text-gray-900 truncate bg-transparent border-0 p-0 cursor-pointer hover:text-orange-600 disabled:cursor-default disabled:hover:text-gray-900">
+                                            {p.name}
+                                        </button>
                                         <div className="text-[12px] text-gray-500">แก้ล่าสุด {formatDateTime(p.updatedAt)}</div>
                                     </div>
                                     {items.length > 0 && (
-                                        <Dropdown menu={menuFor(p)} trigger={['click']}>
-                                            <Button type="text" size="small" icon={<MoreOutlined />} aria-label="ตัวเลือก" />
-                                        </Dropdown>
+                                        <span onClick={own()}>
+                                            <Dropdown menu={menuFor(p)} trigger={['click']}>
+                                                <Button type="text" size="small" icon={<MoreOutlined />} aria-label="ตัวเลือก" />
+                                            </Dropdown>
+                                        </span>
                                     )}
                                 </div>
                                 <div className="flex flex-wrap gap-1">
@@ -219,8 +236,7 @@ function ProjectsContent() {
                                     <span className="text-[12px] text-gray-600 whitespace-nowrap tabular-nums">{p.summary.levelsDone}/{p.summary.levelsTotal} ด่าน</span>
                                 </div>
                                 <Button type={p.id === openId ? 'default' : 'primary'} block icon={<FolderOpenOutlined />}
-                                    loading={opening} disabled={p.archivedAt !== null && p.id !== openId}
-                                    onClick={() => { if (p.id === openId) router.push('/journey'); else void open(p.id); }}>
+                                    loading={opening} disabled={!canOpen} onClick={own(activate)}>
                                     {p.id === openId ? 'ไปที่โครงการ' : p.archivedAt !== null ? 'กู้คืนก่อนเปิด' : 'เปิด'}
                                 </Button>
                             </div>

@@ -12,6 +12,7 @@ import { NewProjectButton } from './NewProjectButton';
 import { BoqExportButtons } from '@/features/export/BoqExportButtons';
 import { LevelAssignee, LevelPresenceAvatars, useCloudLevelInfo } from '@/features/cloud/presence/LevelPresence';
 import { RevisionButtons } from '@/features/cloud/revisions/RevisionButtons';
+import { useCloud } from '@/features/cloud/state';
 
 const { Title, Text } = Typography;
 
@@ -40,6 +41,8 @@ export function JourneyMapPage() {
     const passed = JOURNEY_LEVELS.filter(l => progress[l.id] !== undefined).length;
     // Cloud project only: who is on which level and who is assigned (nothing in guest mode).
     const team = useCloudLevelInfo();
+    const cloudName = useCloud(s => s.project?.name);
+    const title = project.meta.projectName !== '' ? project.meta.projectName : cloudName ?? 'โครงการของฉัน';
 
     return (
         <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full">
@@ -50,7 +53,7 @@ export function JourneyMapPage() {
                         {project.start !== 'blank' && <Tag className="!text-[11px]">บ้านตัวอย่าง Excel v5</Tag>}
                         <span className="ml-auto"><NewProjectButton /></span>
                     </div>
-                    <Title level={3} style={{ margin: '2px 0 4px' }}>{project.meta.projectName === '' ? 'โครงการของฉัน' : project.meta.projectName}</Title>
+                    <Title level={3} style={{ margin: '2px 0 4px' }}>{title}</Title>
                     <Text type="secondary" className="text-[13px]">
                         เปิดแบบแปลนไว้ข้างตัว แล้วกรอกตามที่แต่ละด่านถาม ผ่านครบทุกด่านได้ BOQ ทั้งหลังทันที
                     </Text>

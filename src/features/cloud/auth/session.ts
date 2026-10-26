@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import type { UserDto } from '@/shared/contract';
 import { apiClient } from '../api/client';
 import { api } from '../api/routes';
+import { useCloud } from '../state';
 
 export type SessionStatus = 'unknown' | 'guest' | 'signed-in';
 
@@ -16,6 +17,9 @@ interface SessionState {
 export const useSession = create<SessionState>()(() => ({ status: 'unknown', user: null, accessToken: null }));
 
 apiClient.onAuthChange(auth => {
+    const userId = auth?.user.id ?? null;
+    // Another user (or none): their own remembered workspace choice.
+    if (userId !== (useSession.getState().user?.id ?? null)) useCloud.getState().loadWorkspaceFor(userId);
     useSession.setState(auth
         ? { status: 'signed-in', user: auth.user, accessToken: auth.accessToken }
         : { status: 'guest', user: null, accessToken: null });

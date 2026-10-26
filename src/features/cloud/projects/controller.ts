@@ -89,7 +89,12 @@ export async function openCloudProject(queryClient: QueryClient, projectId: stri
         if (!workspace) throw new ApiError(404, 'not_found', 'not a member of the project workspace');
 
         await stopEngine();
-        const project = docsToProject(detail.project.start, toEntries(detail.docs));
+        const loaded = docsToProject(detail.project.start, toEntries(detail.docs));
+        // No name in the BOQ header yet (no `meta` doc): show the project's name. Not sent as an edit; it is saved
+        // with the first real change of the header.
+        const project = loaded.meta.projectName.trim() === ''
+            ? { ...loaded, meta: { ...loaded.meta, projectName: detail.project.name } }
+            : loaded;
         useProjectStore.getState().openCloudProject({ projectId, workspaceId: workspace.id, role: workspace.role }, project);
 
         const engine = new SyncEngine({
@@ -106,7 +111,6 @@ export async function openCloudProject(queryClient: QueryClient, projectId: stri
         engine.onStatus(syncStatus => { useCloud.setState({ syncStatus }); });
         useCloud.setState({ engine, project: detail.project, presence: [], syncStatus: engine.getStatus() });
         engine.start();
-        useCloud.getState().selectWorkspace(workspace.id);
         remember(projectId);
     } finally {
         useCloud.setState({ opening: false });

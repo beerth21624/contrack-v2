@@ -8,6 +8,7 @@ import type {
     ActivityDto, ChangeRoleRequest, CreateInvitationRequest, CreateRevisionRequest, LevelAssignmentDto, ProjectDetailDto,
     ProjectDto, UpdateProjectRequest, WorkspaceDto,
 } from '@/shared/contract';
+import { useProjectStore } from '@/store/project-store';
 import { api } from '../api/routes';
 import { useSession } from '../auth/session';
 import { useCloud } from '../state';
@@ -38,8 +39,12 @@ export function useCurrentWorkspace(): {
     const q = useWorkspaces();
     const selected = useCloud(s => s.workspaceId);
     const select = useCloud(s => s.selectWorkspace);
+    const openWorkspace = useProjectStore(s => (s.binding.kind === 'cloud' ? s.binding.workspaceId : null));
     const workspaces = q.data ?? [];
-    const workspace = workspaces.find(w => w.id === selected) ?? workspaces[0];
+    // The user's last explicit choice when it is still valid, else the open project's workspace, else the first.
+    const workspace = workspaces.find(w => w.id === selected)
+        ?? workspaces.find(w => w.id === openWorkspace)
+        ?? workspaces[0];
     return { workspace, workspaces, isLoading: q.isLoading, select };
 }
 
