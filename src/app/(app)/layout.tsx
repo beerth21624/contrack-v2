@@ -1,4 +1,5 @@
 import { AppLayoutUI } from '@/components/AppLayoutUI';
+import { CloudProviders } from '@/features/cloud/CloudProviders';
 
 export default function AppLayout({
   children,
@@ -6,6 +7,8 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AppLayoutUI>{children}</AppLayoutUI>
+    <CloudProviders>
+      <AppLayoutUI>{children}</AppLayoutUI>
+    </CloudProviders>
   );
 }

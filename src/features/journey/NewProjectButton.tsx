@@ -23,7 +23,13 @@ const CHOICES: { start: ProjectStart; icon: React.ReactNode; title: string; text
 export function NewProjectButton({ size }: { size?: 'large' | 'middle' }) {
     const router = useRouter();
     const newProject = useProjectStore(s => s.newProject);
+    const isCloud = useProjectStore(s => s.binding.kind === 'cloud');
     const [open, setOpen] = useState(false);
+
+    // A cloud project is never replaced: new cloud projects are made on the projects page.
+    if (isCloud) {
+        return <Button size={size} icon={<PlusOutlined />} onClick={() => router.push('/projects')}>โครงการใหม่</Button>;
+    }
 
     const choose = (start: ProjectStart) => {
         newProject(start);

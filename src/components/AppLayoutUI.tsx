@@ -11,6 +11,10 @@ import {
 import { useTranslations } from 'next-intl';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useProjectStore } from '@/store/project-store';
+import { CloudRuntime } from '@/features/cloud/CloudRuntime';
+import { AccountMenu } from '@/features/cloud/ui/AccountMenu';
+import { ProjectBadge } from '@/features/cloud/ui/ProjectBadge';
+import { ReadOnlyBanner } from '@/features/cloud/ui/ReadOnlyBanner';
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -30,6 +34,7 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
     else if (pathname.includes('/schedule')) activeKey = 'schedule';
     else if (pathname.includes('/man-day')) activeKey = 'man-day';
     else if (pathname.includes('/cashflow')) activeKey = 'cashflow';
+    else if (/^\/(projects|workspace|login|register|invite)(\/|$)/.test(pathname)) activeKey = '';
 
     const menuItems = [
         { key: 'journey', icon: <FlagOutlined />, label: tNav('journey'), onClick: () => router.push('/journey') },
@@ -94,7 +99,15 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
                     />
                 </div>
 
+                <div style={{ display: 'flex', alignItems: 'center', marginRight: 8 }}>
+                    <ProjectBadge compact={isMobile} />
+                </div>
+
                 <LanguageSwitcher />
+
+                <div style={{ marginLeft: 8, display: 'flex', alignItems: 'center' }}>
+                    <AccountMenu compact={isMobile} />
+                </div>
 
                 <div className="md:hidden">
                     <Button
@@ -141,7 +154,10 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
                         <Spin size="large" />
                     </div>
                 ) : (
-                    children
+                    <>
+                        <ReadOnlyBanner />
+                        {children}
+                    </>
                 )}
             </Content>
 
@@ -195,6 +211,7 @@ export function AppLayoutUI({ children }: { children: React.ReactNode }) {
             }}
         >
             <AntdApp message={{ maxCount: 1 }}>
+                <CloudRuntime />
                 <AppLayoutUIContent>{children}</AppLayoutUIContent>
             </AntdApp>
         </ConfigProvider>

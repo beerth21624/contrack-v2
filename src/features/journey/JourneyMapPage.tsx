@@ -10,6 +10,8 @@ import { JOURNEY, JOURNEY_LEVELS, currentLevel, journeyComplete, journeyRatio, l
 import { formatNumber } from '@/components/sheet/NumberCell';
 import { NewProjectButton } from './NewProjectButton';
 import { BoqExportButtons } from '@/features/export/BoqExportButtons';
+import { LevelAssignee, LevelPresenceAvatars, useCloudLevelInfo } from '@/features/cloud/presence/LevelPresence';
+import { RevisionButtons } from '@/features/cloud/revisions/RevisionButtons';
 
 const { Title, Text } = Typography;
 
@@ -36,6 +38,8 @@ export function JourneyMapPage() {
     const next = currentLevel(progress);
     const complete = journeyComplete(progress);
     const passed = JOURNEY_LEVELS.filter(l => progress[l.id] !== undefined).length;
+    // Cloud project only: who is on which level and who is assigned (nothing in guest mode).
+    const team = useCloudLevelInfo();
 
     return (
         <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full">
@@ -92,7 +96,7 @@ export function JourneyMapPage() {
                                 const state = states[level.id] ?? 'locked';
                                 const style = NODE_STYLE[state];
                                 const body = (
-                                    <div className={`flex items-center gap-3 rounded-lg border-2 px-3 py-2 h-full transition
+                                    <div className={`flex items-center gap-3 rounded-lg border-2 px-3 py-2 h-full w-full transition
                                         ${style.ring} ${state === 'locked' ? 'cursor-not-allowed' : 'hover:shadow-md cursor-pointer'}
                                         ${state === 'current' ? 'bg-orange-50 ring-2 ring-orange-200' : 'bg-white'}`}>
                                         <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[13px] ${style.bg} ${style.fg}`}>
@@ -107,11 +111,19 @@ export function JourneyMapPage() {
                                                         : state === 'current' ? 'ด่านถัดไป' : 'ยังล็อกอยู่'}
                                             </div>
                                         </div>
+                                        <LevelPresenceAvatars info={team} levelId={level.id} />
                                     </div>
                                 );
-                                return state === 'locked'
-                                    ? <div key={level.id} title="ผ่านด่านก่อนหน้าก่อน">{body}</div>
-                                    : <Link key={level.id} href={`/journey/${level.id}`}>{body}</Link>;
+                                const node = state === 'locked'
+                                    ? <div title="ผ่านด่านก่อนหน้าก่อน" className="flex flex-1">{body}</div>
+                                    : <Link href={`/journey/${level.id}`} className="flex flex-1">{body}</Link>;
+                                if (!team.enabled) return <div key={level.id} className="flex">{node}</div>;
+                                return (
+                                    <div key={level.id} className="flex flex-col gap-0.5">
+                                        {node}
+                                        <LevelAssignee info={team} levelId={level.id} />
+                                    </div>
+                                );
                             })}
                         </div>
                     </section>
@@ -129,6 +141,7 @@ export function JourneyMapPage() {
                 <div className="flex flex-wrap items-center gap-2 justify-end">
                     <Link href="/boq"><Button type={complete ? 'primary' : 'default'} icon={<TableOutlined />}>เปิด BOQ</Button></Link>
                     {complete && <BoqExportButtons />}
+                    {complete && <RevisionButtons />}
                 </div>
             </section>
         </div>

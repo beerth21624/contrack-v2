@@ -12,6 +12,7 @@ import { getCalculator } from '@/domain/calculators/registry';
 import { CALCULATOR_PAGES } from '@/features/calculators/pages';
 import Link from 'next/link';
 import { BoqExportButtons } from '@/features/export/BoqExportButtons';
+import { RevisionButtons } from '@/features/cloud/revisions/RevisionButtons';
 
 const { Title, Text } = Typography;
 
@@ -170,7 +171,10 @@ export function BoqHomePage() {
                         <Title level={4} style={{ margin: 0 }}>{t('title')}</Title>
                         <Text type="secondary">{meta.projectName || t('subtitle')}</Text>
                     </div>
-                    <BoqExportButtons project={project} />
+                    <div className="flex flex-wrap items-center gap-2 justify-end">
+                        <BoqExportButtons project={project} />
+                        <RevisionButtons />
+                    </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mt-4">
                     {metaField(t('projectName'), 'projectName')}

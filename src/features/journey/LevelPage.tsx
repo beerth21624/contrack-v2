@@ -18,6 +18,7 @@ import { formatNumber } from '@/components/sheet/NumberCell';
 import { JourneyModeContext } from './JourneyMode';
 import { BoqLevelInputs } from './BoqLevelInputs';
 import { ProjectInfoInputs } from './ProjectInfoInputs';
+import { LevelSoftLock } from '@/features/cloud/presence/LevelPresence';
 
 const { Title, Text } = Typography;
 
@@ -75,6 +76,8 @@ export function LevelPage({ levelId }: { levelId: string }) {
                 <Progress percent={Math.round(((index + 1) / JOURNEY_LEVELS.length) * 100)} showInfo={false}
                     strokeColor="#fa8c16" className="flex-1 !mb-0" />
             </div>
+
+            <LevelSoftLock levelId={level.id} />
 
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
                 <div className="flex flex-wrap items-center gap-2">
