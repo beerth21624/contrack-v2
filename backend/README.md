@@ -43,4 +43,5 @@ to `./drizzle`, no database needed) and commit the migration.
 
 `npm run build && npm start` (dist/backend/src/main.js). Required: `NODE_ENV=production`, `COOKIE_SECURE=true`,
 a strong `JWT_ACCESS_SECRET`, `DATABASE_URL`, `CORS_ORIGINS`; `REALTIME_BUS=postgres` when running more than one
-instance. Run `npm run db:migrate` before starting a new version.
+instance. Run `npm run db:migrate` before starting a new version. Business modules are off unless listed in
+`MODULES_ENABLED` (comma-separated, e.g. `MODULES_ENABLED=workforce`; see API.md "platform").

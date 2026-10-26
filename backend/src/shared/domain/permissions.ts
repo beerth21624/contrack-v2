@@ -19,7 +19,14 @@ export type Permission =
     | 'rateCards.read'
     | 'rateCards.create'
     | 'rateCards.edit'
-    | 'rateCards.archive';
+    | 'rateCards.archive'
+    // Crews and people (business module `workforce`): read the lists; manage people and crews; assign crews to
+    // planned tasks and name site supervisors; see a person's daily wage; see a crew's daily cost.
+    | 'workforce.read'
+    | 'workforce.manage'
+    | 'workforce.assign'
+    | 'workforce.seeWages'
+    | 'workforce.seeCrewCost';
 
 const MATRIX: Record<Role, ReadonlySet<Permission>> = {
     owner: new Set<Permission>([
@@ -28,6 +35,7 @@ const MATRIX: Record<Role, ReadonlySet<Permission>> = {
         'projects.read', 'projects.create', 'projects.edit', 'projects.archive', 'projects.delete',
         'revisions.create', 'levels.assign',
         'rateCards.read', 'rateCards.create', 'rateCards.edit', 'rateCards.archive',
+        'workforce.read', 'workforce.manage', 'workforce.assign', 'workforce.seeWages', 'workforce.seeCrewCost',
     ]),
     admin: new Set<Permission>([
         'workspace.read', 'workspace.rename',
@@ -35,15 +43,18 @@ const MATRIX: Record<Role, ReadonlySet<Permission>> = {
         'projects.read', 'projects.create', 'projects.edit', 'projects.archive', 'projects.delete',
         'revisions.create', 'levels.assign',
         'rateCards.read', 'rateCards.create', 'rateCards.edit', 'rateCards.archive',
+        'workforce.read', 'workforce.manage', 'workforce.assign', 'workforce.seeWages', 'workforce.seeCrewCost',
     ]),
     // Estimators price jobs, so they may add a rate card; changing or archiving the company's cards is for admins.
+    // They plan jobs too: they assign crews and see a crew's daily cost, but not a person's own wage.
     estimator: new Set<Permission>([
         'workspace.read', 'members.read',
         'projects.read', 'projects.create', 'projects.edit', 'projects.archive',
         'revisions.create',
         'rateCards.read', 'rateCards.create',
+        'workforce.read', 'workforce.assign', 'workforce.seeCrewCost',
     ]),
-    viewer: new Set<Permission>(['workspace.read', 'members.read', 'projects.read', 'rateCards.read']),
+    viewer: new Set<Permission>(['workspace.read', 'members.read', 'projects.read', 'rateCards.read', 'workforce.read']),
 };
 
 export function can(role: Role, permission: Permission): boolean {

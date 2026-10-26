@@ -15,6 +15,13 @@
       "when": 1793020000000,
       "tag": "0001_rate_cards",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793025000000,
+      "tag": "0002_workforce",
+      "breakpoints": true
     }
   ]
 }

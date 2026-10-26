@@ -12,6 +12,9 @@ export type RevisionId = Brand<string, 'RevisionId'>;
 export type InvitationId = Brand<string, 'InvitationId'>;
 export type RefreshTokenId = Brand<string, 'RefreshTokenId'>;
 export type RateCardId = Brand<string, 'RateCardId'>;
+export type PersonId = Brand<string, 'PersonId'>;
+export type CrewId = Brand<string, 'CrewId'>;
+export type CrewAssignmentId = Brand<string, 'CrewAssignmentId'>;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -31,3 +34,6 @@ export const asRevisionId = (v: string): RevisionId => v as RevisionId;
 export const asInvitationId = (v: string): InvitationId => v as InvitationId;
 export const asRefreshTokenId = (v: string): RefreshTokenId => v as RefreshTokenId;
 export const asRateCardId = (v: string): RateCardId => v as RateCardId;
+export const asPersonId = (v: string): PersonId => v as PersonId;
+export const asCrewId = (v: string): CrewId => v as CrewId;
+export const asCrewAssignmentId = (v: string): CrewAssignmentId => v as CrewAssignmentId;

@@ -3,7 +3,8 @@
 // accounts (`npm run db:seed` first), through the same HTTP API the web app uses: the owner, estimator and admin
 // each save their own steps (so the activity reads like a team), levels are assigned, Rev 00 and Rev 01 issued.
 // Idempotent: a project with the showcase name is updated in place (its documents replaced, missing revisions and
-// assignments added); nothing else in the database is touched.
+// assignments added). With the `workforce` module on, crews, people, crew assignments and the site supervisor are added
+// too (./seed-workforce.ts), matched by name, so a re-run creates no duplicates. Nothing else in the database is touched.
 //   --api <url>      a running backend (default: $CONTRACK_API_URL or http://localhost:4000)
 //   --in-process     start the API in this process on $DATABASE_URL instead (like db:seed)
 //   --recreate       delete the showcase project first and build it again (fresh revisions and activity)
@@ -16,6 +17,7 @@ import {
 import { createApp } from '../bootstrap';
 import { loadEnv } from '../shared/infrastructure/config/env';
 import { ACCOUNTS, DEMO_PASSWORD } from './seed-demo';
+import { seedWorkforce } from './seed-workforce';
 
 const COMPANY = 'บริษัท ตัวอย่างก่อสร้าง จำกัด';
 const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://contrack:contrack@localhost:5432/contrack';
@@ -96,6 +98,7 @@ async function startInProcess(): Promise<() => Promise<void>> {
         DATABASE_URL,
         REALTIME_BUS: 'memory',
         JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET ?? 'seed-script-secret-not-used-for-anything-else',
+        MODULES_ENABLED: process.env.MODULES_ENABLED ?? 'workforce',
     });
     const app = await createApp({ env });
     await app.listen(0);
@@ -177,9 +180,13 @@ async function main(): Promise<void> {
             console.log(`${rev.label}: ${String(n)} documents saved, revision issued`);
         }
         // The project as it is today (also when every revision already existed).
-        const n = await applyProject(projectId, buildShowcaseProject(today), tokens);
+        const current = buildShowcaseProject(today);
+        const n = await applyProject(projectId, current, tokens);
         if (!assigned) await assign();
         if (n > 0) console.log(`current: ${String(n)} documents updated`);
+
+        // Crews and people (module `workforce`; skipped when the server does not offer it).
+        await seedWorkforce({ call, tokens, workspaceId: company.id, projectId, project: current, today });
 
         const detail = await call<Detail>('GET', `/projects/${projectId}`, undefined, tokens.owner);
         const s = detail.project.summary;

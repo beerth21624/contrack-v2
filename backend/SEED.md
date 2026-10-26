@@ -38,3 +38,22 @@ It signs in as the demo accounts and goes through the running API (default `http
 or `-- --in-process` to start the API in the script on `DATABASE_URL`). It only touches the showcase project: run it again
 and the project is updated in place (no duplicate; existing revisions kept). `-- --recreate` deletes that one project
 and builds it again with fresh revisions and activity; `-- --today YYYY-MM-DD` plans relative to another day.
+
+### Crews and people (module `workforce`)
+
+When the API offers the `workforce` module (`MODULES_ENABLED=workforce`; `--in-process` switches it on), the same script
+also fills the company's ทีมช่างและบุคลากร (`src/cli/seed-workforce.ts`); against a server without the module it prints
+"workforce: skipped" and does the rest.
+- **Rate cards** (created if missing): ชุด A งานทั่วไป 800/500, ชุด B หลังคา ไฟฟ้า ฝ้า สี 1,000/600,
+  ทีมไฟฟ้า ช่างพงษ์ 1,200/650.
+- **12 people**: site supervisor **คุณประเสริฐ ช่างแก้ว**, crew leaders (ช่างสมชาย, ช่างแดง, ช่างพงษ์, ช่างวิทย์, ช่างเอก,
+  ช่างหมู) and a few named members, with roles, employment types, phones and daily wages (visible to owner/admin only).
+- **6 crews**, headcounts taken from the showcase's Man-Day: ทีมโครงสร้างช่างสมชาย (ชุด A), ทีมหลังคาช่างหมู (ชุด B),
+  ทีมก่อฉาบช่างแดง (ชุด A), ทีมไฟฟ้าช่างพงษ์ (its own card), ทีมประปาช่างวิทย์ (typed 2,500 บาท/วัน), ทีมทาสีช่างเอก (ชุด B).
+- **Assignments** on the showcase's planned tasks, on its schedule days (structure 1.2–2.5, roof 3.1–3.3, masonry 4.1/5.1,
+  electrical 4.2/5.2/8.1, plumbing 8.2/8.4, painting 6.5/7.2/8.6), and the supervisor on the project.
+- **บ้านคุณสมศรี (เริ่มจากแบบ)** (created if missing) gets the structure crew earlier and **ทีมก่อฉาบช่างแดง** on brickwork
+  from 2 days after today, while it is still plastering คุณวิชัย's house: 3 overlapping days, for W2's conflict detection.
+
+Re-running matches rate cards, people and crews by name and assignments by (project, task, crew): no duplicates; moved
+plan days are updated in place.

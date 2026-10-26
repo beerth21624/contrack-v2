@@ -19,6 +19,21 @@ describe('DeleteProjectUseCase', () => {
         expect(!again.ok && again.error.code).toBe('not_found');
     });
 
+    it('runs the other modules\' cleanups (ProjectDependents) for that project only, before the project goes', async () => {
+        const kit = projectsKit();
+        const p = await kit.seedProject();
+        const seen: string[] = [];
+        kit.dependents.register(async (workspaceId, projectId) => {
+            seen.push(`${workspaceId}/${projectId}`);
+            expect(await kit.projects.findById(projectId)).toBeDefined();
+        });
+        const refused = await kit.deleteProject.execute({ userId: ROLE_USERS.viewer, projectId: p.id });
+        expect(refused.ok).toBe(false);
+        expect(seen).toEqual([]);
+        expect((await kit.deleteProject.execute({ userId: OWNER, projectId: p.id })).ok).toBe(true);
+        expect(seen).toEqual([`${WS_A}/${p.id}`]);
+    });
+
     it('publishes project.deleted after the delete is committed, and nothing when refused', async () => {
         const kit = projectsKit();
         const p = await kit.seedProject();

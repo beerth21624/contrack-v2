@@ -40,6 +40,11 @@ export class InMemoryRateCardRepository extends RateCardRepository {
         return Promise.resolve(c?.workspaceId === workspaceId ? copy(c) : undefined);
     }
 
+    findMany(workspaceId: WorkspaceId, ids: readonly RateCardId[]): Promise<RateCard[]> {
+        const wanted = new Set(ids);
+        return Promise.resolve([...this.rows.values()].filter(c => c.workspaceId === workspaceId && wanted.has(c.id)).map(copy));
+    }
+
     listActive(workspaceId: WorkspaceId): Promise<RateCard[]> {
         const list = this.active(workspaceId)
             .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))

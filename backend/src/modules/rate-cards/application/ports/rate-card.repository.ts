@@ -12,6 +12,8 @@ export abstract class RateCardRepository {
     abstract insert(card: RateCard): Promise<void>;
     /** Active or archived. */
     abstract find(workspaceId: WorkspaceId, id: RateCardId): Promise<RateCard | undefined>;
+    /** Cards of the workspace among `ids` (active or archived); unknown and other workspaces' ids are left out. */
+    abstract findMany(workspaceId: WorkspaceId, ids: readonly RateCardId[]): Promise<RateCard[]>;
     /** Active cards, oldest first (the order a picker shows them in). */
     abstract listActive(workspaceId: WorkspaceId): Promise<RateCard[]>;
     abstract countActive(workspaceId: WorkspaceId): Promise<number>;

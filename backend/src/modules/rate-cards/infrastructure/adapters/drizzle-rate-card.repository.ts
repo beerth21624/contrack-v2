@@ -1,4 +1,4 @@
-import { and, asc, count, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { asRateCardId, asUserId, asWorkspaceId, type RateCardId, type WorkspaceId } from '../../../../shared/domain';
 import type { DatabaseContext } from '../../../../shared/infrastructure/database/database';
 import { rateCards } from '../../../../shared/infrastructure/database/schema';
@@ -64,6 +64,13 @@ export class DrizzleRateCardRepository extends RateCardRepository {
             .limit(1);
         const row = rows[0];
         return row === undefined ? undefined : toEntity(row);
+    }
+
+    async findMany(workspaceId: WorkspaceId, ids: readonly RateCardId[]): Promise<RateCard[]> {
+        if (ids.length === 0) return [];
+        const rows = await this.ctx.executor.select().from(rateCards)
+            .where(and(eq(rateCards.workspaceId, workspaceId), inArray(rateCards.id, [...ids])));
+        return rows.map(toEntity);
     }
 
     async listActive(workspaceId: WorkspaceId): Promise<RateCard[]> {
