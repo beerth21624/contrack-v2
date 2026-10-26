@@ -30,7 +30,7 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
 
     // Determine active menu key from pathname
     let activeKey = 'timeline';
-    if (pathname.startsWith('/boq')) activeKey = 'boq';
+    if (pathname.startsWith('/boq') || pathname.startsWith('/calc')) activeKey = 'boq';
     else if (pathname.includes('/summary')) activeKey = 'summary';
     else if (pathname.includes('/schedule')) activeKey = 'schedule';
     else if (pathname.includes('/man-day')) activeKey = 'man-day';

@@ -1,9 +1,21 @@
 // All calculator sheets. Add a calculator here once its domain module exists.
 import type { CalculatorDef } from './types';
 import { landInspection } from './land-inspection';
+import { demolition } from './demolition';
+import { fill } from './fill';
+import { tempUtilities } from './temp-utilities';
+import { siteCamp } from './site-camp';
+import { layout } from './layout';
+import { piles } from './piles';
 
 export const CALCULATORS: CalculatorDef[] = [
     landInspection,
+    demolition,
+    fill,
+    tempUtilities,
+    siteCamp,
+    layout,
+    piles,
 ];
 
 export function getCalculator(id: string): CalculatorDef | undefined {

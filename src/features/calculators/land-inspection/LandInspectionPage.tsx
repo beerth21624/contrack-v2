@@ -2,7 +2,7 @@
 
 import { Checkbox } from 'antd';
 import {
-    landInspection, lineTotal, LAND_INSPECTION_CHECKLIST, type CostLine,
+    landInspection, lineTotal, LAND_INSPECTION_CHECKLIST, type ChecklistAnswer, type CostLine,
 } from '@/domain/calculators/land-inspection';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, InputTextField, SheetCard } from '@/components/sheet/SheetFields';
@@ -12,6 +12,7 @@ import { useCalculator } from '../useCalculator';
 
 /** Rows 8–11 of the Excel sheet keep their fixed label; rows added after them are free text. */
 const FIXED_ROWS = 4;
+const NO_ANSWER: ChecklistAnswer = { done: false, note: '' };
 
 export default function LandInspectionPage() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(landInspection);
@@ -62,11 +63,14 @@ export default function LandInspectionPage() {
             <SheetCard title="เอกสารสำรวจหน้างาน (Checklist)">
                 <div className="flex flex-col gap-2">
                     {LAND_INSPECTION_CHECKLIST.map((q, i) => {
-                        const a = input.checklist[i] ?? { done: false, note: '' };
-                        const setAnswer = (patch: Partial<typeof a>) => update(p => ({
+                        const a = input.checklist[i] ?? NO_ANSWER;
+                        // Merge into the latest stored answer, not the one captured at render time.
+                        const setAnswer = (patch: Partial<ChecklistAnswer>) => update(p => ({
                             ...p,
-                            checklist: LAND_INSPECTION_CHECKLIST.map((_, j) =>
-                                j === i ? { ...a, ...patch } : (p.checklist[j] ?? { done: false, note: '' })),
+                            checklist: LAND_INSPECTION_CHECKLIST.map((_, j) => {
+                                const prev = p.checklist[j] ?? NO_ANSWER;
+                                return j === i ? { ...prev, ...patch } : prev;
+                            }),
                         }));
                         return (
                             <div key={q} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-3">

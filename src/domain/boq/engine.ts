@@ -12,12 +12,12 @@ const EPS = 1e-9;
 
 /** Excel ROUNDUP(x, 0) for non-negative x, tolerant of float noise (34.100000000000001 → 35, 35.0000000001 → 35). */
 export function roundUp(x: number): number {
-    return Math.ceil(x - EPS);
+    return Math.ceil(x - EPS) + 0;   // + 0 turns -0 (from ceil(-1e-9)) into 0
 }
 
 /** Excel CEILING(x, step). */
 export function ceilingTo(x: number, step: number): number {
-    return Math.ceil(x / step - EPS) * step;
+    return Math.ceil(x / step - EPS) * step + 0;
 }
 
 export interface ComputeBoqInput {

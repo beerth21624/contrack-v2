@@ -11,7 +11,7 @@ const goldenSections = golden.sections as Record<string, { M?: number }>;
 
 /** section no → expected difference (app − Excel) and why. */
 const KNOWN_DELTAS: Record<number, { delta: number; reason: string }> = {
-    // e.g. 2: { delta: -31, reason: 'D3: material 6,469 from the calculator instead of the retyped 6,500' },
+    2: { delta: -31, reason: 'D3: material 6,469 from น้ำไฟชั่วคราว C30 instead of the retyped 6,500 in BOQ I16' },
 };
 
 describe('project with Excel sample inputs', () => {

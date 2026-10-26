@@ -349,7 +349,9 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
   {
     "no": 5,
     "title": "งานเสาเข็ม",
-    "calculators": [],
+    "calculators": [
+      "piles"
+    ],
     "inConstructionTotal": true,
     "lines": [
       {

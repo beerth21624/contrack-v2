@@ -22,6 +22,17 @@ Copy the pattern of **land inspection**:
   Excel row formulas inside the BOQ (waste, rounding, ×2 prices, consumables %, ไม้คร่าว/ตะปู, tie wire) are already
   handled by the BOQ template — only supply the quantity / price the BOQ row reads from your sheet.
 - `boqText(input)` (optional) = desc/note text for BOQ rows.
+- `boqSlots(input)` (optional) = rows for **variable-length runs** of the BOQ. The template marks 16 runs as
+  slots (`type: 'slot'` in `template.v5.ts`, owner `calc` + `slot` name): rebar of each structural element
+  (`footing.rebar`, `pedestal.rebar`, `column.rebar`, `ground-beam.rebar`, `precast-slab.shear-key`,
+  `slab-on-grade.rebar`, `roof-beam.rebar`, `roof-slab.rebar`, `stair.rebar`), doors/windows
+  (`door-window.aluminium`, `door-window.wood`) and pick-lists (`load-center.items`, `electrical-equipment.items`,
+  `sanitary-system.items`, `misc.items`, `sanitary-ware.items`). Return `{ [slotName]: SlotRow[] }`; until you do,
+  the Excel rows are used. For rebar use `rebarSlotRows(weightsBySize)` from `src/domain/boq/slots.ts`
+  (per-size rows + 3 % tie wire, waste RB6 6 / RB9 9 / DB12–DB20 12 %, prices 25/15, wire 50) — it reproduces
+  Excel rows exactly (see `src/domain/__tests__/slots.test.ts`). Row keys inside a slot only need to be unique
+  within the slot (they are prefixed `calc:slot:`); user edits on the BOQ page are stored under those keys, so keep
+  them stable (e.g. the bar size, the door code).
 - Tables: use arrays with no row limit (D5). Keep the Excel's fixed rows as the default rows.
 
 ## Tests (required) — `src/domain/calculators/<id>/<id>.test.ts`
