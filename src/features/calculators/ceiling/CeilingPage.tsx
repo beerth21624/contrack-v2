@@ -12,39 +12,47 @@ import { useCalculator } from '../useCalculator';
 const isCode = (v: string): v is CeilingCode => (CEILING_CODES as readonly string[]).includes(v);
 const isPaint = (v: string): v is CeilingPaintGroup => (CEILING_PAINT_GROUPS as readonly string[]).includes(v);
 
+/** Scroll the table sideways instead of letting the รายการ dropdown squeeze the number columns. */
+const TABLE_MIN_WIDTH = 1240;
+
 export default function CeilingPage() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(ceiling);
 
     return (
         <CalculatorShell def={ceiling} result={result} isDefault={isDefault} onReset={reset}>
             <SheetCard title=": ตารางคำนวณปริมาณฝ้าเพดาน">
-                <EditableTable<CeilingRow>
-                    rows={input.rows}
-                    onChange={rows => update({ rows })}
-                    newRow={() => ({ code: '', width: 0, length: 0, location: '', paint: '' })}
-                    addLabel="+ เพิ่มรายการ"
-                    columns={[
-                        { kind: 'select', key: 'code', title: 'สัญลักษณ์', width: 80,
-                            options: CEILING_CODES.map(v => ({ value: v })),
-                            get: r => r.code, set: (r, v) => ({ ...r, code: isCode(v) ? v : '' }) },
-                        // Excel's C column is its own dropdown; here it selects the same code (O-13), in Excel's list order.
-                        { kind: 'select', key: 'desc', title: 'รายการ', width: 380,
-                            options: CEILING_DESCRIPTION_ORDER.map(c => ({ value: c, label: CEILING_DESCRIPTIONS[c] })),
-                            get: r => r.code, set: (r, v) => ({ ...r, code: isCode(v) ? v : '' }) },
-                        { kind: 'number', key: 'width', title: 'กว้าง (ม.)', width: 80,
-                            get: r => r.width, set: (r, v) => ({ ...r, width: v }) },
-                        { kind: 'number', key: 'length', title: 'ยาว (ม.)', width: 80,
-                            get: r => r.length, set: (r, v) => ({ ...r, length: v }) },
-                        { kind: 'number', key: 'slope', title: 'ลาดเอียง (องศา)', width: 80, digits: 0,
-                            get: r => r.slope ?? 0, set: (r, v) => ({ ...r, slope: v }) },
-                        { kind: 'calc', key: 'area', title: 'รวม (ตร.ม.)', width: 90, get: r => ceilingRowArea(r) },
-                        { kind: 'text', key: 'location', title: 'ตำแหน่ง', width: 150,
-                            get: r => r.location, set: (r, v) => ({ ...r, location: v }) },
-                        { kind: 'select', key: 'paint', title: 'แยกงานทาสี', width: 150,
-                            options: CEILING_PAINT_GROUPS.map(g => ({ value: g, label: paintGroupLabel(g) })),
-                            get: r => r.paint, set: (r, v) => ({ ...r, paint: isPaint(v) ? v : '' }) },
-                    ]}
-                />
+                {/* The long รายการ texts would otherwise squeeze กว้าง/ยาว to ~40 px (62.30 shown as "62."). */}
+                <div className="overflow-x-auto">
+                    <div style={{ minWidth: TABLE_MIN_WIDTH }}>
+                        <EditableTable<CeilingRow>
+                            rows={input.rows}
+                            onChange={rows => update({ rows })}
+                            newRow={() => ({ code: '', width: 0, length: 0, location: '', paint: '' })}
+                            addLabel="+ เพิ่มรายการ"
+                            columns={[
+                                { kind: 'select', key: 'code', title: 'สัญลักษณ์', width: 80,
+                                    options: CEILING_CODES.map(v => ({ value: v })),
+                                    get: r => r.code, set: (r, v) => ({ ...r, code: isCode(v) ? v : '' }) },
+                                // Excel's C column is its own dropdown; here it selects the same code (O-13), in Excel's list order.
+                                { kind: 'select', key: 'desc', title: 'รายการ', width: 380,
+                                    options: CEILING_DESCRIPTION_ORDER.map(c => ({ value: c, label: CEILING_DESCRIPTIONS[c] })),
+                                    get: r => r.code, set: (r, v) => ({ ...r, code: isCode(v) ? v : '' }) },
+                                { kind: 'number', key: 'width', title: 'กว้าง (ม.)', width: 80,
+                                    get: r => r.width, set: (r, v) => ({ ...r, width: v }) },
+                                { kind: 'number', key: 'length', title: 'ยาว (ม.)', width: 80,
+                                    get: r => r.length, set: (r, v) => ({ ...r, length: v }) },
+                                { kind: 'number', key: 'slope', title: 'ลาดเอียง (องศา)', width: 80, digits: 0,
+                                    get: r => r.slope ?? 0, set: (r, v) => ({ ...r, slope: v }) },
+                                { kind: 'calc', key: 'area', title: 'รวม (ตร.ม.)', width: 90, get: r => ceilingRowArea(r) },
+                                { kind: 'text', key: 'location', title: 'ตำแหน่ง', width: 150,
+                                    get: r => r.location, set: (r, v) => ({ ...r, location: v }) },
+                                { kind: 'select', key: 'paint', title: 'แยกงานทาสี', width: 150,
+                                    options: CEILING_PAINT_GROUPS.map(g => ({ value: g, label: paintGroupLabel(g) })),
+                                    get: r => r.paint, set: (r, v) => ({ ...r, paint: isPaint(v) ? v : '' }) },
+                            ]}
+                        />
+                    </div>
+                </div>
                 <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
                     <li>รวม (ตร.ม.) = กว้าง × ยาว</li>
                     <li>
