@@ -8,57 +8,18 @@ import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { EmptyState } from '@/components/sheet/journey/EmptyState';
 import {
-    INSTALLMENTS, computeCrewCalendar, isoToSerial, serialToIso,
+    INSTALLMENTS, computeCrewCalendar,
     type CrewCalendarDay, type CrewCalendarResult, type ManDayResult, type ScheduleResult,
 } from '@/domain/planning';
 import { formatDate, installmentColors } from '../shared/planning-ui';
+import {
+    WEEKDAYS_SHORT, crewText, firstPlanDayOf, longDate, monthCells, monthKey, monthTitle, parts,
+} from './calendar-grid';
 
-const MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-/** Monday first. */
-const WEEKDAYS_SHORT = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'];
-const WEEKDAYS = ['วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์', 'วันอาทิตย์'];
 /** Chips shown in a desktop cell before "+N งาน". */
 const MAX_CHIPS = 3;
 
-interface Ymd { y: number; m: number; d: number }
-
-function parts(iso: string): Ymd {
-    const [y = 0, m = 1, d = 1] = iso.split('-').map(Number);
-    return { y, m: m - 1, d };
-}
-
-/** Months counted from year 0, so consecutive months differ by 1. */
-const monthKey = (iso: string) => { const p = parts(iso); return p.y * 12 + p.m; };
-const keyToIso = (key: number) => `${Math.floor(key / 12)}-${String((key % 12) + 1).padStart(2, '0')}-01`;
-/** Monday = 0 … Sunday = 6. */
-const weekdayOf = (serial: number) => (new Date(Date.UTC(1899, 11, 30 + serial)).getUTCDay() + 6) % 7;
-
-/** "กุมภาพันธ์ 2026" (same year as the dates elsewhere on the page). */
-const monthTitle = (key: number) => `${MONTHS[key % 12] ?? ''} ${Math.floor(key / 12)}`;
-
-/** "วันอังคารที่ 10 กุมภาพันธ์ 2026". */
-function longDate(iso: string): string {
-    const p = parts(iso);
-    const serial = isoToSerial(iso);
-    const wd = serial === null ? '' : `${WEEKDAYS[weekdayOf(serial)] ?? ''}ที่ `;
-    return `${wd}${p.d} ${MONTHS[p.m] ?? ''} ${p.y}`;
-}
-
-const crewText = (skilled: number, labourers: number) => `ช่าง ${skilled} · คนงาน ${labourers}`;
 const tint = (hex: string) => `${hex}24`;
-
-/** The days of a month grid, Monday first, padded with the neighbouring months' days to whole weeks. */
-function monthCells(key: number): { iso: string; inMonth: boolean }[] {
-    const first = isoToSerial(keyToIso(key));
-    const next = isoToSerial(keyToIso(key + 1));
-    if (first === null || next === null) return [];
-    const from = first - weekdayOf(first);
-    const count = Math.ceil((next - from) / 7) * 7;
-    return Array.from({ length: count }, (_, i) => {
-        const serial = from + i;
-        return { iso: serialToIso(serial), inMonth: serial >= first && serial < next };
-    });
-}
 
 export function CrewCalendar({ schedule, manday }: { schedule: ScheduleResult; manday: ManDayResult }) {
     const cal = useMemo(() => computeCrewCalendar(schedule, manday), [schedule, manday]);
@@ -130,12 +91,6 @@ export function CrewCalendar({ schedule, manday }: { schedule: ScheduleResult; m
             </div>
         </div>
     );
-}
-
-/** First day of the month that is inside the plan (the plan start in its own month). */
-function firstPlanDayOf(key: number, start: string): string {
-    const first = keyToIso(key);
-    return first < start ? start : first;
 }
 
 function DayCell({ iso, day, inMonth, inPlan, isToday, isSelected, onSelect }: {

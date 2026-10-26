@@ -15,9 +15,10 @@ import { ActualTable } from './ActualTable';
 import { CrewCalendar } from './CrewCalendar';
 import { GanttTable } from './GanttTable';
 import { ScheduleDetailGrid } from './ScheduleDetailGrid';
+import { SchedulePrintButton } from './SchedulePrintButton';
 
 export function SchedulePage() {
-    const { planning, input, stored, setPlanning, result } = usePlanning();
+    const { project, planning, input, stored, setPlanning, result } = usePlanning();
     const [view, setView] = useState<'table' | 'calendar'>('table');
     const sc = input.schedule;
     const s = planning.schedule;
@@ -102,6 +103,7 @@ export function SchedulePage() {
                     )}
                     <Segmented size="small" value={view} onChange={v => setView(v === 'calendar' ? 'calendar' : 'table')}
                         options={[{ label: 'ตารางงาน', value: 'table' }, { label: 'ปฏิทิน', value: 'calendar' }]} />
+                    <SchedulePrintButton schedule={s} manday={planning.manday} fallbackName={project.meta.projectName} />
                 </span>
             )}>
                 {view === 'table'
