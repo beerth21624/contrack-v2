@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { JOURNEY_LEVELS, getLevel } from '../levels';
-import { currentLevel, isUnlocked, journeyComplete, journeyRatio, levelStates, nextLevel, previousLevel } from '../progress';
+import { JOURNEY_LEVELS, getLevel, type JourneyLevel } from '../levels';
+import {
+    availableLevels, blockingLevels, currentLevel, firstStepToward, isUnlocked, journeyComplete, journeyRatio, levelStates,
+    nextLevel, nextOpenLevel, previousLevel, type JourneyProgress,
+} from '../progress';
 import { CALCULATORS } from '../../calculators/registry';
 import { BOQ_TEMPLATE_V5 } from '../../boq/template.v5';
 import { calculatorInput, computeProject, createProject } from '../../project';
@@ -73,10 +76,182 @@ describe('journey progress', () => {
     });
 
     it('steps forward and back', () => {
-        expect(nextLevel(a)?.id).toBe(b);
-        expect(previousLevel(b)?.id).toBe(a);
-        expect(previousLevel(a)).toBeUndefined();
-        expect(nextLevel(at(JOURNEY_LEVELS.length - 1))).toBeUndefined();
+        expect(nextLevel(a, {})?.id).toBe(b);
+        expect(previousLevel(b, { [a]: 'done' })?.id).toBe(a);
+        expect(previousLevel(a, {})).toBeUndefined();
+        const allButLast = Object.fromEntries(JOURNEY_LEVELS.slice(0, -1).map(l => [l.id, 'done' as const]));
+        expect(nextLevel(at(JOURNEY_LEVELS.length - 1), allButLast)).toBeUndefined();
+    });
+});
+
+/** Every level up to and including `lastId` (journey order) marked done, plus `extra`. */
+function doneThrough(lastId: string, extra: JourneyProgress = {}): JourneyProgress {
+    const i = JOURNEY_LEVELS.findIndex(l => l.id === lastId);
+    if (i < 0) throw new Error(`no level ${lastId}`);
+    return { ...Object.fromEntries(JOURNEY_LEVELS.slice(0, i + 1).map(l => [l.id, 'done' as const])), ...extra };
+}
+const ids = (levels: readonly JourneyLevel[]) => levels.map(l => l.id);
+const done = (...levelIds: string[]): JourneyProgress => Object.fromEntries(levelIds.map(id => [id, 'done' as const]));
+
+describe('journey prerequisites (docs/rebuild/CONSTRUCTION_FLOW.md §4)', () => {
+    const index = new Map(JOURNEY_LEVELS.map((l, i) => [l.id, i]));
+
+    it('name existing levels that come earlier in the list', () => {
+        for (const l of JOURNEY_LEVELS) {
+            expect(new Set(l.after).size, `${l.id} lists a level twice`).toBe(l.after.length);
+            for (const id of l.after) {
+                const at = index.get(id);
+                expect(at, `${l.id} after unknown "${id}"`).toBeDefined();
+                expect(at ?? Infinity, `${id} before ${l.id}`).toBeLessThan(index.get(l.id) ?? -1);
+            }
+        }
+    });
+
+    it('have no cycles', () => {
+        const byId = new Map(JOURNEY_LEVELS.map(l => [l.id, l]));
+        const visiting = new Set<string>();
+        const finished = new Set<string>();
+        const visit = (id: string, path: readonly string[]) => {
+            if (finished.has(id)) return;
+            expect(visiting.has(id), `cycle: ${[...path, id].join(' → ')}`).toBe(false);
+            visiting.add(id);
+            for (const d of byId.get(id)?.after ?? []) visit(d, [...path, id]);
+            visiting.delete(id);
+            finished.add(id);
+        };
+        for (const l of JOURNEY_LEVELS) visit(l.id, []);
+    });
+
+    it('only the first level opens with nothing before it', () => {
+        expect(JOURNEY_LEVELS.filter(l => l.after.length === 0).map(l => l.id)).toEqual(['project-info']);
+    });
+
+    it('wait for every calculator they read from (directly or through other levels)', () => {
+        const byId = new Map(JOURNEY_LEVELS.map(l => [l.id, l]));
+        const levelOfCalc = new Map(JOURNEY_LEVELS.flatMap(l => (l.kind.type === 'calc' ? [[l.kind.calc, l.id] as const] : [])));
+        const ancestors = (id: string, seen = new Set<string>()): Set<string> => {
+            for (const d of byId.get(id)?.after ?? []) {
+                if (seen.has(d)) continue;
+                seen.add(d);
+                ancestors(d, seen);
+            }
+            return seen;
+        };
+        for (const c of CALCULATORS) {
+            const levelId = levelOfCalc.get(c.id);
+            if (levelId === undefined) continue;
+            const before = ancestors(levelId);
+            for (const d of c.deps) {
+                const depLevel = levelOfCalc.get(d);
+                if (depLevel !== undefined) expect(before.has(depLevel), `${depLevel} before ${levelId}`).toBe(true);
+            }
+        }
+        // The data links the flow document names.
+        const links = [['door-window', 'brick'], ['brick', 'plaster'], ['footing', 'pedestal'], ['roofing', 'roof-structure']] as const;
+        for (const [from, to] of links) expect(getLevel(to)?.after, `${from} → ${to}`).toContain(from);
+    });
+
+    it('a level opens only when everything before it is passed; several open at once', () => {
+        const progress = doneThrough('ground-beam');
+        expect(ids(availableLevels(progress))).toEqual(['slab-on-grade', 'stair', 'waste-pipe']);
+        expect(levelStates(progress)['precast-slab']).toBe('locked');
+        expect(currentLevel(progress)?.id).toBe('slab-on-grade');
+        expect(isUnlocked('stair', progress)).toBe(true);
+        expect(isUnlocked('column-plates', progress)).toBe(false);
+    });
+
+    it('group A: stairs beside the slabs and first-floor columns; column plates wait for both', () => {
+        const chain = doneThrough('ground-beam', done('slab-on-grade', 'precast-slab', 'column', 'roof-beam', 'roof-slab'));
+        expect(levelStates(chain)['column-plates']).toBe('locked');
+        expect(ids(blockingLevels('column-plates', chain))).toEqual(['stair']);
+        // Stairs first: the plates wait for the slab chain instead.
+        const stairsFirst = doneThrough('ground-beam', done('stair'));
+        expect(ids(blockingLevels('column-plates', stairsFirst))).toEqual(['roof-beam', 'roof-slab']);
+        expect(levelStates({ ...chain, ...done('stair') })['column-plates']).toBe('current');
+    });
+
+    it('group B: roofing and openings open together after the plates; plaster waits for the roof frame and the walls', () => {
+        const plates = doneThrough('column-plates', done('waste-pipe'));
+        expect(ids(availableLevels(plates))).toEqual(['roofing', 'door-window']);
+        expect(ids(blockingLevels('roof-structure', plates))).toEqual(['roofing']);
+        const openings = { ...plates, ...done('door-window') };
+        expect(ids(availableLevels(openings))).toEqual(['roofing', 'brick', 'electrical-pipe']);
+        const walls = { ...openings, ...done('brick') };
+        expect(ids(blockingLevels('plaster', walls))).toEqual(['roof-structure']);
+        expect(levelStates({ ...walls, ...done('roofing', 'roof-structure') }).plaster).toBe('current');
+    });
+
+    it('group C: the four finishes open together after plaster; paint waits for all four', () => {
+        const plaster = doneThrough('plaster', done('waste-pipe', 'electrical-pipe', 'electrical-cable'));
+        const open = ids(availableLevels(plaster));
+        for (const id of ['ceiling', 'floor-tile', 'toilet-tile', 'wall-finishing', 'water-pipe']) expect(open).toContain(id);
+        expect(ids(blockingLevels('paint', plaster))).toEqual(['ceiling', 'floor-tile', 'toilet-tile', 'wall-finishing']);
+        const three = { ...plaster, ...done('ceiling', 'floor-tile', 'toilet-tile') };
+        expect(ids(blockingLevels('paint', three))).toEqual(['wall-finishing']);
+        expect(levelStates({ ...three, 'wall-finishing': 'skipped' }).paint).toBe('current');
+    });
+
+    it('group D: equipment opens together; sanitary ware waits for the whole group, misc for paint', () => {
+        const plaster = doneThrough('plaster', done('waste-pipe', 'electrical-pipe', 'electrical-cable'));
+        const open = ids(availableLevels(plaster));
+        for (const id of ['load-center', 'electrical-equipment', 'sanitary-system']) expect(open).toContain(id);
+        expect(ids(blockingLevels('sanitary-ware', plaster))).toEqual(['load-center', 'electrical-equipment', 'sanitary-system']);
+        expect(ids(blockingLevels('misc', plaster))).toEqual(['paint']);
+        const painted = { ...plaster, ...done('ceiling', 'floor-tile', 'toilet-tile', 'wall-finishing', 'paint') };
+        expect(levelStates(painted).misc).toBe('current');
+        const group = { ...plaster, ...done('load-center', 'electrical-equipment', 'sanitary-system') };
+        expect(levelStates(group)['sanitary-ware']).toBe('current');
+    });
+
+    it('"ไม่มีในโครงการนี้" counts as passed', () => {
+        const site = done('project-info', 'land-inspection');
+        expect(ids(availableLevels(site))).toEqual(['demolition', 'fill']);
+        expect(ids(blockingLevels('temp-utilities', { ...site, demolition: 'skipped' }))).toEqual(['fill']);
+        expect(levelStates({ ...site, demolition: 'skipped', fill: 'skipped' })['temp-utilities']).toBe('current');
+        const noStairs = doneThrough('roof-slab', { stair: 'skipped' });
+        expect(levelStates(noStairs)['column-plates']).toBe('current');
+        // A skipped level stays open for editing ("มีงานส่วนนี้ กลับไปกรอกข้อมูล").
+        expect(isUnlocked('stair', noStairs)).toBe(true);
+    });
+
+    it('progress saved by the one-at-a-time journey reads the same: passed stays passed, the next one is open', () => {
+        for (const last of ['project-info', 'ground-beam', 'column-plates', 'plaster', 'paint']) {
+            const old = doneThrough(last);
+            const states = levelStates(old);
+            for (const id of Object.keys(old)) expect(states[id], id).toBe('done');
+            const i = JOURNEY_LEVELS.findIndex(l => l.id === last);
+            expect(currentLevel(old)?.id).toBe(JOURNEY_LEVELS[i + 1]?.id);
+        }
+        // A level reopened in the old journey: open again, later passed levels stay done.
+        const { footing: _reopened, ...reopened } = doneThrough('brick');
+        const states = levelStates(reopened);
+        expect(states.footing).toBe('current');
+        expect(states.pedestal).toBe('done');
+        expect(states.plaster).toBe('current');
+        expect(currentLevel(reopened)?.id).toBe('footing');
+    });
+
+    it('confirm-and-next goes to the next available level in list order', () => {
+        const progress = doneThrough('ground-beam');
+        // The step being confirmed counts as passed when choosing where to go.
+        expect(nextLevel('slab-on-grade', progress)?.id).toBe('precast-slab');
+        expect(nextLevel('stair', progress)?.id).toBe('waste-pipe');
+        // Nothing open after it: back to the first step left behind.
+        expect(nextLevel('waste-pipe', progress)?.id).toBe('slab-on-grade');
+        expect(nextLevel('plaster', doneThrough('brick'))?.id).toBe('electrical-pipe');
+        expect(nextLevel('column-plates', doneThrough('stair'))?.id).toBe('roofing');
+        expect(nextLevel('misc', doneThrough('paint'))).toBeUndefined();
+    });
+
+    it('stepping and the way to a waiting level pass over what is still locked', () => {
+        const progress = doneThrough('ground-beam', done('stair'));
+        expect(previousLevel('stair', progress)?.id).toBe('slab-on-grade');
+        expect(previousLevel('waste-pipe', progress)?.id).toBe('stair');
+        expect(nextOpenLevel('stair', progress)?.id).toBe('waste-pipe');
+        expect(nextOpenLevel('waste-pipe', progress)).toBeUndefined();
+        expect(firstStepToward('paint', progress)?.id).toBe('slab-on-grade');
+        expect(firstStepToward('stair', progress)?.id).toBe('stair');
+        expect(firstStepToward('electrical-cable', doneThrough('door-window'))?.id).toBe('brick');
     });
 });
 
