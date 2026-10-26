@@ -27,7 +27,7 @@ export function GanttTable({ schedule, tasks, count, onTask }: {
             <table className="border-collapse" style={{ minWidth: '100%' }}>
                 <thead>
                     <tr>
-                        <th className={cls.th} rowSpan={2} style={{ width: 40 }}>No.</th>
+                        <th className={cls.th} rowSpan={2} style={{ width: 52 }}>ลำดับ</th>
                         <th className={cls.th} rowSpan={2} style={{ minWidth: 190 }}>รายละเอียดงาน</th>
                         <th className={cls.th} rowSpan={2} style={{ width: 72 }}>ระยะเวลา<br /><span className="font-normal">(วัน)</span></th>
                         <th className={cls.th} rowSpan={2} style={{ width: 128 }}>วันเริ่ม</th>

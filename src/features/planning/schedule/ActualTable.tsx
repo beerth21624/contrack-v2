@@ -28,7 +28,7 @@ export function ActualTable({ schedule, tasks, onTask }: {
             <table className="w-full border-collapse min-w-[860px]">
                 <thead>
                     <tr>
-                        <th className={cls.th} style={{ width: 40 }}>No.</th>
+                        <th className={cls.th} style={{ width: 52 }}>ลำดับ</th>
                         <th className={cls.th}>รายละเอียดงาน</th>
                         <th className={cls.th} style={{ width: 150 }}>แผน<br /><span className="font-normal">(เริ่ม – เสร็จ)</span></th>
                         <th className={cls.th} style={{ width: 130 }}>เริ่มจริง</th>

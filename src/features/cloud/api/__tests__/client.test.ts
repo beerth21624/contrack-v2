@@ -123,6 +123,42 @@ describe('ApiClient', () => {
         expect(urls).toEqual(['/api/auth/login']);
     });
 
+    it('remembers whether a refresh cookie may exist (a guest browser skips the start-up refresh)', async () => {
+        let stored = false;
+        const sessionHint = { read: () => stored, write: (v: boolean) => { stored = v; } };
+        let refreshOk = true;
+        const client = new ApiClient({
+            sessionHint,
+            fetch: (url) => Promise.resolve(url === '/api/auth/refresh' && refreshOk
+                ? json(200, auth('new'))
+                : url === '/api/auth/logout' ? new Response(null, { status: 204 }) : json(401, { code: 'invalid_token', message: 'no' })),
+        });
+        expect(client.mayHaveSession).toBe(false);
+
+        await createApi(client).auth.login({ email: 'a@b.co', password: 'x' }).catch(() => undefined);
+        expect(stored).toBe(false); // refused login: still nothing
+
+        expect(await client.refresh()).not.toBeNull();
+        expect(stored).toBe(true);
+        expect(client.mayHaveSession).toBe(true);
+
+        await createApi(client).auth.logout();
+        expect(stored).toBe(false);
+        expect(client.mayHaveSession).toBe(false);
+
+        // A dead cookie while already signed out: forgotten too, so the next start does not ask again.
+        stored = true;
+        refreshOk = false;
+        expect(await client.refresh()).toBeNull();
+        expect(stored).toBe(false);
+
+        // Offline: the hint stays.
+        stored = true;
+        const offline = new ApiClient({ sessionHint, fetch: () => Promise.reject(new TypeError('Failed to fetch')) });
+        expect(await offline.refresh()).toBeNull();
+        expect(stored).toBe(true);
+    });
+
     it('encodes doc keys and query strings', async () => {
         const urls: string[] = [];
         const client = new ApiClient({
