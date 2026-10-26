@@ -38,8 +38,13 @@ function StepMark({ state, n }: { state: LevelState; n: number }) {
 function waitingText(waiting: readonly JourneyLevel[]): string {
     const [first] = waiting;
     if (first === undefined) return '';
-    if (waiting.length <= 2) return `รอ: ${waiting.map(l => l.title).join(', ')}`;
+    if (waiting.length <= 2) return waitingList(waiting);
     return `รอ: ${first.title} และอีก ${String(waiting.length - 1)} ขั้นตอน`;
+}
+
+/** "รอ: ฉาบปูน, ก่ออิฐ": every name (phones, where there is no tooltip to show the rest). */
+function waitingList(waiting: readonly JourneyLevel[]): string {
+    return waiting.length === 0 ? '' : `รอ: ${waiting.map(l => l.title).join(', ')}`;
 }
 
 function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
@@ -52,12 +57,14 @@ function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
     incomplete: number;
 }) {
     const open = state !== 'locked';
+    const waits = state === 'locked' && waiting.length > 0;
     const right = state === 'current'
         ? <span className="text-[13px] font-medium text-orange-600 whitespace-nowrap">ทำต่อ <ArrowRightOutlined className="text-[11px]" /></span>
         : state === 'skipped' ? <span className="text-[12px] text-gray-400 whitespace-nowrap">ไม่มีในโครงการนี้</span>
             : state === 'done' && level.kind.type !== 'meta' ? <span className="text-[13px] tabular-nums text-gray-700 whitespace-nowrap">{baht(value)}</span>
-                : state === 'locked' && waiting.length > 0
-                    ? <span className="text-[12px] text-gray-400 truncate max-w-[160px] sm:max-w-[280px]">{waitingText(waiting)}</span>
+                // Wider screens: one line beside the name (the row's tooltip names every step). Phones: under the name.
+                : waits
+                    ? <span className="hidden sm:inline text-[12px] text-gray-400 truncate max-w-[280px]">{waitingText(waiting)}</span>
                     : null;
     const warn = state === 'done' && incomplete > 0 && (
         <span role="img" aria-label={`ข้อมูลยังไม่ครบ ${String(incomplete)} รายการ`} title={`ข้อมูลยังไม่ครบ ${String(incomplete)} รายการ`}
@@ -71,6 +78,7 @@ function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
                 <div className={`text-[14px] leading-[22px] truncate ${open ? 'text-gray-900' : 'text-gray-400'} ${primary ? 'font-semibold' : ''}`}>
                     {level.title}
                 </div>
+                {waits && <div className="sm:hidden text-[12px] leading-[18px] text-gray-400 line-clamp-2">{waitingList(waiting)}</div>}
                 {team.enabled && <div className="mt-0.5"><LevelAssignee info={team} levelId={level.id} /></div>}
             </div>
             <div className="flex items-center gap-2">
@@ -84,7 +92,7 @@ function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
         <li>
             {open
                 ? <Link href={`/journey/${level.id}`} aria-current={primary ? 'step' : undefined} className="block">{row}</Link>
-                : <div title={`รอ: ${waiting.map(l => l.title).join(', ')}`}>{row}</div>}
+                : <div title={waitingList(waiting)}>{row}</div>}
         </li>
     );
 }
@@ -208,8 +216,8 @@ export function JourneyMapPage() {
             <header className="flex flex-wrap items-end gap-3">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-[12px] text-gray-500">
-                        <span>ภาพรวมโครงการ</span>
-                        {project.start !== 'blank' && <Tag variant="filled" className="!text-[12px] !m-0">บ้านตัวอย่าง Excel v5</Tag>}
+                        <span className="whitespace-nowrap">ภาพรวมโครงการ</span>
+                        {project.start !== 'blank' && <Tag variant="filled" className="!text-[12px] !m-0 min-w-0 truncate">บ้านตัวอย่าง Excel v5</Tag>}
                     </div>
                     <h1 className="m-0 mt-1 text-[26px] leading-tight font-semibold text-gray-900" style={{ overflowWrap: 'anywhere' }}>{title}</h1>
                     {project.meta.siteAddress !== '' && <div className="mt-1 text-[13px] text-gray-500">{project.meta.siteAddress}</div>}

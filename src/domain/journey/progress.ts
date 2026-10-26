@@ -48,8 +48,10 @@ export function blockingLevels(levelId: string, progress: JourneyProgress, level
 }
 
 /**
- * The available level to do first on the way to `levelId`: the earliest of its unpassed prerequisites, direct or
- * indirect (it is available itself, since its own prerequisites come earlier). The level itself when it is open.
+ * The available level to do first on the way to `levelId`: of its unpassed prerequisites, direct or indirect
+ * (through unpassed ones only: a passed level blocks nothing), the earliest in journey order that is available.
+ * There always is one, since the prerequisites have no cycles; list order plays no part in that. The level itself
+ * when it is open.
  */
 export function firstStepToward(levelId: string, progress: JourneyProgress, levels: readonly JourneyLevel[] = JOURNEY_LEVELS): JourneyLevel | undefined {
     const level = levels.find(l => l.id === levelId);
@@ -58,7 +60,7 @@ export function firstStepToward(levelId: string, progress: JourneyProgress, leve
     const needed = new Set<string>();
     const visit = (l: JourneyLevel) => {
         for (const id of l.after) {
-            if (needed.has(id)) continue;
+            if (needed.has(id) || isPassed(progress, id)) continue;
             needed.add(id);
             const dep = levels.find(x => x.id === id);
             if (dep !== undefined) visit(dep);
@@ -97,12 +99,17 @@ export function nextLevel(levelId: string, progress: JourneyProgress, levels: re
     return available.find(l => levels.indexOf(l) > i) ?? available[0];
 }
 
-/** The nearest open level (passed or available) after `levelId`, for stepping through the journey. */
+/**
+ * The nearest open level (passed or available) after `levelId`, for stepping through the journey. When nothing
+ * after it is open, the first available level before it (work left behind, as `nextLevel` does); undefined only
+ * when no other level is left to do.
+ */
 export function nextOpenLevel(levelId: string, progress: JourneyProgress, levels: readonly JourneyLevel[] = JOURNEY_LEVELS): JourneyLevel | undefined {
     const i = levels.findIndex(l => l.id === levelId);
     if (i < 0) return undefined;
     const states = levelStates(progress, levels);
-    return levels.slice(i + 1).find(l => states[l.id] !== 'locked');
+    return levels.slice(i + 1).find(l => states[l.id] !== 'locked')
+        ?? levels.find(l => l.id !== levelId && states[l.id] === 'current');
 }
 
 /** The nearest open level (passed or available) before `levelId`; locked levels in between are passed over. */

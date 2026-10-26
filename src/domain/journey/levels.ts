@@ -4,7 +4,8 @@
 // or a few BOQ (Home) rows that have no calculator.
 // A level opens when every level in its `after` list is passed (docs/rebuild/CONSTRUCTION_FLOW.md §4), so
 // work the construction flow does side by side (stairs beside the slabs, the four finishes, …) opens together.
-// The list order stays a valid order: every prerequisite comes earlier in the list.
+// The list keeps the trade groups, so a prerequisite may sit later in the list (the electrical and sanitary
+// fittings wait for paint, in งานตกแต่ง). Opening never reads list order; the `after` graph only has to be acyclic.
 
 export type LevelKind =
     /** One calculator sheet, shown in journey mode. */
@@ -23,7 +24,7 @@ export interface JourneyLevel {
     kind: LevelKind;
     /**
      * Levels that must be passed (done or "ไม่มีในโครงการนี้") before this one opens. They include every
-     * calculator this level reads from, and all come earlier in the journey list.
+     * calculator this level reads from (directly or through other levels). They may sit anywhere in the list.
      */
     after: readonly string[];
     /** BOQ (Home) sections the level feeds, for the level's money total. */
@@ -193,15 +194,14 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'load-center', title: 'ตู้ควบคุมไฟฟ้า', kind: calc('load-center'), sections: [26],
-                // The flow puts this group after paint, but paint comes later in this list: until the steps are
-                // re-sorted it opens with the finishes (after plaster and the wiring).
-                after: ['plaster', 'electrical-cable'],
+                // Group D (flow 26–29): the fittings go in after paint, beside งานเบ็ดเตล็ด.
+                after: ['paint'],
                 planHint: 'ดูไดอะแกรมไฟฟ้า: ตู้ควบคุม เมนเบรกเกอร์ และเบรกเกอร์ย่อย',
             },
             {
                 id: 'electrical-equipment', title: 'อุปกรณ์ไฟฟ้า', kind: calc('electrical-equipment'), sections: [26],
-                // After paint in the flow; opens with the finishes for now (see ตู้ควบคุมไฟฟ้า).
-                after: ['plaster', 'electrical-cable'],
+                // Group D, after paint (see ตู้ควบคุมไฟฟ้า). Its calculator reads nothing from the wiring.
+                after: ['paint'],
                 planHint: 'นับจากแปลนไฟฟ้า: ดวงโคม ปลั๊ก สวิตช์ และอุปกรณ์แต่ละชนิด',
             },
             {
@@ -216,14 +216,14 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'sanitary-system', title: 'อุปกรณ์ระบบสุขาภิบาล', kind: calc('sanitary-system'), sections: [27],
-                // After paint in the flow; opens with the finishes for now (see ตู้ควบคุมไฟฟ้า).
-                after: ['plaster'],
+                // Group D, after paint (see ตู้ควบคุมไฟฟ้า).
+                after: ['paint'],
                 planHint: 'ดูแปลนสุขาภิบาล: ถังดักไขมัน ถังบำบัด บ่อพัก และความยาวท่อระบายน้ำ AC (ใยหิน) ภายนอก',
             },
             {
                 id: 'sanitary-ware', title: 'สุขภัณฑ์', kind: calc('sanitary-ware'), sections: [29],
-                // The flow also waits for งานเบ็ดเตล็ด, which is later in this list.
-                after: ['load-center', 'electrical-equipment', 'sanitary-system'],
+                // Waits for the whole of group D (flow 30), งานเบ็ดเตล็ด included.
+                after: ['load-center', 'electrical-equipment', 'sanitary-system', 'misc'],
                 planHint: 'นับจากแปลนห้องน้ำ: ชักโครก อ่างล้างหน้า ฝักบัว และอุปกรณ์',
             },
         ],
