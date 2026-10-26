@@ -76,6 +76,22 @@ export function roofSlabTotals(input: RoofSlabInput): RoofSlabTotals {
 const panel = (width: number, length: number): RoofSlabRow =>
     ({ name: 'S1', width, length, thickness: 0.1, size: 'RB9', layers: 2, spacing: 0.2 });
 
+/**
+ * A new panel for the guided journey: no size yet (width, length, thickness read off the plan); the bar spec
+ * copies the previous panel, or the Excel sample (RB9 × 2 layers @0.2).
+ */
+export function newRoofSlabRow(prev?: RoofSlabRow): RoofSlabRow {
+    return {
+        name: prev?.name ?? 'S1',
+        width: 0,
+        length: 0,
+        thickness: prev?.thickness ?? 0,
+        size: prev?.size ?? 'RB9',
+        layers: prev?.layers ?? 2,
+        spacing: prev?.spacing ?? 0.2,
+    };
+}
+
 export const roofSlab = defineCalculator<RoofSlabInput>({
     id: 'roof-slab',
     sheetName: 'พื้นดาดฟ้า_RoofSlab',
@@ -85,6 +101,8 @@ export const roofSlab = defineCalculator<RoofSlabInput>({
     deps: [],
     // Excel v5 rows 8–11 (rows 12–24 are blank).
     defaults: () => ({ rows: [panel(1, 4.5), panel(3, 3.5), panel(1.5, 3), panel(1.5, 3)] }),
+    // A real project starts with no panels; each added panel gets the Excel bar spec (newRoofSlabRow).
+    blank: () => ({ rows: [] }),
     compute: (input) => {
         const t = roofSlabTotals(input);
         const out: Record<string, number> = { props: t.props, formwork: t.formwork, concrete: t.concrete };

@@ -106,3 +106,20 @@ describe('project with journey', () => {
         expect(Number.isFinite(result.boq.constructionTotal)).toBe(true);
     });
 });
+describe('level money', () => {
+    it('counts calculator rows that sit in other sections (column rebar in section 6)', () => {
+        const result = computeProject(createProject());
+        const column = getLevel('column');
+        expect(column).toBeDefined();
+        if (!column) return;
+        const section11 = result.boq.sections.find(s => s.no === 11)?.total ?? 0;
+        expect(levelTotal(column, result)).toBeGreaterThan(0);
+        expect(levelTotal(column, result)).not.toBeCloseTo(section11, 0);
+    });
+
+    it('splits nothing twice: level totals never exceed the construction + pre-construction total', () => {
+        const result = computeProject(createProject());
+        const sum = JOURNEY_LEVELS.reduce((s, l) => s + levelTotal(l, result), 0);
+        expect(sum).toBeLessThanOrEqual(result.boq.constructionTotal + result.boq.preConstructionTotal + 1e-6);
+    });
+});

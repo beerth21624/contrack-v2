@@ -85,6 +85,14 @@ const panel = (width: number, length: number): PrecastPanelRow => ({
     width, length, keySize: 'RB6', keySpacing: 0.35, keyBarLength: 0.8, topping: 0.05,
 });
 
+/**
+ * A new span for the guided journey: no size yet; the shear-key bar and the topping copy the previous span,
+ * or the Excel sample (RB6 @0.35, 0.80 m a bar, topping 0.05 m).
+ */
+export function newPrecastPanel(prev?: PrecastPanelRow): PrecastPanelRow {
+    return prev ? { ...prev, width: 0, length: 0 } : panel(0, 0);
+}
+
 export const precastSlab = defineCalculator<PrecastSlabInput>({
     id: 'precast-slab',
     sheetName: ' พื้นสำเร็จรูป_PS',
@@ -98,6 +106,8 @@ export const precastSlab = defineCalculator<PrecastSlabInput>({
             panel(3, 3.5), panel(3, 1.2), panel(2, 3.5), panel(3.5, 3.5),
         ],
     }),
+    // A real project starts with no spans; each added span gets the Excel shear key / topping (newPrecastPanel).
+    blank: () => ({ panels: [] }),
     compute: (input) => {
         const t = precastSlabTotals(input);
         const out: Record<string, number> = {

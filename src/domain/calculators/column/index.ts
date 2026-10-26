@@ -87,6 +87,25 @@ export function computeColumn(input: ColumnInput): Record<string, number> {
     return out;
 }
 
+/**
+ * A new column type for the guided journey: name, count, size and height read off the plan; the bar sizes and
+ * stirrup spacing copy the previous row, or the Excel sample (DB12 main bars, RB6 stirrups @0.15). The number of
+ * main bars is a count from the column detail, so it starts at 0 (or the previous row's).
+ */
+export function newColumnRow(prev?: ColumnRow): ColumnRow {
+    return {
+        name: '',
+        count: 0,
+        width: 0,
+        depth: 0,
+        height: prev?.height ?? 0,
+        mainSize: prev?.mainSize ?? 'DB12',
+        mainCount: prev?.mainCount ?? 0,
+        stirrupSize: prev?.stirrupSize ?? 'RB6',
+        stirrupSpacing: prev?.stirrupSpacing ?? 0.15,
+    };
+}
+
 export const column = defineCalculator<ColumnInput>({
     id: 'column',
     sheetName: 'เสา_Column',
@@ -103,6 +122,8 @@ export const column = defineCalculator<ColumnInput>({
             mainSize: 'DB12', mainCount: 6, stirrupSize: 'RB6', stirrupSpacing: 0.15,
         }],
     }),
+    // A real project starts with no column types; each added row gets the Excel bar spec (newColumnRow).
+    blank: () => ({ columns: [] }),
     compute: (input) => computeColumn(input),
     // BOQ 11 reads sheet 24 row 11 (O11 = T6, P11 = V6).
     boqLinks: [

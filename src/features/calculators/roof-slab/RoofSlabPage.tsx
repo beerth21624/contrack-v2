@@ -9,6 +9,8 @@ import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
 import { RebarSummary } from '@/components/sheet/RebarSummary';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
+import { RoofSlabJourney } from './RoofSlabJourney';
 
 const sizeOptions = ROOF_SLAB_BAR_SIZES.map(value => ({ value }));
 const nameOptions = ROOF_SLAB_NAMES.map(value => ({ value }));
@@ -23,6 +25,14 @@ const REBAR = 'เหล็กเสริมหลัก';
 
 export default function RoofSlabPage() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(roofSlab);
+    const inJourney = useJourneyMode();
+    if (inJourney) {
+        return (
+            <CalculatorShell def={roofSlab} result={result} isDefault={isDefault} onReset={reset}>
+                <RoofSlabJourney input={input} outputs={outputs} onChange={next => update({ rows: next })} />
+            </CalculatorShell>
+        );
+    }
     const rows = input.rows.map(roofSlabRow);
     const totals = roofSlabTotals(input);
     const res = (i: number) => rows[i];

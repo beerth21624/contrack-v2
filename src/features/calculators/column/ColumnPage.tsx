@@ -8,8 +8,10 @@ import { REBAR_SIZES } from '@/domain/boq/slots';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
+import { ColumnJourney } from './ColumnJourney';
 
 const th = 'border border-gray-200 px-2 py-1 text-[12px] font-semibold text-gray-700 bg-gray-50 text-center';
 const td = 'border border-gray-200 px-2 py-1 text-[13px] text-right tabular-nums';
@@ -43,6 +45,15 @@ const newColumn = (prev: ColumnRow | undefined): ColumnRow => ({
 
 export default function ColumnPage() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(column);
+    const inJourney = useJourneyMode();
+
+    if (inJourney) {
+        return (
+            <CalculatorShell def={column} result={result} isDefault={isDefault} onReset={reset}>
+                <ColumnJourney input={input} outputs={outputs} onChange={columns => update({ columns })} />
+            </CalculatorShell>
+        );
+    }
 
     return (
         <CalculatorShell def={column} result={result} isDefault={isDefault} onReset={reset}>

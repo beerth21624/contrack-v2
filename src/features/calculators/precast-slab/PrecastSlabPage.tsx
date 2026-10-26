@@ -9,8 +9,10 @@ import type { BoqItemRow } from '@/domain/boq/types';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
+import { PrecastSlabJourney } from './PrecastSlabJourney';
 
 /** Column title with the Excel group header (row 3/4) above the column header (row 7). */
 const head = (group: string, title: string): ReactNode => (
@@ -25,6 +27,14 @@ const td = 'border border-gray-200 px-2 py-1 text-[13px] text-right tabular-nums
 
 export default function PrecastSlabPage() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(precastSlab);
+    const inJourney = useJourneyMode();
+    if (inJourney) {
+        return (
+            <CalculatorShell def={precastSlab} result={result} isDefault={isDefault} onReset={reset}>
+                <PrecastSlabJourney input={input} outputs={outputs} onChange={panels => update({ panels })} />
+            </CalculatorShell>
+        );
+    }
     const totals = precastSlabTotals(input);
     const shearKeyRows = result.boq.sections.flatMap(s => s.rows)
         .filter((r): r is BoqItemRow => r.type === 'item' && r.key.startsWith('precast-slab:shear-key:'));

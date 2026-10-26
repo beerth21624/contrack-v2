@@ -10,6 +10,8 @@ import { formatNumber } from '@/components/sheet/NumberCell';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
 import { RebarSummary } from '@/components/sheet/RebarSummary';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
+import { RoofBeamJourney } from './RoofBeamJourney';
 
 const sizeOptions = ROOF_BEAM_BAR_SIZES.map(value => ({ value }));
 const nameOptions = ROOF_BEAM_NAMES.map(value => ({ value }));
@@ -24,6 +26,14 @@ const STIRRUP = 'เหล็กปลอก';
 
 export default function RoofBeamPage() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(roofBeam);
+    const inJourney = useJourneyMode();
+    if (inJourney) {
+        return (
+            <CalculatorShell def={roofBeam} result={result} isDefault={isDefault} onReset={reset}>
+                <RoofBeamJourney input={input} outputs={outputs} onChange={next => update({ rows: next })} />
+            </CalculatorShell>
+        );
+    }
     const rows = input.rows.map(roofBeamRow);
     const totals = roofBeamTotals(input);
     const res = (i: number) => rows[i];

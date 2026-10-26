@@ -151,6 +151,39 @@ const sample = (name: string, width: number): StairRow => ({
     stepMainSize: 'RB9', stepMainSpacing: 0.15, stepTempSize: 'RB9', stepTempSpacing: 0.15,
 });
 
+/**
+ * A new stair for the guided journey: every size read off the stair detail starts at 0; the four bar groups
+ * copy the previous stair, or the Excel sample (RB9 @0.15 everywhere).
+ */
+export function newStairRow(prev?: StairRow): StairRow {
+    const bars = prev ?? sample('', 0);
+    return {
+        name: '', width: 0, waist: 0, rise: 0, run: 0, steps: 0, riser: 0, tread: 0,
+        waistMainSize: bars.waistMainSize, waistMainSpacing: bars.waistMainSpacing,
+        waistTempSize: bars.waistTempSize, waistTempSpacing: bars.waistTempSpacing,
+        stepMainSize: bars.stepMainSize, stepMainSpacing: bars.stepMainSpacing,
+        stepTempSize: bars.stepTempSize, stepTempSpacing: bars.stepTempSpacing,
+    };
+}
+
+const same = (a: number, b: number) => Math.abs(a - b) < 1e-9;
+
+/**
+ * Journey helper: applies a change of steps / riser / tread and keeps the total rise (= steps × riser) and the
+ * horizontal run (= steps × tread) in step while they still match the old values (as in the Excel sample:
+ * 3 × 0.15 = 0.45, 3 × 0.30 = 0.90). A rise or run typed by hand that differs is left alone.
+ */
+export function withStepChange(row: StairRow, patch: Partial<Pick<StairRow, 'steps' | 'riser' | 'tread'>>): StairRow {
+    const next = { ...row, ...patch };
+    const riseLinked = same(num(row.rise), num(row.steps) * num(row.riser));
+    const runLinked = same(num(row.run), num(row.steps) * num(row.tread));
+    return {
+        ...next,
+        rise: riseLinked ? num(next.steps) * num(next.riser) : row.rise,
+        run: runLinked ? num(next.steps) * num(next.tread) : row.run,
+    };
+}
+
 export const stair = defineCalculator<StairInput>({
     id: 'stair',
     sheetName: 'บันได_Stair',
@@ -162,6 +195,8 @@ export const stair = defineCalculator<StairInput>({
     defaults: () => ({
         rows: [sample('บันไดหน้าบ้าน', 3.3), sample('บันไดข้างบ้าน', 2), sample('บันไดหลังบ้าน', 2.9)],
     }),
+    // A real project starts with no stairs; each added stair gets the Excel bar spec (newStairRow).
+    blank: () => ({ rows: [] }),
     compute: (input) => {
         const t = stairTotals(input);
         const out: Record<string, number> = { props: t.props, formwork: t.formwork, concrete: t.concrete };

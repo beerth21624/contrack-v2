@@ -136,11 +136,13 @@ export function StructureTable<R>({ rows, groups, onChange, newRow, addLabel = '
                                     case 'select': {
                                         const v = c.get(row);
                                         const known = c.options.some(o => o.value === v);
+                                        // A value typed elsewhere (e.g. "F3" from the journey) stays visible even if not in the Excel list.
+                                        const extra = !known && v !== undefined && v !== '' ? [{ value: v, label: String(v) }] : [];
                                         return (
                                             <td key={c.key} className={td} style={{ background: SHEET_COLORS.input }}>
                                                 <Select size="small" variant="borderless" style={{ width: '100%' }}
-                                                    value={known ? v : undefined} placeholder={c.placeholder} allowClear={c.allowClear}
-                                                    options={c.options.map(o => ({ value: o.value, label: o.label ?? String(o.value) }))}
+                                                    value={v === '' ? undefined : v} placeholder={c.placeholder} allowClear={c.allowClear}
+                                                    options={[...extra, ...c.options.map(o => ({ value: o.value, label: o.label ?? String(o.value) }))]}
                                                     onChange={(nv: string | number | undefined) => replace(i, c.set(row, nv))} />
                                             </td>
                                         );

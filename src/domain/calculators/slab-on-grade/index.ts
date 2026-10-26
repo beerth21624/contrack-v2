@@ -74,6 +74,24 @@ const sample = (width: number, length: number): SlabRow => ({
     name: 'S1', width, length, thickness: 0.1, fillDepth: 0.4, sandThickness: 0.05, barSize: 'RB9', layers: 2, spacing: 0.2,
 });
 
+/**
+ * A new panel for the guided journey: no size yet (width, length, thickness read off the plan); the fill depth,
+ * sand bed and bar spec copy the previous panel, or the Excel sample values (fill 0.4, sand 0.05, RB9 × 2 @0.2).
+ */
+export function newSlabRow(prev?: SlabRow): SlabRow {
+    return {
+        name: prev?.name ?? 'S1',
+        width: 0,
+        length: 0,
+        thickness: prev?.thickness ?? 0,
+        fillDepth: prev?.fillDepth ?? 0.4,
+        sandThickness: prev?.sandThickness ?? 0.05,
+        barSize: prev?.barSize ?? 'RB9',
+        layers: prev?.layers ?? 2,
+        spacing: prev?.spacing ?? 0.2,
+    };
+}
+
 export const slabOnGrade = defineCalculator<SlabOnGradeInput>({
     id: 'slab-on-grade',
     sheetName: 'พื้นหล่อในที่_S',
@@ -88,6 +106,8 @@ export const slabOnGrade = defineCalculator<SlabOnGradeInput>({
             sample(1.5, 4.0), sample(1.5, 4.0), sample(1.5, 4.0), sample(0.9, 3.5), sample(0.9, 3.5),
         ],
     }),
+    // A real project starts with no panels; each added panel gets the Excel bar spec (newSlabRow).
+    blank: () => ({ slabs: [] }),
     compute: (input) => computeSlabOnGrade(input),
     // BOQ 9.2–9.4, 9.6 read sheet 24 row 9 (Q9 = G6, D9 = I6, F9 = K6, P9 = S6).
     boqLinks: [

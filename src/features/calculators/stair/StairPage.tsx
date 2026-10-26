@@ -9,6 +9,8 @@ import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
 import { RebarSummary } from '@/components/sheet/RebarSummary';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
+import { StairJourney } from './StairJourney';
 
 const sizeOptions = STAIR_BAR_SIZES.map(value => ({ value }));
 const nameOptions = STAIR_NAMES.map(value => ({ value }));
@@ -34,6 +36,14 @@ const emptyRow = (): StairRow => ({
 
 export default function StairPage() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(stair);
+    const inJourney = useJourneyMode();
+    if (inJourney) {
+        return (
+            <CalculatorShell def={stair} result={result} isDefault={isDefault} onReset={reset}>
+                <StairJourney input={input} outputs={outputs} onChange={next => update({ rows: next })} />
+            </CalculatorShell>
+        );
+    }
     const rows = input.rows.map(stairRow);
     const totals = stairTotals(input);
     const res = (i: number) => rows[i];

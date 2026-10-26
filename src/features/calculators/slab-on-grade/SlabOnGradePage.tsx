@@ -8,8 +8,10 @@ import { REBAR_SIZES } from '@/domain/boq/slots';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
+import { SlabOnGradeJourney } from './SlabOnGradeJourney';
 
 const th = 'border border-gray-200 px-2 py-1 text-[12px] font-semibold text-gray-700 bg-gray-50 text-center';
 const td = 'border border-gray-200 px-2 py-1 text-[13px] text-right tabular-nums';
@@ -41,6 +43,15 @@ const newSlab = (prev: SlabRow | undefined): SlabRow => ({
 
 export default function SlabOnGradePage() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(slabOnGrade);
+    const inJourney = useJourneyMode();
+
+    if (inJourney) {
+        return (
+            <CalculatorShell def={slabOnGrade} result={result} isDefault={isDefault} onReset={reset}>
+                <SlabOnGradeJourney input={input} outputs={outputs} onChange={slabs => update({ slabs })} />
+            </CalculatorShell>
+        );
+    }
 
     return (
         <CalculatorShell def={slabOnGrade} result={result} isDefault={isDefault} onReset={reset}>

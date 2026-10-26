@@ -99,6 +99,23 @@ export function roofBeamTotals(input: RoofBeamInput): RoofBeamTotals {
     return t;
 }
 
+/**
+ * A new beam for the guided journey: name, size, length and bar count read off the plan; the bar sizes and the
+ * stirrup spacing copy the previous beam, or the Excel sample (DB12 main bars, RB6 stirrups @0.15).
+ */
+export function newRoofBeamRow(prev?: RoofBeamRow): RoofBeamRow {
+    return {
+        name: '',
+        width: prev?.width ?? 0,
+        depth: prev?.depth ?? 0,
+        length: 0,
+        mainSize: prev?.mainSize ?? 'DB12',
+        mainCount: prev?.mainCount ?? 0,
+        stirrupSize: prev?.stirrupSize ?? 'RB6',
+        stirrupSpacing: prev?.stirrupSpacing ?? 0.15,
+    };
+}
+
 export const roofBeam = defineCalculator<RoofBeamInput>({
     id: 'roof-beam',
     sheetName: 'คานดาดฟ้า_RoofBeam',
@@ -113,6 +130,8 @@ export const roofBeam = defineCalculator<RoofBeamInput>({
             { name: 'B5', width: 0.2, depth: 0.3, length: 9, mainSize: 'DB12', mainCount: 6, stirrupSize: 'RB6', stirrupSpacing: 0.15 },
         ],
     }),
+    // A real project starts with no beams; each added beam gets the Excel bar spec (newRoofBeamRow).
+    blank: () => ({ rows: [] }),
     compute: (input) => {
         const t = roofBeamTotals(input);
         const out: Record<string, number> = {

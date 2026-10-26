@@ -28,10 +28,12 @@ function consumableRefs(t: BoqItemTemplate): BoqLineKey[] {
  * only from those (e.g. fittings 50 % of the pipe, tie wire); for a BOQ level, every item row of its sections.
  */
 export function levelRows(level: JourneyLevel, result: ProjectResult): BoqItemRow[] {
-    const sections = result.boq.sections.filter(s => level.sections.includes(s.no));
-    const items = sections.flatMap(s => s.rows.filter((r): r is BoqItemRow => r.type === 'item'));
-    if (level.kind.type === 'boq') return items;
+    const itemsOf = (all: boolean) => result.boq.sections.filter(s => all || level.sections.includes(s.no))
+        .flatMap(s => s.rows.filter((r): r is BoqItemRow => r.type === 'item'));
+    if (level.kind.type === 'boq') return itemsOf(false);
     if (level.kind.type === 'meta') return [];
+    // A calculator's rows can sit outside its own sections (column rebar goes into section 6), so look everywhere.
+    const items = itemsOf(true);
     const def = getCalculator(level.kind.calc);
     if (!def) return [];
     const own = new Set(def.boqLinks.map(l => l.line));
@@ -59,8 +61,7 @@ export function levelTotal(level: JourneyLevel, result: ProjectResult): number {
     const own = new Map(rows.map(r => [r.key, r]));
     let total = rows.reduce((sum, r) => sum + r.total, 0);
     if (level.kind.type !== 'calc') return total;
-    const sections = result.boq.sections.filter(s => level.sections.includes(s.no));
-    const items = new Map(sections.flatMap(s => s.rows.flatMap(r => (r.type === 'item' ? [[r.key, r] as const] : []))));
+    const items = new Map(result.boq.sections.flatMap(s => s.rows.flatMap(r => (r.type === 'item' ? [[r.key, r] as const] : []))));
     for (const r of items.values()) {
         const t = TEMPLATE_ITEMS.get(r.key);
         if (!t || own.has(r.key)) continue;
