@@ -3,4 +3,10 @@
 const base = require('../jest.config');
 
 /** @type {import('jest').Config} */
-module.exports = { ...base, rootDir: '..', testMatch: ['<rootDir>/test/integration/**/*.int-spec.ts'], testTimeout: 30000 };
+module.exports = {
+    ...base,
+    rootDir: '..',
+    testMatch: ['<rootDir>/test/integration/**/*.int-spec.ts'],
+    testTimeout: 30000,
+    globalSetup: '<rootDir>/test/support/int-global-setup.js',
+};

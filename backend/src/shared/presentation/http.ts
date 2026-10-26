@@ -52,6 +52,17 @@ export class ZodPipe<T> implements PipeTransform<unknown, T> {
     }
 }
 
+/**
+ * A client error raised by express middleware before any route runs (body-parser: 413 `entity.too.large`,
+ * 415 unsupported charset, …). These are http-errors objects with their own 4xx `status` and `expose: true`.
+ */
+function middlewareClientError(exception: unknown): { status: number; message: string } | undefined {
+    if (!(exception instanceof Error)) return undefined;
+    const { status, expose } = exception as Error & { status?: unknown; expose?: unknown };
+    if (typeof status !== 'number' || status < 400 || status >= 500 || expose !== true) return undefined;
+    return { status, message: exception.message };
+}
+
 /** Every error leaves the API as an ErrorResponse; unexpected ones are logged and hidden. */
 @Catch()
 export class ErrorFilter implements ExceptionFilter {
@@ -63,11 +74,14 @@ export class ErrorFilter implements ExceptionFilter {
             res.status(exception.getStatus()).json(exception.getResponse());
             return;
         }
-        if (exception instanceof HttpException) {
-            const status = exception.getStatus();
+        const client = exception instanceof HttpException
+            ? { status: exception.getStatus(), message: exception.message }
+            : middlewareClientError(exception);
+        if (client !== undefined) {
+            const { status } = client;
             const code: ErrorCode = status === 404 ? 'not_found' : status === 401 ? 'unauthenticated'
                 : status === 403 ? 'forbidden' : status === 429 ? 'rate_limited' : status < 500 ? 'validation_failed' : 'internal';
-            res.status(status).json({ code, message: exception.message } satisfies ErrorResponse);
+            res.status(status).json({ code, message: client.message } satisfies ErrorResponse);
             return;
         }
         this.logger.error(exception instanceof Error ? exception.stack ?? exception.message : String(exception));

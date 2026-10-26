@@ -29,7 +29,9 @@ export async function databaseReachable(): Promise<boolean> {
  */
 export function describeIfDatabase(name: string, body: (db: () => DatabaseContext) => void): void {
     let ctx: DatabaseContext | undefined;
-    describe(name, () => {
+    // Probed by test/support/int-global-setup.js (jest-int.config.js); unknown → decided per test (skipIfNoDatabase).
+    const define = process.env.CONTRACK_TEST_DATABASE === 'unreachable' ? describe.skip : describe;
+    define(name, () => {
         beforeAll(async () => {
             if (!(await databaseReachable())) return;
             const pool = createPool(TEST_DATABASE_URL);
