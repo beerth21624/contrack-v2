@@ -6,3 +6,5 @@ export { LevelLink, levelHref, levelTitle } from './levelRef';
 export { Hint, LabelWithHint } from './Hint';
 export { SumInput } from './SumInput';
 export { AddButton, ElementCard, JBar, JGroup, JNumber, JSelect, JText } from './Fields';
+export { ChoiceButtons, FieldNote, PresetChips, outOfRange } from './Choices';
+export { ChecklistItem, ChecklistProgress, type ChecklistValue } from './ChecklistItem';
