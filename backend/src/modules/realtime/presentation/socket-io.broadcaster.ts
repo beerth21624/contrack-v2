@@ -17,4 +17,8 @@ export class SocketIoBroadcaster extends Broadcaster {
     emit<E extends keyof ServerToClientEvents>(room: string, event: E, ...args: Parameters<ServerToClientEvents[E]>): void {
         this.namespace?.to(room).emit(event, ...args);
     }
+
+    clearRoom(room: string): void {
+        this.namespace?.in(room).socketsLeave(room);
+    }
 }

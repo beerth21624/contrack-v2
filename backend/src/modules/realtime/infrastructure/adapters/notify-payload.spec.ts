@@ -18,6 +18,11 @@ describe('NOTIFY payloads', () => {
         expect(decodeNotifyPayload(payload!)).toEqual(message);
     });
 
+    it('round-trips project.deleted', () => {
+        const message: BusMessage = { kind: 'project.deleted', origin: 'i1', event: { projectId: P1 } };
+        expect(decodeNotifyPayload(encodeNotifyPayload(message)!)).toEqual(message);
+    });
+
     it('turns a large doc.updated into a reference', () => {
         const message: BusMessage = {
             kind: 'doc.updated', origin: 'i1', event: { projectId: P1, doc: doc({ text: 'é'.repeat(LARGE_MESSAGE_BYTES) }) },

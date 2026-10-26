@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import {
     assignmentUpdatedEventSchema, docKeySchema, docUpdatedEventSchema, isoDateTimeSchema, levelIdSchema,
-    projectUpdatedEventSchema, uuidSchema,
+    projectDeletedEventSchema, projectUpdatedEventSchema, uuidSchema,
 } from '@contrack/contract';
 import { asProjectId, asUserId } from '../../../../shared/domain/ids';
 import type { BusMessage, DocReferenceMessage } from '../../application/ports/realtime-bus.port';
@@ -26,6 +26,7 @@ const busMessageSchema: z.ZodType<BusMessage, z.ZodTypeDef, unknown> = z.discrim
         version: z.number().int().positive(),
     }),
     z.object({ kind: z.literal('project.updated'), origin: originSchema, event: projectUpdatedEventSchema }),
+    z.object({ kind: z.literal('project.deleted'), origin: originSchema, event: projectDeletedEventSchema }),
     z.object({ kind: z.literal('assignment.updated'), origin: originSchema, event: assignmentUpdatedEventSchema }),
     z.object({
         kind: z.literal('presence.sync'),

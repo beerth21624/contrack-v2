@@ -2,11 +2,13 @@ import type {
     AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDocDto, ProjectDto, ProjectUpdatedEvent,
 } from '@contrack/contract';
 import { ProjectDocLookup } from '../../../../shared/application/ports';
-import { type ProjectId, asProjectId } from '../../../../shared/domain/ids';
+import { type ProjectId, asProjectId, asUserId } from '../../../../shared/domain/ids';
 import { InMemoryRealtimeBus } from '../../infrastructure/adapters/in-memory-realtime-bus.adapter';
-import { RecordingBroadcaster } from '../../testing/realtime-fakes';
+import { FixedClock } from '../../../../shared/infrastructure/system';
+import { ManualScheduler, RecordingBroadcaster } from '../../testing/realtime-fakes';
 import type { BusMessage } from '../ports/realtime-bus.port';
 import { RealtimeInstance } from '../ports/realtime-instance.port';
+import { PresenceService } from './presence.service';
 import { RealtimeService } from './realtime.service';
 
 const P1 = asProjectId('11111111-1111-4111-8111-111111111111');
@@ -34,9 +36,11 @@ function setup() {
     const docs = new FakeDocLookup();
     const make = (id: string) => {
         const broadcaster = new RecordingBroadcaster();
-        const service = new RealtimeService(broadcaster, bus, new RealtimeInstance(id), docs);
+        const instance = new RealtimeInstance(id);
+        const presence = new PresenceService(new FixedClock(), broadcaster, bus, instance, new ManualScheduler());
+        const service = new RealtimeService(broadcaster, bus, instance, docs, presence);
         service.start();
-        return { broadcaster, service };
+        return { broadcaster, presence, service };
     };
     return { bus, published, docs, a: make('instance-a'), b: make('instance-b') };
 }
@@ -109,7 +113,9 @@ describe('RealtimeService', () => {
         const bus = new InMemoryRealtimeBus();
         jest.spyOn(bus, 'publish').mockRejectedValue(new Error('bus down'));
         const broadcaster = new RecordingBroadcaster();
-        const service = new RealtimeService(broadcaster, bus, new RealtimeInstance('solo'), new FakeDocLookup());
+        const instance = new RealtimeInstance('solo');
+        const presence = new PresenceService(new FixedClock(), broadcaster, bus, instance, new ManualScheduler());
+        const service = new RealtimeService(broadcaster, bus, instance, new FakeDocLookup(), presence);
 
         await expect(service.docUpdated({ projectId: P1, doc: doc(1) })).resolves.toBeUndefined();
         expect(broadcaster.of('doc.updated')).toHaveLength(1);
@@ -120,5 +126,34 @@ describe('RealtimeService', () => {
         b.service.stop();
         await a.service.docUpdated({ projectId: P1, doc: doc(1) });
         expect(b.broadcaster.emitted).toEqual([]);
+    });
+
+    describe('project.deleted', () => {
+        it('tells the room, empties it and forgets its presence on this and the other instances', async () => {
+            const { a, b, published } = setup();
+            await a.presence.start();
+            await b.presence.start();
+            await a.presence.join({ connectionId: 'a1', userId: asUserId(USER), displayName: 'Alice' }, P1);
+            await b.presence.join({ connectionId: 'b1', userId: asUserId(USER), displayName: 'Alice' }, P1);
+            expect(b.presence.snapshot(P1)).toHaveLength(1);
+            a.broadcaster.clear();
+            b.broadcaster.clear();
+
+            await a.service.projectDeleted({ projectId: P1 });
+
+            expect(published).toContainEqual({ kind: 'project.deleted', origin: 'instance-a', event: { projectId: P1 } });
+            for (const side of [a, b]) {
+                expect(side.broadcaster.emitted).toEqual([{ room: ROOM, event: 'project.deleted', payload: { projectId: P1 } }]);
+                expect(side.broadcaster.cleared).toEqual([ROOM]);
+                expect(side.presence.snapshot(P1)).toEqual([]);
+            }
+        });
+
+        it('does not handle its own project.deleted twice', async () => {
+            const { a } = setup();
+            await a.service.projectDeleted({ projectId: P1 });
+            expect(a.broadcaster.of('project.deleted')).toHaveLength(1);
+            expect(a.broadcaster.cleared).toEqual([ROOM]);
+        });
     });
 });

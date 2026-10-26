@@ -96,6 +96,17 @@ describe('PresenceRoster', () => {
         expect(roster.snapshot(P2).map(e => e.displayName)).toEqual(['Bob']);
     });
 
+    it('forgets every connection of a removed project, on every instance', () => {
+        const roster = PresenceRoster.create();
+        roster.join(P1, conn({ instanceId: 'i1' }));
+        roster.join(P1, conn({ instanceId: 'i2', userId: BOB, displayName: 'Bob' }));
+        roster.join(P2, conn({ instanceId: 'i1' }));
+        roster.removeProject(P1);
+        expect(roster.snapshot(P1)).toEqual([]);
+        expect(roster.projectsOf('i2')).toEqual([]);
+        expect(roster.snapshot(P2)).toHaveLength(1);
+    });
+
     it('replaces what another instance reported, leaving other instances alone', () => {
         const roster = PresenceRoster.create();
         roster.join(P1, conn({ instanceId: 'local' }));

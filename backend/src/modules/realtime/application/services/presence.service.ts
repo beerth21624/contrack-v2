@@ -102,6 +102,15 @@ export class PresenceService implements OnModuleInit, OnModuleDestroy {
         await Promise.all(affected.map(projectId => this.shareProject(projectId)));
     }
 
+    /**
+     * The project was deleted: forgets its presence without broadcasting (its room is being emptied). Every instance
+     * does this itself on the project.deleted bus message, so nothing is shared.
+     */
+    forgetProject(projectId: ProjectId): void {
+        this.roster.removeProject(projectId);
+        this.shown.delete(projectId);
+    }
+
     snapshot(projectId: ProjectId): PresenceEntry[] {
         return this.roster.snapshot(projectId);
     }

@@ -64,6 +64,11 @@ export class PresenceRoster {
         return removed;
     }
 
+    /** Forgets every connection of a project, on every instance (the project was deleted). */
+    removeProject(projectId: ProjectId): void {
+        this.projects.delete(projectId);
+    }
+
     /** Removes a connection from every project (socket closed). Returns the projects it was in. */
     leaveAll(instanceId: string, connectionId: string): ProjectId[] {
         const affected: ProjectId[] = [];

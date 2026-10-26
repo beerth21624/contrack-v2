@@ -12,9 +12,14 @@ export interface Emitted {
 /** Records every emit instead of sending it. */
 export class RecordingBroadcaster extends Broadcaster {
     readonly emitted: Emitted[] = [];
+    readonly cleared: string[] = [];
 
     emit<E extends keyof ServerToClientEvents>(room: string, event: E, ...args: Parameters<ServerToClientEvents[E]>): void {
         this.emitted.push({ room, event, payload: args[0] });
+    }
+
+    clearRoom(room: string): void {
+        this.cleared.push(room);
     }
 
     of(event: keyof ServerToClientEvents): Emitted[] {
@@ -27,6 +32,7 @@ export class RecordingBroadcaster extends Broadcaster {
 
     clear(): void {
         this.emitted.length = 0;
+        this.cleared.length = 0;
     }
 }
 

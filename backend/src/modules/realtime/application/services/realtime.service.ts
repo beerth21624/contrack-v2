@@ -1,6 +1,8 @@
 // ─── Fan-out of project events: to this instance's sockets at once, then to the other instances over the bus ───
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
-import type { AssignmentUpdatedEvent, DocUpdatedEvent, ProjectUpdatedEvent } from '@contrack/contract';
+import type {
+    AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDeletedEvent, ProjectUpdatedEvent,
+} from '@contrack/contract';
 import { ProjectDocLookup, RealtimePublisher } from '../../../../shared/application/ports';
 import { asProjectId } from '../../../../shared/domain/ids';
 import { projectRoom } from '../../domain/policies/room-naming.policy';
@@ -8,6 +10,7 @@ import { Broadcaster } from '../ports/broadcaster.port';
 import { type BusMessage, type DocReferenceMessage, RealtimeBus, type Unsubscribe } from '../ports/realtime-bus.port';
 import { RealtimeInstance } from '../ports/realtime-instance.port';
 import { errorMessage } from './error-message';
+import { PresenceService } from './presence.service';
 
 @Injectable()
 export class RealtimeService extends RealtimePublisher implements OnModuleInit, OnModuleDestroy {
@@ -19,6 +22,7 @@ export class RealtimeService extends RealtimePublisher implements OnModuleInit, 
         private readonly bus: RealtimeBus,
         private readonly instance: RealtimeInstance,
         private readonly docs: ProjectDocLookup,
+        private readonly presence: PresenceService,
     ) {
         super();
     }
@@ -51,6 +55,12 @@ export class RealtimeService extends RealtimePublisher implements OnModuleInit, 
         await this.share({ kind: 'project.updated', origin: this.instance.id, event });
     }
 
+    /** Tells the room, empties it and forgets its presence, here and on every other instance. */
+    async projectDeleted(event: ProjectDeletedEvent): Promise<void> {
+        this.closeProject(event);
+        await this.share({ kind: 'project.deleted', origin: this.instance.id, event });
+    }
+
     async assignmentUpdated(event: AssignmentUpdatedEvent): Promise<void> {
         this.emitAssignment(event);
         await this.share({ kind: 'assignment.updated', origin: this.instance.id, event });
@@ -69,6 +79,9 @@ export class RealtimeService extends RealtimePublisher implements OnModuleInit, 
                     return;
                 case 'project.updated':
                     this.emitProject(message.event);
+                    return;
+                case 'project.deleted':
+                    this.closeProject(message.event);
                     return;
                 case 'assignment.updated':
                     this.emitAssignment(message.event);
@@ -96,6 +109,15 @@ export class RealtimeService extends RealtimePublisher implements OnModuleInit, 
 
     private emitProject(event: ProjectUpdatedEvent): void {
         this.broadcaster.emit(projectRoom(asProjectId(event.project.id)), 'project.updated', event);
+    }
+
+    /** The event goes out before the sockets leave the room, so they still receive it. */
+    private closeProject(event: ProjectDeletedEvent): void {
+        const projectId = asProjectId(event.projectId);
+        const room = projectRoom(projectId);
+        this.broadcaster.emit(room, 'project.deleted', event);
+        this.broadcaster.clearRoom(room);
+        this.presence.forgetProject(projectId);
     }
 
     private emitAssignment(event: AssignmentUpdatedEvent): void {

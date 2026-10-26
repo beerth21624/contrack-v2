@@ -1,5 +1,7 @@
 // ─── Bus between server instances: every instance fans the messages out to its own sockets ───
-import type { AssignmentUpdatedEvent, DocUpdatedEvent, ProjectUpdatedEvent } from '@contrack/contract';
+import type {
+    AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDeletedEvent, ProjectUpdatedEvent,
+} from '@contrack/contract';
 import type { ProjectId, UserId } from '../../../../shared/domain/ids';
 
 interface FromInstance {
@@ -26,6 +28,12 @@ export interface DocReferenceMessage extends FromInstance {
 export interface ProjectUpdatedMessage extends FromInstance {
     readonly kind: 'project.updated';
     readonly event: ProjectUpdatedEvent;
+}
+
+/** The project was deleted: every instance tells its sockets, empties the room and forgets the presence. */
+export interface ProjectDeletedMessage extends FromInstance {
+    readonly kind: 'project.deleted';
+    readonly event: ProjectDeletedEvent;
 }
 
 export interface AssignmentUpdatedMessage extends FromInstance {
@@ -58,6 +66,7 @@ export type BusMessage =
     | DocUpdatedMessage
     | DocReferenceMessage
     | ProjectUpdatedMessage
+    | ProjectDeletedMessage
     | AssignmentUpdatedMessage
     | PresenceSyncMessage
     | PresenceHelloMessage;

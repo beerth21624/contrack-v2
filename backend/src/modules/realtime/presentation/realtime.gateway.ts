@@ -10,7 +10,6 @@ import {
 } from '@contrack/contract';
 import { AccessTokenVerifier, Clock } from '../../../shared/application/ports';
 import { type ProjectId, type UserId, parseId } from '../../../shared/domain/ids';
-import { AppConfig } from '../../../shared/infrastructure/config/env';
 import { bearerToken } from '../../../shared/presentation/auth';
 import { projectRoom } from '../domain/policies/room-naming.policy';
 import { PresenceService, type PresenceViewer } from '../application/services/presence.service';
@@ -45,13 +44,11 @@ function tokenOf(socket: RealtimeSocket): string | undefined {
     return bearerToken(socket.handshake.headers.authorization);
 }
 
-// CORS origins come from AppConfig and are filled in afterInit (decorator options are static). engine.io's cors
-// middleware keeps a reference to this object, so the origins set there apply to every later request.
-@WebSocketGateway({ namespace: REALTIME_NAMESPACE, cors: { origin: false, credentials: true } })
+// CORS (CORS_ORIGINS, credentials) is set per app by the Socket.IO adapter in bootstrap.ts.
+@WebSocketGateway({ namespace: REALTIME_NAMESPACE })
 export class RealtimeGateway implements OnGatewayInit<RealtimeNamespace>, OnGatewayConnection<RealtimeSocket>,
     OnGatewayDisconnect<RealtimeSocket> {
     constructor(
-        private readonly config: AppConfig,
         private readonly verifier: AccessTokenVerifier,
         private readonly access: ProjectViewAccess,
         private readonly presence: PresenceService,
@@ -60,8 +57,6 @@ export class RealtimeGateway implements OnGatewayInit<RealtimeNamespace>, OnGate
     ) {}
 
     afterInit(namespace: RealtimeNamespace): void {
-        const cors = namespace.server.engine.opts.cors;
-        if (cors !== undefined && typeof cors !== 'function') cors.origin = this.config.env.CORS_ORIGINS;
         this.broadcaster.attach(namespace);
         // Authenticate before the connection is accepted, so no event can arrive from an unknown socket.
         namespace.use((socket, next) => {

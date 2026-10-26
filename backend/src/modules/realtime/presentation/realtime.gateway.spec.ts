@@ -3,7 +3,6 @@ import {
     AccessTokenVerifier, type AuthenticatedUser, ProjectDirectory, UserDirectory, type UserProfile, WorkspaceAccess,
 } from '../../../shared/application/ports';
 import { type ProjectId, type UserId, type WorkspaceId, asProjectId, asUserId, asWorkspaceId } from '../../../shared/domain/ids';
-import { AppConfig, testEnv } from '../../../shared/infrastructure/config/env';
 import { FixedClock } from '../../../shared/infrastructure/system';
 import { RealtimeInstance } from '../application/ports/realtime-instance.port';
 import { PresenceService } from '../application/services/presence.service';
@@ -91,7 +90,6 @@ function setup() {
     const workspaceAccess = new FakeAccess();
     const presence = new PresenceService(clock, broadcaster, new InMemoryRealtimeBus(), new RealtimeInstance('i1'), new ManualScheduler());
     const gateway = new RealtimeGateway(
-        new AppConfig(testEnv()),
         new FakeVerifier(),
         new ProjectViewAccess(new FakeProjects(), workspaceAccess, new FakeUsers()),
         presence,

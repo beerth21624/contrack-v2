@@ -119,6 +119,21 @@ describe('PresenceService', () => {
         expect(service.snapshot(P2)).toEqual([]);
     });
 
+    it('forgets a deleted project without broadcasting to its (emptied) room', async () => {
+        const { service, broadcaster } = setup();
+        await service.join(alice(), P1);
+        await service.join(alice(), P2);
+        broadcaster.clear();
+
+        service.forgetProject(P1);
+
+        expect(service.snapshot(P1)).toEqual([]);
+        expect(service.snapshot(P2)).toHaveLength(1);
+        expect(broadcaster.emitted).toEqual([]);
+        await service.disconnect('a1'); // P1 is no longer affected
+        expect(broadcaster.of('presence.state').map(e => e.room)).toEqual([`project:${P2}`]);
+    });
+
     it('shares presence over the bus', async () => {
         const { service, bus } = setup();
         const published: BusMessage[] = [];
