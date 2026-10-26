@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { evaluateNumber } from './evaluate';
 
 /** Excel-like cell colours: yellow = user input, green = formula. */
 export const SHEET_COLORS = {
@@ -43,11 +44,12 @@ export function NumberCell({ value, onCommit, edited, digits = 2, percent, ariaL
     const commit = () => {
         if (text === null) return;
         if (text === initial) { setText(null); return; }
-        const trimmed = text.replace(/,/g, '').trim();
+        const trimmed = text.replace(/,/g, '').replace(/%$/, '').trim();
         if (trimmed === '') onCommit(undefined);
         else {
-            const n = Number(trimmed);
-            if (Number.isFinite(n)) onCommit(percent ? n / 100 : n);
+            // Plain numbers or Excel-style arithmetic ("7*2.3", "=12+3.5"); anything unreadable keeps the old value.
+            const n = evaluateNumber(trimmed);
+            if (n !== undefined) onCommit(percent ? n / 100 : n);
         }
         setText(null);
     };

@@ -114,10 +114,12 @@ export function LevelPage({ levelId }: { levelId: string }) {
                     {prev
                         ? <Link href={`/journey/${prev.id}`}><Button icon={<ArrowLeftOutlined />} aria-label="ด่านก่อนหน้า" /></Link>
                         : <Button icon={<ArrowLeftOutlined />} disabled aria-label="ด่านก่อนหน้า" />}
-                    <div className="min-w-0">
-                        <div className="text-[11px] text-gray-500 leading-tight">ด่านนี้คิดเป็น</div>
-                        <div className="text-[18px] font-bold tabular-nums leading-tight">{formatNumber(mark === 'skipped' ? 0 : total, 0)} บาท</div>
-                    </div>
+                    {level.kind.type !== 'meta' && (
+                        <div className="min-w-0">
+                            <div className="text-[11px] text-gray-500 leading-tight">ด่านนี้คิดเป็น</div>
+                            <div className="text-[18px] font-bold tabular-nums leading-tight">{formatNumber(mark === 'skipped' ? 0 : total, 0)} บาท</div>
+                        </div>
+                    )}
                     <div className="hidden sm:block min-w-0 pl-3 border-l border-gray-200">
                         <div className="text-[11px] text-gray-500 leading-tight">รวมทั้งหลังตอนนี้</div>
                         <div className="text-[15px] font-semibold tabular-nums leading-tight text-gray-700">
