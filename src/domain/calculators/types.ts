@@ -2,7 +2,10 @@
 // One calculator = one Excel calculator sheet (e.g. "ค่าตรวจสอบที่ดิน", "ฐานราก_Footing").
 // It turns its own input into named outputs, and declares which BOQ (Home) cells those outputs fill.
 
-import type { BoqLineKey } from '../boq/types';
+import type { BoqHeadingTemplate, BoqItemTemplate, BoqLineKey } from '../boq/types';
+
+/** A row a calculator supplies for a BOQ slot. `key` must be unique and stable within the slot. */
+export type SlotRow = Omit<BoqItemTemplate, 'excelRow'> | Omit<BoqHeadingTemplate, 'excelRow'>;
 
 /** Which BOQ cell a calculator output fills. */
 export interface BoqLink {
@@ -35,6 +38,11 @@ export interface CalculatorDef<I = unknown> {
     boqLinks: BoqLink[];
     /** Optional text for BOQ cells (description D / note N), e.g. a pile spec built from the inputs. */
     boqText?(input: I, ctx: CalcContext): Record<BoqLineKey, { desc?: string; note?: string }>;
+    /**
+     * Rows for the BOQ slots this calculator owns (see BoqSlotTemplate in boq/types.ts), keyed by slot name.
+     * Row keys are prefixed with `${calcId}:${slot}:` by the project so they stay unique.
+     */
+    boqSlots?(input: I, ctx: CalcContext): Record<string, SlotRow[]>;
 }
 
 /** Helper that keeps the input type when registering. */

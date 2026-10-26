@@ -470,65 +470,74 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "desc": "เหล็กเสริม - ***ฟุตติ้ง"
       },
       {
-        "type": "item",
-        "key": "R43",
+        "type": "slot",
+        "key": "S43",
         "excelRow": 43,
-        "desc": "- เหล็ก RB9",
-        "unit": "กก.",
-        "qty": {
-          "kind": "calc",
-          "calc": "structure-summary",
-          "output": "R43",
-          "fallback": 50.2992
-        },
-        "waste": 0.09,
-        "gross": "std",
-        "mat": 25,
-        "lab": 15,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R44",
-        "excelRow": 44,
-        "desc": "- เหล็ก DB12",
-        "unit": "กก.",
-        "qty": {
-          "kind": "calc",
-          "calc": "structure-summary",
-          "output": "R44",
-          "fallback": 335.664
-        },
-        "waste": 0.12,
-        "gross": "std",
-        "mat": 25,
-        "lab": 15,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R45",
-        "excelRow": 45,
-        "desc": "- ลวดผูกเหล็ก",
-        "unit": "กก.",
-        "qty": {
-          "kind": "none"
-        },
-        "waste": 0,
-        "gross": {
-          "kind": "tieWire",
-          "refs": [
-            "R43",
-            "R44"
-          ],
-          "ratio": 0.03
-        },
-        "mat": 50,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "gross"
+        "calc": "footing",
+        "slot": "rebar",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R43",
+            "excelRow": 43,
+            "desc": "- เหล็ก RB9",
+            "unit": "กก.",
+            "qty": {
+              "kind": "calc",
+              "calc": "structure-summary",
+              "output": "R43",
+              "fallback": 50.2992
+            },
+            "waste": 0.09,
+            "gross": "std",
+            "mat": 25,
+            "lab": 15,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R44",
+            "excelRow": 44,
+            "desc": "- เหล็ก DB12",
+            "unit": "กก.",
+            "qty": {
+              "kind": "calc",
+              "calc": "structure-summary",
+              "output": "R44",
+              "fallback": 335.664
+            },
+            "waste": 0.12,
+            "gross": "std",
+            "mat": 25,
+            "lab": 15,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R45",
+            "excelRow": 45,
+            "desc": "- ลวดผูกเหล็ก",
+            "unit": "กก.",
+            "qty": {
+              "kind": "none"
+            },
+            "waste": 0,
+            "gross": {
+              "kind": "tieWire",
+              "refs": [
+                "R43",
+                "R44"
+              ],
+              "ratio": 0.03
+            },
+            "mat": 50,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "gross"
+          }
+        ]
       },
       {
         "type": "heading",
@@ -538,65 +547,74 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "desc": "เหล็กเสริม - ***เสาตอม่อ"
       },
       {
-        "type": "item",
-        "key": "R47",
+        "type": "slot",
+        "key": "S47",
         "excelRow": 47,
-        "desc": "- เหล็ก RB6",
-        "unit": "กก.",
-        "qty": {
-          "kind": "calc",
-          "calc": "structure-summary",
-          "output": "R47",
-          "fallback": 33.5664
-        },
-        "waste": 0.06,
-        "gross": "std",
-        "mat": 25,
-        "lab": 15,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R48",
-        "excelRow": 48,
-        "desc": "- เหล็ก DB12",
-        "unit": "กก.",
-        "qty": {
-          "kind": "calc",
-          "calc": "structure-summary",
-          "output": "R48",
-          "fallback": 156.6432
-        },
-        "waste": 0.12,
-        "gross": "std",
-        "mat": 25,
-        "lab": 15,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R49",
-        "excelRow": 49,
-        "desc": "- ลวดผูกเหล็ก",
-        "unit": "กก.",
-        "qty": {
-          "kind": "none"
-        },
-        "waste": 0,
-        "gross": {
-          "kind": "tieWire",
-          "refs": [
-            "R47",
-            "R48"
-          ],
-          "ratio": 0.03
-        },
-        "mat": 50,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "gross"
+        "calc": "pedestal",
+        "slot": "rebar",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R47",
+            "excelRow": 47,
+            "desc": "- เหล็ก RB6",
+            "unit": "กก.",
+            "qty": {
+              "kind": "calc",
+              "calc": "structure-summary",
+              "output": "R47",
+              "fallback": 33.5664
+            },
+            "waste": 0.06,
+            "gross": "std",
+            "mat": 25,
+            "lab": 15,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R48",
+            "excelRow": 48,
+            "desc": "- เหล็ก DB12",
+            "unit": "กก.",
+            "qty": {
+              "kind": "calc",
+              "calc": "structure-summary",
+              "output": "R48",
+              "fallback": 156.6432
+            },
+            "waste": 0.12,
+            "gross": "std",
+            "mat": 25,
+            "lab": 15,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R49",
+            "excelRow": 49,
+            "desc": "- ลวดผูกเหล็ก",
+            "unit": "กก.",
+            "qty": {
+              "kind": "none"
+            },
+            "waste": 0,
+            "gross": {
+              "kind": "tieWire",
+              "refs": [
+                "R47",
+                "R48"
+              ],
+              "ratio": 0.03
+            },
+            "mat": 50,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "gross"
+          }
+        ]
       },
       {
         "type": "heading",
@@ -606,65 +624,74 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "desc": "เหล็กเสริม - ***เสาชั้น 1"
       },
       {
-        "type": "item",
-        "key": "R51",
+        "type": "slot",
+        "key": "S51",
         "excelRow": 51,
-        "desc": "- เหล็ก RB6",
-        "unit": "กก.",
-        "qty": {
-          "kind": "calc",
-          "calc": "structure-summary",
-          "output": "R51",
-          "fallback": 100.6992
-        },
-        "waste": 0.06,
-        "gross": "std",
-        "mat": 25,
-        "lab": 15,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R52",
-        "excelRow": 52,
-        "desc": "- เหล็ก DB12",
-        "unit": "กก.",
-        "qty": {
-          "kind": "calc",
-          "calc": "structure-summary",
-          "output": "R52",
-          "fallback": 453.1464
-        },
-        "waste": 0.12,
-        "gross": "std",
-        "mat": 25,
-        "lab": 15,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R53",
-        "excelRow": 53,
-        "desc": "- ลวดผูกเหล็ก",
-        "unit": "กก.",
-        "qty": {
-          "kind": "none"
-        },
-        "waste": 0,
-        "gross": {
-          "kind": "tieWire",
-          "refs": [
-            "R51",
-            "R52"
-          ],
-          "ratio": 0.03
-        },
-        "mat": 50,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "gross"
+        "calc": "column",
+        "slot": "rebar",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R51",
+            "excelRow": 51,
+            "desc": "- เหล็ก RB6",
+            "unit": "กก.",
+            "qty": {
+              "kind": "calc",
+              "calc": "structure-summary",
+              "output": "R51",
+              "fallback": 100.6992
+            },
+            "waste": 0.06,
+            "gross": "std",
+            "mat": 25,
+            "lab": 15,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R52",
+            "excelRow": 52,
+            "desc": "- เหล็ก DB12",
+            "unit": "กก.",
+            "qty": {
+              "kind": "calc",
+              "calc": "structure-summary",
+              "output": "R52",
+              "fallback": 453.1464
+            },
+            "waste": 0.12,
+            "gross": "std",
+            "mat": 25,
+            "lab": 15,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R53",
+            "excelRow": 53,
+            "desc": "- ลวดผูกเหล็ก",
+            "unit": "กก.",
+            "qty": {
+              "kind": "none"
+            },
+            "waste": 0,
+            "gross": {
+              "kind": "tieWire",
+              "refs": [
+                "R51",
+                "R52"
+              ],
+              "ratio": 0.03
+            },
+            "mat": 50,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "gross"
+          }
+        ]
       },
       {
         "type": "heading",
@@ -899,65 +926,74 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "desc": "เหล็กเสริม"
       },
       {
-        "type": "item",
-        "key": "R71",
+        "type": "slot",
+        "key": "S71",
         "excelRow": 71,
-        "desc": "- เหล็ก RB6",
-        "unit": "กก.",
-        "qty": {
-          "kind": "calc",
-          "calc": "structure-summary",
-          "output": "R71",
-          "fallback": 208.1028
-        },
-        "waste": 0.06,
-        "gross": "std",
-        "mat": 25,
-        "lab": 15,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R72",
-        "excelRow": 72,
-        "desc": "- เหล็ก DB12",
-        "unit": "กก.",
-        "qty": {
-          "kind": "calc",
-          "calc": "structure-summary",
-          "output": "R72",
-          "fallback": 708.9792
-        },
-        "waste": 0.12,
-        "gross": "std",
-        "mat": 25,
-        "lab": 15,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R73",
-        "excelRow": 73,
-        "desc": "- ลวดผูกเหล็ก",
-        "unit": "กก.",
-        "qty": {
-          "kind": "none"
-        },
-        "waste": 0,
-        "gross": {
-          "kind": "tieWire",
-          "refs": [
-            "R71",
-            "R72"
-          ],
-          "ratio": 0.03
-        },
-        "mat": 50,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "gross"
+        "calc": "ground-beam",
+        "slot": "rebar",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R71",
+            "excelRow": 71,
+            "desc": "- เหล็ก RB6",
+            "unit": "กก.",
+            "qty": {
+              "kind": "calc",
+              "calc": "structure-summary",
+              "output": "R71",
+              "fallback": 208.1028
+            },
+            "waste": 0.06,
+            "gross": "std",
+            "mat": 25,
+            "lab": 15,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R72",
+            "excelRow": 72,
+            "desc": "- เหล็ก DB12",
+            "unit": "กก.",
+            "qty": {
+              "kind": "calc",
+              "calc": "structure-summary",
+              "output": "R72",
+              "fallback": 708.9792
+            },
+            "waste": 0.12,
+            "gross": "std",
+            "mat": 25,
+            "lab": 15,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R73",
+            "excelRow": 73,
+            "desc": "- ลวดผูกเหล็ก",
+            "unit": "กก.",
+            "qty": {
+              "kind": "none"
+            },
+            "waste": 0,
+            "gross": {
+              "kind": "tieWire",
+              "refs": [
+                "R71",
+                "R72"
+              ],
+              "ratio": 0.03
+            },
+            "mat": 50,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "gross"
+          }
+        ]
       },
       {
         "type": "heading",
@@ -967,23 +1003,32 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "desc": "เหล็กล๊อคหัวแผ่นพื้นสำเร็จรูป"
       },
       {
-        "type": "item",
-        "key": "R75",
+        "type": "slot",
+        "key": "S75",
         "excelRow": 75,
-        "desc": "- เหล็ก RB6",
-        "unit": "กก.",
-        "qty": {
-          "kind": "calc",
-          "calc": "structure-summary",
-          "output": "R75",
-          "fallback": 26.9952
-        },
-        "waste": 0.06,
-        "gross": "std",
-        "mat": 25,
-        "lab": 15,
-        "materialBasis": "gross",
-        "labourBasis": "net"
+        "calc": "precast-slab",
+        "slot": "shear-key",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R75",
+            "excelRow": 75,
+            "desc": "- เหล็ก RB6",
+            "unit": "กก.",
+            "qty": {
+              "kind": "calc",
+              "calc": "structure-summary",
+              "output": "R75",
+              "fallback": 26.9952
+            },
+            "waste": 0.06,
+            "gross": "std",
+            "mat": 25,
+            "lab": 15,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          }
+        ]
       },
       {
         "type": "heading",
@@ -1237,45 +1282,54 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "desc": "เหล็กเสริม"
       },
       {
-        "type": "item",
-        "key": "R92",
+        "type": "slot",
+        "key": "S92",
         "excelRow": 92,
-        "desc": "- เหล็ก RB9",
-        "unit": "กก.",
-        "qty": {
-          "kind": "calc",
-          "calc": "structure-summary",
-          "output": "R92",
-          "fallback": 499.998
-        },
-        "waste": 0.09,
-        "gross": "std",
-        "mat": 25,
-        "lab": 15,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R93",
-        "excelRow": 93,
-        "desc": "- ลวดผูกเหล็ก",
-        "unit": "กก.",
-        "qty": {
-          "kind": "none"
-        },
-        "waste": 0,
-        "gross": {
-          "kind": "tieWire",
-          "refs": [
-            "R92"
-          ],
-          "ratio": 0.03
-        },
-        "mat": 50,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "gross"
+        "calc": "slab-on-grade",
+        "slot": "rebar",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R92",
+            "excelRow": 92,
+            "desc": "- เหล็ก RB9",
+            "unit": "กก.",
+            "qty": {
+              "kind": "calc",
+              "calc": "structure-summary",
+              "output": "R92",
+              "fallback": 499.998
+            },
+            "waste": 0.09,
+            "gross": "std",
+            "mat": 25,
+            "lab": 15,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R93",
+            "excelRow": 93,
+            "desc": "- ลวดผูกเหล็ก",
+            "unit": "กก.",
+            "qty": {
+              "kind": "none"
+            },
+            "waste": 0,
+            "gross": {
+              "kind": "tieWire",
+              "refs": [
+                "R92"
+              ],
+              "ratio": 0.03
+            },
+            "mat": 50,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "gross"
+          }
+        ]
       },
       {
         "type": "item",
@@ -1564,65 +1618,74 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "desc": "เหล็กเสริม"
       },
       {
-        "type": "item",
-        "key": "R116",
+        "type": "slot",
+        "key": "S116",
         "excelRow": 116,
-        "desc": "- เหล็ก RB6",
-        "unit": "กก.",
-        "qty": {
-          "kind": "calc",
-          "calc": "structure-summary",
-          "output": "R116",
-          "fallback": 50.394
-        },
-        "waste": 0.12,
-        "gross": "std",
-        "mat": 25,
-        "lab": 15,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R117",
-        "excelRow": 117,
-        "desc": "- เหล็ก DB12",
-        "unit": "กก.",
-        "qty": {
-          "kind": "calc",
-          "calc": "structure-summary",
-          "output": "R117",
-          "fallback": 181.152
-        },
-        "waste": 0.06,
-        "gross": "std",
-        "mat": 25,
-        "lab": 15,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R118",
-        "excelRow": 118,
-        "desc": "- ลวดผูกเหล็ก",
-        "unit": "กก.",
-        "qty": {
-          "kind": "none"
-        },
-        "waste": 0,
-        "gross": {
-          "kind": "tieWire",
-          "refs": [
-            "R116",
-            "R117"
-          ],
-          "ratio": 0.03
-        },
-        "mat": 50,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "gross"
+        "calc": "roof-beam",
+        "slot": "rebar",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R116",
+            "excelRow": 116,
+            "desc": "- เหล็ก RB6",
+            "unit": "กก.",
+            "qty": {
+              "kind": "calc",
+              "calc": "structure-summary",
+              "output": "R116",
+              "fallback": 50.394
+            },
+            "waste": 0.12,
+            "gross": "std",
+            "mat": 25,
+            "lab": 15,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R117",
+            "excelRow": 117,
+            "desc": "- เหล็ก DB12",
+            "unit": "กก.",
+            "qty": {
+              "kind": "calc",
+              "calc": "structure-summary",
+              "output": "R117",
+              "fallback": 181.152
+            },
+            "waste": 0.06,
+            "gross": "std",
+            "mat": 25,
+            "lab": 15,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R118",
+            "excelRow": 118,
+            "desc": "- ลวดผูกเหล็ก",
+            "unit": "กก.",
+            "qty": {
+              "kind": "none"
+            },
+            "waste": 0,
+            "gross": {
+              "kind": "tieWire",
+              "refs": [
+                "R116",
+                "R117"
+              ],
+              "ratio": 0.03
+            },
+            "mat": 50,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "gross"
+          }
+        ]
       },
       {
         "type": "item",
@@ -1740,45 +1803,54 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "desc": "เหล็กเสริม"
       },
       {
-        "type": "item",
-        "key": "R127",
+        "type": "slot",
+        "key": "S127",
         "excelRow": 127,
-        "desc": "- เหล็ก RB9",
-        "unit": "กก.",
-        "qty": {
-          "kind": "calc",
-          "calc": "structure-summary",
-          "output": "R127",
-          "fallback": 239.52
-        },
-        "waste": 0.09,
-        "gross": "std",
-        "mat": 25,
-        "lab": 15,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R128",
-        "excelRow": 128,
-        "desc": "- ลวดผูกเหล็ก",
-        "unit": "กก.",
-        "qty": {
-          "kind": "none"
-        },
-        "waste": 0,
-        "gross": {
-          "kind": "tieWire",
-          "refs": [
-            "R127"
-          ],
-          "ratio": 0.03
-        },
-        "mat": 50,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "gross"
+        "calc": "roof-slab",
+        "slot": "rebar",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R127",
+            "excelRow": 127,
+            "desc": "- เหล็ก RB9",
+            "unit": "กก.",
+            "qty": {
+              "kind": "calc",
+              "calc": "structure-summary",
+              "output": "R127",
+              "fallback": 239.52
+            },
+            "waste": 0.09,
+            "gross": "std",
+            "mat": 25,
+            "lab": 15,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R128",
+            "excelRow": 128,
+            "desc": "- ลวดผูกเหล็ก",
+            "unit": "กก.",
+            "qty": {
+              "kind": "none"
+            },
+            "waste": 0,
+            "gross": {
+              "kind": "tieWire",
+              "refs": [
+                "R127"
+              ],
+              "ratio": 0.03
+            },
+            "mat": 50,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "gross"
+          }
+        ]
       },
       {
         "type": "item",
@@ -1900,45 +1972,54 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "desc": "เหล็กเสริม"
       },
       {
-        "type": "item",
-        "key": "R138",
+        "type": "slot",
+        "key": "S138",
         "excelRow": 138,
-        "desc": "- เหล็ก RB9",
-        "unit": "กก.",
-        "qty": {
-          "kind": "calc",
-          "calc": "structure-summary",
-          "output": "R138",
-          "fallback": 152.5687076
-        },
-        "waste": 0.09,
-        "gross": "std",
-        "mat": 25,
-        "lab": 15,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R139",
-        "excelRow": 139,
-        "desc": "- ลวดผูกเหล็ก",
-        "unit": "กก.",
-        "qty": {
-          "kind": "none"
-        },
-        "waste": 0,
-        "gross": {
-          "kind": "tieWire",
-          "refs": [
-            "R138"
-          ],
-          "ratio": 0.03
-        },
-        "mat": 50,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "gross"
+        "calc": "stair",
+        "slot": "rebar",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R138",
+            "excelRow": 138,
+            "desc": "- เหล็ก RB9",
+            "unit": "กก.",
+            "qty": {
+              "kind": "calc",
+              "calc": "structure-summary",
+              "output": "R138",
+              "fallback": 152.5687076
+            },
+            "waste": 0.09,
+            "gross": "std",
+            "mat": 25,
+            "lab": 15,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R139",
+            "excelRow": 139,
+            "desc": "- ลวดผูกเหล็ก",
+            "unit": "กก.",
+            "qty": {
+              "kind": "none"
+            },
+            "waste": 0,
+            "gross": {
+              "kind": "tieWire",
+              "refs": [
+                "R138"
+              ],
+              "ratio": 0.03
+            },
+            "mat": 50,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "gross"
+          }
+        ]
       },
       {
         "type": "item",
@@ -3461,184 +3542,193 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
     "inConstructionTotal": true,
     "lines": [
       {
-        "type": "item",
-        "key": "R234",
+        "type": "slot",
+        "key": "S234",
         "excelRow": 234,
-        "itemNo": "1)",
-        "desc": "D1-บานเลื่อนคู่ และช่องแสงติดตาย ขนาด 2.6 x 2.05 ม.",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "door-window",
-          "output": "R234",
-          "fallback": 1
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 15990,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R235",
-        "excelRow": 235,
-        "itemNo": "2)",
-        "desc": "D2-บานเลื่อนสลับ ขนาด 1.5 x 2.05 ม.",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "door-window",
-          "output": "R235",
-          "fallback": 1
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 9225,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R236",
-        "excelRow": 236,
-        "itemNo": "3)",
-        "desc": "D6-บานเลื่อนสลับ ขนาด 1.6 x 2.05 ม.",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "door-window",
-          "output": "R236",
-          "fallback": 1
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 9840,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R237",
-        "excelRow": 237,
-        "itemNo": "4)",
-        "desc": "D7-บานเลื่อนสลับ และช่องแสงติดตาย ขนาด 1.65 x 2.65 ม.",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "door-window",
-          "output": "R237",
-          "fallback": 1
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 13117.5,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R238",
-        "excelRow": 238,
-        "itemNo": "5)",
-        "desc": "D8-บานกระทุ้งข้าง ขนาด 0.6 x 2.65 ม.",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "door-window",
-          "output": "R238",
-          "fallback": 1
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 5565,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R239",
-        "excelRow": 239,
-        "itemNo": "6)",
-        "desc": "D9-บานเลื่อนสลับ ขนาด 2.4 x 2.05 ม.",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "door-window",
-          "output": "R239",
-          "fallback": 1
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 14760,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R240",
-        "excelRow": 240,
-        "itemNo": "7)",
-        "desc": "W1-บานเลื่อนสลับ ขนาด 1.3 x 1.2 ม.",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "door-window",
-          "output": "R240",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 4680,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R241",
-        "excelRow": 241,
-        "itemNo": "8)",
-        "desc": "W2-บานกระทุ้งข้าง และช่องแสงติดตาย ขนาด 0.6 x 1.8 ม.",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "door-window",
-          "output": "R241",
-          "fallback": 4
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 3780,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R242",
-        "excelRow": 242,
-        "itemNo": "9)",
-        "desc": "W3-บานกระทุ้งล่าง ขนาด 1.8 x 0.5 ม.",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "door-window",
-          "output": "R242",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 3150,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "net"
+        "calc": "door-window",
+        "slot": "aluminium",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R234",
+            "excelRow": 234,
+            "itemNo": "1)",
+            "desc": "D1-บานเลื่อนคู่ และช่องแสงติดตาย ขนาด 2.6 x 2.05 ม.",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "door-window",
+              "output": "R234",
+              "fallback": 1
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 15990,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R235",
+            "excelRow": 235,
+            "itemNo": "2)",
+            "desc": "D2-บานเลื่อนสลับ ขนาด 1.5 x 2.05 ม.",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "door-window",
+              "output": "R235",
+              "fallback": 1
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 9225,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R236",
+            "excelRow": 236,
+            "itemNo": "3)",
+            "desc": "D6-บานเลื่อนสลับ ขนาด 1.6 x 2.05 ม.",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "door-window",
+              "output": "R236",
+              "fallback": 1
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 9840,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R237",
+            "excelRow": 237,
+            "itemNo": "4)",
+            "desc": "D7-บานเลื่อนสลับ และช่องแสงติดตาย ขนาด 1.65 x 2.65 ม.",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "door-window",
+              "output": "R237",
+              "fallback": 1
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 13117.5,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R238",
+            "excelRow": 238,
+            "itemNo": "5)",
+            "desc": "D8-บานกระทุ้งข้าง ขนาด 0.6 x 2.65 ม.",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "door-window",
+              "output": "R238",
+              "fallback": 1
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 5565,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R239",
+            "excelRow": 239,
+            "itemNo": "6)",
+            "desc": "D9-บานเลื่อนสลับ ขนาด 2.4 x 2.05 ม.",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "door-window",
+              "output": "R239",
+              "fallback": 1
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 14760,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R240",
+            "excelRow": 240,
+            "itemNo": "7)",
+            "desc": "W1-บานเลื่อนสลับ ขนาด 1.3 x 1.2 ม.",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "door-window",
+              "output": "R240",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 4680,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R241",
+            "excelRow": 241,
+            "itemNo": "8)",
+            "desc": "W2-บานกระทุ้งข้าง และช่องแสงติดตาย ขนาด 0.6 x 1.8 ม.",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "door-window",
+              "output": "R241",
+              "fallback": 4
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 3780,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R242",
+            "excelRow": 242,
+            "itemNo": "9)",
+            "desc": "W3-บานกระทุ้งล่าง ขนาด 1.8 x 0.5 ม.",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "door-window",
+              "output": "R242",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 3150,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          }
+        ]
       }
     ]
   },
@@ -3828,164 +3918,173 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "desc": "งานตู้ควบคุมระบบไฟฟ้า"
       },
       {
-        "type": "item",
-        "key": "R256",
+        "type": "slot",
+        "key": "S256",
         "excelRow": 256,
-        "itemNo": "1)",
-        "desc": "ตู้ Consumer Unit ชนาด 18 ช่อง",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "load-center",
-          "output": "R256",
-          "fallback": 1
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 3000,
-        "lab": 3000,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R257",
-        "excelRow": 257,
-        "itemNo": "2)",
-        "desc": "เซอร์กิตเบรกเกอร์เมน  ขนาด100 A",
-        "unit": "ตัว",
-        "qty": {
-          "kind": "calc",
-          "calc": "load-center",
-          "output": "R257",
-          "fallback": 1
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 1500,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R258",
-        "excelRow": 258,
-        "itemNo": "3)",
-        "desc": "เซอร์กิตเบรกเกอร์ย่อย (CB) ขนาด 16 A",
-        "unit": "ตัว",
-        "qty": {
-          "kind": "calc",
-          "calc": "load-center",
-          "output": "R258",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 120,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R259",
-        "excelRow": 259,
-        "itemNo": "4)",
-        "desc": "เซอร์กิตเบรกเกอร์ย่อย (CB) ขนาด 20 A",
-        "unit": "ตัว",
-        "qty": {
-          "kind": "calc",
-          "calc": "load-center",
-          "output": "R259",
-          "fallback": 8
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 140,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R260",
-        "excelRow": 260,
-        "itemNo": "5)",
-        "desc": "เซอร์กิตเบรกเกอร์ย่อยชนิดกันดูด (ELCB) 20 A",
-        "unit": "ตัว",
-        "qty": {
-          "kind": "calc",
-          "calc": "load-center",
-          "output": "R260",
-          "fallback": 4
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 1200,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R261",
-        "excelRow": 261,
-        "itemNo": "6)",
-        "desc": "สายเมนไฟฟ้า THW ขนาด 25 ตร.มม.",
-        "unit": "ม.",
-        "qty": {
-          "kind": "calc",
-          "calc": "load-center",
-          "output": "R261",
-          "fallback": 50
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 200,
-        "lab": 100,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R262",
-        "excelRow": 262,
-        "itemNo": "7)",
-        "desc": "แท่งกราวด์ทองแดง 5/8\" ยาว 2.40 ม.",
-        "unit": "ท่อน",
-        "qty": {
-          "kind": "calc",
-          "calc": "load-center",
-          "output": "R262",
-          "fallback": 1
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 500,
-        "lab": 300,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R263",
-        "excelRow": 263,
-        "itemNo": "8)",
-        "desc": "สายไฟกราวด์ THW 10 ตร.มม.",
-        "unit": "ม.",
-        "qty": {
-          "kind": "calc",
-          "calc": "load-center",
-          "output": "R263",
-          "fallback": 5
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 70,
-        "lab": 30,
-        "materialBasis": "gross",
-        "labourBasis": "net"
+        "calc": "load-center",
+        "slot": "items",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R256",
+            "excelRow": 256,
+            "itemNo": "1)",
+            "desc": "ตู้ Consumer Unit ชนาด 18 ช่อง",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "load-center",
+              "output": "R256",
+              "fallback": 1
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 3000,
+            "lab": 3000,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R257",
+            "excelRow": 257,
+            "itemNo": "2)",
+            "desc": "เซอร์กิตเบรกเกอร์เมน  ขนาด100 A",
+            "unit": "ตัว",
+            "qty": {
+              "kind": "calc",
+              "calc": "load-center",
+              "output": "R257",
+              "fallback": 1
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 1500,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R258",
+            "excelRow": 258,
+            "itemNo": "3)",
+            "desc": "เซอร์กิตเบรกเกอร์ย่อย (CB) ขนาด 16 A",
+            "unit": "ตัว",
+            "qty": {
+              "kind": "calc",
+              "calc": "load-center",
+              "output": "R258",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 120,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R259",
+            "excelRow": 259,
+            "itemNo": "4)",
+            "desc": "เซอร์กิตเบรกเกอร์ย่อย (CB) ขนาด 20 A",
+            "unit": "ตัว",
+            "qty": {
+              "kind": "calc",
+              "calc": "load-center",
+              "output": "R259",
+              "fallback": 8
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 140,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R260",
+            "excelRow": 260,
+            "itemNo": "5)",
+            "desc": "เซอร์กิตเบรกเกอร์ย่อยชนิดกันดูด (ELCB) 20 A",
+            "unit": "ตัว",
+            "qty": {
+              "kind": "calc",
+              "calc": "load-center",
+              "output": "R260",
+              "fallback": 4
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 1200,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R261",
+            "excelRow": 261,
+            "itemNo": "6)",
+            "desc": "สายเมนไฟฟ้า THW ขนาด 25 ตร.มม.",
+            "unit": "ม.",
+            "qty": {
+              "kind": "calc",
+              "calc": "load-center",
+              "output": "R261",
+              "fallback": 50
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 200,
+            "lab": 100,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R262",
+            "excelRow": 262,
+            "itemNo": "7)",
+            "desc": "แท่งกราวด์ทองแดง 5/8\" ยาว 2.40 ม.",
+            "unit": "ท่อน",
+            "qty": {
+              "kind": "calc",
+              "calc": "load-center",
+              "output": "R262",
+              "fallback": 1
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 500,
+            "lab": 300,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R263",
+            "excelRow": 263,
+            "itemNo": "8)",
+            "desc": "สายไฟกราวด์ THW 10 ตร.มม.",
+            "unit": "ม.",
+            "qty": {
+              "kind": "calc",
+              "calc": "load-center",
+              "output": "R263",
+              "fallback": 5
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 70,
+            "lab": 30,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          }
+        ]
       },
       {
         "type": "heading",
@@ -3994,124 +4093,133 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
         "desc": "อุปกรณ์ไฟฟ้า"
       },
       {
-        "type": "item",
-        "key": "R265",
+        "type": "slot",
+        "key": "S265",
         "excelRow": 265,
-        "itemNo": "1)",
-        "desc": "โคมไฟดาวน์ไลท์",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "electrical-equipment",
-          "output": "R265",
-          "fallback": 25
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 150,
-        "lab": 120,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R266",
-        "excelRow": 266,
-        "itemNo": "2)",
-        "desc": "โคมไฟซาลาเปา",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "electrical-equipment",
-          "output": "R266",
-          "fallback": 5
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 300,
-        "lab": 200,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R267",
-        "excelRow": 267,
-        "itemNo": "3)",
-        "desc": "โคมไฟฟลูออเรสเซนต์ ชนิดกันน้ำ",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "electrical-equipment",
-          "output": "R267",
-          "fallback": 1
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 250,
-        "lab": 200,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R268",
-        "excelRow": 268,
-        "itemNo": "4)",
-        "desc": "สวิตซ์ทางเดียว (พร้อมหน้ากาก)",
-        "unit": "ตัว",
-        "qty": {
-          "kind": "calc",
-          "calc": "electrical-equipment",
-          "output": "R268",
-          "fallback": 18
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 80,
-        "lab": 80,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R269",
-        "excelRow": 269,
-        "itemNo": "5)",
-        "desc": "เต้ารับไฟฟ้าคู่ชนิดมีกราวน์ (พร้อมหน้ากาก)",
-        "unit": "ตัว",
-        "qty": {
-          "kind": "calc",
-          "calc": "electrical-equipment",
-          "output": "R269",
-          "fallback": 17
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 140,
-        "lab": 100,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R270",
-        "excelRow": 270,
-        "itemNo": "6)",
-        "desc": "เต้ารับไฟฟ้าคู่ชนิดมีกราวน์ ชนิดกันน้ำ (พร้อมหน้ากาก)",
-        "unit": "ตัว",
-        "qty": {
-          "kind": "calc",
-          "calc": "electrical-equipment",
-          "output": "R270",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 300,
-        "lab": 150,
-        "materialBasis": "gross",
-        "labourBasis": "net"
+        "calc": "electrical-equipment",
+        "slot": "items",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R265",
+            "excelRow": 265,
+            "itemNo": "1)",
+            "desc": "โคมไฟดาวน์ไลท์",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "electrical-equipment",
+              "output": "R265",
+              "fallback": 25
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 150,
+            "lab": 120,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R266",
+            "excelRow": 266,
+            "itemNo": "2)",
+            "desc": "โคมไฟซาลาเปา",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "electrical-equipment",
+              "output": "R266",
+              "fallback": 5
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 300,
+            "lab": 200,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R267",
+            "excelRow": 267,
+            "itemNo": "3)",
+            "desc": "โคมไฟฟลูออเรสเซนต์ ชนิดกันน้ำ",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "electrical-equipment",
+              "output": "R267",
+              "fallback": 1
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 250,
+            "lab": 200,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R268",
+            "excelRow": 268,
+            "itemNo": "4)",
+            "desc": "สวิตซ์ทางเดียว (พร้อมหน้ากาก)",
+            "unit": "ตัว",
+            "qty": {
+              "kind": "calc",
+              "calc": "electrical-equipment",
+              "output": "R268",
+              "fallback": 18
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 80,
+            "lab": 80,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R269",
+            "excelRow": 269,
+            "itemNo": "5)",
+            "desc": "เต้ารับไฟฟ้าคู่ชนิดมีกราวน์ (พร้อมหน้ากาก)",
+            "unit": "ตัว",
+            "qty": {
+              "kind": "calc",
+              "calc": "electrical-equipment",
+              "output": "R269",
+              "fallback": 17
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 140,
+            "lab": 100,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R270",
+            "excelRow": 270,
+            "itemNo": "6)",
+            "desc": "เต้ารับไฟฟ้าคู่ชนิดมีกราวน์ ชนิดกันน้ำ (พร้อมหน้ากาก)",
+            "unit": "ตัว",
+            "qty": {
+              "kind": "calc",
+              "calc": "electrical-equipment",
+              "output": "R270",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 300,
+            "lab": 150,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          }
+        ]
       }
     ]
   },
@@ -4124,87 +4232,96 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
     "inConstructionTotal": true,
     "lines": [
       {
-        "type": "item",
-        "key": "R273",
+        "type": "slot",
+        "key": "S273",
         "excelRow": 273,
-        "itemNo": "1)",
-        "desc": "ถังดักไขมัน ขนาด 20 ลิตร",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "sanitary-system",
-          "output": "R273",
-          "fallback": 1
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 1500,
-        "lab": 300,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R274",
-        "excelRow": 274,
-        "itemNo": "2)",
-        "desc": "ถังบำบัดน้ำเสียสาเร็จรูป ขนาด 600 ลิตร",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "sanitary-system",
-          "output": "R274",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 7000,
-        "lab": 3000,
-        "materialBasis": "gross",
-        "labourBasis": "net",
-        "note": "รถแมคโครเล็ก"
-      },
-      {
-        "type": "item",
-        "key": "R275",
-        "excelRow": 275,
-        "itemNo": "3)",
-        "desc": "บ่อพักน้ำทิ้งสำเร็จรูป ขนาด 40 x 40 ซม.",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "sanitary-system",
-          "output": "R275",
-          "fallback": 6
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 300,
-        "lab": 200,
-        "materialBasis": "gross",
-        "labourBasis": "net",
-        "note": "รถแมคโครเล็ก"
-      },
-      {
-        "type": "item",
-        "key": "R276",
-        "excelRow": 276,
-        "itemNo": "4)",
-        "desc": "ท่อระบายน้า AC Dia.8”",
-        "unit": "ม.",
-        "qty": {
-          "kind": "calc",
-          "calc": "sanitary-system",
-          "output": "R276",
-          "fallback": 36
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 200,
-        "lab": 150,
-        "materialBasis": "gross",
-        "labourBasis": "net",
-        "note": "รถแมคโครเล็ก"
+        "calc": "sanitary-system",
+        "slot": "items",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R273",
+            "excelRow": 273,
+            "itemNo": "1)",
+            "desc": "ถังดักไขมัน ขนาด 20 ลิตร",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "sanitary-system",
+              "output": "R273",
+              "fallback": 1
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 1500,
+            "lab": 300,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R274",
+            "excelRow": 274,
+            "itemNo": "2)",
+            "desc": "ถังบำบัดน้ำเสียสาเร็จรูป ขนาด 600 ลิตร",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "sanitary-system",
+              "output": "R274",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 7000,
+            "lab": 3000,
+            "materialBasis": "gross",
+            "labourBasis": "net",
+            "note": "รถแมคโครเล็ก"
+          },
+          {
+            "type": "item",
+            "key": "R275",
+            "excelRow": 275,
+            "itemNo": "3)",
+            "desc": "บ่อพักน้ำทิ้งสำเร็จรูป ขนาด 40 x 40 ซม.",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "sanitary-system",
+              "output": "R275",
+              "fallback": 6
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 300,
+            "lab": 200,
+            "materialBasis": "gross",
+            "labourBasis": "net",
+            "note": "รถแมคโครเล็ก"
+          },
+          {
+            "type": "item",
+            "key": "R276",
+            "excelRow": 276,
+            "itemNo": "4)",
+            "desc": "ท่อระบายน้า AC Dia.8”",
+            "unit": "ม.",
+            "qty": {
+              "kind": "calc",
+              "calc": "sanitary-system",
+              "output": "R276",
+              "fallback": 36
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 200,
+            "lab": 150,
+            "materialBasis": "gross",
+            "labourBasis": "net",
+            "note": "รถแมคโครเล็ก"
+          }
+        ]
       }
     ]
   },
@@ -4217,24 +4334,33 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
     "inConstructionTotal": true,
     "lines": [
       {
-        "type": "item",
-        "key": "R279",
+        "type": "slot",
+        "key": "S279",
         "excelRow": 279,
-        "itemNo": "1)",
-        "desc": "ราวกันตกกระจก เฉลียง 1 และ 2",
-        "unit": "ม.",
-        "qty": {
-          "kind": "calc",
-          "calc": "misc",
-          "output": "R279",
-          "fallback": 7.1
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 4000,
-        "lab": 0,
-        "materialBasis": "gross",
-        "labourBasis": "net"
+        "calc": "misc",
+        "slot": "items",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R279",
+            "excelRow": 279,
+            "itemNo": "1)",
+            "desc": "ราวกันตกกระจก เฉลียง 1 และ 2",
+            "unit": "ม.",
+            "qty": {
+              "kind": "calc",
+              "calc": "misc",
+              "output": "R279",
+              "fallback": 7.1
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 4000,
+            "lab": 0,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          }
+        ]
       }
     ]
   },
@@ -4247,204 +4373,213 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
     "inConstructionTotal": true,
     "lines": [
       {
-        "type": "item",
-        "key": "R282",
+        "type": "slot",
+        "key": "S282",
         "excelRow": 282,
-        "itemNo": "1)",
-        "desc": "ชักโครกนั่งราบ",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "sanitary-ware",
-          "output": "R282",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 5000,
-        "lab": 800,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R283",
-        "excelRow": 283,
-        "itemNo": "2)",
-        "desc": "สายชำระ",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "sanitary-ware",
-          "output": "R283",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 500,
-        "lab": 100,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R284",
-        "excelRow": 284,
-        "itemNo": "3)",
-        "desc": "อ่างล้างหน้า",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "sanitary-ware",
-          "output": "R284",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 3500,
-        "lab": 500,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R285",
-        "excelRow": 285,
-        "itemNo": "4)",
-        "desc": "ก๊อกเดี่ยวอ่างล้างหน้า",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "sanitary-ware",
-          "output": "R285",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 800,
-        "lab": 70,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R286",
-        "excelRow": 286,
-        "itemNo": "5)",
-        "desc": "กระจกเงา",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "sanitary-ware",
-          "output": "R286",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 1000,
-        "lab": 100,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R287",
-        "excelRow": 287,
-        "itemNo": "6)",
-        "desc": "ที่ใส่กระดาษชำระ",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "sanitary-ware",
-          "output": "R287",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 350,
-        "lab": 70,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R288",
-        "excelRow": 288,
-        "itemNo": "7)",
-        "desc": "ราวแขวนผ้า",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "sanitary-ware",
-          "output": "R288",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 800,
-        "lab": 70,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R289",
-        "excelRow": 289,
-        "itemNo": "8)",
-        "desc": "ตะแกรงกันกลิ่น",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "sanitary-ware",
-          "output": "R289",
-          "fallback": 3
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 300,
-        "lab": 100,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R290",
-        "excelRow": 290,
-        "itemNo": "9)",
-        "desc": "ที่ใส่สบู่",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "sanitary-ware",
-          "output": "R290",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 500,
-        "lab": 100,
-        "materialBasis": "gross",
-        "labourBasis": "net"
-      },
-      {
-        "type": "item",
-        "key": "R291",
-        "excelRow": 291,
-        "itemNo": "10)",
-        "desc": "ฝักบัวอาบน้ำ",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "sanitary-ware",
-          "output": "R291",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 1000,
-        "lab": 100,
-        "materialBasis": "gross",
-        "labourBasis": "net"
+        "calc": "sanitary-ware",
+        "slot": "items",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R282",
+            "excelRow": 282,
+            "itemNo": "1)",
+            "desc": "ชักโครกนั่งราบ",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "sanitary-ware",
+              "output": "R282",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 5000,
+            "lab": 800,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R283",
+            "excelRow": 283,
+            "itemNo": "2)",
+            "desc": "สายชำระ",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "sanitary-ware",
+              "output": "R283",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 500,
+            "lab": 100,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R284",
+            "excelRow": 284,
+            "itemNo": "3)",
+            "desc": "อ่างล้างหน้า",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "sanitary-ware",
+              "output": "R284",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 3500,
+            "lab": 500,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R285",
+            "excelRow": 285,
+            "itemNo": "4)",
+            "desc": "ก๊อกเดี่ยวอ่างล้างหน้า",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "sanitary-ware",
+              "output": "R285",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 800,
+            "lab": 70,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R286",
+            "excelRow": 286,
+            "itemNo": "5)",
+            "desc": "กระจกเงา",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "sanitary-ware",
+              "output": "R286",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 1000,
+            "lab": 100,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R287",
+            "excelRow": 287,
+            "itemNo": "6)",
+            "desc": "ที่ใส่กระดาษชำระ",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "sanitary-ware",
+              "output": "R287",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 350,
+            "lab": 70,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R288",
+            "excelRow": 288,
+            "itemNo": "7)",
+            "desc": "ราวแขวนผ้า",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "sanitary-ware",
+              "output": "R288",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 800,
+            "lab": 70,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R289",
+            "excelRow": 289,
+            "itemNo": "8)",
+            "desc": "ตะแกรงกันกลิ่น",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "sanitary-ware",
+              "output": "R289",
+              "fallback": 3
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 300,
+            "lab": 100,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R290",
+            "excelRow": 290,
+            "itemNo": "9)",
+            "desc": "ที่ใส่สบู่",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "sanitary-ware",
+              "output": "R290",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 500,
+            "lab": 100,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          },
+          {
+            "type": "item",
+            "key": "R291",
+            "excelRow": 291,
+            "itemNo": "10)",
+            "desc": "ฝักบัวอาบน้ำ",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "sanitary-ware",
+              "output": "R291",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 1000,
+            "lab": 100,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          }
+        ]
       }
     ]
   },
@@ -4457,87 +4592,96 @@ export const BOQ_TEMPLATE_V5: BoqSectionTemplate[] = [
     "inConstructionTotal": true,
     "lines": [
       {
-        "type": "item",
-        "key": "R294",
+        "type": "slot",
+        "key": "S294",
         "excelRow": 294,
-        "itemNo": "1)",
-        "desc": "D3-บานเปิดเดี่ยว ขนาด 0.8 x 2 ม.",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "door-window",
-          "output": "R294",
-          "fallback": 3
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 4000,
-        "lab": 800,
-        "materialBasis": "gross",
-        "labourBasis": "net",
-        "note": "ราคาบานไม่เกิน 3,000 .-"
-      },
-      {
-        "type": "item",
-        "key": "R295",
-        "excelRow": 295,
-        "itemNo": "2)",
-        "desc": "D4-บานเปิดเดี่ยว ขนาด 0.8 x 2 ม.",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "door-window",
-          "output": "R295",
-          "fallback": 1
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 4000,
-        "lab": 800,
-        "materialBasis": "gross",
-        "labourBasis": "net",
-        "note": "ราคาบานไม่เกิน 3,000 .-"
-      },
-      {
-        "type": "item",
-        "key": "R296",
-        "excelRow": 296,
-        "itemNo": "3)",
-        "desc": "D5-บานเปิดเดี่ยว มีเกล็ดระบายอากาศ ขนาด 0.7 x 2 ม.",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "door-window",
-          "output": "R296",
-          "fallback": 2
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 4000,
-        "lab": 800,
-        "materialBasis": "gross",
-        "labourBasis": "net",
-        "note": "ราคาบานไม่เกิน 3,000 .-"
-      },
-      {
-        "type": "item",
-        "key": "R297",
-        "excelRow": 297,
-        "itemNo": "4)",
-        "desc": "W4-บานวงกลม ช่องแสงติดตาย ขนาด Dia.1.1 ม.",
-        "unit": "ชุด",
-        "qty": {
-          "kind": "calc",
-          "calc": "door-window",
-          "output": "R297",
-          "fallback": 1
-        },
-        "waste": 0,
-        "gross": "std",
-        "mat": 5000,
-        "lab": 500,
-        "materialBasis": "gross",
-        "labourBasis": "net"
+        "calc": "door-window",
+        "slot": "wood",
+        "fallback": [
+          {
+            "type": "item",
+            "key": "R294",
+            "excelRow": 294,
+            "itemNo": "1)",
+            "desc": "D3-บานเปิดเดี่ยว ขนาด 0.8 x 2 ม.",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "door-window",
+              "output": "R294",
+              "fallback": 3
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 4000,
+            "lab": 800,
+            "materialBasis": "gross",
+            "labourBasis": "net",
+            "note": "ราคาบานไม่เกิน 3,000 .-"
+          },
+          {
+            "type": "item",
+            "key": "R295",
+            "excelRow": 295,
+            "itemNo": "2)",
+            "desc": "D4-บานเปิดเดี่ยว ขนาด 0.8 x 2 ม.",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "door-window",
+              "output": "R295",
+              "fallback": 1
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 4000,
+            "lab": 800,
+            "materialBasis": "gross",
+            "labourBasis": "net",
+            "note": "ราคาบานไม่เกิน 3,000 .-"
+          },
+          {
+            "type": "item",
+            "key": "R296",
+            "excelRow": 296,
+            "itemNo": "3)",
+            "desc": "D5-บานเปิดเดี่ยว มีเกล็ดระบายอากาศ ขนาด 0.7 x 2 ม.",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "door-window",
+              "output": "R296",
+              "fallback": 2
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 4000,
+            "lab": 800,
+            "materialBasis": "gross",
+            "labourBasis": "net",
+            "note": "ราคาบานไม่เกิน 3,000 .-"
+          },
+          {
+            "type": "item",
+            "key": "R297",
+            "excelRow": 297,
+            "itemNo": "4)",
+            "desc": "W4-บานวงกลม ช่องแสงติดตาย ขนาด Dia.1.1 ม.",
+            "unit": "ชุด",
+            "qty": {
+              "kind": "calc",
+              "calc": "door-window",
+              "output": "R297",
+              "fallback": 1
+            },
+            "waste": 0,
+            "gross": "std",
+            "mat": 5000,
+            "lab": 500,
+            "materialBasis": "gross",
+            "labourBasis": "net"
+          }
+        ]
       }
     ]
   },

@@ -1,7 +1,12 @@
 import type {
-    BoqItemTemplate, BoqLineKey, BoqLineOverride, BoqResult, BoqRow, BoqSectionTemplate,
-    LinkedValues, PriceRule,
+    BoqHeadingTemplate, BoqItemTemplate, BoqLineKey, BoqLineOverride, BoqResult, BoqRow, BoqSectionTemplate,
+    LinkedValues, PriceRule, SlotLines,
 } from './types';
+
+/** Replaces each slot with the rows its calculator supplied (or the Excel fallback rows). */
+export function expandSlots(lines: BoqSectionTemplate['lines'], slots: SlotLines): (BoqItemTemplate | BoqHeadingTemplate)[] {
+    return lines.flatMap(l => (l.type === 'slot' ? (slots[`${l.calc}.${l.slot}`] ?? l.fallback) : [l]));
+}
 
 const EPS = 1e-9;
 
@@ -21,6 +26,8 @@ export interface ComputeBoqInput {
     overrides?: Record<BoqLineKey, BoqLineOverride | undefined>;
     /** Values supplied by calculator sheets — win over the template's Excel sample. */
     linked?: LinkedValues;
+    /** Rows supplied for variable-length runs (see BoqSlotTemplate). */
+    slots?: SlotLines;
 }
 
 interface LineCalc {
@@ -39,7 +46,8 @@ interface LineCalc {
  * Sub-totals sum every item row of the section (decision D1 fixes Excel's short ranges at
  * J95/L95, J216/L216, L243; M sub-totals are unchanged).
  */
-export function computeBoq({ sections, overrides = {}, linked = {} }: ComputeBoqInput): BoqResult {
+export function computeBoq({ sections: rawSections, overrides = {}, linked = {}, slots = {} }: ComputeBoqInput): BoqResult {
+    const sections = rawSections.map(s => ({ ...s, lines: expandSlots(s.lines, slots) }));
     const items = new Map<BoqLineKey, BoqItemTemplate>();
     for (const s of sections) for (const l of s.lines) if (l.type === 'item') items.set(l.key, l);
 

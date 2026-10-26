@@ -63,7 +63,24 @@ export interface BoqHeadingTemplate {
     desc: string;
 }
 
-export type BoqLineTemplate = BoqItemTemplate | BoqHeadingTemplate;
+/**
+ * A run of BOQ rows whose number varies with the calculator input (rebar lines per bar size + tie wire,
+ * one row per door/window, pick-list items). The calculator supplies the rows via `boqSlots`;
+ * until it does, the Excel rows in `fallback` are used.
+ */
+export interface BoqSlotTemplate {
+    type: 'slot';
+    key: BoqLineKey;           // e.g. 'S43'
+    excelRow: number;          // first Excel row of the run
+    calc: string;              // calculator id that fills it
+    slot: string;              // slot name within that calculator, e.g. 'rebar.footing'
+    fallback: (BoqItemTemplate | BoqHeadingTemplate)[];
+}
+
+export type BoqLineTemplate = BoqItemTemplate | BoqHeadingTemplate | BoqSlotTemplate;
+
+/** Rows supplied for slots, keyed `${calc}.${slot}`. */
+export type SlotLines = Record<string, (BoqItemTemplate | BoqHeadingTemplate)[] | undefined>;
 
 export interface BoqSectionTemplate {
     no: number;                        // 0–31, Excel column B
