@@ -173,7 +173,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'sanitary-system', title: 'อุปกรณ์ระบบสุขาภิบาล', kind: calc('sanitary-system'), sections: [27],
-                planHint: 'ดูแปลนสุขาภิบาล: ถังบำบัด บ่อพัก ปั๊มน้ำ ถังเก็บน้ำ',
+                planHint: 'ดูแปลนสุขาภิบาล: ถังดักไขมัน ถังบำบัด บ่อพัก และความยาวท่อระบายน้ำแอร์',
             },
             {
                 id: 'sanitary-ware', title: 'สุขภัณฑ์', kind: calc('sanitary-ware'), sections: [29],

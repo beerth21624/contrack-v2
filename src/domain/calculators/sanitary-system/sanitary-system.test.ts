@@ -72,4 +72,14 @@ describe('ระบบสุขาภิบาล_Sanitary System (sheet 07)', (
         expect(boqRows({ items: overridden })[3]?.total).toBe(14400);
         expect(section27({ items: overridden })?.total).toBe(37400 + 1800);
     });
+
+    it('blank(): no items; finite zero totals; section 27 empty', () => {
+        const blank = sanitarySystem.blank?.();
+        expect(blank).toEqual({ items: [] });
+        if (!blank) return;
+        expect(sanitarySystem.compute(blank, ctx)).toEqual({ rows: 0, mat: 0, lab: 0, total: 0 });
+        expect(sanitarySystem.boqSlots?.(blank, ctx)).toEqual({ items: [] });
+        const s = computeProject(createProject('blank'), [sanitarySystem]).boq.sections.find(x => x.no === 27);
+        expect(s?.total).toBe(0);
+    });
 });

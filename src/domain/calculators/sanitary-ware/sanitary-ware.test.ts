@@ -3,7 +3,9 @@ import golden from '../../boq/__tests__/golden.v5.json';
 import { computeProject, createProject } from '../../project';
 import type { BoqItemRow } from '../../boq/types';
 import { catalogueItem, pickRow } from '../shared/pick-list';
-import { SANITARY_WARE_CATALOGUE, SANITARY_WARE_ITEMS, sanitaryWare, type SanitaryWareInput } from '.';
+import {
+    BATHROOM_SET, SANITARY_WARE_CATALOGUE, SANITARY_WARE_ITEMS, addBathroomSet, sanitaryWare, type SanitaryWareInput,
+} from '.';
 
 const ctx = { outputs: () => undefined };
 const goldenLines = golden.lines as Record<string, { E?: number; I?: number; J?: number; K?: number; L?: number; M?: number }>;
@@ -75,5 +77,31 @@ describe('สุขภัณฑ์_Sanitary (sheet 21)', () => {
         expect(rows[0]).toMatchObject({ matUnit: 6000, total: 13600 });   // 2 × (6,000 + 800)
         expect(rows[9]).toMatchObject({ key: 'sanitary-ware:items:ชักโครกนั่งราบ~2', itemNo: '10)', total: 5800 });
         expect(section29(next)?.total).toBe(31920 + 2000 - 2200 + 5800);
+    });
+
+    it('blank(): no items; finite zero totals; section 29 empty', () => {
+        const blank = sanitaryWare.blank?.();
+        expect(blank).toEqual({ items: [] });
+        if (!blank) return;
+        expect(sanitaryWare.compute(blank, ctx)).toEqual({ rows: 0, mat: 0, lab: 0, total: 0 });
+        expect(sanitaryWare.boqSlots?.(blank, ctx)).toEqual({ items: [] });
+        const s = computeProject(createProject('blank'), [sanitaryWare]).boq.sections.find(x => x.no === 29);
+        expect(s?.total).toBe(0);
+    });
+
+    it('addBathroomSet: one of each set item per bathroom; two bathrooms ≈ the Excel sample', () => {
+        const one = addBathroomSet([]);
+        expect(one.map(r => [r.item, r.qty, r.unit, r.mat, r.lab])).toEqual(
+            BATHROOM_SET.map(item => [item, 1, 'ชุด', null, null]));
+        const two = addBathroomSet(one);
+        expect(two).toHaveLength(BATHROOM_SET.length);
+        // Excel sample = 2 bathrooms with one extra floor drain
+        expect(two.map(r => [r.item, r.qty])).toEqual(
+            input.items.map(r => [r.item, r.item === 'ตะแกรงกันกลิ่น ' ? 2 : r.qty]));
+        expect(sanitaryWare.compute({ items: two }, ctx).total).toBe(31920 - 400);
+        // An existing row (any spacing, typed price kept) is counted up, not duplicated
+        const typed = addBathroomSet([{ item: 'อ่างล้างหน้า', qty: 1, unit: '', mat: 4000, lab: null }]);
+        expect(typed[0]).toEqual({ item: 'อ่างล้างหน้า', qty: 2, unit: '', mat: 4000, lab: null });
+        expect(typed).toHaveLength(BATHROOM_SET.length);
     });
 });

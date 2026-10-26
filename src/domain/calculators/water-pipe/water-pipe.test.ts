@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { waterPipe, runLength, unlinkedRuns, WATER_PIPE_BOQ_LINES, type WaterPipeInput } from '.';
+import {
+    waterPipe, runLength, unlinkedRuns, sizeMismatches, plainLabel,
+    WATER_PIPE_BOQ_LINES, WATER_PIPE_ITEMS, WATER_PIPE_PLAIN, type WaterPipeInput,
+} from '.';
 import { wastePipe } from '../waste-pipe';
 import { CALCULATORS } from '../registry';
 import { computeProject, createProject } from '../../project';
@@ -61,6 +64,26 @@ describe('ท่อน้ำดี_Water Pipe (sheet 06)', () => {
         expect(row('R214')?.total).toBeCloseTo(1391.5, 6);
         // R215 = (1345.5 + 379.5 + 2691 + 1012) × 50 %
         expect(row('R215')?.total).toBeCloseTo(2714, 6);
+    });
+
+    it('blank(): the two fixed rows (item + size kept) with no length; BOQ rows R213:R215 are 0', () => {
+        const blank = waterPipe.blank?.();
+        expect(blank).toBeDefined();
+        if (!blank) return;
+        expect(blank.runs.map(r => [r.label, r.size])).toEqual(waterPipe.defaults().runs.map(r => [r.label, r.size]));
+        const out = waterPipe.compute(blank, ctx);
+        expect(Object.values(out).every(Number.isFinite)).toBe(true);
+        expect(out).toEqual({ R213: 0, R214: 0, total: 0, unlinked: 0 });
+        expect(sizeMismatches(blank, WATER_PIPE_BOQ_LINES)).toEqual([]);
+        const sec = computeProject(createProject('blank'), calcs).boq.sections.find(s => s.no === 21);
+        for (const key of ['R213', 'R214', 'R215']) {
+            const row = sec?.rows.find((r): r is BoqItemRow => r.type === 'item' && r.key === key);
+            expect(row?.total, key).toBe(0);
+        }
+    });
+
+    it('every item option has a plain journey name', () => {
+        for (const item of WATER_PIPE_ITEMS) expect(plainLabel(item, WATER_PIPE_PLAIN), item).toBeDefined();
     });
 
     it('links', () => {

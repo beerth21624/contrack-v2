@@ -4,15 +4,18 @@
 import type { CalculatorDef } from '@/domain/calculators/types';
 import type { ProjectResult } from '@/domain/project';
 import {
-    runLength, sizeFromLabel, sizeMismatches, unlinkedRuns, type PipeBoqLine, type PipeRun, type PipeRunsInput,
+    runLength, sizeFromLabel, sizeMismatches, unlinkedRuns,
+    type PipeBoqLine, type PipePlainLabel, type PipeRun, type PipeRunsInput,
 } from '@/domain/calculators/waste-pipe/pipe-runs';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber } from '@/components/sheet/NumberCell';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
+import { PipeRunsJourney } from './PipeRunsJourney';
 
 const NO_DEPS = { outputs: () => undefined };
 
-export function PipeRunsSheet({ def, input, onChange, result, subtitle, items, sizes, lines }: {
+export function PipeRunsSheet({ def, input, onChange, result, subtitle, items, sizes, lines, plain, noun }: {
     def: CalculatorDef<PipeRunsInput>;
     input: PipeRunsInput;
     onChange: (runs: PipeRun[]) => void;
@@ -22,7 +25,15 @@ export function PipeRunsSheet({ def, input, onChange, result, subtitle, items, s
     items: readonly string[];
     sizes: readonly string[];
     lines: readonly PipeBoqLine[];
+    /** Guided journey: plain names of the B options, and what the pipes are (e.g. "ท่อน้ำทิ้ง"). */
+    plain: Record<string, PipePlainLabel>;
+    noun: string;
 }) {
+    const inJourney = useJourneyMode();
+    if (inJourney) {
+        return <PipeRunsJourney def={def} input={input} onChange={onChange} result={result} items={items}
+            sizes={sizes} lines={lines} plain={plain} noun={noun} />;
+    }
     const sectionNo = def.sections[0] ?? 0;
     const out = def.compute(input, NO_DEPS);
     const boqDesc = (line: PipeBoqLine) => {

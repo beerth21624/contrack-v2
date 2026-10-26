@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-    wastePipe, runLength, pipeRunTargets, unlinkedRuns, sizeMismatches, sizeFromLabel,
-    WASTE_PIPE_BOQ_LINES, WASTE_PIPE_SIZES, type WastePipeInput,
+    wastePipe, runLength, pipeRunTargets, unlinkedRuns, sizeMismatches, sizeFromLabel, plainLabel,
+    WASTE_PIPE_BOQ_LINES, WASTE_PIPE_ITEMS, WASTE_PIPE_PLAIN, WASTE_PIPE_SIZES, type WastePipeInput,
 } from '.';
 import { waterPipe } from '../water-pipe';
 import { CALCULATORS } from '../registry';
@@ -104,6 +104,34 @@ describe('ท่อน้ำทิ้ง_Waste Pipe (sheet 05)', () => {
         expect(sizeFromLabel('ท่อน้ำทิ้งชักโครก PVC 4"', WASTE_PIPE_SIZES)).toBe('PVC 4"');
         expect(sizeFromLabel('ท่ออากาศถังบำบัด PVC 1"', WASTE_PIPE_SIZES)).toBe('PVC 1"');
         expect(sizeFromLabel('อื่น ๆ', WASTE_PIPE_SIZES)).toBe('');
+    });
+
+    it('blank(): the three fixed rows (item + size kept) with no length; BOQ rows R84:R87 are 0', () => {
+        const blank = wastePipe.blank?.();
+        expect(blank).toBeDefined();
+        if (!blank) return;
+        expect(blank.runs.map(r => [r.label, r.size])).toEqual(wastePipe.defaults().runs.map(r => [r.label, r.size]));
+        expect(blank.runs.every(r => r.horizontal === 0 && r.vertical === 0)).toBe(true);
+        const out = wastePipe.compute(blank, ctx);
+        expect(Object.values(out).every(Number.isFinite)).toBe(true);
+        expect(out).toEqual({ R84: 0, R85: 0, R86: 0, total: 0, unlinked: 0 });
+        expect(sizeMismatches(blank, WASTE_PIPE_BOQ_LINES)).toEqual([]);
+        expect(unlinkedRuns(blank, WASTE_PIPE_BOQ_LINES)).toEqual([]);
+        const project = createProject('blank');
+        const sec = computeProject(project, calcs).boq.sections.find(s => s.no === 9);
+        for (const key of ['R84', 'R85', 'R86', 'R87']) {
+            const row = sec?.rows.find((r): r is BoqItemRow => r.type === 'item' && r.key === key);
+            expect(row?.total, key).toBe(0);
+        }
+        // the BOQ text still names the pipes
+        expect(wastePipe.boqText?.(blank, ctx).R84).toEqual({ desc: 'ท่อน้ำทิ้งชักโครก PVC 4"' });
+    });
+
+    it('every item option has a plain journey name', () => {
+        for (const item of WASTE_PIPE_ITEMS) expect(plainLabel(item, WASTE_PIPE_PLAIN), item).toBeDefined();
+        expect(plainLabel(' ท่ออากาศถังบำบัด  PVC 1" ', WASTE_PIPE_PLAIN)?.name).toBe('ท่ออากาศถังบำบัด');
+        expect(plainLabel('', WASTE_PIPE_PLAIN)).toBeUndefined();
+        expect(plainLabel('อื่น ๆ', WASTE_PIPE_PLAIN)).toBeUndefined();
     });
 
     it('links', () => {

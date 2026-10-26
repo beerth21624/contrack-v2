@@ -49,6 +49,8 @@ export const sanitarySystem = defineCalculator<SanitarySystemInput>({
             pickRow(AC_PIPE, 36, 'ม.'),
         ],
     }),
+    // A new project lists nothing yet (items come from the plan); prices stay in the catalogue.
+    blank: () => ({ items: [] }),
     compute: input => computePickList(input.items, SANITARY_SYSTEM_CATALOGUE),
     boqLinks: [],
     boqSlots: input => ({ items: pickListSlotRows(input.items, SANITARY_SYSTEM_CATALOGUE) }),

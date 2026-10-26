@@ -15,6 +15,12 @@ export interface PipeRunsInput {
     runs: PipeRun[];
 }
 
+/** Guided-journey wording of a รายการ option: what the run is on the plan, and where to measure it. */
+export interface PipePlainLabel {
+    name: string;
+    hint: string;
+}
+
 /** A BOQ (Home) row fed by the sheet, and the pipe size its typed price / unit are for (Excel sample row). */
 export interface PipeBoqLine {
     line: BoqLineKey;
@@ -88,6 +94,14 @@ export function sizeMismatches(input: PipeRunsInput, lines: readonly PipeBoqLine
     });
 }
 
+/**
+ * Input of a new real project: the sheet's fixed rows (one per BOQ line, item and pipe size as in Excel — they are
+ * the rows the BOQ reads by position) with no length yet.
+ */
+export const blankRuns = (input: PipeRunsInput): PipeRunsInput => ({
+    runs: input.runs.map(r => ({ ...r, horizontal: 0, vertical: 0 })),
+});
+
 /** BOQ D cells: Excel links D84 = B5, D85 = B6, … (blank → the template text). */
 export function pipeRunsBoqText(input: PipeRunsInput, lines: readonly PipeBoqLine[]): Record<BoqLineKey, { desc?: string }> {
     const out: Record<BoqLineKey, { desc?: string }> = {};
@@ -96,6 +110,13 @@ export function pipeRunsBoqText(input: PipeRunsInput, lines: readonly PipeBoqLin
         if (label) out[l.line] = { desc: label };
     });
     return out;
+}
+
+/** Plain wording of a รายการ value (compared without stray spaces), or undefined for free / unknown text. */
+export function plainLabel(label: string, plain: Record<string, PipePlainLabel>): PipePlainLabel | undefined {
+    const l = normalizeSize(label);
+    if (l === '') return undefined;
+    return Object.entries(plain).find(([k]) => normalizeSize(k) === l)?.[1];
 }
 
 /** The size written at the end of a dropdown item (`ท่อน้ำทิ้งชักโครก PVC 4"` → `PVC 4"`), or ''. */

@@ -2,7 +2,7 @@
 // Shared core: ../shared/pick-list. Spec: docs/excel-spec/05-mep-sanitary-misc.md §9.
 import { defineCalculator } from '../types';
 import {
-    computePickList, pickListSlotRows, pickRow, type Catalogue, type PickListInput,
+    computePickList, matchKey, pickListSlotRows, pickRow, type Catalogue, type PickListInput, type PickRow,
 } from '../shared/pick-list';
 
 export type SanitaryWareInput = PickListInput;
@@ -42,6 +42,26 @@ export const SANITARY_WARE_CATALOGUE: Catalogue = {
     [SHOWER]: { unit: SET, mat: 1000, lab: 100 },        // R291
 };
 
+/**
+ * Fittings of one bathroom, in BOQ order (the Excel sample is 2 bathrooms: 2 of each, 3 floor drains).
+ * Guided journey helper: the user counts bathrooms on the plan, then corrects single items.
+ */
+export const BATHROOM_SET = [
+    TOILET, BIDET_SPRAY, BASIN, BASIN_TAP, MIRROR, PAPER_HOLDER, TOWEL_RAIL, FLOOR_DRAIN, SOAP_DISH, SHOWER,
+] as const;
+
+/** Adds one bathroom: +1 on the first row of each set item (any spacing), or a new catalogue-priced row. */
+export function addBathroomSet(items: PickRow[]): PickRow[] {
+    let next = items;
+    for (const item of BATHROOM_SET) {
+        const i = next.findIndex(r => matchKey(r.item) === matchKey(item));
+        next = i >= 0
+            ? next.map((r, j) => (j === i ? { ...r, qty: (Number.isFinite(r.qty) ? r.qty : 0) + 1 } : r))
+            : [...next, pickRow(item, 1, SET)];
+    }
+    return next;
+}
+
 export const sanitaryWare = defineCalculator<SanitaryWareInput>({
     id: 'sanitary-ware',
     sheetName: 'สุขภัณฑ์_Sanitary',
@@ -64,6 +84,8 @@ export const sanitaryWare = defineCalculator<SanitaryWareInput>({
             pickRow(SHOWER, 2, SET),
         ],
     }),
+    // A new project lists nothing yet (items are counted from the plan); prices stay in the catalogue.
+    blank: () => ({ items: [] }),
     compute: input => computePickList(input.items, SANITARY_WARE_CATALOGUE),
     boqLinks: [],
     boqSlots: input => ({ items: pickListSlotRows(input.items, SANITARY_WARE_CATALOGUE) }),
