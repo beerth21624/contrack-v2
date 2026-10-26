@@ -4,6 +4,7 @@ import type { BoqItemRow, BoqResult } from '@/domain/boq/types';
 import {
     buildBoqPrintModel, buildHeaderFields, fmtMoney, fmtQty, quantityBasis, type PrintDetailRow,
 } from '../boq-print-model';
+import { buildBoqSheet } from '../boq-sheet';
 
 const sample = createProject('sample');
 const boq = computeProject(sample).boq;
@@ -175,15 +176,130 @@ describe('print formatting', () => {
     });
 });
 
+/** A section's printed headings and numbers: group headings by name, numbered rows by number. */
+const outline = (rows: PrintDetailRow[]) =>
+    rows.filter(r => (r.type === 'heading' && r.group) || r.itemNo !== '')
+        .map(r => (r.type === 'heading' && r.group ? r.desc : r.itemNo));
+
+const nums = (n: number) => Array.from({ length: n }, (_, i) => `${i + 1})`);
+
+/** The sample BOQ with every item row whose key is in `keys` emptied (nothing to price, so left out of print). */
+const emptied = (keys: Set<string>): BoqResult => ({
+    ...boq,
+    sections: boq.sections.map(s => ({
+        ...s,
+        rows: s.rows.map(r => (r.type === 'item' && keys.has(r.key)
+            ? { ...r, qty: 0, grossQty: null, matTotal: 0, labTotal: 0, total: 0 }
+            : r)),
+    })),
+});
+
+/** Keys of the item rows from the heading `from` up to (not including) the next un-numbered heading. */
+const groupItemKeys = (sectionNo: number, from: string): Set<string> => {
+    const rows = boq.sections.find(s => s.no === sectionNo)?.rows ?? [];
+    const start = rows.findIndex(r => r.type === 'heading' && r.desc === from);
+    const keys = new Set<string>();
+    for (const r of rows.slice(start + 1)) {
+        if (r.type === 'heading' && (r.itemNo ?? '').trim() === '') break;
+        if (r.type === 'item') keys.add(r.key);
+    }
+    return keys;
+};
+
 describe('printed item numbers', () => {
-    it('numbered rows count 1), 2) … in print order in every section, with no gaps from left-out rows', () => {
+    it('numbered rows count 1), 2) … in print order in every group, with no gaps from left-out rows', () => {
         for (const s of [...model.details, ...model.preConstructionDetails]) {
-            const numbers = s.rows.map(r => r.itemNo).filter(no => no !== '');
-            expect(numbers).toEqual(numbers.map((_, i) => `${i + 1})`));
+            const groups: string[][] = [[]];
+            for (const r of s.rows) {
+                if (r.type === 'heading' && r.group) groups.push([]);
+                else if (r.itemNo !== '') groups[groups.length - 1]?.push(r.itemNo);
+            }
+            for (const g of groups) expect(g).toEqual(nums(g.length));
         }
         // section 1 of the sample leaves out its empty first item: the fill is printed as 1), not 2)
         const fill = model.details.find(s => s.no === 1);
         expect(fill?.rows[0]?.itemNo).toBe('1)');
+    });
+
+    it('section 12: each group heading is printed and restarts the count', () => {
+        const s = model.details.find(x => x.no === 12);
+        expect(outline(s?.rows ?? [])).toEqual(['งานคานดาดฟ้า', ...nums(4), 'งานพื้นดาดฟ้า', ...nums(4)]);
+        expect(s?.rows[0]).toMatchObject({ type: 'heading', group: true, itemNo: '', desc: 'งานคานดาดฟ้า' });
+        expect(s?.rows[1]).toMatchObject({ type: 'heading', group: false, itemNo: '1)', desc: 'เหล็กเสริม' });
+    });
+
+    it('section 26: a group heading is printed before its first item even when that item is numbered', () => {
+        const s = model.details.find(x => x.no === 26);
+        expect(outline(s?.rows ?? [])).toEqual(['งานตู้ควบคุมระบบไฟฟ้า', ...nums(8), 'อุปกรณ์ไฟฟ้า', ...nums(6)]);
+        expect(s?.rows[0]).toMatchObject({ type: 'heading', group: true, desc: 'งานตู้ควบคุมระบบไฟฟ้า' });
+        expect(s?.rows[1]).toMatchObject({ type: 'item', itemNo: '1)' });
+    });
+
+    it('a group whose rows are all empty is not printed; the next group still counts from 1)', () => {
+        const m = buildBoqPrintModel(emptied(groupItemKeys(12, 'งานคานดาดฟ้า')), sample.meta);
+        const s = m.details.find(x => x.no === 12);
+        expect(outline(s?.rows ?? [])).toEqual(['งานพื้นดาดฟ้า', ...nums(4)]);
+        expect(s?.rows.some(r => r.desc === 'งานคานดาดฟ้า')).toBe(false);
+
+        const all = buildBoqPrintModel(emptied(new Set([
+            ...groupItemKeys(26, 'งานตู้ควบคุมระบบไฟฟ้า'), ...groupItemKeys(26, 'อุปกรณ์ไฟฟ้า'),
+        ])), sample.meta);
+        expect(all.details.some(x => x.no === 26)).toBe(false);
+    });
+
+    it('left-out rows inside a group renumber that group only', () => {
+        // leave out 1) and 3) of the switchboard group: 8 rows print as 1)–6), the next group is untouched
+        const rows = boq.sections.find(s => s.no === 26)?.rows ?? [];
+        const drop = new Set(rows.filter(r => r.type === 'item' && (r.itemNo === '1)' || r.itemNo === '3)'))
+            .slice(0, 2).map(r => r.key));
+        const s = buildBoqPrintModel(emptied(drop), sample.meta).details.find(x => x.no === 26);
+        expect(outline(s?.rows ?? [])).toEqual(['งานตู้ควบคุมระบบไฟฟ้า', ...nums(6), 'อุปกรณ์ไฟฟ้า', ...nums(6)]);
+    });
+
+    it('printed numbers are the Excel export\'s wherever no numbered row before them (in their group) was left out', () => {
+        // the Excel sheet keeps every template row and its original number, in the same order as the BOQ rows
+        const sheet = buildBoqSheet(boq, sample.meta);
+        const excelNo = new Map<string, string>();
+        let i = -1;
+        let j = 0;
+        for (const row of sheet.rows) {
+            if (row.kind === 'section') { i++; j = 0; continue; }
+            if (row.kind !== 'heading' && row.kind !== 'item') continue;
+            const src = boq.sections[i]?.rows[j++];
+            if (src === undefined) throw new Error(`no BOQ row for Excel row ${row.r}`);
+            excelNo.set(src.key, String(row.cells.find(c => c.col === 'C')?.value ?? '').trim());
+        }
+        let matched = 0;
+        const renumbered = new Set<number>();
+        const templateGaps = new Set<number>();
+        for (const s of [...model.details, ...model.preConstructionDetails]) {
+            const printed = new Map(s.rows.map(r => [r.key, r]));
+            let gap = false;
+            let k = 0;
+            for (const r of boq.sections.find(x => x.no === s.no)?.rows ?? []) {
+                const no = (r.itemNo ?? '').trim();
+                if (no === '') {
+                    if (r.type === 'heading') { gap = false; k = 0; }   // a group heading: the template counts from 1) again
+                    continue;
+                }
+                // the template's own numbering skips a number (section 11 starts at 2)): print counts on from 1)
+                if (no !== `${++k})`) { gap = true; templateGaps.add(s.no); k = Number.parseInt(no, 10) || k; }
+                const p = printed.get(r.key);
+                if (p === undefined) { gap = true; continue; }   // a numbered row left out
+                if (gap) { if (p.itemNo !== excelNo.get(r.key)) renumbered.add(s.no); continue; }
+                expect(p.itemNo, `section ${s.no} ${r.desc}`).toBe(excelNo.get(r.key));
+                matched++;
+            }
+        }
+        expect(matched).toBeGreaterThan(100);
+        expect([...renumbered]).toContain(1);       // section 1: its empty first item is left out
+        expect([...templateGaps]).toEqual([11]);    // the only section the template numbers from 2)
+        // sections 12 and 26 leave nothing out: every number is the Excel one
+        for (const no of [12, 26]) {
+            for (const r of model.details.find(s => s.no === no)?.rows ?? []) {
+                if (!(r.type === 'heading' && r.group)) expect(r.itemNo).toBe(excelNo.get(r.key));
+            }
+        }
     });
 
     it('un-numbered sub-items (e.g. "- เหล็ก RB9") keep a blank number', () => {

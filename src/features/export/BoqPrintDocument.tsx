@@ -81,6 +81,7 @@ const CSS = `
 .boqp-b { font-weight: 700; }
 .boqp-sec td { font-weight: 700; break-after: avoid; page-break-after: avoid; }
 .boqp-hd td { font-weight: 600; break-after: avoid; page-break-after: avoid; }
+.boqp-hd.boqp-grp td { font-weight: 700; }
 .boqp-sub td { font-weight: 700; background: #f2f2f2; }
 .boqp-total td { font-weight: 700; background: #e6e6e6; border-top: 1pt solid #000; }
 .boqp-band td { font-weight: 700; background: #f2f2f2; }
@@ -205,7 +206,7 @@ const DETAIL_COLS = 10;
 function DetailRow({ r }: { r: PrintDetailRow }) {
     if (r.type === 'heading') {
         return (
-            <tr className="boqp-hd">
+            <tr className={r.group ? 'boqp-hd boqp-grp' : 'boqp-hd'}>
                 <td className="boqp-c">{r.itemNo}</td>
                 <td>{r.desc}</td>
                 <td /><td /><td /><td /><td /><td /><td /><td />
@@ -248,26 +249,51 @@ function AmountsRow({ className, label, mat, lab, total }: {
     );
 }
 
-/** Rows a section's title stays with: up to and including its first priced item (a heading alone is not enough). */
-function leadCount(rows: PrintDetailRow[]): number {
-    const i = rows.findIndex(r => r.type === 'item');
-    return i < 0 ? rows.length : i + 1;
+/**
+ * A section's rows cut into pieces that must stay on one page: each run of headings (a group heading, a numbered
+ * heading, or both) with the item after it, and every other item on its own.
+ */
+function keepChunks(rows: PrintDetailRow[]): PrintDetailRow[][] {
+    const chunks: PrintDetailRow[][] = [];
+    let open: PrintDetailRow[] = [];
+    for (const r of rows) {
+        open.push(r);
+        if (r.type === 'item') {
+            chunks.push(open);
+            open = [];
+        }
+    }
+    if (open.length > 0) chunks.push(open);   // headings with no item after them (the model never prints those)
+    return chunks;
 }
 
 /**
- * One section as up to three <tbody> blocks. Chrome ignores `break-after: avoid` between table rows, but keeps a
- * whole <tbody> with `break-inside: avoid` on one page: the title (and `lead`, e.g. the pre-construction band) stays
- * with the first item, and the "รวมหมวดที่ n" sub-total with the last row, so neither is left alone on a page.
+ * One section as <tbody> blocks. Chrome ignores `break-after: avoid` between table rows, but keeps a whole <tbody>
+ * with `break-inside: avoid` on one page, so no heading or title is left alone at the foot of a page:
+ *   - the title (and `lead`, e.g. the pre-construction band) stays with the first item (and the headings above it);
+ *   - every other heading stays with the row after it, in a kept block of its own;
+ *   - the "รวมหมวดที่ n" sub-total stays with the last item (and the headings above it).
+ * Runs of plain items between them share one ordinary <tbody>, free to break between any two rows.
  */
 function DetailSection({ s, lead }: { s: PrintDetailSection; lead?: ReactNode }) {
     const outside = s.inConstructionTotal ? '' : ` (${T.preConstructionNote})`;
-    const head = Math.min(leadCount(s.rows), s.rows.length);
-    const tailFrom = Math.max(head, s.rows.length - 1);
     const subtotal = (
         <AmountsRow className="boqp-sub" label={`${s.subtotalLabel}${outside}`}
             mat={s.matTotal} lab={s.labTotal} total={s.total} />
     );
-    const together = tailFrom <= head;   // short section: title, rows and sub-total in one block
+    const chunks = keepChunks(s.rows);
+    const together = chunks.length <= 1;   // one item: title, rows and sub-total in one block
+    const first = chunks[0] ?? [];
+    const last = together ? [] : chunks[chunks.length - 1] ?? [];
+    // between the first and last piece: plain items gathered into shared blocks, heading pieces kept on their own
+    const blocks: { keep: boolean; rows: PrintDetailRow[] }[] = [];
+    for (const c of chunks.slice(1, -1)) {
+        const keep = c.length > 1;
+        const prev = blocks[blocks.length - 1];
+        if (!keep && prev !== undefined && !prev.keep) prev.rows.push(...c);
+        else blocks.push({ keep, rows: [...c] });
+    }
+    const rows = (rs: PrintDetailRow[]) => rs.map(r => <DetailRow key={r.key} r={r} />);
     return (
         <>
             <tbody className="boqp-keep">
@@ -277,17 +303,17 @@ function DetailSection({ s, lead }: { s: PrintDetailSection; lead?: ReactNode })
                     <td>{s.title}</td>
                     <td /><td /><td /><td /><td /><td /><td /><td />
                 </tr>
-                {s.rows.slice(0, together ? s.rows.length : head).map(r => <DetailRow key={r.key} r={r} />)}
+                {rows(first)}
                 {together && subtotal}
             </tbody>
+            {blocks.map(b => (
+                <tbody key={b.rows[0]?.key} className={b.keep ? 'boqp-keep' : undefined}>{rows(b.rows)}</tbody>
+            ))}
             {!together && (
-                <>
-                    {tailFrom > head && <tbody>{s.rows.slice(head, tailFrom).map(r => <DetailRow key={r.key} r={r} />)}</tbody>}
-                    <tbody className="boqp-keep">
-                        {s.rows.slice(tailFrom).map(r => <DetailRow key={r.key} r={r} />)}
-                        {subtotal}
-                    </tbody>
-                </>
+                <tbody className="boqp-keep">
+                    {rows(last)}
+                    {subtotal}
+                </tbody>
             )}
         </>
     );

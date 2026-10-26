@@ -24,7 +24,11 @@ export interface PrintSummaryLine {
 }
 
 export type PrintDetailRow =
-    | { type: 'heading'; key: string; itemNo: string; desc: string }
+    | {
+        type: 'heading'; key: string; itemNo: string; desc: string;
+        /** An un-numbered group heading (e.g. "งานคานดาดฟ้า"): the rows under it are numbered from 1) again. */
+        group: boolean;
+    }
     | {
         type: 'item'; key: string; itemNo: string; desc: string; unit: string;
         /** Quantity shown in จำนวน (net qty; gross qty when every amount of the row is priced on it). */
@@ -210,25 +214,45 @@ function detailItem(r: BoqItemRow): PrintDetailRow {
     };
 }
 
+const numbered = (itemNo: string | undefined) => (itemNo ?? '').trim() !== '';
+
 /**
  * The printed rows of a section. Rows with nothing to price are left out, so the numbered rows ("1)", "2)" …) are
  * numbered again in print order: a form must not jump from 1) to 3). Un-numbered sub-items keep their blank number.
+ *
+ * Two kinds of heading come before items:
+ *   - an un-numbered group heading (section 12 "งานคานดาดฟ้า" / "งานพื้นดาดฟ้า", section 26 "งานตู้ควบคุมระบบไฟฟ้า" /
+ *     "อุปกรณ์ไฟฟ้า") opens a group that the template numbers from 1) again; it runs to the next group heading;
+ *   - a numbered heading ("1) เหล็กเสริม") heads the un-numbered sub-items after it; the next numbered row ends it.
+ * Each is printed just before the first printed item under it, and only then; a printed group heading restarts
+ * the count, so where nothing was left out the printed numbers are the template's (and the Excel export's).
  */
 function detailRows(s: BoqSectionResult): PrintDetailRow[] {
     const out: PrintDetailRow[] = [];
-    let pending: BoqHeadingRow | null = null;
+    let group: BoqHeadingRow | null = null;   // group heading not printed yet
+    let head: BoqHeadingRow | null = null;    // numbered heading not printed yet
     let n = 0;
-    const renumber = (itemNo: string | undefined) => ((itemNo ?? '').trim() === '' ? '' : `${++n})`);
+    const renumber = (itemNo: string | undefined) => (numbered(itemNo) ? `${++n})` : '');
     for (const r of s.rows) {
         if (r.type === 'heading') {
-            pending = r;
+            if (numbered(r.itemNo)) {
+                head = r;
+            } else {
+                group = r;
+                head = null;
+            }
             continue;
         }
-        if (r.itemNo !== undefined && r.itemNo !== '') pending = null;   // a numbered item ends the heading's group
+        if (numbered(r.itemNo)) head = null;   // a numbered item ends the numbered heading's sub-items
         if (!isPrintableItem(r)) continue;
-        if (pending !== null) {
-            out.push({ type: 'heading', key: pending.key, itemNo: renumber(pending.itemNo), desc: pending.desc });
-            pending = null;
+        if (group !== null) {
+            out.push({ type: 'heading', key: group.key, itemNo: '', desc: group.desc, group: true });
+            group = null;
+            n = 0;
+        }
+        if (head !== null) {
+            out.push({ type: 'heading', key: head.key, itemNo: renumber(head.itemNo), desc: head.desc, group: false });
+            head = null;
         }
         out.push({ ...detailItem(r), itemNo: renumber(r.itemNo) });
     }
