@@ -12,9 +12,9 @@ const labelCls = 'text-[12px] text-gray-600 leading-tight';
 const hintCls = 'text-[11px] text-gray-400 leading-tight';
 
 /** Labelled yellow number box (label above, unit after). */
-export function JNumber({ label, value, onChange, unit, hint, digits = 2, blankZero, placeholder }: {
+export function JNumber({ label, value, onChange, unit, hint, digits = 2, blankZero = true, placeholder }: {
     label: string; value: number; onChange: (v: number) => void; unit?: string; hint?: ReactNode; digits?: number;
-    /** Empty box instead of "0.00" while 0 (a plan value not filled yet). */
+    /** Empty box instead of "0.00" while 0 (a plan value not filled yet). Default on: journey fields are plan values. */
     blankZero?: boolean; placeholder?: string;
 }) {
     return (

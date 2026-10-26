@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { Button, Select } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { NumberCell, TextCell, SHEET_COLORS, formatNumber } from './NumberCell';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
 
 /** One column of an Excel-style input table. */
 export type SheetColumn<R> =
@@ -35,10 +36,14 @@ export function EditableTable<R>({
     rows, columns, onChange, newRow, addLabel = '+ เพิ่มรายการ', lockedRows = 0, canDelete = true, footer,
 }: EditableTableProps<R>) {
     const replace = (i: number, row: R) => onChange(rows.map((r, j) => (j === i ? row : r)));
+    // Inside the journey an unfilled plan value shows as an empty cell, not "0.00".
+    const inJourney = useJourneyMode();
+    // Columns keep their widths (a long dropdown must not squeeze the number cells); the table scrolls instead.
+    const minWidth = columns.reduce((s, c) => s + (c.width ?? 90), 36 + 40);
 
     return (
         <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse" style={{ minWidth }}>
                 <thead>
                     <tr>
                         <th className={th} style={{ width: 36 }}>#</th>
@@ -63,6 +68,7 @@ export function EditableTable<R>({
                                         return (
                                             <td key={c.key} className={td}>
                                                 <NumberCell value={c.get(row)} digits={c.digits} percent={c.percent}
+                                                    blankZero={inJourney && c.percent !== true} ariaLabel={typeof c.title === 'string' ? c.title : undefined}
                                                     onCommit={v => replace(i, c.set(row, v ?? 0))} />
                                             </td>
                                         );
@@ -70,6 +76,7 @@ export function EditableTable<R>({
                                         return (
                                             <td key={c.key} className={td} style={{ background: SHEET_COLORS.input }}>
                                                 <Select size="small" variant="borderless" style={{ width: '100%' }}
+                                                    aria-label={typeof c.title === 'string' ? c.title : undefined}
                                                     value={c.get(row) || undefined}
                                                     options={c.options.map(o => ({ value: o.value, label: o.label ?? o.value }))}
                                                     onChange={v => replace(i, c.set(row, v))} />
