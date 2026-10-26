@@ -48,6 +48,22 @@ Max-Age = refresh TTL.
 | PUT | `/projects/:projectId/assignments/:levelId` | `PutAssignmentRequest` → `LevelAssignmentDto \| null` | `levels.assign`; a level id not in the journey → 422 `unprocessable`; an assignee who is not a member of the workspace → 422 `unprocessable`; `userId: null` removes it (answers JSON `null`) |
 | GET | `/projects/:projectId/activity?before=<id>&limit=50` | → `ActivityDto[]` (newest first) | `projects.read` |
 
+## rate cards (workspace library of daily wage sets, คลังอัตราค่าแรงของบริษัท)
+Schemas: `../src/shared/contract/rate-cards.ts`. A card is `{ name, skilledRate, labourerRate, note }`; rates are **whole
+baht per day** (integers 0–100,000), name trimmed 1–60 characters, note trimmed ≤ 500 (blank → `null`). Names are unique
+per workspace among active cards, ignoring case; an archived card frees its name. A workspace keeps at most
+`MAX_ACTIVE_RATE_CARDS` (50) active cards. Projects copy the rates of the card they pick, so editing or archiving a card
+never changes a project. No realtime event: clients refetch after their own writes.
+
+| Method | Path | Body → Response | Permission |
+|---|---|---|---|
+| GET | `/workspaces/:workspaceId/rate-cards` | → `RateCardDto[]` (active only, oldest first) | `rateCards.read` (every role) |
+| POST | `/workspaces/:workspaceId/rate-cards` | `CreateRateCardRequest` → `RateCardDto` (201) | `rateCards.create` (owner, admin, estimator); name taken or 50 active cards → 409 `conflict` with `RateCardConflictDetails` (`{ reason: 'name_taken', name }` / `{ reason: 'limit_reached', limit }`) |
+| PATCH | `/workspaces/:workspaceId/rate-cards/:rateCardId` | `UpdateRateCardRequest` → `RateCardDto` | `rateCards.edit` (owner, admin); any subset of the fields, at least one (`note: null` clears it); an unchanged value is a no-op; an archived card → 404; name taken → 409 `conflict` (`name_taken`) |
+| DELETE | `/workspaces/:workspaceId/rate-cards/:rateCardId` | → 204 | `rateCards.archive` (owner, admin); soft delete (`archived_at`); archiving an archived card again → 204 |
+
+Not a member of the workspace → 404 on every route; a card of another workspace (or a malformed id) → 404.
+
 ## realtime (Socket.IO namespace `/realtime`, `io(url + '/realtime', { auth: { token } })`)
 Events and payloads: `../src/shared/contract/realtime.ts`. A bad/missing token → the server disconnects.
 `project.join` checks `projects.read`; after joining the client receives `presence.state`, then live

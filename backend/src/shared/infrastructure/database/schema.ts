@@ -152,7 +152,35 @@ export const activityLog = pgTable('activity_log', {
     at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
 }, t => [index('activity_log_project_idx').on(t.projectId, t.id), tenantFk('activity_log', t)]);
 
+// ── rate cards (workspace library of daily wage sets) ──
+/**
+ * Rates are whole baht per day (integer): Excel's sets are whole numbers and Thai daily wages are quoted in whole baht.
+ * Archiving is a soft delete (archived_at); the name is unique, case-insensitively, among the active cards only, so an
+ * archived card's name can be used again.
+ */
+export const rateCards = pgTable('rate_cards', {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    skilledRate: integer('skilled_rate').notNull(),
+    labourerRate: integer('labourer_rate').notNull(),
+    note: text('note'),
+    createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'restrict' }),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
+}, t => [
+    uniqueIndex('rate_cards_name_key').on(t.workspaceId, sql`lower(${t.name})`).where(sql`${t.archivedAt} is null`),
+    index('rate_cards_workspace_idx').on(t.workspaceId, t.archivedAt),
+    // Target of future (rate_card_id, workspace_id) foreign keys (crews, project snapshots), like projects_id_workspace_key:
+    // a child row will only be able to name a card of its own workspace.
+    unique('rate_cards_id_workspace_key').on(t.id, t.workspaceId),
+    check('rate_cards_name_check', sql`char_length(${t.name}) between 1 and 60`),
+    check('rate_cards_skilled_rate_check', sql`${t.skilledRate} between 0 and 100000`),
+    check('rate_cards_labourer_rate_check', sql`${t.labourerRate} between 0 and 100000`),
+]);
+
 export const schema = {
     users, refreshTokens, workspaces, memberships, invitations, projects, projectDocs, projectRevisions,
-    levelAssignments, activityLog,
+    levelAssignments, activityLog, rateCards,
 };

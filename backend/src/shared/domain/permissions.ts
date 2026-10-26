@@ -15,7 +15,11 @@ export type Permission =
     | 'projects.archive'
     | 'projects.delete'
     | 'revisions.create'
-    | 'levels.assign';
+    | 'levels.assign'
+    | 'rateCards.read'
+    | 'rateCards.create'
+    | 'rateCards.edit'
+    | 'rateCards.archive';
 
 const MATRIX: Record<Role, ReadonlySet<Permission>> = {
     owner: new Set<Permission>([
@@ -23,19 +27,23 @@ const MATRIX: Record<Role, ReadonlySet<Permission>> = {
         'members.read', 'members.invite', 'members.changeRole', 'members.remove',
         'projects.read', 'projects.create', 'projects.edit', 'projects.archive', 'projects.delete',
         'revisions.create', 'levels.assign',
+        'rateCards.read', 'rateCards.create', 'rateCards.edit', 'rateCards.archive',
     ]),
     admin: new Set<Permission>([
         'workspace.read', 'workspace.rename',
         'members.read', 'members.invite', 'members.changeRole', 'members.remove',
         'projects.read', 'projects.create', 'projects.edit', 'projects.archive', 'projects.delete',
         'revisions.create', 'levels.assign',
+        'rateCards.read', 'rateCards.create', 'rateCards.edit', 'rateCards.archive',
     ]),
+    // Estimators price jobs, so they may add a rate card; changing or archiving the company's cards is for admins.
     estimator: new Set<Permission>([
         'workspace.read', 'members.read',
         'projects.read', 'projects.create', 'projects.edit', 'projects.archive',
         'revisions.create',
+        'rateCards.read', 'rateCards.create',
     ]),
-    viewer: new Set<Permission>(['workspace.read', 'members.read', 'projects.read']),
+    viewer: new Set<Permission>(['workspace.read', 'members.read', 'projects.read', 'rateCards.read']),
 };
 
 export function can(role: Role, permission: Permission): boolean {
