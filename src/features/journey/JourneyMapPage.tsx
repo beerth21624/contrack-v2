@@ -6,7 +6,9 @@ import { Button, Progress, Tag, Typography } from 'antd';
 import { CheckOutlined, LockOutlined, CaretRightFilled, StepForwardOutlined, FlagFilled, TableOutlined } from '@ant-design/icons';
 import { useProjectStore } from '@/store/project-store';
 import { computeProject } from '@/domain/project';
-import { JOURNEY, JOURNEY_LEVELS, currentLevel, journeyComplete, journeyRatio, levelStates, levelTotal, type LevelState } from '@/domain/journey';
+import {
+    JOURNEY, JOURNEY_LEVELS, currentLevel, journeyComplete, journeyRatio, levelStates, levelTotal, type LevelState,
+} from '@/domain/journey';
 import { formatNumber } from '@/components/sheet/NumberCell';
 import { NewProjectButton } from './NewProjectButton';
 import { BoqExportButtons } from '@/features/export/BoqExportButtons';
@@ -39,6 +41,10 @@ export function JourneyMapPage() {
     const next = currentLevel(progress);
     const complete = journeyComplete(progress);
     const passed = JOURNEY_LEVELS.filter(l => progress[l.id] !== undefined).length;
+    const remaining = JOURNEY_LEVELS.length - passed;
+    // Money of each group: every step of it not marked "ไม่มีในโครงการนี้" (project info has none).
+    const phaseMoney = (levels: typeof JOURNEY_LEVELS) =>
+        levels.reduce((s, l) => s + (progress[l.id] === 'skipped' ? 0 : levelTotal(l, result)), 0);
     // Cloud project only: who is on which level and who is assigned (nothing in guest mode).
     const team = useCloudLevelInfo();
     const cloudName = useCloud(s => s.project?.name);
@@ -58,8 +64,10 @@ export function JourneyMapPage() {
                         เปิดแบบแปลนประกอบ แล้วกรอกข้อมูลตามแต่ละขั้นตอน เมื่อครบทุกขั้นตอนจะได้สรุป BOQ ทั้งโครงการทันที
                     </Text>
                     <div className="mt-3 flex items-center gap-3">
-                        <Progress percent={Math.round(journeyRatio(progress) * 100)} strokeColor="#fa8c16" className="flex-1 !mb-0" />
-                        <Text className="whitespace-nowrap text-[13px] text-gray-600">{passed}/{JOURNEY_LEVELS.length} ขั้นตอน</Text>
+                        <Progress percent={Math.round(journeyRatio(progress) * 100)} strokeColor="#fa8c16" showInfo={false} className="flex-1 !mb-0" />
+                        <Text className="whitespace-nowrap text-[13px] text-gray-600">
+                            {complete ? 'ครบทุกขั้นตอน' : `อีก ${String(remaining)} ขั้นตอน`}
+                        </Text>
                     </div>
                 </div>
                 <div className="md:text-right md:pl-6 md:border-l border-gray-100">
@@ -86,12 +94,20 @@ export function JourneyMapPage() {
             {JOURNEY.map(phase => {
                 const done = phase.levels.filter(l => progress[l.id] !== undefined).length;
                 const phaseLocked = phase.levels.every(l => states[l.id] === 'locked');
+                const isCurrent = phase.levels.some(l => states[l.id] === 'current');
+                const money = phaseMoney(phase.levels);
                 return (
-                    <section key={phase.id} className={`bg-white border border-gray-200 rounded-xl p-4 shadow-sm ${phaseLocked ? 'opacity-70' : ''}`}>
-                        <div className="flex items-center gap-3 mb-3">
+                    <section key={phase.id} aria-current={isCurrent ? 'step' : undefined}
+                        className={`bg-white border rounded-xl p-4 shadow-sm ${phaseLocked ? 'opacity-70' : ''}
+                            ${isCurrent ? 'border-orange-300' : 'border-gray-200'}`}>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
                             <Title level={5} style={{ margin: 0 }}>{phase.title}</Title>
-                            <Text type="secondary" className="text-[12px]">{done}/{phase.levels.length}</Text>
-                            {done === phase.levels.length && <span className="text-[12px] text-green-600 font-semibold">ครบทุกขั้นตอน</span>}
+                            {done === phase.levels.length
+                                ? <span className="text-[12px] text-green-600 font-semibold">ครบทุกขั้นตอน</span>
+                                : <Text type="secondary" className="text-[12px] tabular-nums">{done}/{phase.levels.length} ขั้นตอน</Text>}
+                            {money !== 0 && (
+                                <span className="ml-auto text-[13px] tabular-nums text-gray-600">{formatNumber(money, 0)} บาท</span>
+                            )}
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                             {phase.levels.map(level => {

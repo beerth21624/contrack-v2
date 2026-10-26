@@ -1,6 +1,5 @@
 'use client';
 
-import { Alert } from 'antd';
 import {
     roofing, withRoofSlope, ROOFING_BOQ_UNITS, ROOFING_FACTOR_UNITS, ROOFING_ITEMS, type RoofingRow,
 } from '@/domain/calculators/roofing';
@@ -11,7 +10,7 @@ import { LengthsCell, formatLengths, parseLengths } from '@/components/sheet/Len
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { Hint, JNumber, LabelWithHint, ResultSummary, blankIfZero } from '@/components/sheet/journey';
+import { Hint, LabelWithHint, PlanNumber, ResultSummary, blankIfZero } from '@/components/sheet/journey';
 
 /** What to measure on the roof plan for each material row (by the row's stable key). */
 const MEASURE_HINTS: Record<string, string> = {
@@ -38,6 +37,8 @@ export default function RoofingJourney() {
         return i < 0 ? undefined : outputs[`qty.${i}`];
     };
     const rakeOffSlope = input.rows.filter(r => r.takeoff.kind === 'rake' && r.takeoff.deg !== input.slopeDeg);
+    // Roof area typed but no pitch: the slope area would silently equal the plan area.
+    const slopeMissing = input.planArea > 0 && input.slopeDeg === 0;
 
     const measure = (r: RoofingRow, i: number) => {
         const t = r.takeoff;
@@ -71,10 +72,11 @@ export default function RoofingJourney() {
         <CalculatorShell def={roofing} result={result} isDefault={isDefault} onReset={reset}>
             <SheetCard title="ขนาดหลังคา">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 items-start">
-                    <JNumber label="พื้นที่หลังคาตามแนวราบ" value={input.planArea} unit="ตร.ม."
+                    <PlanNumber label="พื้นที่หลังคาตามแนวราบ" value={input.planArea} unit="ตร.ม." range={[10, 2000]}
                         hint="มองจากด้านบน รวมชายคา" onChange={v => update({ planArea: v })} />
-                    <JNumber label="ความชันหลังคา" value={input.slopeDeg} unit="องศา" digits={0} hint="ดูจากรูปตัด"
-                        onChange={v => update(p => withRoofSlope(p, v))} />
+                    <PlanNumber label="ความชันหลังคา" value={input.slopeDeg} unit="องศา" digits={0} range={[5, 60]}
+                        presets={[30, 35, 40]} presetFormat={v => `${String(v)}°`} missing={slopeMissing}
+                        hint="ดูจากรูปตัด" onChange={v => update(p => withRoofSlope(p, v))} />
                     {(outputs.slopeArea ?? 0) > 0 && (
                         <div className="flex flex-col gap-1">
                             <span className="text-[12px] text-gray-600 leading-tight">พื้นที่หลังคาตามแนวลาดเอียง</span>
@@ -82,9 +84,6 @@ export default function RoofingJourney() {
                         </div>
                     )}
                 </div>
-                {input.planArea > 0 && input.slopeDeg === 0 && (
-                    <Alert className="mt-2" type="warning" showIcon title="ยังไม่ได้กรอกความชันหลังคา — พื้นที่ตามแนวลาดจะเท่ากับพื้นที่แนวราบ" />
-                )}
             </SheetCard>
 
             <SheetCard title="วัดจากแปลนหลังคา">

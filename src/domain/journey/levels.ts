@@ -175,7 +175,7 @@ export const JOURNEY: JourneyPhase[] = [
             },
             {
                 id: 'sanitary-system', title: 'อุปกรณ์ระบบสุขาภิบาล', kind: calc('sanitary-system'), sections: [27],
-                planHint: 'ดูแปลนสุขาภิบาล: ถังดักไขมัน ถังบำบัด บ่อพัก และความยาวท่อระบายน้ำแอร์',
+                planHint: 'ดูแปลนสุขาภิบาล: ถังดักไขมัน ถังบำบัด บ่อพัก และความยาวท่อระบายน้ำ AC (ใยหิน) ภายนอก',
             },
             {
                 id: 'sanitary-ware', title: 'สุขภัณฑ์', kind: calc('sanitary-ware'), sections: [29],

@@ -8,14 +8,14 @@ import { InputTextField, SheetCard } from '@/components/sheet/SheetFields';
 import { bucketIndexOf, isoToSerial, serialToIso, type ScheduleInput, type ScheduleTaskInput } from '@/domain/planning';
 import { SCurveChart } from '../shared/charts';
 import {
-    DateCell, DetailSection, PlanningHeader, StatTile, SummaryBanner, formatDate, money, usePlanning, usedBucketCount,
+    DateCell, DetailSection, NoBoqYet, PlanningHeader, StatTile, SummaryBanner, formatDate, money, usePlanning, usedBucketCount,
 } from '../shared/planning-ui';
 import { ActualTable } from './ActualTable';
 import { GanttTable } from './GanttTable';
 import { ScheduleDetailGrid } from './ScheduleDetailGrid';
 
 export function SchedulePage() {
-    const { planning, input, stored, setPlanning } = usePlanning();
+    const { planning, input, stored, setPlanning, result } = usePlanning();
     const sc = input.schedule;
     const s = planning.schedule;
     const save = (next: ScheduleInput) => setPlanning({ schedule: next });
@@ -45,6 +45,7 @@ export function SchedulePage() {
         <div className="flex flex-col gap-4">
             <PlanningHeader current="/schedule" title="แผนงาน S-Curve" sheetName="S-Curve_Plan_Basic"
                 isDefault={stored.schedule === undefined} onReset={() => setPlanning({ schedule: undefined })} />
+            <NoBoqYet constructionTotal={result.boq.constructionTotal} />
 
             <SummaryBanner headline={s.start && s.finish
                 ? <>ใช้เวลา {s.durationDays} วัน เริ่ม {formatDate(s.start)} เสร็จ {formatDate(s.finish)}</>
@@ -72,7 +73,7 @@ export function SchedulePage() {
                     </div>
                 </SheetCard>
                 <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <StatTile label="วันที่ Update ล่าสุด" value={status.lastUpdate ? formatDate(status.lastUpdate) : '–'}
+                    <StatTile label="บันทึกผลงานล่าสุด" value={status.lastUpdate ? formatDate(status.lastUpdate) : '–'}
                         hint={actualCount ? `บันทึกผลงานแล้ว ${actualCount} งาน` : 'กรอกในส่วนบันทึกผลงานจริง'} />
                     <StatTile label={<Tooltip title="Excel เรียกว่างบประมาณตามแผน แต่คิดจาก % คืบหน้า × น้ำหนักงาน × งบ (มูลค่างานที่ทำได้)">
                         <span className="underline decoration-dotted">งบประมาณตามแผน</span></Tooltip>}

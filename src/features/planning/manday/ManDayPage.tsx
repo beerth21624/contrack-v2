@@ -8,7 +8,7 @@ import { EditableTable, type SheetColumn } from '@/components/sheet/EditableTabl
 import { NumberCell, formatNumber } from '@/components/sheet/NumberCell';
 import { InputNumberField, SheetCard } from '@/components/sheet/SheetFields';
 import type { ManDayBlockInput, ManDayBlockResult, ManDayInput, WageSetId } from '@/domain/planning';
-import { CalcText, PlanningHeader, StatTile, SummaryBanner, formatDate, money, usePlanning } from '../shared/planning-ui';
+import { CalcText, NoBoqYet, PlanningHeader, StatTile, SummaryBanner, formatDate, money, usePlanning } from '../shared/planning-ui';
 
 interface Row {
     id: string;
@@ -25,7 +25,7 @@ function basisNote(r: ManDayBlockResult, share: number): string | null {
 }
 
 export function ManDayPage() {
-    const { planning, input, stored, setPlanning } = usePlanning();
+    const { planning, input, stored, setPlanning, result } = usePlanning();
     const md = input.manday;
     const res = planning.manday;
     const sched = planning.schedule;
@@ -72,7 +72,7 @@ export function ManDayPage() {
         { kind: 'calc', key: 'wage', title: <>4.ค่าแรงต่อวัน<br /><span className="font-normal">(รวม บาท)</span></>, width: 96, digits: 0, get: r => r.result.dailyWage },
         { kind: 'calc', key: 'labour', title: <>ค่าแรงของงาน<br /><span className="font-normal">(จาก BOQ บาท)</span></>, width: 110, digits: 2, get: r => (r.result.labourBasis === 'none' ? null : r.result.labourCost) },
         {
-            kind: 'label', key: 'calcDays', title: <>5.คำนวณ<br /><span className="font-normal">(วัน)</span></>, width: 76,
+            kind: 'label', key: 'calcDays', title: <>5.วันตามค่าแรง<br /><span className="font-normal">(วัน)</span></>, width: 84,
             get: r => (
                 <Tooltip title={r.result.calcDays === null
                     ? (r.result.labourBasis === 'none' ? 'งานนี้ไม่มีสูตรใน Excel' : 'ยังไม่มีคนทำงาน (ค่าแรงต่อวัน = 0)')
@@ -82,7 +82,7 @@ export function ManDayPage() {
             ),
         },
         {
-            kind: 'label', key: 'days', title: <>6.ประเมิน<br /><span className="font-normal">(วัน)</span></>, width: 110,
+            kind: 'label', key: 'days', title: <>6.วันที่ใช้จริง<br /><span className="font-normal">(ประเมิน วัน)</span></>, width: 110,
             get: r => {
                 const s = r.result.suggestedDays;
                 return (
@@ -116,13 +116,14 @@ export function ManDayPage() {
         <div className="flex flex-col gap-4">
             <PlanningHeader current="/man-day" title="ประเมินจำนวนคน-วัน (Man-Day) และงบประมาณ" sheetName="Man-Day_Basic"
                 isDefault={stored.manday === undefined} onReset={() => setPlanning({ manday: undefined })} />
+            <NoBoqYet constructionTotal={result.boq.constructionTotal} />
 
             <SummaryBanner headline={<>จัดคน {rows.length} งาน · รวม {formatNumber(res.totalDays, 0)} วันทำงาน · งบประมาณ {money(res.totalBudget)} บาท</>}>
                 <span>
                     &quot;รวมเวลา&quot; คือผลรวมวันของทุกงาน บางงานทำพร้อมกัน ระยะเวลาโครงการจริงคือ
                     <b> {sched.durationDays} วัน</b>{sched.finish ? <> (เสร็จ {formatDate(sched.finish)})</> : null} ดูได้ในหน้า S-Curve
                 </span>
-                <span>กรอกจำนวนช่าง/คนงาน ระบบคำนวณวันจากค่าแรงใน BOQ ให้ แล้วใส่วันที่คิดว่าจะใช้จริงในช่อง &quot;ประเมิน&quot;</span>
+                <span>กรอกจำนวนช่าง/คนงาน ระบบคำนวณวันจากค่าแรงใน BOQ ให้ แล้วใส่วันที่คิดว่าจะใช้จริงในช่อง &quot;วันที่ใช้จริง&quot;</span>
             </SummaryBanner>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">

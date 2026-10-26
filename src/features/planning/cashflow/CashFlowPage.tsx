@@ -9,7 +9,7 @@ import { CalcField, InputNumberField, SheetCard } from '@/components/sheet/Sheet
 import { bucketIndexOf, isoToSerial, type CashFlowInput, type CashInstallmentInput } from '@/domain/planning';
 import { CashFlowChart } from '../shared/charts';
 import {
-    DetailSection, PlanningHeader, StatTile, SummaryBanner, bucketLabel, bucketOptions, bucketRange, formatDate, money,
+    DetailSection, NoBoqYet, PlanningHeader, StatTile, SummaryBanner, bucketLabel, bucketOptions, bucketRange, formatDate, money,
     usePlanning, usedBucketCount,
 } from '../shared/planning-ui';
 import { CashFlowDetailGrid } from './CashFlowDetailGrid';
@@ -18,7 +18,7 @@ import { EvmPanel } from './EvmPanel';
 const NONE = 'none';
 
 export function CashFlowPage() {
-    const { planning, input, stored, setPlanning } = usePlanning();
+    const { planning, input, stored, setPlanning, result } = usePlanning();
     const ci = input.cashflow;
     const cf = planning.cashflow;
     const sched = planning.schedule;
@@ -44,7 +44,7 @@ export function CashFlowPage() {
     const options = [{ value: NONE, label: 'ยังไม่กำหนด' }, ...bucketOptions(cf.buckets)];
     const columns: SheetColumn<CashInstallmentInput>[] = [
         { kind: 'text', key: 'label', title: 'งวด', width: 150, get: r => r.label, set: (r, v) => ({ ...r, label: v }) },
-        { kind: 'number', key: 'pct', title: 'งวด %', width: 76, percent: true, get: r => r.pct, set: (r, v) => ({ ...r, pct: v }) },
+        { kind: 'number', key: 'pct', title: 'สัดส่วนงวด', width: 84, percent: true, get: r => r.pct, set: (r, v) => ({ ...r, pct: v }) },
         {
             kind: 'select', key: 'bucket', title: 'เรียกเก็บสัปดาห์', width: 250, options,
             get: r => (r.bucket === null ? NONE : String(r.bucket)),
@@ -77,6 +77,7 @@ export function CashFlowPage() {
         <div className="flex flex-col gap-4">
             <PlanningHeader current="/cashflow" title="วางแผนการเงิน (Project Cash-FLOW)" sheetName="CashFLOW_Basic"
                 isDefault={stored.cashflow === undefined} onReset={() => setPlanning({ cashflow: undefined })} />
+            <NoBoqYet constructionTotal={result.boq.constructionTotal} />
 
             <SummaryBanner headline={neg
                 ? <>เงินติดลบสูงสุด {money(-neg.value)} บาท ช่วงสัปดาห์ {bucketLabel(minBucket)} ({bucketRange(minBucket)})</>

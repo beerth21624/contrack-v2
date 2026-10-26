@@ -5,15 +5,32 @@
 import { Button, Popconfirm } from 'antd';
 import { totalKg, type FootingRow } from '@/domain/calculators/footing';
 import {
-    footingRefFor, newPedestalRow, pedestalRow, pedestalTotals, pedestalsForFootings, type PedestalRow,
+    footingRefFor, newPedestalRow, pedestalRow, pedestalTotals, pedestalsForFootings, PEDESTAL_BAR_SIZES, type PedestalRow,
 } from '@/domain/calculators/pedestal';
 import { formatNumber } from '@/components/sheet/NumberCell';
 import {
-    AddButton, ElementCard, EmptyState, JBar, JGroup, JNumber, JSelect, JText, ResultSummary, resultText,
+    AddButton, BarField, ChoiceButtons, EmptyState, JSelect, JText, PlanCard, PlanField, PlanGroup, PlanNumber, ResultSummary,
+    isPositive, planChecks, removeAt, resultText,
 } from '@/components/sheet/journey';
 
-const label = (r: PedestalRow, i: number) => r.name.trim() || `แบบที่ ${i + 1}`;
-const footingLabel = (f: FootingRow, i: number) => f.name.trim() || `ฐานแบบที่ ${i + 1}`;
+const label = (r: PedestalRow, i: number) => (r.name.trim() === '' ? `แบบที่ ${i + 1}` : r.name.trim());
+const footingLabel = (f: FootingRow, i: number) => (f.name.trim() === '' ? `ฐานแบบที่ ${i + 1}` : f.name.trim());
+
+const L = {
+    footing: 'ตั้งอยู่บนฐานราก', count: 'จำนวนต้น', width: 'ความกว้าง', length: 'ความยาว', height: 'ความสูง',
+    main: 'เหล็กยืน', stirrup: 'เหล็กปลอก',
+} as const;
+
+const checksOf = (r: PedestalRow, onFooting: boolean) => planChecks([
+    { label: L.footing, ok: onFooting },
+    { label: L.count, ok: isPositive(r.count) },
+    { label: L.width, ok: isPositive(r.width) },
+    { label: L.length, ok: isPositive(r.length) },
+    { label: L.height, ok: isPositive(r.height) },
+    { label: L.main, ok: isPositive(r.mainBarCount) && r.mainBarSize !== '' },
+    { label: L.stirrup, ok: isPositive(r.stirrupSpacing) && r.stirrupSize !== '' },
+// The footing, count and bars come pre-filled on a new pedestal: only its own size marks it as started.
+], [r.width, r.length, r.height, r.mainBarCount].some(isPositive));
 
 export function PedestalJourney({ rows, onChange, footings, footingSkipped, footingOutputs, backfill }: {
     rows: PedestalRow[];
@@ -64,37 +81,45 @@ export function PedestalJourney({ rows, onChange, footings, footingSkipped, foot
             {rows.map((r, i) => {
                 const c = pedestalRow(r, footingRefFor(footingOutputs, r.footing));
                 const onFooting = r.footing >= 0 && r.footing < footings.length;
+                const k = checksOf(r, onFooting);
                 return (
-                    <ElementCard key={i} title={`เสาตอม่อ ${label(r, i)}`}
-                        onDelete={() => onChange(rows.filter((_, j) => j !== i))} deleteTitle={`ลบเสาตอม่อ ${label(r, i)}?`}
-                        warning={onFooting ? undefined : 'เลือกฐานรากที่เสาตอม่อนี้ตั้งอยู่ — ความยาวเหล็กยืนคิดจากความหนาและความกว้างของฐานนั้น'}
-                        result={resultText([
+                    <PlanCard key={i} index={i + 1} state={k.state} hasData={k.hasData} missingText={k.missingText}
+                        title={`เสาตอม่อ ${label(r, i)}`}
+                        result={k.state === 'empty' ? undefined : resultText([
                             { label: 'คอนกรีต', value: c.concrete, unit: 'ลบ.ม.' },
-                            { label: 'เหล็ก', value: c.mainKg + c.stirrupKg, unit: 'กก.' },
-                            { label: 'ไม้แบบ', value: c.formwork, unit: 'ตร.ม.' },
-                        ])}>
-                        <JGroup title="ตำแหน่งและจำนวน">
-                            <JSelect<number> label="ตั้งอยู่บนฐานราก" value={onFooting ? r.footing : undefined} placeholder="เลือกฐาน"
-                                options={footingOptions} width={140}
-                                onChange={v => set(i, { footing: v ?? -1 })} />
+                            { label: 'เหล็ก', value: c.mainKg + c.stirrupKg, unit: 'กก.', digits: 1 },
+                        ])}
+                        onDelete={() => onChange(removeAt(rows, i))} deleteTitle={`ลบเสาตอม่อ ${label(r, i)}?`}>
+                        <PlanGroup title="ตำแหน่งและจำนวน">
+                            <PlanField label={L.footing} className="col-span-2">
+                                {footingOptions.length <= 5
+                                    ? (
+                                        <ChoiceButtons<number> size="small" ariaLabel={L.footing} value={onFooting ? r.footing : undefined}
+                                            options={footingOptions} onChange={v => set(i, { footing: v })} />
+                                    )
+                                    : (
+                                        <JSelect<number> label="" value={onFooting ? r.footing : undefined} placeholder="เลือกฐาน"
+                                            options={footingOptions} width={140} onChange={v => set(i, { footing: v ?? -1 })} />
+                                    )}
+                            </PlanField>
                             <JText label="ชื่อเสาตอม่อ" value={r.name} placeholder="เช่น C1" onChange={v => set(i, { name: v })} />
-                            <JNumber label="จำนวนต้น" value={r.count} unit="ต้น" digits={0} onChange={v => set(i, { count: v })}
-                                hint="ปกติเท่ากับจำนวนฐาน" />
-                        </JGroup>
-                        <JGroup title="ขนาดเสา (จากรูปขยายตอม่อ)">
-                            <JNumber label="ความกว้าง" value={r.width} unit="ม." onChange={v => set(i, { width: v })} />
-                            <JNumber label="ความยาว" value={r.length} unit="ม." onChange={v => set(i, { length: v })} />
-                            <JNumber label="ความสูง" value={r.height} unit="ม." onChange={v => set(i, { height: v })}
-                                hint="จากหลังฐานรากถึงคานคอดิน" />
-                        </JGroup>
-                        <JGroup title="เหล็กเสริม (ต่อ 1 ต้น)">
-                            <JBar label="เหล็กยืน" size={r.mainBarSize} onSize={v => set(i, { mainBarSize: v })}
+                            <PlanNumber label={L.count} value={r.count} unit="ต้น" digits={0} hint="ปกติเท่ากับจำนวนฐาน"
+                                onChange={v => set(i, { count: v })} />
+                        </PlanGroup>
+                        <PlanGroup title="ขนาดเสา (จากรูปขยายตอม่อ)">
+                            <PlanNumber label={L.width} value={r.width} unit="ม." range={[0.1, 1.5]} onChange={v => set(i, { width: v })} />
+                            <PlanNumber label={L.length} value={r.length} unit="ม." range={[0.1, 1.5]} onChange={v => set(i, { length: v })} />
+                            <PlanNumber label={L.height} value={r.height} unit="ม." range={[0.1, 4]} hint="จากหลังฐานรากถึงคานคอดิน"
+                                onChange={v => set(i, { height: v })} />
+                        </PlanGroup>
+                        <PlanGroup title="เหล็กเสริม ต่อ 1 ต้น" hint="เช่น 4-DB12 ปลอก RB6 @0.15" layout="wide">
+                            <BarField label={L.main} sizes={PEDESTAL_BAR_SIZES} size={r.mainBarSize} onSize={v => set(i, { mainBarSize: v })}
                                 amount={r.mainBarCount} onAmount={v => set(i, { mainBarCount: v })} />
-                            <JBar label="เหล็กปลอก ระยะห่าง" size={r.stirrupSize} onSize={v => set(i, { stirrupSize: v })}
-                                amount={r.stirrupSpacing} onAmount={v => set(i, { stirrupSpacing: v })} amountUnit="ม." amountDigits={2}
-                                hint="เช่น RB6 @ 0.15 ม." />
-                        </JGroup>
-                    </ElementCard>
+                            <BarField label={L.stirrup} sizes={PEDESTAL_BAR_SIZES} size={r.stirrupSize} onSize={v => set(i, { stirrupSize: v })}
+                                amount={r.stirrupSpacing} onAmount={v => set(i, { stirrupSpacing: v })} amountLabel="ระยะห่าง @"
+                                amountUnit="ม." amountDigits={2} presets={[0.15, 0.2]} range={[0.05, 0.5]} />
+                        </PlanGroup>
+                    </PlanCard>
                 );
             })}
 

@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Button, Spin, Tooltip, Typography } from 'antd';
-import { CaretDownOutlined, CaretRightOutlined, UndoOutlined, LinkOutlined } from '@ant-design/icons';
-import { useTranslations } from 'next-intl';
+import { useMemo, useRef, useState } from 'react';
+import { Button, Input, Select, Spin, Tooltip, Typography } from 'antd';
+import { CaretDownOutlined, CaretRightOutlined, UndoOutlined, LinkOutlined, SearchOutlined } from '@ant-design/icons';
+import { useLocale, useTranslations } from 'next-intl';
 import { useProjectStore } from '@/store/project-store';
 import { computeProject } from '@/domain/project';
 import type { BoqItemRow, BoqSectionResult } from '@/domain/boq/types';
@@ -32,14 +32,55 @@ function CalcValue({ value, digits = 2, tip }: { value: number | null; digits?: 
     return tip ? <Tooltip title={tip}>{content}</Tooltip> : content;
 }
 
+/** Texts of the table tools (search, jump), per locale. */
+const TOOL_TEXT = {
+    th: {
+        searchPh: 'ค้นหารายการ เช่น DB12, ฝ้า, ท่อ',
+        jump: 'ไปที่หมวด…',
+        found: (n: number) => `พบ ${String(n)} รายการ`,
+        none: 'ไม่พบรายการที่ตรงกับคำค้น',
+        clear: 'ล้างคำค้น',
+    },
+    en: {
+        searchPh: 'Search items, e.g. DB12, ceiling, pipe',
+        jump: 'Go to section…',
+        found: (n: number) => `${String(n)} items found`,
+        none: 'No items match the search',
+        clear: 'Clear search',
+    },
+} as const;
+
+/** An edited value: an orange inner outline on top of the bold text. */
+const editedCls = (on: boolean) => (on ? 'shadow-[inset_0_0_0_2px_#fdba74]' : '');
+
+/** `text` with the parts matching `q` (case-insensitive) marked. */
+function Highlight({ text, q }: { text: string; q: string }) {
+    if (q === '') return <>{text}</>;
+    const lower = text.toLowerCase();
+    const parts: { s: string; hit: boolean }[] = [];
+    let at = 0;
+    for (let i = lower.indexOf(q, at); i >= 0; i = lower.indexOf(q, at)) {
+        if (i > at) parts.push({ s: text.slice(at, i), hit: false });
+        parts.push({ s: text.slice(i, i + q.length), hit: true });
+        at = i + q.length;
+    }
+    if (at < text.length) parts.push({ s: text.slice(at), hit: false });
+    return <>{parts.map((p, i) => (p.hit ? <mark key={i} className="bg-yellow-200 rounded-sm px-0">{p.s}</mark> : <span key={i}>{p.s}</span>))}</>;
+}
+
 export function BoqHomePage() {
     const t = useTranslations('boqHome');
+    const locale = useLocale();
+    const tt = locale === 'en' ? TOOL_TEXT.en : TOOL_TEXT.th;
     const hasHydrated = useProjectStore(s => s.hasHydrated);
     const project = useProjectStore(s => s.project);
     const setMeta = useProjectStore(s => s.setMeta);
     const setOverride = useProjectStore(s => s.setBoqOverride);
     const resetSection = useProjectStore(s => s.resetBoqSection);
     const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+    const [query, setQuery] = useState('');
+    const boxRef = useRef<HTMLDivElement>(null);
+    const headRef = useRef<HTMLTableSectionElement>(null);
 
     const result = useMemo(() => computeProject(project), [project]);
     const overrides = project.boqOverrides;
@@ -47,6 +88,33 @@ export function BoqHomePage() {
     if (!hasHydrated) {
         return <div className="flex justify-center p-20"><Spin size="large" /></div>;
     }
+
+    const q = query.trim().toLowerCase();
+    const filtering = q !== '';
+    const matches = (r: BoqItemRow) =>
+        r.desc.toLowerCase().includes(q) || (r.note ?? '').toLowerCase().includes(q);
+    const itemsOf = (s: BoqSectionResult) => s.rows.filter((r): r is BoqItemRow => r.type === 'item');
+    const visibleSections = filtering ? result.boq.sections.filter(s => itemsOf(s).some(matches)) : result.boq.sections;
+    const matchCount = visibleSections.reduce((n, s) => n + itemsOf(s).filter(matches).length, 0);
+
+    /** Opens a section and scrolls the table to it (under the sticky column header). */
+    const jumpTo = (no: number) => {
+        setCollapsed(prev => {
+            if (!prev.has(no)) return prev;
+            const next = new Set(prev);
+            next.delete(no);
+            return next;
+        });
+        requestAnimationFrame(() => {
+            const box = boxRef.current;
+            const el = document.getElementById(`boq-section-${String(no)}`);
+            if (!box || !el) return;
+            const head = headRef.current?.offsetHeight ?? 0;
+            const top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - head;
+            box.scrollTo({ top, behavior: 'smooth' });
+            box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        });
+    };
 
     const toggle = (no: number) => setCollapsed(prev => {
         const next = new Set(prev);
@@ -72,8 +140,8 @@ export function BoqHomePage() {
             <tr key={r.key} className="hover:bg-orange-50/40">
                 <td className={`${cell} bg-white ${STICKY.no.className}`} />
                 <td className={`${cell} text-center text-gray-500 bg-white ${STICKY.step.className}`}>{r.itemNo}</td>
-                <td className={`${cell} min-w-[260px] bg-white ${STICKY.desc.className}`}>{r.desc}</td>
-                <td className={num} style={{ background: r.editable.qty ? undefined : SHEET_COLORS.calc, minWidth: 90 }}>
+                <td className={`${cell} min-w-[260px] bg-white ${STICKY.desc.className}`}><Highlight text={r.desc} q={q} /></td>
+                <td className={`${num} ${editedCls(ov.qty !== undefined)}`} style={{ background: r.editable.qty ? undefined : SHEET_COLORS.calc, minWidth: 90 }}>
                     {r.editable.qty
                         ? <Tooltip title={qtyTip}>
                             <div><NumberCell value={r.qty} edited={ov.qty !== undefined} digits={r.qty % 1 === 0 ? 0 : 2}
@@ -83,23 +151,23 @@ export function BoqHomePage() {
                         : <CalcValue value={r.qtySource === 'none' ? null : r.qty} tip={qtyTip} />}
                 </td>
                 <td className={`${cell} text-center`}>{r.unit}</td>
-                <td className={num} style={{ minWidth: 64 }}>
+                <td className={`${num} ${editedCls(ov.waste !== undefined)}`} style={{ minWidth: 64 }}>
                     <NumberCell value={r.waste} percent edited={ov.waste !== undefined}
                         onCommit={v => setOverride(r.key, 'waste', v)} ariaLabel={`${r.desc} ${t('colWaste')}`} />
                 </td>
                 <td className={num} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.grossQty} /></td>
-                <td className={num} style={{ minWidth: 90 }}>
+                <td className={`${num} ${editedCls(ov.mat !== undefined)}`} style={{ minWidth: 90 }}>
                     <NumberCell value={r.matUnit} edited={ov.mat !== undefined} tone={r.fromCalc.mat ? 'calc' : 'input'}
                         onCommit={v => setOverride(r.key, 'mat', v)} ariaLabel={`${r.desc} ${t('colMat')}`} />
                 </td>
                 <td className={num} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.matTotal} /></td>
-                <td className={num} style={{ minWidth: 90 }}>
+                <td className={`${num} ${editedCls(ov.lab !== undefined)}`} style={{ minWidth: 90 }}>
                     <NumberCell value={r.labUnit} edited={ov.lab !== undefined} tone={r.fromCalc.lab ? 'calc' : 'input'}
                         onCommit={v => setOverride(r.key, 'lab', v)} ariaLabel={`${r.desc} ${t('colLab')}`} />
                 </td>
                 <td className={num} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.labTotal} /></td>
                 <td className={`${num} font-semibold`} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.total} /></td>
-                <td className={`${cell} min-w-[160px] text-gray-600`}>
+                <td className={`${cell} min-w-[160px] text-gray-600 ${editedCls(ov.note !== undefined)}`}>
                     <TextCell value={r.note ?? ''} edited={ov.note !== undefined}
                         onCommit={v => setOverride(r.key, 'note', v)} ariaLabel={`${r.desc} ${t('colNote')}`} />
                 </td>
@@ -108,9 +176,11 @@ export function BoqHomePage() {
     };
 
     const renderSection = (s: BoqSectionResult) => {
-        const isCollapsed = collapsed.has(s.no);
+        // A filter shows the matching rows of every section, open (headings would be out of context).
+        const isCollapsed = !filtering && collapsed.has(s.no);
         const keys = s.rows.map(r => r.key);
         const hasEdits = keys.some(k => overrides[k] !== undefined);
+        const shownRows = filtering ? s.rows.filter(r => r.type === 'item' && matches(r)) : s.rows;
         return (
             <tbody key={s.no} id={`boq-section-${s.no}`}>
                 <tr style={{ background: SHEET_COLORS.header }}>
@@ -145,7 +215,7 @@ export function BoqHomePage() {
                         </div>
                     </td>
                 </tr>
-                {!isCollapsed && s.rows.map(r => r.type === 'heading'
+                {!isCollapsed && shownRows.map(r => r.type === 'heading'
                     ? (
                         <tr key={r.key}>
                             <td className={`${cell} bg-white ${STICKY.no.className}`} />
@@ -210,14 +280,24 @@ export function BoqHomePage() {
                 </div>
             </div>
 
-            <div className="flex gap-2">
-                <Button size="small" onClick={() => setCollapsed(new Set())}>{t('expandAll')}</Button>
-                <Button size="small" onClick={() => setCollapsed(new Set(boq.sections.map(s => s.no)))}>{t('collapseAll')}</Button>
+            <div className="flex flex-wrap items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
+                <Input allowClear prefix={<SearchOutlined className="text-gray-400" />} placeholder={tt.searchPh} aria-label={t('search')}
+                    value={query} onChange={e => setQuery(e.target.value)} style={{ width: 300, maxWidth: '100%' }} />
+                <Select<number> showSearch={{ optionFilterProp: 'label' }} placeholder={tt.jump} aria-label={tt.jump}
+                    style={{ width: 260, maxWidth: '100%' }}
+                    options={visibleSections.map(s => ({ value: s.no, label: `${String(s.no)}. ${s.title}` }))}
+                    onSelect={jumpTo} />
+                {filtering && <span className="text-[13px] text-gray-500">{tt.found(matchCount)}</span>}
+                <span className="ml-auto flex gap-2">
+                    <Button size="small" disabled={filtering} onClick={() => setCollapsed(new Set())}>{t('expandAll')}</Button>
+                    <Button size="small" disabled={filtering}
+                        onClick={() => setCollapsed(new Set(boq.sections.map(s => s.no)))}>{t('collapseAll')}</Button>
+                </span>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-auto max-h-[75vh]">
+            <div ref={boxRef} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-auto max-h-[75vh]">
                 <table className="w-full border-collapse text-[13px]">
-                    <thead className="sticky top-0 z-10 bg-gray-100">
+                    <thead ref={headRef} className="sticky top-0 z-10 bg-gray-100">
                         <tr>
                             <th className={`${cell} bg-gray-100 ${STICKY.no.className}`} style={STICKY.no.style} rowSpan={2}>{t('colNo')}</th>
                             <th className={`${cell} bg-gray-100 ${STICKY.step.className}`} style={STICKY.step.style} rowSpan={2}>{t('colStep')}</th>
@@ -238,7 +318,19 @@ export function BoqHomePage() {
                             <th className={cell}>{t('colSum')}</th>
                         </tr>
                     </thead>
-                    {boq.sections.map(renderSection)}
+                    {visibleSections.map(renderSection)}
+                    {filtering && visibleSections.length === 0 && (
+                        <tbody>
+                            <tr>
+                                <td className={`${cell} text-center text-gray-500 py-8`} colSpan={13}>
+                                    {tt.none}
+                                    <div className="mt-2">
+                                        <Button size="small" onClick={() => setQuery('')}>{tt.clear}</Button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    )}
                     <tbody>
                         <tr className="bg-orange-50">
                             <td className={`${cell} text-right font-bold`} colSpan={11}>{t('constructionTotal')}</td>

@@ -1,69 +1,91 @@
 'use client';
 
-// Journey-mode body of the column level: one row per column type (C1, C2 …) read off the column plan and
+// Journey-mode body of the column level: one card per column type (C1, C2 …) read off the column plan and
 // detail, the formulas folded away, and a short result at the end. Same input and formulas as /calc.
 import {
     columnRowCalc, COLUMN_BAR_SIZES, COLUMN_NAMES, newColumnRow, type ColumnInput, type ColumnRow,
 } from '@/domain/calculators/column';
-import { EditableTable } from '@/components/sheet/EditableTable';
-import { SheetCard } from '@/components/sheet/SheetFields';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
-import { formatNumber } from '@/components/sheet/NumberCell';
-import { EmptyState, ResultSummary, rebarSummaryItem, blankIfZero } from '@/components/sheet/journey';
+import {
+    AddButton, BarField, ChoiceButtons, EmptyState, PlanCard, PlanField, PlanGroup, PlanNumber, ResultSummary, insertAfter,
+    isPositive, nextFreeName, planChecks, rebarSummaryItem, removeAt, resultText,
+} from '@/components/sheet/journey';
 
-const nameOptions = COLUMN_NAMES.map(v => ({ value: v }));
-const sizeOptions = COLUMN_BAR_SIZES.map(v => ({ value: v }));
+const nameOptions = COLUMN_NAMES.map(v => ({ value: v as string, label: v }));
+const label = (r: ColumnRow, i: number) => (r.name === '' ? `แบบที่ ${i + 1}` : r.name);
+
+const L = {
+    count: 'จำนวนต้น', width: 'ความกว้าง', depth: 'ความยาว', height: 'ความสูงเสา', main: 'เหล็กยืน', stirrup: 'เหล็กปลอก',
+} as const;
+
+const checksOf = (r: ColumnRow) => planChecks([
+    { label: L.count, ok: isPositive(r.count) },
+    { label: L.width, ok: isPositive(r.width) },
+    { label: L.depth, ok: isPositive(r.depth) },
+    { label: L.height, ok: isPositive(r.height) },
+    { label: L.main, ok: isPositive(r.mainCount) && r.mainSize !== '' },
+    { label: L.stirrup, ok: isPositive(r.stirrupSpacing) && r.stirrupSize !== '' },
+// Height and bars may be copied from the previous column: the count or the size marks a column as started.
+], [r.count, r.width, r.depth].some(isPositive));
 
 export function ColumnJourney({ input, outputs, onChange }: {
     input: ColumnInput; outputs: Record<string, number>; onChange: (columns: ColumnRow[]) => void;
 }) {
     const rows = input.columns;
-    const add = () => onChange([...rows, newColumnRow(rows[rows.length - 1])]);
-    const count = rows.reduce((s, r) => s + (Number.isFinite(r.count) ? r.count : 0), 0);
+    const set = (i: number, patch: Partial<ColumnRow>) => onChange(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+    const freeName = () => nextFreeName(COLUMN_NAMES, rows.map(r => r.name));
+    const add = () => onChange([...rows, { ...newColumnRow(rows[rows.length - 1]), name: freeName() }]);
+    /** Same size, height and bars; the count to fill. */
+    const duplicate = (r: ColumnRow, i: number) => onChange(insertAfter(rows, i, { ...r, name: freeName(), count: 0 }));
+
+    if (rows.length === 0) {
+        return (
+            <EmptyState text="ยังไม่มีเสา — ดูแปลนเสาและรูปขยายเสา แล้วเพิ่มทีละแบบ (C1, C2 …) พร้อมจำนวนต้น"
+                addLabel="เพิ่มเสา C1" onAdd={add} />
+        );
+    }
+
+    const nextName = freeName();
 
     return (
-        <>
-            <SheetCard title="เสาแต่ละแบบ" extra={rows.length > 0 ? <span className="text-[12px] text-gray-500">{rows.length} แบบ · {formatNumber(count, 0)} ต้น</span> : undefined}>
-                {rows.length === 0
-                    ? (
-                        <EmptyState text="ยังไม่มีเสา — ดูแปลนเสาและรูปขยายเสา แล้วเพิ่มทีละแบบ (C1, C2 …) พร้อมจำนวนต้น"
-                            addLabel="เพิ่มเสาแบบแรก" onAdd={add} />
-                    )
-                    : (
-                        <>
-                            <EditableTable<ColumnRow>
-                                rows={rows}
-                                onChange={onChange}
-                                newRow={i => newColumnRow(rows[i - 1])}
-                                addLabel="เพิ่มเสาอีกแบบ"
-                                columns={[
-                                    { kind: 'select', key: 'name', title: 'ชื่อเสา', width: 70, options: nameOptions,
-                                        get: r => r.name, set: (r, v) => ({ ...r, name: v }) },
-                                    { kind: 'number', key: 'count', title: 'จำนวน (ต้น)', width: 70, digits: 0,
-                                        get: r => r.count, set: (r, v) => ({ ...r, count: v }) },
-                                    { kind: 'number', key: 'width', title: 'กว้าง (ม.)', width: 70, get: r => r.width, set: (r, v) => ({ ...r, width: v }) },
-                                    { kind: 'number', key: 'depth', title: 'ยาว (ม.)', width: 70, get: r => r.depth, set: (r, v) => ({ ...r, depth: v }) },
-                                    { kind: 'number', key: 'height', title: 'สูง (ม.)', width: 70, get: r => r.height, set: (r, v) => ({ ...r, height: v }) },
-                                    { kind: 'select', key: 'mainSize', title: 'เหล็กยืน', width: 85, options: sizeOptions,
-                                        get: r => r.mainSize, set: (r, v) => ({ ...r, mainSize: v }) },
-                                    { kind: 'number', key: 'mainCount', title: 'เหล็กยืน (เส้น/ต้น)', width: 80, digits: 0,
-                                        get: r => r.mainCount, set: (r, v) => ({ ...r, mainCount: v }) },
-                                    { kind: 'select', key: 'stirrupSize', title: 'เหล็กปลอก', width: 85, options: sizeOptions,
-                                        get: r => r.stirrupSize, set: (r, v) => ({ ...r, stirrupSize: v }) },
-                                    { kind: 'number', key: 'stirrupSpacing', title: 'ปลอกห่าง (ม.)', width: 75,
-                                        get: r => r.stirrupSpacing, set: (r, v) => ({ ...r, stirrupSpacing: v }) },
-                                    { kind: 'calc', key: 'concrete', title: 'คอนกรีต (ลบ.ม.)', width: 85, get: r => blankIfZero(columnRowCalc(r).concrete) },
-                                    { kind: 'calc', key: 'weight', title: 'เหล็ก (กก.)', width: 85,
-                                        get: r => { const c = columnRowCalc(r); return blankIfZero(c.mainWeight + c.stirrupWeight); } },
-                                ]}
-                            />
-                            <p className="mt-2 text-[12px] text-gray-500">
-                                เช่น รูปขยายเขียน C1 0.20×0.20 ม. 6-DB12 ปลอก RB6@0.15 ม. → กว้าง 0.2, ยาว 0.2, เหล็กยืน DB12 6 เส้น,
-                                เหล็กปลอก RB6 ห่าง 0.15 · สูง = จากหลังฐานรากถึงใต้คานบน พิมพ์บวกได้ เช่น 0.55+3.5
-                            </p>
-                        </>
-                    )}
-            </SheetCard>
+        <div className="flex flex-col gap-4">
+            {rows.map((r, i) => {
+                const c = columnRowCalc(r);
+                const k = checksOf(r);
+                return (
+                    <PlanCard key={i} index={i + 1} state={k.state} hasData={k.hasData} missingText={k.missingText}
+                        title={`เสา ${label(r, i)}`}
+                        result={k.state === 'empty' ? undefined : resultText([
+                            { label: 'คอนกรีต', value: c.concrete, unit: 'ลบ.ม.' },
+                            { label: 'เหล็ก', value: c.mainWeight + c.stirrupWeight, unit: 'กก.', digits: 1 },
+                        ])}
+                        onDuplicate={() => duplicate(r, i)}
+                        onDelete={() => onChange(removeAt(rows, i))} deleteTitle={`ลบเสา ${label(r, i)}?`}>
+                        <PlanGroup title="จากแปลนเสา">
+                            <PlanField label="ชื่อเสา">
+                                <ChoiceButtons<string> size="small" ariaLabel="ชื่อเสา" value={r.name === '' ? undefined : r.name}
+                                    options={nameOptions} onChange={v => set(i, { name: v })} />
+                            </PlanField>
+                            <PlanNumber label={L.count} value={r.count} unit="ต้น" digits={0} onChange={v => set(i, { count: v })} />
+                        </PlanGroup>
+                        <PlanGroup title="ขนาดเสา (จากรูปขยายเสา)">
+                            <PlanNumber label={L.width} value={r.width} unit="ม." range={[0.1, 1.5]} onChange={v => set(i, { width: v })} />
+                            <PlanNumber label={L.depth} value={r.depth} unit="ม." range={[0.1, 1.5]} onChange={v => set(i, { depth: v })} />
+                            <PlanNumber label={L.height} value={r.height} unit="ม." range={[1, 12]} placeholder="เช่น 0.55+3.5"
+                                hint="จากหลังฐานรากถึงใต้คานบน" onChange={v => set(i, { height: v })} />
+                        </PlanGroup>
+                        <PlanGroup title="เหล็กเสริม ต่อ 1 ต้น" hint="เช่น 6-DB12 ปลอก RB6 @0.15" layout="wide">
+                            <BarField label={L.main} sizes={COLUMN_BAR_SIZES} size={r.mainSize} onSize={v => set(i, { mainSize: v })}
+                                amount={r.mainCount} onAmount={v => set(i, { mainCount: v })} />
+                            <BarField label={L.stirrup} sizes={COLUMN_BAR_SIZES} size={r.stirrupSize} onSize={v => set(i, { stirrupSize: v })}
+                                amount={r.stirrupSpacing} onAmount={v => set(i, { stirrupSpacing: v })} amountLabel="ระยะห่าง @"
+                                amountUnit="ม." amountDigits={2} presets={[0.15, 0.2]} range={[0.05, 0.5]} />
+                        </PlanGroup>
+                    </PlanCard>
+                );
+            })}
+
+            <AddButton label={nextName === '' ? 'เพิ่มเสาอีกแบบ' : `เพิ่มเสา ${nextName}`} onClick={add} />
 
             <AdvancedSection title="วิธีคิด" hint="ระบบคิดให้อัตโนมัติ">
                 <ul className="list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
@@ -74,13 +96,11 @@ export function ColumnJourney({ input, outputs, onChange }: {
                 </ul>
             </AdvancedSection>
 
-            {rows.length > 0 && (
-                <ResultSummary items={[
-                    { label: 'คอนกรีต', value: outputs.concrete ?? 0, unit: 'ลบ.ม.' },
-                    { label: 'ไม้แบบ', value: outputs.formwork ?? 0, unit: 'ตร.ม.' },
-                    rebarSummaryItem(outputs),
-                ]} />
-            )}
-        </>
+            <ResultSummary items={[
+                { label: 'คอนกรีต', value: outputs.concrete ?? 0, unit: 'ลบ.ม.' },
+                { label: 'ไม้แบบ', value: outputs.formwork ?? 0, unit: 'ตร.ม.' },
+                rebarSummaryItem(outputs),
+            ]} />
+        </div>
     );
 }

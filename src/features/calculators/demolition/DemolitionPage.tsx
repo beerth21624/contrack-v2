@@ -1,13 +1,14 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import {
     demolition, lineTotal, DEMOLITION_FIXED_ITEMS, type DemolitionInput, type DemolitionLine,
 } from '@/domain/calculators/demolition';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { TextCell, formatNumber } from '@/components/sheet/NumberCell';
-import { ResultSummary, blankIfZero } from '@/components/sheet/journey';
+import {
+    AddButton, JText, PlanCard, PlanNumber, ResultSummary, isPositive, patchAt, planChecks, removeAt,
+} from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -32,7 +33,7 @@ export default function DemolitionPage() {
 
     return (
         <CalculatorShell def={demolition} result={result} isDefault={isDefault} onReset={reset}>
-            {inJourney ? <JourneyView calc={calc} cell={cell} /> : (
+            {inJourney ? <JourneyView calc={calc} /> : (
                 <SheetCard title="รายการงานรื้อถอน">
                     <EditableTable<DemolitionLine>
                         rows={input.items}
@@ -69,44 +70,62 @@ export default function DemolitionPage() {
     );
 }
 
+/** A demolition kind is "on site" once it has a quantity or a rate; it costs something once it has both. */
+const lineChecks = (l: DemolitionLine) => planChecks([
+    { label: 'ปริมาณ', ok: isPositive(l.qty) },
+    { label: 'ค่ารื้อต่อหน่วย', ok: isPositive(l.rate) },
+]);
+
 /**
- * Guided journey: the kinds of demolition listed, the user fills only the ones on site. Excel has no rates,
- * so the per-unit price stays in the table (hiding it would leave the level at 0 บาท).
+ * Guided journey: the kinds of demolition listed as cards, the user fills only the ones on site (a kind left
+ * empty stays grey). Excel has no rates, so the per-unit price stays on each card (hiding it would leave the
+ * level at 0 บาท); a quantity without a rate is flagged.
  */
-function JourneyView({ calc, cell }: {
-    calc: UseCalculator<DemolitionInput>;
-    cell: (field: 'label' | 'unit' | 'check', placeholder: string, r: DemolitionLine, i: number) => ReactNode;
-}) {
+function JourneyView({ calc }: { calc: UseCalculator<DemolitionInput> }) {
     const { input, update, outputs } = calc;
     const total = outputs.total ?? 0;
+    const setLine = (i: number, patch: Partial<DemolitionLine>) => update(p => ({ ...p, items: patchAt(p.items, i, patch) }));
+    const checks = input.items.map(lineChecks);
     return (
         <>
             <SheetCard title="งานรื้อถอนในที่ดิน">
-                <p className="mb-2 text-[12px] text-gray-500">
+                <p className="mb-3 text-[12px] text-gray-500">
                     กรอกเฉพาะงานที่มีจริง งานที่ไม่มีปล่อยว่างไว้ — ค่ารื้อต่อหน่วยรวมค่าแรง เครื่องมือ และค่าใช้จ่ายเบื้องต้น
                 </p>
-                <EditableTable<DemolitionLine>
-                    rows={input.items}
-                    onChange={items => update({ items })}
-                    lockedRows={FIXED_ROWS}
-                    newRow={newLine}
-                    addLabel="เพิ่มงานรื้ออื่น"
-                    columns={[
-                        {
-                            kind: 'label', key: 'label', title: 'งาน',
-                            get: (r, i) => (
-                                <div>
-                                    <div>{cell('label', 'ชื่องาน', r, i)}</div>
-                                    {i < FIXED_ROWS && r.check !== '' && <div className="text-[11px] text-gray-400">ดู: {r.check}</div>}
+                <div className="flex flex-col gap-2">
+                    {input.items.map((r, i) => {
+                        const k = checks[i] ?? lineChecks(r);
+                        const fixed = i < FIXED_ROWS;
+                        const unit = r.unit === '' ? 'หน่วย' : r.unit;
+                        return (
+                            <PlanCard key={i} index={i + 1} state={k.state} hasData={k.hasData} compact
+                                missingText={k.missingText === undefined ? undefined
+                                    : `${k.missingText} — รายการนี้ยังคิดเป็น 0 บาท`}
+                                title={fixed
+                                    ? <>{r.label}{r.check !== '' && <span className="ml-2 text-[12px] font-normal text-gray-500">ดู: {r.check}</span>}</>
+                                    : (r.label === '' ? 'งานรื้ออื่น' : r.label)}
+                                result={isPositive(lineTotal(r)) ? `รวม ${formatNumber(lineTotal(r), 0)} บาท` : undefined}
+                                onDelete={fixed ? undefined : () => update(p => ({ ...p, items: removeAt(p.items, i) }))}
+                                deleteTitle={`ลบ${r.label === '' ? 'รายการนี้' : r.label}?`}>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3">
+                                    {!fixed && (
+                                        <>
+                                            <JText label="ชื่องาน" value={r.label} placeholder="เช่น รื้อบ่อเกรอะเดิม" onChange={v => setLine(i, { label: v })} />
+                                            <JText label="หน่วย" value={r.unit} placeholder="เช่น ตร.ม." onChange={v => setLine(i, { unit: v })} />
+                                        </>
+                                    )}
+                                    <PlanNumber label="ปริมาณ" value={r.qty} unit={unit}
+                                        onChange={v => setLine(i, { qty: v })} />
+                                    <PlanNumber label="ค่ารื้อต่อหน่วย" value={r.rate} unit={`บาท/${unit}`} digits={0}
+                                        onChange={v => setLine(i, { rate: v })} />
                                 </div>
-                            ),
-                        },
-                        { kind: 'number', key: 'qty', title: 'ปริมาณ', width: 100, get: r => r.qty, set: (r, v) => ({ ...r, qty: v }) },
-                        { kind: 'label', key: 'unit', title: 'หน่วย', width: 80, get: (r, i) => cell('unit', 'หน่วย', r, i) },
-                        { kind: 'number', key: 'rate', title: 'ค่ารื้อต่อหน่วย (บาท)', width: 130, get: r => r.rate, set: (r, v) => ({ ...r, rate: v }) },
-                        { kind: 'calc', key: 'total', title: 'รวม (บาท)', width: 120, get: r => blankIfZero(lineTotal(r)) },
-                    ]}
-                />
+                            </PlanCard>
+                        );
+                    })}
+                </div>
+                <div className="mt-3">
+                    <AddButton label="เพิ่มงานรื้ออื่น" onClick={() => update(p => ({ ...p, items: [...p.items, newLine()] }))} />
+                </div>
             </SheetCard>
 
             <ResultSummary

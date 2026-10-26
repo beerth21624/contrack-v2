@@ -18,6 +18,18 @@ export const nextName = (rows: OpeningRow[], prefix: string): string => {
     return `${prefix}${Math.max(0, ...used) + 1}-`;
 };
 
+/**
+ * "ทำซ้ำ" of row `i`: a copy (size, type, wall, prices) inserted right after it, with the next free code of the
+ * block so the copy gets its own BOQ row ("D1-บานเปิด" → "D3-บานเปิด").
+ */
+export const duplicateOpeningRow = (rows: OpeningRow[], i: number, prefix: string): OpeningRow[] => {
+    const src = rows[i];
+    if (src === undefined) return rows;
+    const rest = src.name.replace(/^\s*[A-Za-z]+\d+\s*-?\s*/, '');
+    const copy: OpeningRow = { ...src, name: `${nextName(rows, prefix)}${rest}` };
+    return [...rows.slice(0, i + 1), copy, ...rows.slice(i + 1)];
+};
+
 /** A new row keeps the previous row's type and wall settings; size starts empty. */
 export const newOpeningRow = (rows: OpeningRow[], prefix: string): OpeningRow => {
     const prev = rows[rows.length - 1];

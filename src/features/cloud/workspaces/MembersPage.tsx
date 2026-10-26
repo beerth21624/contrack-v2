@@ -3,8 +3,10 @@
 // ─── /workspace/members: members and roles, invitations (copyable link), workspace settings ───
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Alert, App, Avatar, Button, Form, Input, Modal, Popconfirm, Select, Table, Tag, Typography } from 'antd';
-import { DeleteOutlined, EditOutlined, LogoutOutlined, PlusOutlined, TeamOutlined, UserAddOutlined } from '@ant-design/icons';
+import { Alert, App, Avatar, Button, Form, Input, Modal, Popconfirm, Select, Table, Tag, Tooltip, Typography } from 'antd';
+import {
+    CheckOutlined, CopyOutlined, DeleteOutlined, EditOutlined, LogoutOutlined, PlusOutlined, TeamOutlined, UserAddOutlined,
+} from '@ant-design/icons';
 import type { AssignableRole, InvitationDto, MemberDto, Role, WorkspaceDto } from '@/shared/contract';
 import { thaiErrorMessage } from '../api/errors';
 import { RULES } from '../auth/form-rules';
@@ -16,12 +18,25 @@ import {
 } from '../query/hooks';
 import { RequireSignIn, formatDateTime, spinner } from '../ui/common';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 export function inviteLink(token: string): string {
     const origin = typeof window === 'undefined' ? '' : window.location.origin;
     return `${origin}/invite/${encodeURIComponent(token)}`;
 }
+
+/** A role option in a dropdown: the role, and under it what that role may do. */
+const roleOption = (r: Role) => ({
+    value: r,
+    label: ROLE_LABEL[r],
+    hint: ROLE_HINT[r],
+});
+const renderRoleOption = (o: { data: { label?: unknown; hint?: unknown } }) => (
+    <div className="py-0.5">
+        <div>{typeof o.data.label === 'string' ? o.data.label : ''}</div>
+        <div className="text-[11px] text-gray-500 whitespace-normal">{typeof o.data.hint === 'string' ? o.data.hint : ''}</div>
+    </div>
+);
 
 export function MembersPage() {
     return (
@@ -115,9 +130,14 @@ function WorkspaceSection({ workspace, onCreate }: { workspace: WorkspaceDto; on
             render: (_: unknown, m: MemberDto) => (isCompany && m.userId !== me?.id && canManage(myRole, m.role)
                 ? (
                     <Select value={m.role} style={{ width: 210 }} onChange={(r: Role) => onRole(m, r)} loading={changeRole.isPending}
-                        options={grantableRoles(myRole, true).map(r => ({ value: r, label: ROLE_LABEL[r], title: ROLE_HINT[r] }))} />
+                        popupMatchSelectWidth={260} optionRender={renderRoleOption}
+                        options={grantableRoles(myRole, true).map(roleOption)} />
                 )
-                : <Tag color={m.role === 'owner' ? 'orange' : m.role === 'viewer' ? 'default' : 'blue'}>{ROLE_LABEL[m.role]}</Tag>),
+                : (
+                    <Tooltip title={ROLE_HINT[m.role]}>
+                        <Tag color={m.role === 'owner' ? 'orange' : m.role === 'viewer' ? 'default' : 'blue'}>{ROLE_LABEL[m.role]}</Tag>
+                    </Tooltip>
+                )),
         },
         { title: 'เข้าร่วมเมื่อ', key: 'joined', width: 170, responsive: ['md' as const], render: (_: unknown, m: MemberDto) => formatDateTime(m.joinedAt) },
         {
@@ -181,7 +201,19 @@ function InvitationsSection({ workspace }: { workspace: WorkspaceDto }) {
     const revoke = useRevokeInvitation(workspace.id);
     const [form] = Form.useForm<{ email: string; role: AssignableRole }>();
     const [link, setLink] = useState<{ email: string; url: string } | null>(null);
+    // "คัดลอกแล้ว" after a successful copy, until the dialog closes.
+    const [copied, setCopied] = useState(false);
     const roles = grantableRoles(workspace.role, false) as AssignableRole[];
+    const closeLink = () => { setLink(null); setCopied(false); };
+    const copyLink = async () => {
+        if (!link) return;
+        try {
+            await navigator.clipboard.writeText(link.url);
+            setCopied(true);
+        } catch {
+            void message.error('คัดลอกไม่สำเร็จ — เลือกลิงก์แล้วคัดลอกเอง');
+        }
+    };
 
     const submit = async () => {
         const values = await form.validateFields();
@@ -196,7 +228,10 @@ function InvitationsSection({ workspace }: { workspace: WorkspaceDto }) {
 
     const columns = [
         { title: 'อีเมล', dataIndex: 'email', key: 'email' },
-        { title: 'บทบาท', key: 'role', render: (_: unknown, i: InvitationDto) => <Tag>{ROLE_LABEL[i.role]}</Tag> },
+        {
+            title: 'บทบาท', key: 'role',
+            render: (_: unknown, i: InvitationDto) => <Tooltip title={ROLE_HINT[i.role]}><Tag>{ROLE_LABEL[i.role]}</Tag></Tooltip>,
+        },
         { title: 'หมดอายุ', key: 'exp', responsive: ['sm' as const], render: (_: unknown, i: InvitationDto) => formatDateTime(i.expiresAt) },
         {
             title: '', key: 'actions', align: 'right' as const,
@@ -221,7 +256,8 @@ function InvitationsSection({ workspace }: { workspace: WorkspaceDto }) {
                     <Input placeholder="อีเมลของคนที่จะเชิญ" inputMode="email" />
                 </Form.Item>
                 <Form.Item name="role">
-                    <Select style={{ width: 210 }} options={roles.map(r => ({ value: r, label: ROLE_LABEL[r], title: ROLE_HINT[r] }))} />
+                    <Select style={{ width: 210 }} popupMatchSelectWidth={260} optionRender={renderRoleOption}
+                        options={roles.map(roleOption)} />
                 </Form.Item>
                 <Button type="primary" htmlType="submit" icon={<UserAddOutlined />} loading={create.isPending}>สร้างลิงก์เชิญ</Button>
             </Form>
@@ -234,13 +270,15 @@ function InvitationsSection({ workspace }: { workspace: WorkspaceDto }) {
                 pagination={false} size="small" className="mt-2"
                 locale={{ emptyText: invitations.isError ? thaiErrorMessage(invitations.error) : 'ไม่มีคำเชิญค้าง' }} />
 
-            <Modal open={link !== null} onCancel={() => setLink(null)} title="ลิงก์เชิญพร้อมแล้ว"
-                footer={<Button type="primary" onClick={() => setLink(null)}>เสร็จ</Button>}>
+            <Modal open={link !== null} onCancel={closeLink} title="ลิงก์เชิญพร้อมแล้ว"
+                footer={<Button onClick={closeLink}>เสร็จ</Button>}>
                 <p className="text-[13px] text-gray-600">ส่งลิงก์นี้ให้ <b>{link?.email}</b> (แสดงครั้งเดียว ถ้าทำหายให้สร้างคำเชิญใหม่)</p>
-                <Paragraph copyable={{ text: link?.url ?? '', tooltips: ['คัดลอก', 'คัดลอกแล้ว'] }}
-                    className="!mb-0 rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 break-all text-[13px]">
-                    {link?.url}
-                </Paragraph>
+                <div className="flex gap-2">
+                    <Input readOnly value={link?.url ?? ''} aria-label="ลิงก์เชิญ" onFocus={e => e.currentTarget.select()} />
+                    <Button type="primary" icon={copied ? <CheckOutlined /> : <CopyOutlined />} onClick={() => { void copyLink(); }}>
+                        {copied ? 'คัดลอกแล้ว' : 'คัดลอกลิงก์'}
+                    </Button>
+                </div>
             </Modal>
         </div>
     );

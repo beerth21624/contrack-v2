@@ -1,17 +1,25 @@
 'use client';
 
-import { Button } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { App, Button } from 'antd';
+import { CopyOutlined } from '@ant-design/icons';
 import {
     floorTile, floorTileRowArea, FLOOR_TILE_CODES, FLOOR_TILE_DESCRIPTIONS, FLOOR_TILE_DESCRIPTION_ORDER,
     type FloorTileCode, type FloorTileInput, type FloorTileRow,
 } from '@/domain/calculators/floor-tile';
+import { ceiling } from '@/domain/calculators/ceiling';
+import { calculatorInput } from '@/domain/project';
+import { useProjectStore } from '@/store/project-store';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
-import { EmptyState, ResultSummary, blankIfZero } from '@/components/sheet/journey';
+import { formatNumber } from '@/components/sheet/NumberCell';
+import {
+    AddButton, ChoiceButtons, EmptyState, FillProgress, NameInput, PlanCard, PlanField, PlanNumber, ResultSummary,
+    countFill, fillState, insertAfter, nextCopyName, patchAt, removeAt, type FillState,
+} from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
-import { useCalculator } from '../useCalculator';
+import { useCalculator, type UseCalculator } from '../useCalculator';
+import { isBathroomName, roomsFromCeiling } from './fromCeiling';
 
 const isCode = (v: string): v is FloorTileCode => (FLOOR_TILE_CODES as readonly string[]).includes(v);
 
@@ -24,50 +32,113 @@ const PLAIN_TYPE: Record<FloorTileCode, string> = {
 
 const newJourneyRow = (): FloorTileRow => ({ code: 'F1', width: 0, length: 0, location: '' });
 
-/** Journey mode: one row per room, read off the floor plan; results reduced to the totals. */
-function FloorTileJourney({ input, onChange, outputs }: {
-    input: FloorTileInput; onChange: (rows: FloorTileRow[]) => void; outputs: Record<string, number>;
+/** Journey: the three floor finishes as buttons (short names; the full name is the button's tooltip). */
+const TYPE_CHOICES = FLOOR_TILE_CODES.map(c => ({
+    value: c,
+    label: { F1: 'แกรนิตโต้', F3: 'แกรนิตโต้ กันลื่น', F4: 'ปรับระดับ ทำกันซึม' }[c],
+    hint: PLAIN_TYPE[c],
+}));
+
+/** Plan values a room card still needs, in reading order. */
+function missingOf(r: FloorTileRow): string[] {
+    const out: string[] = [];
+    if (r.code === '') out.push('ชนิดพื้น');
+    if (!(r.width > 0)) out.push('กว้าง');
+    if (!(r.length > 0)) out.push('ยาว');
+    return out;
+}
+const stateOf = (r: FloorTileRow): FillState => fillState([missingOf(r).length === 0], r.width > 0 || r.length > 0);
+const isStair = (r: FloorTileRow) => r.location.includes('บันได');
+
+/**
+ * "คัดลอกห้องจากฝ้าเพดาน": the rooms of the ceiling step not on this list yet, as new editable rows (names and
+ * sizes). `count` is 0 when there is nothing to copy.
+ */
+function useRoomsFromCeiling(rows: FloorTileRow[], onCopy: (rows: FloorTileRow[]) => void) {
+    const { message } = App.useApp();
+    const project = useProjectStore(s => s.project);
+    const copy = roomsFromCeiling(calculatorInput(project, ceiling).rows, rows);
+    const count = copy.rows.length;
+    const run = () => {
+        onCopy(copy.rows);
+        const skipped = copy.skippedBathrooms > 0 ? ` (ไม่รวมห้องน้ำ ${String(copy.skippedBathrooms)} ห้อง)` : '';
+        void message.success(`คัดลอก ${String(count)} ห้องแล้ว${skipped} — ตรวจชนิดพื้นอีกครั้ง`);
+    };
+    return { count, run, label: `คัดลอกห้องจากฝ้าเพดาน (${String(count)} ห้อง)` };
+}
+
+/** Journey mode: one card per room, read off the floor plan; live area per room, results reduced to the totals. */
+function FloorTileJourney({ input, update, outputs }: {
+    input: FloorTileInput; update: UseCalculator<FloorTileInput>['update']; outputs: Record<string, number>;
 }) {
-    const add = () => onChange([...input.rows, newJourneyRow()]);
+    const rows = input.rows;
+    const setRows = (edit: (rows: FloorTileRow[]) => FloorTileRow[]) => update(p => ({ ...p, rows: edit(p.rows) }));
+    const setRow = (i: number, patch: Partial<FloorTileRow>) => setRows(rs => patchAt(rs, i, patch));
+    const add = () => setRows(rs => [...rs, newJourneyRow()]);
+    const duplicate = (i: number) => setRows(rs => {
+        const r = rs[i];
+        return r ? insertAfter(rs, i, { ...r, location: nextCopyName(r.location, rs.map(x => x.location)) }) : rs;
+    });
+    const fromCeiling = useRoomsFromCeiling(rows, copied => setRows(rs => [...rs, ...copied]));
     const usedTypes = FLOOR_TILE_CODES.filter(c => (outputs[c] ?? 0) !== 0);
+    const states = rows.map(stateOf);
+
+    const card = (r: FloorTileRow, i: number) => {
+        const state = states[i] ?? 'empty';
+        const missing = state === 'missing' ? new Set(missingOf(r)) : new Set<string>();
+        const area = floorTileRowArea(r);
+        const stair = isStair(r);
+        return (
+            <PlanCard key={i} index={i + 1} state={state}
+                title={<NameInput value={r.location} placeholder="ชื่อห้อง เช่น ห้องนอน 1" ariaLabel={`ชื่อห้องที่ ${String(i + 1)}`}
+                    onChange={location => setRow(i, { location })} />}
+                result={area > 0 ? `${formatNumber(area)} ตร.ม.` : undefined}
+                onDuplicate={() => duplicate(i)} onDelete={() => setRows(rs => removeAt(rs, i))} hasData={r.width > 0 || r.length > 0}
+                deleteTitle="ลบห้องนี้?" missingText={`ยังขาด: ${missingOf(r).join(', ')}`}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                    <PlanField className="sm:col-span-2" label="ชนิดพื้น" missing={missing.has('ชนิดพื้น')}>
+                        <ChoiceButtons ariaLabel="ชนิดพื้น" size="small" options={TYPE_CHOICES} value={r.code === '' ? undefined : r.code}
+                            onChange={code => setRow(i, { code })} />
+                    </PlanField>
+                    <PlanNumber label={stair ? 'ความกว้างบันได' : 'กว้าง'} unit="ม." value={r.width} range={[0.3, 30]}
+                        missing={missing.has('กว้าง')} onChange={width => setRow(i, { width })} />
+                    <PlanNumber label={stair ? 'ลูกนอน + ลูกตั้ง' : 'ยาว'} unit="ม." value={r.length} range={[0.3, 30]}
+                        missing={missing.has('ยาว')} hint={stair ? 'เช่น 0.9+0.45' : undefined}
+                        onChange={length => setRow(i, { length })} />
+                </div>
+                {isBathroomName(r.location) && (
+                    <div className="mt-2 text-[12px] text-amber-700">ห้องน้ำกรอกในขั้นตอนกระเบื้องห้องน้ำ — ที่นี่จะนับซ้ำ</div>
+                )}
+            </PlanCard>
+        );
+    };
+
     return (
         <>
             <SheetCard title="ห้องและชนิดพื้น">
-                {input.rows.length === 0
+                {rows.length === 0
                     ? (
+                        // With rooms on the ceiling step, copying them is the quickest start.
                         <EmptyState text="ยังไม่มีห้อง — เปิดแปลนพื้น แล้วเพิ่มทีละห้อง (ชื่อห้อง ชนิดพื้น กว้าง × ยาว)"
-                            note="ไม่ต้องใส่ห้องน้ำที่นี่ — มีขั้นตอนกระเบื้องห้องน้ำแยกต่างหาก"
-                            addLabel="เพิ่มห้อง" onAdd={add} />
+                            note="ห้องน้ำไม่ต้องใส่ที่นี่ — มีขั้นตอนกระเบื้องห้องน้ำแยกต่างหาก"
+                            {...(fromCeiling.count > 0
+                                ? { addLabel: fromCeiling.label, onAdd: fromCeiling.run, actions: [{ label: 'เพิ่มห้อง', onClick: add }] }
+                                : { addLabel: 'เพิ่มห้อง', onAdd: add })} />
                     )
                     : (
-                        <>
-                            <div className="overflow-x-auto">
-                                <div style={{ minWidth: 720 }}>
-                                    <EditableTable<FloorTileRow>
-                                        rows={input.rows}
-                                        onChange={onChange}
-                                        columns={[
-                                            { kind: 'text', key: 'location', title: 'ห้อง / ตำแหน่ง', width: 170, placeholder: 'เช่น ห้องนอน 1',
-                                                get: r => r.location, set: (r, v) => ({ ...r, location: v }) },
-                                            { kind: 'select', key: 'code', title: 'ชนิดพื้น', width: 270,
-                                                options: FLOOR_TILE_CODES.map(c => ({ value: c, label: PLAIN_TYPE[c] })),
-                                                get: r => r.code, set: (r, v) => ({ ...r, code: isCode(v) ? v : '' }) },
-                                            { kind: 'number', key: 'width', title: 'กว้าง (ม.)', width: 90,
-                                                get: r => r.width, set: (r, v) => ({ ...r, width: v }) },
-                                            { kind: 'number', key: 'length', title: 'ยาว (ม.)', width: 90,
-                                                get: r => r.length, set: (r, v) => ({ ...r, length: v }) },
-                                            { kind: 'calc', key: 'area', title: 'พื้นที่ (ตร.ม.)', width: 100, get: r => blankIfZero(floorTileRowArea(r)) },
-                                        ]}
-                                    />
-                                </div>
-                            </div>
-                            <Button type="dashed" icon={<PlusOutlined />} className="mt-3" onClick={add}>เพิ่มห้อง</Button>
-                            <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
-                                <li>ห้องที่เป็นรูปตัว L ให้แบ่งเป็น 2 แถว เช่น ห้องนอน 1 (1) และ ห้องนอน 1 (2)</li>
-                                <li>บันได: กว้าง = ความกว้างบันได, ยาว = ลูกนอน + ลูกตั้ง (เช่น 0.9 + 0.45 = 1.35 ม. พิมพ์ 0.9+0.45 ได้)</li>
-                                <li>ไม่ต้องใส่ห้องน้ำที่นี่ — มีขั้นตอนกระเบื้องห้องน้ำแยกต่างหาก</li>
-                            </ul>
-                        </>
+                        <div className="flex flex-col gap-2">
+                            {rows.length >= 5 && <FillProgress {...countFill(states)} noun="ห้อง" />}
+                            {rows.map(card)}
+                            <AddButton label="เพิ่มห้อง" onClick={add} />
+                            {fromCeiling.count > 0 && (
+                                <Button type="link" size="small" className="self-start !px-0" icon={<CopyOutlined />} onClick={fromCeiling.run}>
+                                    {fromCeiling.label}
+                                </Button>
+                            )}
+                            <p className="text-[12px] text-gray-500">
+                                ห้องรูปตัว L แบ่งเป็น 2 การ์ด · บันได: กว้าง = ความกว้างบันได, ยาว = ลูกนอน + ลูกตั้ง
+                            </p>
+                        </div>
                     )}
             </SheetCard>
 
@@ -86,7 +157,7 @@ export default function FloorTilePage() {
     if (inJourney) {
         return (
             <CalculatorShell def={floorTile} result={result} isDefault={isDefault} onReset={reset}>
-                <FloorTileJourney input={input} outputs={outputs} onChange={rows => update({ rows })} />
+                <FloorTileJourney input={input} outputs={outputs} update={update} />
             </CalculatorShell>
         );
     }

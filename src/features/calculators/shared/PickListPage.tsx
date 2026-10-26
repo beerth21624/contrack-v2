@@ -5,14 +5,16 @@ import { AutoComplete, Button, Select } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { CalculatorDef } from '@/domain/calculators/types';
 import {
-    catalogueItem, emptyPickRow, needsPrice, pickRowCalc, qtyDigits, selectItem, setOptionQty, splitByOption,
-    type Catalogue, type PickListInput, type PickRow,
+    catalogueItem, emptyPickRow, isCountUnit, matchKey, needsPrice, pickRowCalc, qtyDigits, selectItem, setOptionQty,
+    splitByOption, type Catalogue, type PickListInput, type PickRow,
 } from '@/domain/calculators/shared/pick-list';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { EditableTable } from '@/components/sheet/EditableTable';
-import { NumberCell, SHEET_COLORS } from '@/components/sheet/NumberCell';
+import { NumberCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
-import { EmptyState, ResultSummary, blankIfZero } from '@/components/sheet/journey';
+import {
+    CountStepper, EmptyState, Hint, LevelLink, ResultSummary, blankIfZero, levelTitle,
+} from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -31,6 +33,25 @@ interface PickListPageProps {
     notes?: ReactNode;
     /** Notes for the guided journey (plain words, no Excel/BOQ references); `notes` is not shown there. */
     journeyNotes?: ReactNode;
+    /** Guided journey: shown above the count list (e.g. a "add one bathroom" helper). */
+    journeyTop?: ReactNode;
+    /** Guided journey: the count list in titled groups (items by their dropdown text); unlisted items go last. */
+    groups?: readonly PickGroup[];
+    /** Guided journey: where on the plan to read an item (by its dropdown text). */
+    itemHints?: Readonly<Record<string, string>>;
+    /** Guided journey: counts an earlier step already knows, offered with one click (by dropdown text). */
+    suggestions?: readonly PickSuggestion[];
+}
+
+export interface PickGroup { title: string; items: readonly string[] }
+
+export interface PickSuggestion {
+    item: string;
+    qty: number;
+    /** Journey step the count comes from. */
+    levelId: string;
+    /** What was counted there, e.g. "วงจรเบรกเกอร์ 16A". */
+    what: string;
 }
 
 type Calc = UseCalculator<PickListInput>;
@@ -188,12 +209,67 @@ interface OtherLine {
     row: PickRow;
 }
 
+/** The count lines in the page's groups (dropdown order inside a group); lines in no group come last. */
+function groupLines(lines: OptionLine[], groups: readonly PickGroup[] | undefined): { title: string; lines: OptionLine[] }[] {
+    if (groups === undefined || groups.length === 0) return [{ title: '', lines }];
+    const inGroup = (g: PickGroup, l: OptionLine) => g.items.some(it => matchKey(it) === matchKey(l.label));
+    const out = groups.map(g => ({ title: g.title, lines: lines.filter(l => inGroup(g, l)) })).filter(g => g.lines.length > 0);
+    const rest = lines.filter(l => !groups.some(g => inGroup(g, l)));
+    return rest.length > 0 ? [...out, { title: 'อื่น ๆ', lines: rest }] : out;
+}
+
+const hintOf = (hints: Readonly<Record<string, string>> | undefined, label: string): string | undefined =>
+    hints === undefined ? undefined : Object.entries(hints).find(([k]) => matchKey(k) === matchKey(label))?.[1];
+
+/**
+ * One item of the journey count sheet: name (and where to read it when people hesitate), − / + stepper for counted
+ * units (a plain box for lengths) with the unit, and a count an earlier step already knows.
+ */
+function CountLine({ line, hint, suggestion, onQty }: {
+    line: OptionLine; hint?: string; suggestion?: PickSuggestion; onQty: (qty: number) => void;
+}) {
+    const qty = line.row?.qty ?? 0;
+    const offer = suggestion !== undefined && suggestion.qty > 0 && suggestion.qty !== qty ? suggestion : undefined;
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 border-b border-gray-100 py-2 last:border-b-0">
+            <div className="min-w-0">
+                <div className="text-[13px] text-gray-800">{line.label}</div>
+                {hint !== undefined && <Hint>{hint}</Hint>}
+                {offer !== undefined && (
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-sky-800">
+                        <span>
+                            <LevelLink levelId={offer.levelId} className="text-sky-700 hover:underline">ขั้นตอน{levelTitle(offer.levelId)}</LevelLink>
+นับ{offer.what}ได้ {formatNumber(offer.qty, 0)}
+                        </span>
+                        <Button size="small" onClick={() => onQty(offer.qty)}>ใช้ {formatNumber(offer.qty, 0)} {line.unit}</Button>
+                    </div>
+                )}
+            </div>
+            <div className="flex items-center gap-1.5">
+                {isCountUnit(line.unit)
+                    ? <CountStepper value={qty} onChange={onQty} ariaLabel={`จำนวน ${line.label}`} unit={line.unit} />
+                    : (
+                        <>
+                            <span className="w-[96px]">
+                                <NumberCell value={qty} digits={qtyDigits(qty, line.unit)} blankZero placeholder="0"
+                                    onCommit={v => onQty(v ?? 0)} ariaLabel={`ปริมาณ ${line.label} (${line.unit})`} />
+                            </span>
+                            <span className="text-[12px] text-gray-500">{line.unit}</span>
+                        </>
+                    )}
+            </div>
+        </div>
+    );
+}
+
 /**
  * Guided journey: a count sheet of every dropdown option (type how many the plan shows, 0 = none), then the
  * rows that are not a dropdown option (free text / a second row of an item) with their prices in plain view,
  * the catalogue prices folded away, and a short money summary.
  */
-function JourneyPickList({ catalogue, options, units = [], allowFreeText, journeyNotes, calc }: PickListPageProps & { calc: Calc }) {
+function JourneyPickList({
+    catalogue, options, units = [], allowFreeText, journeyNotes, journeyTop, groups, itemHints, suggestions, calc,
+}: PickListPageProps & { calc: Calc }) {
     const { input, update, outputs } = calc;
     const rows = input.items;
     const { first, others } = splitByOption(rows, options);
@@ -219,23 +295,23 @@ function JourneyPickList({ catalogue, options, units = [], allowFreeText, journe
     return (
         <>
             <SheetCard title="นับจากแบบ">
-                <EditableTable<OptionLine>
-                    rows={lines}
-                    onChange={() => undefined}
-                    canDelete={false}
-                    columns={[
-                        { kind: 'label', key: 'item', title: 'รายการ', get: l => <span className="px-1">{l.label}</span> },
-                        {
-                            kind: 'label', key: 'qty', title: 'จำนวน', width: 110,
-                            get: l => (
-                                <NumberCell value={l.row?.qty ?? 0} digits={qtyDigits(l.row?.qty ?? 0, l.unit)} blankZero placeholder="0"
-                                    onCommit={v => setQty(l.option, v ?? 0)} ariaLabel={`จำนวน ${l.label}`} />
-                            ),
-                        },
-                        { kind: 'label', key: 'unit', title: 'หน่วย', width: 80, get: l => <span className="block text-center text-gray-600">{l.unit}</span> },
-                    ]}
-                />
-                <p className="mt-2 text-[12px] text-gray-500">ใส่จำนวนตามที่เห็นในแบบ รายการที่ไม่มีให้เว้นว่างไว้</p>
+                {journeyTop !== undefined && <div className="mb-3">{journeyTop}</div>}
+                <p className="mb-1 text-[12px] text-gray-500">ใส่จำนวนตามที่เห็นในแบบ รายการที่ไม่มีให้เว้นว่างไว้</p>
+                <div className="flex flex-col gap-3">
+                    {groupLines(lines, groups).map(g => (
+                        <div key={g.title}>
+                            {g.title !== '' && <div className="mt-1 text-[12px] font-semibold text-gray-500">{g.title}</div>}
+                            <div className="flex flex-col">
+                                {g.lines.map(l => (
+                                    <CountLine key={l.option} line={l}
+                                        hint={hintOf(itemHints, l.label)}
+                                        suggestion={suggestions?.find(s => matchKey(s.item) === matchKey(l.label))}
+                                        onQty={qty => setQty(l.option, qty)} />
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
                 {journeyNotes}
             </SheetCard>
 

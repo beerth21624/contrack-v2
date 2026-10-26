@@ -9,7 +9,7 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { InputNumberField, SheetCard } from '@/components/sheet/SheetFields';
 import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
-import { JNumber, ResultSummary } from '@/components/sheet/journey';
+import { CountStepper, PlanField, ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -147,8 +147,10 @@ function JourneyView({ calc }: { calc: Calc }) {
                 <p className="mb-2 text-[12px] text-gray-500">ใส่จำนวนห้องที่ต้องสร้าง ถ้าไม่ต้องสร้างปล่อยว่างไว้</p>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
                     {ROOM_FIELDS.map(f => (
-                        <JNumber key={f.key} label={f.label} value={input[f.key]} digits={0} unit="ห้อง" hint={f.size}
-                            onChange={v => update({ [f.key]: v } as Partial<SiteCampInput>)} />
+                        <PlanField key={f.key} label={f.label} hint={f.size}>
+                            <CountStepper value={input[f.key]} unit="ห้อง" ariaLabel={f.label}
+                                onChange={v => update({ [f.key]: v } as Partial<SiteCampInput>)} />
+                        </PlanField>
                     ))}
                 </div>
             </SheetCard>

@@ -3,7 +3,7 @@
 // Building blocks shared by the three planning pages (Man-Day, S-Curve, CashFlow).
 import { useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { Button, Collapse, DatePicker, Popconfirm, Tag, Typography } from 'antd';
+import { Alert, Button, Collapse, DatePicker, Popconfirm, Tag, Typography } from 'antd';
 import { RightOutlined, UndoOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useProjectStore } from '@/store/project-store';
@@ -93,6 +93,23 @@ export function PlanningHeader({ current, title, sheetName, isDefault, onReset }
                 </div>
             </div>
         </div>
+    );
+}
+
+/**
+ * Shown while the BOQ has no money yet (a new project): the planning pages are computed from BOQ prices, so their
+ * numbers stay 0 until the BOQ steps are filled. Nothing is shown once there is a construction total.
+ */
+export function NoBoqYet({ constructionTotal }: { constructionTotal: number }) {
+    if (constructionTotal !== 0) return null;
+    return (
+        <Alert type="info" showIcon title="ยังไม่มีมูลค่างานใน BOQ"
+            description={(
+                <span>
+                    หน้านี้คำนวณจากค่าแรงและราคาใน BOQ — กรอกขั้นตอนจัดทำ BOQ ก่อน แล้วตัวเลขจะขึ้นให้เอง{' '}
+                    <Link href="/journey" className="text-blue-600 hover:underline">ไปที่ขั้นตอนจัดทำ BOQ</Link>
+                </span>
+            )} />
     );
 }
 

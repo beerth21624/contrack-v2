@@ -27,7 +27,7 @@ The Excel-exact engine stays: calculations, defaults, BOQ links and golden tests
 - `src/domain/journey/levels.ts`: the ordered levels (one calculator each, with `planHint`).
 - `/journey` (level map) and `/journey/[level]` (level page): the level page shows title, plan hint,
   the calculator page inside `JourneyModeContext` (`useJourneyMode()` from `@/features/journey/JourneyMode`),
-  and a bottom bar (ด่านนี้คิดเป็น … บาท, ผ่านด่านนี้, ไม่มีงานนี้).
+  and a bottom bar (มูลค่าขั้นตอนนี้ … บาท, ยืนยันและไปขั้นตอนถัดไป, ไม่มีในโครงการนี้).
 - `CalculatorShell` in journey mode drops its header and folds the BOQ preview, so the page body is all
   the user sees.
 - `/calc/<id>` stays the full Excel-mirror view (unchanged behaviour outside journey mode).

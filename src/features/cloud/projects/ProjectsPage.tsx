@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { App, Button, Dropdown, Empty, Form, Input, Modal, Progress, Segmented, Select, Tag, Typography, type MenuProps } from 'antd';
 import {
     CloudUploadOutlined, DeleteOutlined, EditOutlined, FileAddOutlined, FolderOpenOutlined, HomeOutlined, InboxOutlined,
-    LaptopOutlined, MoreOutlined, PlusOutlined, RollbackOutlined,
+    LaptopOutlined, MoreOutlined, PlusOutlined, RollbackOutlined, SearchOutlined,
 } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { computeProject, createProject, type Project, type ProjectStart } from '@/domain/project';
@@ -29,6 +29,28 @@ const { Title, Text } = Typography;
 /** The guest project has something the user typed (not just a fresh default project). */
 export function hasGuestData(p: Project): boolean {
     return diffDocs(createProject(p.start ?? 'sample'), p).length > 0;
+}
+
+type ProjectSort = 'recent' | 'name' | 'value';
+const SORT_OPTIONS: { value: ProjectSort; label: string }[] = [
+    { value: 'recent', label: 'แก้ล่าสุด' },
+    { value: 'name', label: 'ชื่อ ก–ฮ' },
+    { value: 'value', label: 'มูลค่าสูงสุด' },
+];
+/** Search and sort show from this many projects on. */
+const LIST_TOOLS_FROM = 6;
+
+export function filterProjects(list: readonly ProjectDto[], search: string): ProjectDto[] {
+    const q = search.trim().toLowerCase();
+    return q === '' ? [...list] : list.filter(p => p.name.toLowerCase().includes(q));
+}
+
+export function sortProjects(list: readonly ProjectDto[], sort: ProjectSort): ProjectDto[] {
+    const out = [...list];
+    if (sort === 'name') out.sort((a, b) => a.name.localeCompare(b.name, 'th'));
+    else if (sort === 'value') out.sort((a, b) => b.summary.constructionTotal - a.summary.constructionTotal);
+    else out.sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+    return out;
 }
 
 const START_CHOICES: { start: ProjectStart; icon: React.ReactNode; title: string; text: string }[] = [
@@ -57,6 +79,8 @@ function ProjectsContent() {
     const [createOpen, setCreateOpen] = useState(false);
     const [uploadOpen, setUploadOpen] = useState(false);
     const [renaming, setRenaming] = useState<ProjectDto | null>(null);
+    const [search, setSearch] = useState('');
+    const [sort, setSort] = useState<ProjectSort>('recent');
     const update = useUpdateProject();
     const remove = useDeleteProject(workspace?.id ?? '');
 
@@ -128,7 +152,10 @@ function ProjectsContent() {
         },
     });
 
-    const list = projects.data ?? [];
+    const all = projects.data ?? [];
+    // Search and sort only pay off on a longer list; a few projects are scanned at a glance.
+    const showTools = all.length >= LIST_TOOLS_FROM;
+    const list = showTools ? sortProjects(filterProjects(all, search), sort) : all;
 
     return (
         <div className="flex flex-col gap-4 max-w-5xl mx-auto w-full">
@@ -167,10 +194,18 @@ function ProjectsContent() {
                 </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
                 <Segmented value={archived ? 'archived' : 'active'} onChange={v => setArchived(v === 'archived')}
                     options={[{ value: 'active', label: 'ใช้งานอยู่' }, { value: 'archived', label: 'เก็บถาวร' }]} />
                 {projects.isFetching && <Text type="secondary" className="text-[12px]">กำลังโหลด…</Text>}
+                {showTools && (
+                    <span className="ml-auto flex flex-wrap items-center gap-2">
+                        <Input allowClear prefix={<SearchOutlined className="text-gray-400" />} placeholder="ค้นหาชื่อโครงการ"
+                            aria-label="ค้นหาชื่อโครงการ" value={search} onChange={e => setSearch(e.target.value)} style={{ width: 220 }} />
+                        <Select<ProjectSort> value={sort} onChange={setSort} aria-label="เรียงตาม" style={{ width: 150 }}
+                            options={SORT_OPTIONS} />
+                    </span>
+                )}
             </div>
 
             {projects.isLoading ? spinner : projects.isError ? (
@@ -178,13 +213,30 @@ function ProjectsContent() {
                     {thaiErrorMessage(projects.error)}
                     <div className="mt-3"><Button onClick={() => { void projects.refetch(); }}>ลองใหม่</Button></div>
                 </div>
-            ) : list.length === 0 ? (
+            ) : all.length === 0 ? (
                 <div className="bg-white border border-gray-200 rounded-xl p-10">
-                    <Empty description={archived ? 'ไม่มีโครงการที่เก็บถาวร' : 'ยังไม่มีโครงการในพื้นที่นี้'}>
-                        {!archived && can(role, 'projects.create') && (
-                            <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>สร้างโครงการแรก</Button>
+                    {archived || !can(role, 'projects.create')
+                        ? <Empty description={archived ? 'ไม่มีโครงการที่เก็บถาวร' : 'ยังไม่มีโครงการในพื้นที่นี้'} />
+                        : (
+                            <Empty description={(
+                                <span className="block max-w-md mx-auto">
+                                    ยังไม่มีโครงการในพื้นที่นี้ — สร้างโครงการแล้วกรอกตามแบบแปลนทีละขั้นตอน
+                                    {guestHasData && ' หรืออัปโหลดโครงการที่ทำไว้ในเครื่องนี้'}
+                                </span>
+                            )}>
+                                <div className="flex flex-wrap justify-center gap-2">
+                                    <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>สร้างโครงการแรก</Button>
+                                    {guestHasData && (
+                                        <Button icon={<CloudUploadOutlined />} onClick={() => setUploadOpen(true)}>อัปโหลดโครงการในเครื่อง</Button>
+                                    )}
+                                </div>
+                            </Empty>
                         )}
-                    </Empty>
+                </div>
+            ) : list.length === 0 ? (
+                <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-600">
+                    ไม่พบโครงการที่ชื่อมี &quot;{search.trim()}&quot;
+                    <div className="mt-2"><Button size="small" onClick={() => setSearch('')}>ล้างคำค้น</Button></div>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

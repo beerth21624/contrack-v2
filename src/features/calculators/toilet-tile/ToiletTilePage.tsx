@@ -1,17 +1,20 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Button, Popconfirm, Select } from 'antd';
+import { Button, Select } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import {
     toiletTile, toiletTileArea, bathroomGroups, bathroomPerimeter, newBathroomRows, newToiletRow, nextBathroomName,
-    renameBathroom, setBathroomFloorSize, toiletRowKind, TOILET_TILE_CODES, TOILET_TILE_ITEMS, TOILET_TILE_SURFACES,
-    type BathroomGroup, type ToiletTileInput, type ToiletTileRow,
+    renameBathroom, setBathroomFloorSize, toiletRowKind, TOILET_TILE_CODES, TOILET_TILE_ITEMS,
+    TOILET_TILE_SURFACES, type BathroomGroup, type ToiletTileInput, type ToiletTileRow,
 } from '@/domain/calculators/toilet-tile';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
-import { formatNumber, SHEET_COLORS, TextCell } from '@/components/sheet/NumberCell';
-import { EmptyState, ResultSummary } from '@/components/sheet/journey';
+import { formatNumber, SHEET_COLORS } from '@/components/sheet/NumberCell';
+import {
+    AddButton, EmptyState, FillProgress, NameInput, PlanCard, PlanField, PresetChips, ResultSummary, countFill, fillState,
+    outOfRange, type FillState,
+} from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -27,17 +30,47 @@ const CODE_DEFAULTS: Record<string, { surface: string; item: string }> = {
 
 // ─── Journey mode: one card per bathroom (rows sharing a ตำแหน่ง) ───
 
-/** A labelled blank-able number input of a bathroom card. */
-function Dim({ label, hint, value, onCommit, extra }: {
+/** Tile height of a bathroom wall: half / common / full height (the Excel sample tiles 2.40 m, to the ceiling). */
+const FULL_TILE_HEIGHT = 2.4;
+const TILE_HEIGHTS = [1.2, 1.5, 2.0, FULL_TILE_HEIGHT];
+const tileHeightLabel = (v: number) => (v === FULL_TILE_HEIGHT ? 'เต็มผนัง' : v.toFixed(1));
+
+const filled = (v: number | undefined) => v !== undefined && Number.isFinite(v) && v > 0;
+const plausible = (v: number | undefined, min: number, max: number) => (v === undefined ? undefined : outOfRange(v, min, max, 'ม.'));
+
+/** Plan values a bathroom still needs, in reading order. */
+function missingOf(input: ToiletTileInput, group: BathroomGroup): string[] {
+    const rows = group.rows.flatMap(i => (input.rows[i] ? [input.rows[i]] : []));
+    const out: string[] = [];
+    const floor = rows.filter(r => toiletRowKind(r) === 'floor');
+    const wall = rows.filter(r => toiletRowKind(r) === 'wall');
+    if (floor.some(r => !filled(r.width) || !filled(r.length))) out.push('ขนาดพื้น');
+    if (wall.some(r => !filled(r.length))) out.push('ความยาวรอบห้อง');
+    if (wall.some(r => !filled(r.height))) out.push('ความสูงกระเบื้องผนัง');
+    if (rows.some(r => toiletRowKind(r) === 'other')) out.push('พื้นหรือผนัง');
+    if (rows.length === 0) out.push('พื้นและผนัง');
+    return out;
+}
+const startedOf = (input: ToiletTileInput, group: BathroomGroup) =>
+    group.rows.some(i => {
+        const r = input.rows[i];
+        return r !== undefined && (filled(r.width) || filled(r.length) || filled(r.height));
+    });
+const stateOf = (input: ToiletTileInput, group: BathroomGroup): FillState =>
+    fillState([missingOf(input, group).length === 0], startedOf(input, group));
+
+/** A labelled blank-able number input of a bathroom card (a blank cell is not 0 here, as in Excel). */
+function Dim({ label, hint, value, onCommit, extra, note, missing }: {
     label: string; hint?: string; value: number | undefined; onCommit: (v: number | undefined) => void; extra?: ReactNode;
+    note?: string; missing?: boolean;
 }) {
     return (
-        <div className="flex flex-col gap-0.5 min-w-[130px] max-w-[200px]">
-            <span className="text-[12px] text-gray-700">{label}</span>
-            <div className="w-[120px]"><OptionalNumberCell value={value} ariaLabel={label} onCommit={onCommit} /></div>
-            {hint && <span className="text-[11px] text-gray-400 leading-tight">{hint}</span>}
+        <PlanField label={label} hint={hint} note={note} missing={missing}>
+            <span className={`block w-[120px] rounded ${missing ? 'ring-1 ring-red-400' : ''}`}>
+                <OptionalNumberCell value={value} ariaLabel={label} onCommit={onCommit} />
+            </span>
             {extra}
-        </div>
+        </PlanField>
     );
 }
 
@@ -45,17 +78,17 @@ function AreaOf({ row }: { row: ToiletTileRow }) {
     const area = toiletTileArea(row) ?? 0;
     if (area === 0) return null;
     return (
-        <div className="flex flex-col gap-0.5 ml-auto text-right">
+        <div className="flex flex-col gap-0.5 sm:ml-auto sm:text-right">
             <span className="text-[12px] text-gray-500">พื้นที่</span>
-            <span className="tabular-nums px-2 py-0.5 rounded-sm" style={{ background: SHEET_COLORS.calc }}>
+            <span className={`tabular-nums px-2 py-0.5 rounded-sm ${area < 0 ? 'text-red-600' : ''}`} style={{ background: SHEET_COLORS.calc }}>
                 {formatNumber(area)} ตร.ม.
             </span>
         </div>
     );
 }
 
-function BathroomCard({ group, input, update }: {
-    group: BathroomGroup; input: ToiletTileInput; update: UseCalculator<ToiletTileInput>['update'];
+function BathroomCard({ index, group, input, update }: {
+    index: number; group: BathroomGroup; input: ToiletTileInput; update: UseCalculator<ToiletTileInput>['update'];
 }) {
     const setRow = (i: number, patch: Partial<ToiletTileRow>) =>
         update(p => ({ ...p, rows: p.rows.map((x, j) => (j === i ? { ...x, ...patch } : x)) }));
@@ -65,32 +98,48 @@ function BathroomCard({ group, input, update }: {
         const perimeter = kind === 'wall' ? bathroomPerimeter(p, group.name) : undefined;
         return { ...p, rows: [...p.rows, perimeter === undefined ? row : { ...row, length: perimeter }] };
     });
+    // "ทำซ้ำ": every row of this bathroom under the next free name, right after it.
+    const duplicate = () => update(p => {
+        const name = nextBathroomName(p);
+        const copies = p.rows.filter(r => r.location.trim() === group.name).map(r => ({ ...r, location: name }));
+        const last = p.rows.reduce((at, r, j) => (r.location.trim() === group.name ? j : at), p.rows.length - 1);
+        return { ...p, rows: [...p.rows.slice(0, last + 1), ...copies, ...p.rows.slice(last + 1)] };
+    });
     const perimeter = bathroomPerimeter(input, group.name);
+    const state = stateOf(input, group);
+    const missing = state === 'missing' ? new Set(missingOf(input, group)) : new Set<string>();
+    const rows = group.rows.flatMap(i => (input.rows[i] ? [input.rows[i]] : []));
+    const sumOf = (kind: 'floor' | 'wall') =>
+        rows.filter(r => toiletRowKind(r) === kind).reduce((s, r) => s + (toiletTileArea(r) ?? 0), 0);
+    const floorArea = sumOf('floor');
+    const wallArea = sumOf('wall');
+    const result = floorArea !== 0 || wallArea !== 0
+        ? `พื้น ${formatNumber(floorArea)} · ผนัง ${formatNumber(wallArea)} ตร.ม.`
+        : undefined;
 
     return (
-        <div className="border border-gray-200 rounded-lg p-3 flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-                <div className="w-[220px] rounded-sm font-semibold" style={{ background: SHEET_COLORS.input }}>
-                    <TextCell value={group.name} placeholder="ชื่อห้องน้ำ" ariaLabel="ชื่อห้องน้ำ"
-                        onCommit={v => update(p => renameBathroom(p, group.name, (v ?? '').trim()))} />
-                </div>
-                <Popconfirm title={`ลบ "${group.name === '' ? 'ห้องนี้' : group.name}" ทั้งห้อง?`} okText="ลบ" cancelText="ยกเลิก"
-                    onConfirm={() => update(p => ({ ...p, rows: p.rows.filter(r => r.location.trim() !== group.name) }))}>
-                    <Button type="text" size="small" danger icon={<DeleteOutlined />}>ลบห้อง</Button>
-                </Popconfirm>
-            </div>
-
+        <PlanCard index={index} state={state}
+            title={<NameInput value={group.name} placeholder="ชื่อห้องน้ำ" ariaLabel={`ชื่อห้องน้ำที่ ${String(index)}`}
+                onChange={name => update(p => renameBathroom(p, group.name, name))} />}
+            result={result} onDuplicate={duplicate} hasData={startedOf(input, group)}
+            onDelete={() => update(p => ({ ...p, rows: p.rows.filter(r => r.location.trim() !== group.name) }))}
+            deleteTitle={`ลบ "${group.name === '' ? 'ห้องนี้' : group.name}" ทั้งห้อง?`}
+            missingText={`ยังขาด: ${missingOf(input, group).join(', ')}`}>
+            <div className="flex flex-col gap-2">
             {group.rows.map(i => {
                 const r = input.rows[i];
                 if (!r) return null;
                 const kind = toiletRowKind(r);
                 const del = <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label="ลบแถว" onClick={() => removeRow(i)} />;
                 if (kind === 'floor') {
+                    const need = missing.has('ขนาดพื้น');
                     return (
                         <div key={i} className="flex flex-wrap items-start gap-3 bg-gray-50 rounded-md px-3 py-2">
                             <div className="w-[120px] text-[13px] font-medium text-gray-800 pt-4">พื้น<div className="text-[11px] font-normal text-gray-500">กระเบื้องกันลื่น</div></div>
-                            <Dim label="กว้างห้อง (ม.)" value={r.width} onCommit={v => update(p => setBathroomFloorSize(p, i, { width: v }))} />
-                            <Dim label="ยาวห้อง (ม.)" value={r.length} onCommit={v => update(p => setBathroomFloorSize(p, i, { length: v }))} />
+                            <Dim label="กว้างห้อง (ม.)" value={r.width} missing={need && !filled(r.width)} note={plausible(r.width, 0.8, 6)}
+                                onCommit={v => update(p => setBathroomFloorSize(p, i, { width: v }))} />
+                            <Dim label="ยาวห้อง (ม.)" value={r.length} missing={need && !filled(r.length)} note={plausible(r.length, 0.8, 6)}
+                                onCommit={v => update(p => setBathroomFloorSize(p, i, { length: v }))} />
                             <AreaOf row={r} />
                             <div className="pt-4">{del}</div>
                         </div>
@@ -98,21 +147,32 @@ function BathroomCard({ group, input, update }: {
                 }
                 if (kind === 'wall') {
                     const canUse = perimeter !== undefined && Math.abs(perimeter - (r.length ?? NaN)) >= 1e-9;
+                    const gross = (r.length ?? 0) * (r.height ?? 0);
+                    const tooMuchOpening = gross > 0 && (r.openings ?? 0) > gross;
                     return (
-                        <div key={i} className="flex flex-wrap items-start gap-3 bg-gray-50 rounded-md px-3 py-2">
-                            <div className="w-[120px] text-[13px] font-medium text-gray-800 pt-4">ผนัง<div className="text-[11px] font-normal text-gray-500">กรุกระเบื้อง</div></div>
-                            <Dim label="ความยาวรอบห้อง (ม.)" value={r.length} onCommit={v => setRow(i, { length: v })}
-                                hint="ใส่ขนาดพื้นแล้วคิดให้: 2 × (กว้าง + ยาว)"
-                                extra={canUse && (
-                                    <Button size="small" type="link" className="!px-0 !h-auto self-start" onClick={() => setRow(i, { length: perimeter })}>
-                                        ใช้รอบห้อง {formatNumber(perimeter)} ม.
-                                    </Button>
-                                )} />
-                            <Dim label="ความสูงที่กรุกระเบื้อง (ม.)" value={r.height} onCommit={v => setRow(i, { height: v })} hint="เช่น 2.40" />
-                            <Dim label="หักช่องเปิด (ตร.ม.)" value={r.openings} onCommit={v => setRow(i, { openings: v })}
-                                hint="ประตู + หน้าต่าง เช่น 0.7*2+0.5*1.8" />
-                            <AreaOf row={r} />
-                            <div className="pt-4">{del}</div>
+                        <div key={i} className="flex flex-col gap-2 bg-gray-50 rounded-md px-3 py-2">
+                            <div className="flex flex-wrap items-start gap-3">
+                                <div className="w-[120px] text-[13px] font-medium text-gray-800 pt-4">ผนัง<div className="text-[11px] font-normal text-gray-500">กรุกระเบื้อง</div></div>
+                                <Dim label="ความยาวรอบห้อง (ม.)" value={r.length} onCommit={v => setRow(i, { length: v })}
+                                    missing={missing.has('ความยาวรอบห้อง') && !filled(r.length)} note={plausible(r.length, 2, 30)}
+                                    hint="ใส่ขนาดพื้นแล้วคิดให้: 2 × (กว้าง + ยาว)"
+                                    extra={canUse && (
+                                        <Button size="small" type="link" className="!px-0 !h-auto self-start" onClick={() => setRow(i, { length: perimeter })}>
+                                            ใช้รอบห้อง {formatNumber(perimeter)} ม.
+                                        </Button>
+                                    )} />
+                                <Dim label="ความสูงที่กรุกระเบื้อง (ม.)" value={r.height} onCommit={v => setRow(i, { height: v })}
+                                    missing={missing.has('ความสูงกระเบื้องผนัง') && !filled(r.height)} note={plausible(r.height, 0.3, 4)}
+                                    extra={<PresetChips values={TILE_HEIGHTS} current={r.height ?? 0} format={tileHeightLabel}
+                                        onPick={v => setRow(i, { height: v })} />} />
+                                <Dim label="หักช่องเปิด (ตร.ม.)" value={r.openings} onCommit={v => setRow(i, { openings: v })}
+                                    hint="ประตู + หน้าต่าง เช่น 0.7*2+0.5*1.8" />
+                                <AreaOf row={r} />
+                                <div className="pt-4">{del}</div>
+                            </div>
+                            {tooMuchOpening && (
+                                <div className="text-[12px] text-red-600">ช่องเปิดมากกว่าพื้นที่ผนัง — ตรวจความยาวรอบห้อง ความสูง หรือขนาดช่องเปิด</div>
+                            )}
                         </div>
                     );
                 }
@@ -141,7 +201,8 @@ function BathroomCard({ group, input, update }: {
                 <Button size="small" type="dashed" icon={<PlusOutlined />} onClick={() => addRow('floor')}>พื้น</Button>
                 <Button size="small" type="dashed" icon={<PlusOutlined />} onClick={() => addRow('wall')}>ผนัง</Button>
             </div>
-        </div>
+            </div>
+        </PlanCard>
     );
 }
 
@@ -150,6 +211,7 @@ function ToiletTileJourney({ input, update, outputs }: {
 }) {
     const groups = bathroomGroups(input);
     const add = () => update(p => ({ ...p, rows: [...p.rows, ...newBathroomRows(nextBathroomName(p))] }));
+    const states = groups.map(g => stateOf(input, g));
     return (
         <>
             <SheetCard title="ห้องน้ำ">
@@ -159,9 +221,10 @@ function ToiletTileJourney({ input, update, outputs }: {
                             addLabel="เพิ่มห้องน้ำ" onAdd={add} />
                     )
                     : (
-                        <div className="flex flex-col gap-3">
-                            {groups.map(g => <BathroomCard key={g.name} group={g} input={input} update={update} />)}
-                            <Button type="dashed" icon={<PlusOutlined />} className="self-start" onClick={add}>เพิ่มห้องน้ำ</Button>
+                        <div className="flex flex-col gap-2">
+                            {groups.length >= 5 && <FillProgress {...countFill(states)} noun="ห้อง" />}
+                            {groups.map((g, k) => <BathroomCard key={g.name} index={k + 1} group={g} input={input} update={update} />)}
+                            <AddButton label="เพิ่มห้องน้ำ" onClick={add} />
                             <p className="text-[12px] text-gray-500">
                                 พื้นห้องน้ำใช้กระเบื้องแกรนิตโต้ชนิดกันลื่น ผนังกรุกระเบื้องแกรนิตโต้ — ช่องตัวเลขพิมพ์เป็นสูตรได้ เช่น 2*(2.3+3)
                             </p>

@@ -1,7 +1,5 @@
 'use client';
 
-import { Button } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
 import {
     wallFinishing, wallFinishingArea, wallFinishingKind, wallFinishingLength, newMouldingRow, newSlatRow, replaceRowsOfKind,
     setMouldingLength, MOULDING_0_1, MOULDING_0_3, SLAT_WALL, WALL_FINISHING_CODES, WALL_FINISHING_ITEMS,
@@ -9,7 +7,11 @@ import {
 } from '@/domain/calculators/wall-finishing';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
-import { EmptyState, ResultSummary, blankIfZero } from '@/components/sheet/journey';
+import { formatNumber } from '@/components/sheet/NumberCell';
+import {
+    AddButton, ChoiceButtons, EmptyState, FillProgress, NameInput, PlanCard, PlanField, PlanNumber, ResultSummary, countFill,
+    fillState, insertAfter, removeAt, type FillState,
+} from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
@@ -20,7 +22,18 @@ const MOULDING_OPTIONS = [
     { value: MOULDING_0_1, label: 'บัวเล็ก 0.10 × 0.10 ม.' },
 ];
 
-/** Journey mode: mouldings (metres) and slat-clad walls (m²) read off the elevations. */
+/** Plan values an item card still needs. */
+function missingOf(r: WallFinishingRow): string[] {
+    if (wallFinishingKind(r) === 'moulding') return (wallFinishingLength(r) ?? 0) > 0 ? [] : ['ความยาว'];
+    const out: string[] = [];
+    if (!(r.width > 0)) out.push('กว้าง');
+    if (!(r.length > 0)) out.push('สูง');
+    return out;
+}
+const stateOf = (r: WallFinishingRow): FillState =>
+    fillState([missingOf(r).length === 0], r.width > 0 || r.length > 0);
+
+/** Journey mode: mouldings (metres) and slat-clad walls (m²) read off the elevations, one card per item. */
 function WallFinishingJourney({ input, onChange, outputs }: {
     input: WallFinishingInput; onChange: (edit: (prev: WallFinishingInput) => WallFinishingInput) => void; outputs: Record<string, number>;
 }) {
@@ -31,6 +44,60 @@ function WallFinishingJourney({ input, onChange, outputs }: {
     const others = rowsOf('other');
     const addMoulding = () => onChange(p => ({ rows: [...p.rows, newMouldingRow()] }));
     const addSlat = () => onChange(p => ({ rows: [...p.rows, newSlatRow()] }));
+    const setRow = (i: number, edit: (r: WallFinishingRow) => WallFinishingRow) =>
+        onChange(p => ({ rows: p.rows.map((r, j) => (j === i ? edit(r) : r)) }));
+    const duplicate = (i: number) => onChange(p => {
+        const r = p.rows[i];
+        return r ? { rows: insertAfter(p.rows, i, { ...r }) } : p;
+    });
+    const remove = (i: number) => onChange(p => ({ rows: removeAt(p.rows, i) }));
+    // Cards address rows by their place in the whole list (mouldings and slat walls are shown apart).
+    const indexed = input.rows.map((r, i) => ({ r, i }));
+    const states = [...mouldings, ...slats].map(stateOf);
+
+    const mouldingCard = ({ r, i }: { r: WallFinishingRow; i: number }, n: number) => {
+        const state = stateOf(r);
+        const length = wallFinishingLength(r) ?? 0;
+        return (
+            <PlanCard key={i} index={n} state={state}
+                title={<NameInput value={r.location} placeholder="ตำแหน่ง เช่น ผนังภายนอก" ariaLabel={`ตำแหน่งบัวที่ ${String(n)}`}
+                    onChange={location => setRow(i, x => ({ ...x, location }))} />}
+                result={length > 0 ? `${formatNumber(length)} ม.` : undefined}
+                onDuplicate={() => duplicate(i)} onDelete={() => remove(i)} hasData={length > 0}
+                deleteTitle="ลบบัวนี้?" missingText="ยังขาด: ความยาว">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                    <PlanField label="ขนาดบัว">
+                        <ChoiceButtons ariaLabel="ขนาดบัว" size="small" options={MOULDING_OPTIONS} value={r.item.trim()}
+                            onChange={item => setRow(i, x => ({ ...x, item }))} />
+                    </PlanField>
+                    <PlanNumber label="ความยาวรวม" unit="ม." value={length} range={[0.5, 300]}
+                        missing={state === 'missing'} hint="รวมทุกช่วง เช่น 6+4.5+2.5"
+                        onChange={v => setRow(i, x => setMouldingLength(x, v))} />
+                </div>
+            </PlanCard>
+        );
+    };
+
+    const slatCard = ({ r, i }: { r: WallFinishingRow; i: number }, n: number) => {
+        const state = stateOf(r);
+        const missing = state === 'missing' ? new Set(missingOf(r)) : new Set<string>();
+        const area = wallFinishingArea(r) ?? 0;
+        return (
+            <PlanCard key={i} index={n} state={state}
+                title={<NameInput value={r.location} placeholder="ตำแหน่ง เช่น ผนังเฉลียง" ariaLabel={`ตำแหน่งผนังระแนงที่ ${String(n)}`}
+                    onChange={location => setRow(i, x => ({ ...x, location }))} />}
+                result={area > 0 ? `${formatNumber(area)} ตร.ม.` : undefined}
+                onDuplicate={() => duplicate(i)} onDelete={() => remove(i)} hasData={r.width > 0 || r.length > 0}
+                deleteTitle="ลบผนังระแนงนี้?" missingText={`ยังขาด: ${missingOf(r).join(', ')}`}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                    <PlanNumber label="กว้าง" unit="ม." value={r.width} range={[0.3, 20]} missing={missing.has('กว้าง')}
+                        onChange={width => setRow(i, x => ({ ...x, width }))} />
+                    <PlanNumber label="สูง" unit="ม." value={r.length} range={[0.3, 6]} missing={missing.has('สูง')}
+                        onChange={length => setRow(i, x => ({ ...x, length }))} />
+                </div>
+            </PlanCard>
+        );
+    };
 
     if (input.rows.length === 0) {
         return (
@@ -45,53 +112,20 @@ function WallFinishingJourney({ input, onChange, outputs }: {
 
     return (
         <>
+            {states.length >= 5 && <FillProgress {...countFill(states)} noun="รายการ" />}
+
             <SheetCard title="บัวผนัง (คิดเป็นความยาว)">
-                {mouldings.length > 0 && (
-                    <div className="overflow-x-auto">
-                        <div style={{ minWidth: 560 }}>
-                            <EditableTable<WallFinishingRow>
-                                rows={mouldings}
-                                onChange={setKind('moulding')}
-                                columns={[
-                                    { kind: 'text', key: 'location', title: 'ตำแหน่ง', width: 180, placeholder: 'เช่น ผนังภายนอก',
-                                        get: r => r.location, set: (r, v) => ({ ...r, location: v }) },
-                                    { kind: 'select', key: 'item', title: 'ขนาดบัว', width: 200, options: MOULDING_OPTIONS,
-                                        get: r => r.item.trim(), set: (r, v) => ({ ...r, item: v }) },
-                                    { kind: 'number', key: 'length', title: 'ความยาว (ม.)', width: 110,
-                                        get: r => wallFinishingLength(r) ?? 0, set: (r, v) => setMouldingLength(r, v) },
-                                ]}
-                            />
-                        </div>
-                    </div>
-                )}
-                <Button type="dashed" icon={<PlusOutlined />} className={mouldings.length > 0 ? 'mt-3' : ''} onClick={addMoulding}>
-                    เพิ่มบัวผนัง
-                </Button>
+                <div className="flex flex-col gap-2">
+                    {indexed.filter(x => wallFinishingKind(x.r) === 'moulding').map((x, k) => mouldingCard(x, k + 1))}
+                    <AddButton label="เพิ่มบัวผนัง" onClick={addMoulding} />
+                </div>
             </SheetCard>
 
             <SheetCard title="ผนังกรุไม้ระแนงไฟเบอร์ซีเมนต์ (คิดเป็นพื้นที่)">
-                {slats.length > 0 && (
-                    <div className="overflow-x-auto">
-                        <div style={{ minWidth: 560 }}>
-                            <EditableTable<WallFinishingRow>
-                                rows={slats}
-                                onChange={setKind('slat')}
-                                columns={[
-                                    { kind: 'text', key: 'location', title: 'ตำแหน่ง', width: 180, placeholder: 'เช่น ผนังเฉลียง',
-                                        get: r => r.location, set: (r, v) => ({ ...r, location: v }) },
-                                    { kind: 'number', key: 'width', title: 'กว้าง (ม.)', width: 100,
-                                        get: r => r.width, set: (r, v) => ({ ...r, width: v }) },
-                                    { kind: 'number', key: 'length', title: 'สูง (ม.)', width: 100,
-                                        get: r => r.length, set: (r, v) => ({ ...r, length: v }) },
-                                    { kind: 'calc', key: 'area', title: 'พื้นที่ (ตร.ม.)', width: 100, get: r => blankIfZero(wallFinishingArea(r)) },
-                                ]}
-                            />
-                        </div>
-                    </div>
-                )}
-                <Button type="dashed" icon={<PlusOutlined />} className={slats.length > 0 ? 'mt-3' : ''} onClick={addSlat}>
-                    เพิ่มผนังไม้ระแนง
-                </Button>
+                <div className="flex flex-col gap-2">
+                    {indexed.filter(x => wallFinishingKind(x.r) === 'slat').map((x, k) => slatCard(x, k + 1))}
+                    <AddButton label="เพิ่มผนังไม้ระแนง" onClick={addSlat} />
+                </div>
             </SheetCard>
 
             {others.length > 0 && (

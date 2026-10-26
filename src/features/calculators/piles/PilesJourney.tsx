@@ -7,7 +7,11 @@ import {
 } from '@/domain/calculators/piles';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { formatNumber } from '@/components/sheet/NumberCell';
-import { JGroup, JNumber, JSelect, JText, ResultSummary } from '@/components/sheet/journey';
+import {
+    ChoiceButtons, JGroup, JNumber, JSelect, JText, PlanField, PlanNumber, ResultSummary,
+} from '@/components/sheet/journey';
+
+const typeOptions = PILE_TYPES.map(t => ({ value: t as string, label: t }));
 
 export function PilesJourney({ input, update }: { input: PilesInput; update: (patch: Partial<PilesInput>) => void }) {
     const spec = composePileSpec(input);
@@ -19,12 +23,14 @@ export function PilesJourney({ input, update }: { input: PilesInput; update: (pa
         <div className="flex flex-col gap-4">
             <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
                 <JGroup title="เสาเข็ม (จากแปลนฐานราก / รายการประกอบแบบ)">
-                    <JSelect<string> label="ชนิดเสาเข็ม" value={input.pileType || undefined} placeholder="เลือกชนิด"
-                        options={PILE_TYPES.map(t => ({ value: t }))} onChange={v => update({ pileType: v ?? '' })} />
+                    <PlanField label="ชนิดเสาเข็ม" className="col-span-2">
+                        <ChoiceButtons<string> size="small" ariaLabel="ชนิดเสาเข็ม" value={input.pileType === '' ? undefined : input.pileType}
+                            options={typeOptions} onChange={v => update({ pileType: v })} />
+                    </PlanField>
                     <JSelect<string> label="หน้าตัด / รูปทรง" value={input.section || undefined} placeholder="เลือกหน้าตัด"
                         options={PILE_SECTION_GROUPS.map(g => ({ label: g.label, options: g.options.map(o => ({ value: o })) }))}
                         onChange={v => update({ section: v ?? '' })} />
-                    <JNumber label="ความยาวต่อต้น" value={input.length} unit="ม." onChange={v => update({ length: v })} />
+                    <PlanNumber label="ความยาวต่อต้น" value={input.length} unit="ม." range={[1, 40]} onChange={v => update({ length: v })} />
                     <JNumber label="จำนวนเสาเข็มทั้งหมด" value={input.count} unit="ต้น" digits={0} onChange={v => update({ count: v })}
                         hint="นับจากแปลนฐานราก (ทุกฐานรวมกัน)" />
                 </JGroup>

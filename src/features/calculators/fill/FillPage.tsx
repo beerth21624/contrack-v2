@@ -4,7 +4,7 @@ import { fill, type FillInput } from '@/domain/calculators/fill';
 import { CalcField, InputNumberField, InputTextField, SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
-import { JNumber, JText, ResultSummary } from '@/components/sheet/journey';
+import { JNumber, JText, PlanNumber, ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -59,7 +59,7 @@ function JourneyView({ calc }: { calc: UseCalculator<FillInput> }) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
                     <JNumber label="ความกว้างพื้นที่ถม" value={input.width} unit="ม." onChange={v => update({ width: v })} />
                     <JNumber label="ความยาวพื้นที่ถม" value={input.length} unit="ม." onChange={v => update({ length: v })} />
-                    <JNumber label="ความสูงถม" value={input.height} unit="ม."
+                    <PlanNumber label="ความสูงถม" value={input.height} unit="ม." range={[0.05, 3]}
                         hint="ระดับที่ต้องการ ลบ ระดับดินเดิม" onChange={v => update({ height: v })} />
                     <JText wide label="วัสดุถม" value={input.material} placeholder="เช่น ดินถม, ทรายถม, ลูกค้าจัดหาเอง"
                         onChange={v => update({ material: v })} />

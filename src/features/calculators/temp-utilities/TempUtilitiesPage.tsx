@@ -5,7 +5,7 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, InputNumberField, InputTextField, SheetCard } from '@/components/sheet/SheetFields';
 import { NumberCell, formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
-import { JNumber, ResultSummary } from '@/components/sheet/journey';
+import { CountStepper, JNumber, PlanField, ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -37,6 +37,12 @@ const PRICE_FIELDS: { key: keyof TempUtilitiesPrices; label: string; unit: strin
 ];
 
 type Calc = UseCalculator<TempUtilitiesInput>;
+
+/** Journey field labels (also the names in "ยังขาด: …"). */
+const L = {
+    powerDistance: 'ระยะเดินสายไฟ จากมิเตอร์ถึงหน้างาน', powerPoints: 'จำนวนจุดไฟ / ปลั๊ก',
+    waterDistance: 'ระยะเดินท่อน้ำ จากมิเตอร์ถึงหน้างาน', waterPoints: 'จำนวนจุดใช้น้ำ',
+} as const;
 
 export default function TempUtilitiesPage() {
     const calc = useCalculator(tempUtilities);
@@ -156,17 +162,16 @@ function JourneyView({ calc, setPrice }: { calc: Calc; setPrice: (key: keyof Tem
         <>
             <SheetCard title="น้ำ-ไฟที่ใช้ระหว่างก่อสร้าง">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
-                    <JNumber label="ระยะเดินสายไฟ จากมิเตอร์ถึงหน้างาน" value={input.powerDistance} unit="ม."
-                        onChange={v => update({ powerDistance: v })} />
-                    <JNumber label="ระยะเดินท่อน้ำ จากมิเตอร์ถึงหน้างาน" value={input.waterDistance} unit="ม."
-                        onChange={v => update({ waterDistance: v })} />
-                    <JNumber label="จำนวนจุดใช้น้ำ" value={input.waterPoints} digits={0} unit="จุด" hint="ก๊อกน้ำ / จุดล้าง"
-                        onChange={v => update({ waterPoints: v })} />
-                    <JNumber label="จำนวนจุดไฟ / ปลั๊ก" value={input.powerPoints} digits={0} unit="ชุด" hint="หลอดไฟ + ปลั๊ก 1 ชุด"
-                        onChange={v => update({ powerPoints: v })} />
+                    <JNumber label={L.powerDistance} value={input.powerDistance} unit="ม." onChange={v => update({ powerDistance: v })} />
+                    <JNumber label={L.waterDistance} value={input.waterDistance} unit="ม." onChange={v => update({ waterDistance: v })} />
+                    <PlanField label={L.waterPoints} hint="ก๊อกน้ำ / จุดล้าง">
+                        <CountStepper value={input.waterPoints} unit="จุด" ariaLabel={L.waterPoints} onChange={v => update({ waterPoints: v })} />
+                    </PlanField>
+                    <PlanField label={L.powerPoints} hint="หลอดไฟ + ปลั๊ก 1 ชุด">
+                        <CountStepper value={input.powerPoints} unit="ชุด" ariaLabel={L.powerPoints} onChange={v => update({ powerPoints: v })} />
+                    </PlanField>
                 </div>
             </SheetCard>
-
             <AdvancedSection hint="ตั้งไว้ให้แล้ว ไม่ต้องแก้ก็ได้">
                 <Allowances calc={calc} />
                 <div className="mt-3 text-[12px] font-semibold text-gray-600">ราคาต่อหน่วย</div>

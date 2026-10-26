@@ -1,14 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from 'antd';
-import { CheckOutlined } from '@ant-design/icons';
+import { UndoOutlined } from '@ant-design/icons';
 import {
     paint, paintLinkedSources, paintSuggestions, applyPaintSuggestions, pendingPaintSuggestions, mouldingArea, PAINT_LINES,
     type MouldingRun, type PaintInput, type PaintLineKey, type PaintSuggestions,
 } from '@/domain/calculators/paint';
 import type { CalcContext } from '@/domain/calculators/types';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
-import { JNumber, LevelLink, ResultSummary, levelTitle } from '@/components/sheet/journey';
+import { JNumber, LevelLink, ResultSummary, SuggestedValue, levelTitle } from '@/components/sheet/journey';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, InputNumberField, SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber, SHEET_COLORS } from '@/components/sheet/NumberCell';
@@ -56,27 +57,30 @@ const JOURNEY_SOURCE: Partial<Record<PaintLineKey, { level: string; what: string
     skim: { level: 'plaster', what: 'ผนังฉาบภายนอก + ภายใน' },
 };
 
-/** "ใช้ค่าจากขั้นตอน …" in journey mode: a primary button while the source offers another number. */
-function UseFromLevel({ level, value, current, unit, onUse }: {
-    level: string; value: number | undefined; current: number; unit: string; onUse: (v: number) => void;
-}) {
-    const title = levelTitle(level);
-    if (value === undefined) return <span className="text-[12px] text-gray-400">ขั้นตอน{title}ยังไม่มีค่านี้</span>;
-    if (Math.abs(value - current) < 1e-9) {
-        return <span className="text-[12px] text-green-700"><CheckOutlined /> ตรงกับขั้นตอน{title}</span>;
-    }
-    return (
-        <Button type="primary" size="small" onClick={() => onUse(value)}>
-            ใช้ค่าจากขั้นตอน{title}: {formatNumber(value)} {unit}
-        </Button>
-    );
-}
+/** The hand-typed values before an "ใช้ค่า…ทั้งหมด" (for เลิกทำ). */
+interface AppliedSnapshot { slatWallArea: number; fasciaLength: number; mouldingLengths: number[]; count: number }
 
 function PaintJourney({ input, update, outputs, linked, suggest }: {
     input: PaintInput; update: UseCalculator<PaintInput>['update']; outputs: Record<string, number>;
     linked: ReturnType<typeof paintLinkedSources>; suggest: PaintSuggestions;
 }) {
     const pending = pendingPaintSuggestions(input, suggest);
+    // Set by the "ใช้ทั้งหมด" click only; cleared by เลิกทำ.
+    const [applied, setApplied] = useState<AppliedSnapshot | null>(null);
+    const applyAll = () => {
+        setApplied({
+            slatWallArea: input.slatWallArea, fasciaLength: input.fasciaLength,
+            mouldingLengths: input.mouldings.map(m => m.length), count: pending,
+        });
+        update(p => applyPaintSuggestions(p, suggest));
+    };
+    const undoApply = (snap: AppliedSnapshot) => {
+        update(p => ({
+            ...p, slatWallArea: snap.slatWallArea, fasciaLength: snap.fasciaLength,
+            mouldings: p.mouldings.map((m, i) => ({ ...m, length: snap.mouldingLengths[i] ?? m.length })),
+        }));
+        setApplied(null);
+    };
     const isLinked = (key: PaintLineKey) =>
         key === 'ceilingExterior' || key === 'ceilingInterior' || key === 'ceilingSlat' ? linked[key] : linked.plaster;
     const fromLevels = PAINT_LINES.filter(l => JOURNEY_SOURCE[l.key] !== undefined);
@@ -122,10 +126,14 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
             <SheetCard title="พื้นที่ที่ต้องยืนยัน">
                 {pending > 0 && (
                     <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-orange-200 bg-orange-50 px-3 py-2">
-                        <span className="text-[13px] text-gray-800">ขั้นตอนก่อนหน้ามีค่าให้ใช้ {pending} รายการ</span>
-                        <Button type="primary" onClick={() => update(p => applyPaintSuggestions(p, suggest))}>
-                            ใช้ค่าจากขั้นตอนก่อนหน้าทั้งหมด
-                        </Button>
+                        <span className="text-[13px] text-gray-800">ขั้นตอนก่อนหน้ามีค่าให้ใช้ {pending} รายการ — ค่าเดิมและค่าใหม่แสดงใต้แต่ละช่อง</span>
+                        <Button type="primary" className="ml-auto" onClick={applyAll}>ใช้ค่าจากขั้นตอนก่อนหน้าทั้งหมด</Button>
+                    </div>
+                )}
+                {pending === 0 && applied !== null && (
+                    <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-[13px] text-green-800">
+                        <span>ใช้ค่าจากขั้นตอนก่อนหน้าแล้ว {applied.count} รายการ</span>
+                        <Button size="small" type="link" icon={<UndoOutlined />} onClick={() => undoApply(applied)}>เลิกทำ</Button>
                     </div>
                 )}
 
@@ -139,7 +147,7 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                         <div className="text-[13px] font-semibold text-gray-800">ทาสีผนังไม้ระแนง</div>
                         <JNumber label="พื้นที่ผนังไม้ระแนง" unit="ตร.ม." value={input.slatWallArea}
                             onChange={v => update({ slatWallArea: v })} />
-                        <UseFromLevel level="wall-finishing" value={suggest.slatWallArea} current={input.slatWallArea}
+                        <SuggestedValue levelId="wall-finishing" value={suggest.slatWallArea} current={input.slatWallArea}
                             unit="ตร.ม." onUse={v => update({ slatWallArea: v })} />
                     </div>
 
@@ -152,7 +160,7 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                                     unit="ม." value={m.length} onChange={v => setMoulding(i, { length: v })}
                                     hint={mouldingArea(m) === 0 ? undefined : `ทาสี ${formatNumber(mouldingArea(m))} ตร.ม.`} />
                                 {m.size.trim() !== '' && (
-                                    <UseFromLevel level="wall-finishing" value={suggest.mouldingLength(m.size)} current={m.length}
+                                    <SuggestedValue levelId="wall-finishing" value={suggest.mouldingLength(m.size)} current={m.length}
                                         unit="ม." onUse={v => setMoulding(i, { length: v })} />
                                 )}
                             </div>
@@ -165,7 +173,7 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                         <JNumber label="ความยาวเชิงชาย" unit="ม." value={input.fasciaLength}
                             onChange={v => update({ fasciaLength: v })}
                             hint={(outputs.fascia ?? 0) === 0 ? undefined : `สูง ${formatNumber(input.fasciaHeight)} ม. → ${formatNumber(outputs.fascia)} ตร.ม.`} />
-                        <UseFromLevel level="roofing" value={suggest.fasciaLength} current={input.fasciaLength}
+                        <SuggestedValue levelId="roofing" value={suggest.fasciaLength} current={input.fasciaLength}
                             unit="ม." onUse={v => update({ fasciaLength: v })} />
                     </div>
                 </div>

@@ -16,7 +16,9 @@ import { LengthsCell } from '@/components/sheet/LengthsCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { EmptyState, FromLevel, Hint, JNumber, ResultSummary, blankIfZero } from '@/components/sheet/journey';
+import {
+    EmptyState, FieldNote, FromLevel, Hint, JNumber, PlanNumber, ResultSummary, blankIfZero, outOfRange,
+} from '@/components/sheet/journey';
 
 const th = 'border border-gray-200 px-2 py-1 text-[12px] font-semibold text-gray-700 bg-gray-50 text-center';
 const td = 'border border-gray-200 px-1 py-0.5 text-[13px] align-middle';
@@ -31,20 +33,24 @@ function NumSelect({ value, options, onChange, label, digits = 0 }: {
     );
 }
 
-/** One plan-length line: label, typed segments, their sum. */
+/** One plan-length line: label, typed segments, their sum (a total typed in cm gets a quiet note). */
 function LengthLine({ label, hint, lengths, total, onChange }: {
     label: string; hint: string; lengths: number[]; total: number | undefined; onChange: (lengths: number[]) => void;
 }) {
+    const note = outOfRange(total ?? 0, 1, 500, 'ม.');
     return (
-        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_260px_110px] items-center gap-2 py-1">
-            <div>
-                <div className="text-[13px] text-gray-700">{label}</div>
-                <Hint>{hint}</Hint>
+        <div className="py-1">
+            <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_260px_110px] items-center gap-2">
+                <div>
+                    <div className="text-[13px] text-gray-700">{label}</div>
+                    <Hint>{hint}</Hint>
+                </div>
+                <LengthsCell lengths={lengths} ariaLabel={label} onChange={onChange} />
+                <span className="text-right tabular-nums px-1 rounded-sm text-[13px]" style={{ background: SHEET_COLORS.calc }}>
+                    {(total ?? 0) === 0 ? '' : `${formatNumber(total)} ม.`}
+                </span>
             </div>
-            <LengthsCell lengths={lengths} ariaLabel={label} onChange={onChange} />
-            <span className="text-right tabular-nums px-1 rounded-sm text-[13px]" style={{ background: SHEET_COLORS.calc }}>
-                {(total ?? 0) === 0 ? '' : `${formatNumber(total)} ม.`}
-            </span>
+            {note !== undefined && <FieldNote>{note}</FieldNote>}
         </div>
     );
 }
@@ -134,15 +140,20 @@ export default function RoofStructureJourney() {
             <SheetCard title="ตะเข้ราง">
                 <Hint>ถ้าหลังคาไม่มีตะเข้ (รางน้ำระหว่างหลังคา 2 ผืน) ปล่อยว่างได้</Hint>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3 mt-2 items-start">
-                    <JNumber label="ระยะตามแนวราบ ด้านที่ 1" value={input.valley.runA} unit="ม." onChange={runA => set('valley', { runA })} />
-                    <JNumber label="ระยะตามแนวราบ ด้านที่ 2" value={input.valley.runB} unit="ม." onChange={runB => set('valley', { runB })} />
+                    <PlanNumber label="ระยะตามแนวราบ ด้านที่ 1" value={input.valley.runA} unit="ม." range={[0.5, 30]}
+                        onChange={runA => set('valley', { runA })} />
+                    <PlanNumber label="ระยะตามแนวราบ ด้านที่ 2" value={input.valley.runB} unit="ม." range={[0.5, 30]}
+                        onChange={runB => set('valley', { runB })} />
                     <JNumber label="จำนวนตะเข้" value={input.valley.count} unit="เส้น" digits={0} onChange={count => set('valley', { count })} />
-                    <JNumber label="ความชันหลังคา" value={input.valley.deg} unit="องศา" digits={0} onChange={deg => set('valley', { deg })}
-                        hint={roofSlope > 0 && input.valley.deg !== roofSlope && (
-                            <Button size="small" type="link" className="!px-0" onClick={() => set('valley', { deg: roofSlope })}>
-                                ใช้ความชันเดียวกับหลังคา ({formatNumber(roofSlope, 0)}°)
-                            </Button>
-                        )} />
+                    <PlanNumber label="ความชันหลังคา" value={input.valley.deg} unit="องศา" digits={0} range={[5, 60]}
+                        onChange={deg => set('valley', { deg })}
+                        hint={roofSlope > 0 && input.valley.deg !== roofSlope
+                            ? (
+                                <Button size="small" type="link" className="!px-0" onClick={() => set('valley', { deg: roofSlope })}>
+                                    ใช้ความชันเดียวกับหลังคา ({formatNumber(roofSlope, 0)}°)
+                                </Button>
+                            )
+                            : undefined} />
                 </div>
                 {(outputs['valley.length'] ?? 0) > 0 && (
                     <div className="mt-2 text-[13px] text-gray-700">

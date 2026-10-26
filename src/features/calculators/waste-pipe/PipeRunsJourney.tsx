@@ -11,29 +11,28 @@ import {
     normalizeSize, plainLabel, runLength, sizeFromLabel, sizeMismatches, unlinkedRuns,
     type PipeBoqLine, type PipePlainLabel, type PipeRun, type PipeRunsInput,
 } from '@/domain/calculators/waste-pipe/pipe-runs';
-import { EditableTable, type SheetColumn } from '@/components/sheet/EditableTable';
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
-import { formatNumber } from '@/components/sheet/NumberCell';
-import { EmptyState, ResultSummary, blankIfZero } from '@/components/sheet/journey';
+import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import {
+    AddButton, ChoiceButtons, EmptyState, PlanCard, PlanField, ResultSummary, SumInput, fillState, outOfRange,
+} from '@/components/sheet/journey';
 
 const NO_DEPS = { outputs: () => undefined };
 const EMPTY_RUN: PipeRun = { label: '', size: '', horizontal: 0, vertical: 0 };
 
-const colTitle = (title: string, hint: string) => (
-    <div>
-        <div>{title}</div>
-        <div className="font-normal text-[11px] text-gray-400">{hint}</div>
-    </div>
-);
-
-const lengthColumns: SheetColumn<PipeRun>[] = [
-    { kind: 'number', key: 'horizontal', title: colTitle('แนวราบ (ม.)', 'วัดตามแปลน'), width: 110,
-        get: r => r.horizontal, set: (r, v) => ({ ...r, horizontal: v }) },
-    { kind: 'number', key: 'vertical', title: colTitle('แนวดิ่ง (ม.)', 'ท่อขึ้น-ลงผนัง/พื้น'), width: 110,
-        get: r => r.vertical, set: (r, v) => ({ ...r, vertical: v }) },
-    { kind: 'calc', key: 'length', title: colTitle('รวม (ม.)', 'ระบบคิดให้'), width: 100, get: r => blankIfZero(runLength(r)) },
-];
+/** A pipe length read off the plan (segments can be typed as a sum), with a plausibility note. */
+function LengthField({ label, hint, value, onChange }: {
+    label: string; hint?: string; value: number; onChange: (v: number) => void;
+}) {
+    return (
+        <PlanField label={label} hint={hint} note={outOfRange(value, 0.2, 200, 'ม.')}>
+            <span className="max-w-[150px]">
+                <SumInput value={value} ariaLabel={label} placeholder="เช่น 4+3.5" onChange={onChange} />
+            </span>
+        </PlanField>
+    );
+}
 
 export function PipeRunsJourney({ def, input, onChange, result, items, sizes, lines, plain, noun }: {
     def: CalculatorDef<PipeRunsInput>;
@@ -74,38 +73,47 @@ export function PipeRunsJourney({ def, input, onChange, result, items, sizes, li
     const mismatches = sizeMismatches(input, lines);
     const unlinked = unlinkedRuns(input, lines);
     const itemOptions = items.map(v => ({ value: v, label: plainLabel(v, plain)?.name ?? v }));
+    const sizeOptions = sizes.map(v => ({ value: v, label: v }));
     const waste = lines.map(boqRow).find(r => r !== undefined)?.waste;
 
     return (
         <>
             <SheetCard title="ท่อหลัก">
                 <p className="mb-2 text-[13px] text-gray-600">
-                    กรอกความยาวท่อแต่ละชนิดจากแบบ ถ้ามีหลายแนวให้รวมความยาวมาใส่ในแถวเดียว
-                    ระบบบวกแนวราบกับแนวดิ่งให้เอง
+                    กรอกความยาวท่อแต่ละชนิดจากแบบ ถ้ามีหลายแนวให้พิมพ์ต่อกันด้วย + ได้ (เช่น 4+3.5+4)
+                    ระบบบวกแนวราบกับแนวดิ่งให้เอง · ถ้าแบบไม่มีท่อชนิดนั้น ปล่อยว่างไว้
                 </p>
-                <EditableTable<PipeRun>
-                    rows={fixed}
-                    onChange={setFixed}
-                    canDelete={false}
-                    columns={[
-                        {
-                            kind: 'label', key: 'pipe', title: 'ท่อ', width: 280,
-                            get: (_, i) => (
-                                <div className="py-0.5">
-                                    <div className="font-medium text-gray-800">{fixedName(i)}</div>
-                                    <div className="flex flex-wrap items-center gap-1 mt-0.5">
-                                        <Tag color="blue" className="!mr-0">{lines[i]?.size}</Tag>
-                                        <span className="text-[11px] text-gray-400">{fixedHint(i)}</span>
+                <div className="flex flex-col gap-2">
+                    {fixed.map((r, i) => {
+                        const len = runLength(r);
+                        return (
+                            <div key={lines[i]?.line ?? i} className="rounded-md border border-gray-200 px-3 py-2.5">
+                                <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_150px_150px_110px] items-start gap-x-3 gap-y-2">
+                                    <div className="min-w-0">
+                                        <div className="text-[13px] font-medium text-gray-800">{fixedName(i)}</div>
+                                        <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                                            <Tag color="blue" className="!mr-0">{lines[i]?.size}</Tag>
+                                            <span className="text-[11px] text-gray-400">{fixedHint(i)}</span>
+                                        </div>
                                     </div>
+                                    <div>
+                                        <LengthField label="แนวราบ (ม.)" value={r.horizontal}
+                                            onChange={horizontal => setFixed(fixed.map((x, j) => (j === i ? { ...x, horizontal } : x)))} />
+                                    </div>
+                                    <div>
+                                        <LengthField label="แนวดิ่ง (ม.)" hint="ท่อขึ้น-ลงผนัง/พื้น" value={r.vertical}
+                                            onChange={vertical => setFixed(fixed.map((x, j) => (j === i ? { ...x, vertical } : x)))} />
+                                    </div>
+                                    <span className="md:self-center text-[13px] tabular-nums md:text-right">
+                                        {len > 0
+                                            ? <span className="px-2 py-0.5 rounded" style={{ background: SHEET_COLORS.calc }}>รวม {formatNumber(len)} ม.</span>
+                                            : <span className="text-gray-400">—</span>}
+                                    </span>
                                 </div>
-                            ),
-                        },
-                        ...lengthColumns,
-                    ]}
-                />
-                <p className="mt-2 text-[12px] text-gray-500">
-                    แถวท่อหลักลบไม่ได้ เพราะแต่ละแถวคือท่อ 1 ขนาดที่ตั้งราคาไว้แล้ว — ถ้าแบบไม่มีท่อชนิดนั้น ปล่อยว่างไว้
-                </p>
+                            </div>
+                        );
+                    })}
+                </div>
                 {mismatches.map(m => (
                     <div key={m.index} className="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-orange-50 border border-orange-200 px-3 py-2 text-[13px] text-orange-700">
                         <span>
@@ -128,34 +136,47 @@ export function PipeRunsJourney({ def, input, onChange, result, items, sizes, li
                             addLabel={`เพิ่ม${noun}อีกแนว`} onAdd={addExtra} />
                     )
                     : (
-                        <EditableTable<PipeRun>
-                            rows={extras}
-                            onChange={setExtras}
-                            newRow={() => EMPTY_RUN}
-                            addLabel={`เพิ่ม${noun}อีกแนว`}
-                            columns={[
-                                { kind: 'select', key: 'label', title: 'ชนิดท่อ', width: 240, options: itemOptions,
-                                    get: r => r.label,
-                                    // The item ends with its pipe size: pick that size too (it can still be changed).
-                                    set: (r, v) => ({ ...r, label: v, size: sizeFromLabel(v, sizes) || r.size }) },
-                                { kind: 'select', key: 'size', title: 'ขนาด', width: 110,
-                                    options: sizes.map(v => ({ value: v })),
-                                    get: r => normalizeSize(r.size), set: (r, v) => ({ ...r, size: v }) },
-                                ...lengthColumns,
-                            ]}
-                        />
+                        <div className="flex flex-col gap-2">
+                            {extras.map((r, i) => {
+                                const len = runLength(r);
+                                const size = normalizeSize(r.size);
+                                const problem = unlinked.find(u => u.index === n + i);
+                                const state = fillState([len > 0 && problem === undefined], len > 0);
+                                const setExtra = (patch: Partial<PipeRun>) => setExtras(extras.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+                                return (
+                                    <PlanCard key={i} index={i + 1} state={state} compact
+                                        title={plainLabel(r.label, plain)?.name ?? (r.label.trim() === '' ? `${noun}แนวที่ ${String(i + 1)}` : r.label)}
+                                        result={len > 0 ? <>รวม {formatNumber(len)} ม.</> : undefined}
+                                        onDelete={() => setExtras(extras.filter((_, j) => j !== i))} hasData={len > 0}
+                                        deleteTitle="ลบแนวท่อนี้?"
+                                        missingText={problem === undefined ? undefined
+                                            : `${problem.size === '' ? 'ยังไม่ได้เลือกขนาดท่อ' : `ไม่มีราคาท่อขนาด ${problem.size}`} — ความยาว ${formatNumber(problem.length)} ม. ยังไม่ถูกนำไปคิดเงิน`}>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 items-start">
+                                            <PlanField label="ชนิดท่อ" className="sm:col-span-2">
+                                                <ChoiceButtons ariaLabel="ชนิดท่อ" size="small" options={itemOptions}
+                                                    value={r.label === '' ? undefined : items.find(it => it.trim() === r.label.trim())}
+                                                    // The item ends with its pipe size: pick that size too (it can still be changed).
+                                                    onChange={v => {
+                                                        const fromLabel = sizeFromLabel(v, sizes);
+                                                        setExtra({ label: v, size: fromLabel === '' ? r.size : fromLabel });
+                                                    }} />
+                                            </PlanField>
+                                            <PlanField label="ขนาดท่อ" missing={state === 'missing' && size === ''}>
+                                                <ChoiceButtons ariaLabel="ขนาดท่อ" size="small" options={sizeOptions}
+                                                    value={size === '' ? undefined : size} onChange={v => setExtra({ size: v })} />
+                                            </PlanField>
+                                            <div className="hidden sm:block" />
+                                            <LengthField label="แนวราบ (ม.)" value={r.horizontal}
+                                                onChange={horizontal => setExtra({ horizontal })} />
+                                            <LengthField label="แนวดิ่ง (ม.)" hint="ท่อขึ้น-ลงผนัง/พื้น" value={r.vertical}
+                                                onChange={vertical => setExtra({ vertical })} />
+                                        </div>
+                                    </PlanCard>
+                                );
+                            })}
+                            <AddButton label={`เพิ่ม${noun}อีกแนว`} onClick={addExtra} />
+                        </div>
                     )}
-                {unlinked.length > 0 && (
-                    <ul className="mt-2 list-disc pl-5 text-[13px] text-orange-600 space-y-0.5">
-                        {unlinked.map(u => (
-                            <li key={u.index}>
-                                แถวที่ {u.index - n + 1}: {u.size === ''
-                                    ? 'ยังไม่ได้เลือกขนาดท่อ'
-                                    : `ไม่มีราคาท่อขนาด ${u.size}`} — ความยาว {formatNumber(u.length)} ม. ยังไม่ถูกนำไปคิดเงิน
-                            </li>
-                        ))}
-                    </ul>
-                )}
             </SheetCard>
 
             <AdvancedSection>

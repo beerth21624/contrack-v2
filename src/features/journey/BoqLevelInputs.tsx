@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { Button } from 'antd';
 import { useProjectStore } from '@/store/project-store';
 import { calculatorInput, computeProject } from '@/domain/project';
 import type { BoqItemRow } from '@/domain/boq/types';
@@ -34,12 +35,20 @@ export function BoqLevelInputs({ sections }: { sections: number[] }) {
         .filter(s => sections.includes(s.no))
         .flatMap(s => s.rows.filter((r): r is BoqItemRow => r.type === 'item'));
     const total = rows.reduce((s, r) => s + r.total, 0);
+    // One plate (and its grout) per column: fill every row with the column count in one click.
+    const editable = rows.filter(r => r.editable.qty);
+    const atColumns = editable.every(r => r.qty === columns);
 
     return (
         <div className="flex flex-col gap-4">
             {sections.includes(PLATES_SECTION) && columns > 0 && (
                 <FromLevel levelId="column">
-                    เสาที่กรอกไว้ {formatNumber(columns, 0)} ต้น — ปกติเสาที่รับโครงหลังคามีเพลทหัวเสาต้นละ 1 จุด
+                    <div>เสาที่กรอกไว้ {formatNumber(columns, 0)} ต้น — ปกติเสาที่รับโครงหลังคามีเพลทหัวเสาต้นละ 1 จุด</div>
+                    {editable.length > 0 && !atColumns && (
+                        <Button className="mt-1.5" size="small" onClick={() => editable.forEach(r => setOverride(r.key, 'qty', columns))}>
+                            ใช้ {formatNumber(columns, 0)} จุด ทุกรายการ
+                        </Button>
+                    )}
                 </FromLevel>
             )}
 
