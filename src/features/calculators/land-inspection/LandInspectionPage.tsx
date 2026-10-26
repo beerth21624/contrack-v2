@@ -1,14 +1,15 @@
 'use client';
 
-import { Checkbox } from 'antd';
 import {
-    landInspection, lineTotal, LAND_INSPECTION_CHECKLIST, type ChecklistAnswer, type CostLine, type LandInspectionInput,
+    checklistProgress, landInspection, lineTotal, LAND_INSPECTION_CHECKLIST, LAND_INSPECTION_CHECKLIST_KIND,
+    type ChecklistAnswer, type CostLine, type LandInspectionInput,
 } from '@/domain/calculators/land-inspection';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, InputTextField, SheetCard } from '@/components/sheet/SheetFields';
 import { TextCell, formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { EmptyState, ResultSummary } from '@/components/sheet/journey';
+import { ChecklistItem, ChecklistProgress } from '@/components/sheet/journey/ChecklistItem';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -67,7 +68,7 @@ function JourneyView({ calc }: { calc: Calc }) {
         <>
             <SheetCard title="ตรวจที่ดินก่อนเริ่มงาน">
                 <p className="mb-3 text-[12px] text-gray-500">
-                    เดินดูที่ดินจริงเทียบกับโฉนดและผังบริเวณ ติ๊กข้อที่ตรวจแล้ว และจดสิ่งที่พบไว้ข้างหลัง
+                    เดินตรวจที่ดินจริงเทียบกับโฉนดและผังบริเวณ แล้วตอบทีละข้อ — หากพบปัญหา ให้ระบุไว้เพื่อติดตามก่อนเริ่มงาน
                 </p>
                 <Checklist calc={calc} />
                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6">
@@ -139,13 +140,18 @@ function CostTable({ calc }: { calc: Calc }) {
     );
 }
 
-/** The 5 questions of the site-inspection checklist, each with a tick and a note. */
+/**
+ * The 5 questions of the site-inspection checklist: yes / no answered with two buttons (a "no" asks for the
+ * problem found), the open question answered in writing, and the progress on top.
+ */
 function Checklist({ calc }: { calc: Calc }) {
     const { input, update } = calc;
     return (
         <div className="flex flex-col gap-2">
+            <ChecklistProgress {...checklistProgress(input.checklist)} />
             {LAND_INSPECTION_CHECKLIST.map((q, i) => {
                 const a = input.checklist[i] ?? NO_ANSWER;
+                const meta = LAND_INSPECTION_CHECKLIST_KIND[i];
                 // Merge into the latest stored answer, not the one captured at render time.
                 const setAnswer = (patch: Partial<ChecklistAnswer>) => update(p => ({
                     ...p,
@@ -155,14 +161,8 @@ function Checklist({ calc }: { calc: Calc }) {
                     }),
                 }));
                 return (
-                    <div key={q} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-3">
-                        <Checkbox checked={a.done} onChange={e => setAnswer({ done: e.target.checked })}>
-                            {i + 1}. {q}
-                        </Checkbox>
-                        <div className="border-b border-gray-200">
-                            <TextCell value={a.note} placeholder="บันทึก" onCommit={v => setAnswer({ note: v ?? '' })} />
-                        </div>
-                    </div>
+                    <ChecklistItem key={q} index={i + 1} question={q} hint={meta?.hint} kind={meta?.kind ?? 'yesno'}
+                        problemIf={meta?.problemIf} value={a} onChange={setAnswer} />
                 );
             })}
         </div>

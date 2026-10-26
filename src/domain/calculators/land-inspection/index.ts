@@ -11,8 +11,11 @@ export interface CostLine {
 }
 
 export interface ChecklistAnswer {
+    /** The question was checked on site (answered, or the open answer written). */
     done: boolean;
     note: string;
+    /** Yes / no questions: what was found. Optional, so answers saved before it existed still load. */
+    answer?: 'yes' | 'no';
 }
 
 export interface LandInspectionInput {
@@ -35,7 +38,32 @@ export const LAND_INSPECTION_CHECKLIST = [
     'มีข้อมูลเพียงพอสำหรับเริ่มงานหรือไม่',
 ] as const;
 
-export const lineTotal = (l: CostLine) => (Number.isFinite(l.qty) ? l.qty : 0) * (Number.isFinite(l.unitPrice) ? l.unitPrice : 0);
+/**
+ * How each checklist question is answered on screen (same order as LAND_INSPECTION_CHECKLIST): an open answer
+ * written in the note, or yes / no where "no" is a finding to write down. `hint` says what to look at on site.
+ */
+export const LAND_INSPECTION_CHECKLIST_KIND: readonly { kind: 'open' | 'yesno'; hint: string; problemIf?: 'no' }[] = [
+    { kind: 'open', hint: 'ตำแหน่งตามโฉนด เลขที่ดิน หรือพิกัด / ลิงก์แผนที่' },
+    { kind: 'yesno', hint: 'ทางเข้า-ออกสำหรับรถบรรทุกและรถปูน สิทธิ์ผ่านทาง ความกว้างถนน', problemIf: 'no' },
+    { kind: 'yesno', hint: 'แนวรั้วและสิ่งปลูกสร้างข้างเคียงตรงกับโฉนด ไม่มีการรุกล้ำ', problemIf: 'no' },
+    { kind: 'yesno', hint: 'หมุดเขตที่ดินครบทุกมุม และมีหมุดระดับอ้างอิง', problemIf: 'no' },
+    { kind: 'yesno', hint: 'แบบ ระดับดิน และข้อมูลหน้างานพร้อมสำหรับวางผังและเริ่มงาน', problemIf: 'no' },
+];
+
+/** How many questions are checked, and how many of them found a problem. */
+export function checklistProgress(answers: readonly ChecklistAnswer[]): { done: number; total: number; problems: number } {
+    let done = 0;
+    let problems = 0;
+    LAND_INSPECTION_CHECKLIST.forEach((_, i) => {
+        const a = answers[i];
+        if (a?.done !== true) return;
+        done += 1;
+        if (a.answer !== undefined && a.answer === LAND_INSPECTION_CHECKLIST_KIND[i]?.problemIf) problems += 1;
+    });
+    return { done, total: LAND_INSPECTION_CHECKLIST.length, problems };
+}
+
+export const lineTotal =(l: CostLine) => (Number.isFinite(l.qty) ? l.qty : 0) * (Number.isFinite(l.unitPrice) ? l.unitPrice : 0);
 
 /** Excel v5 sample (rows 4–11). */
 const sample = (): LandInspectionInput => ({

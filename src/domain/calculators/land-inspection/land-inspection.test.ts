@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { landInspection, lineTotal } from '.';
+import { checklistProgress, landInspection, lineTotal, LAND_INSPECTION_CHECKLIST, LAND_INSPECTION_CHECKLIST_KIND } from '.';
 import { computeProject, createProject } from '../../project';
 import golden from '../../boq/__tests__/golden.v5.json';
 import type { BoqItemRow } from '../../boq/types';
@@ -54,5 +54,26 @@ describe('ค่าตรวจสอบที่ดิน: blank project', () =
         expect(out.total).toBe(7500);
         const s0 = computeProject(createProject('blank'), [landInspection]).boq.sections.find(s => s.no === 0);
         expect(s0?.total).toBe(7500);
+    });
+});
+
+describe('site-inspection checklist progress', () => {
+    it('counts checked questions and the "no" answers as problems', () => {
+        const answers = [
+            { done: true, note: 'โฉนด 1234' },
+            { done: true, note: '', answer: 'yes' as const },
+            { done: true, note: 'รั้วเพื่อนบ้านล้ำ 20 ซม.', answer: 'no' as const },
+            { done: false, note: '' },
+            { done: true, note: '' },
+        ];
+        expect(checklistProgress(answers)).toEqual({ done: 4, total: 5, problems: 1 });
+        expect(checklistProgress([])).toEqual({ done: 0, total: 5, problems: 0 });
+    });
+
+    it('describes every question and keeps the checklist out of the money', () => {
+        expect(LAND_INSPECTION_CHECKLIST_KIND).toHaveLength(LAND_INSPECTION_CHECKLIST.length);
+        const base = landInspection.defaults();
+        const answered = { ...base, checklist: base.checklist.map(() => ({ done: true, note: 'x', answer: 'no' as const })) };
+        expect(landInspection.compute(answered, { outputs: () => undefined })).toEqual(landInspection.compute(base, { outputs: () => undefined }));
     });
 });
