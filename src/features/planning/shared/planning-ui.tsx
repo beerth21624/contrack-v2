@@ -10,6 +10,7 @@ import { useProjectStore } from '@/store/project-store';
 import { computeProject, projectPlanningInput } from '@/domain/project';
 import { type WeekBucket } from '@/domain/planning';
 import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { useProjectWorkforceState } from '@/features/workforce/project-team/project-workforce';
 import { formatDate, formatDayMonth } from './planning-format';
 
 export { formatDate, formatDayMonth, installmentColors, usedBucketCount } from './planning-format';
@@ -48,6 +49,29 @@ const STEPS = [
     { href: '/cashflow', label: '3. กระแสเงินสด (Cash Flow)' },
 ] as const;
 
+/** The workforce module's step: shown only for a cloud project while the module is on. */
+const TEAM_STEP = { href: '/team', label: '4. ทีมงาน' } as const;
+
+export type PlanningStepHref = (typeof STEPS)[number]['href'] | typeof TEAM_STEP.href;
+
+/** The planning steps: Man-Day → S-Curve → Cash Flow, then ทีมงาน when the workforce module applies to the project. */
+export function PlanningSteps({ current }: { current: PlanningStepHref }) {
+    const team = useProjectWorkforceState() === 'on';
+    const steps: readonly { href: PlanningStepHref; label: string }[] = team ? [...STEPS, TEAM_STEP] : STEPS;
+    return (
+        <nav aria-label="ขั้นตอนวางแผน" className="flex flex-wrap items-center gap-1 text-[12px]">
+            {steps.map((s, i) => (
+                <span key={s.href} className="flex items-center gap-1">
+                    {i > 0 && <RightOutlined className="text-gray-300 text-[10px]" />}
+                    {s.href === current
+                        ? <span className="px-2 py-0.5 rounded-full bg-orange-500 text-white font-semibold">{s.label}</span>
+                        : <Link href={s.href} className="px-2 py-0.5 rounded-full text-gray-600 hover:bg-orange-50">{s.label}</Link>}
+                </span>
+            ))}
+        </nav>
+    );
+}
+
 /** Page header: the planning steps, the title, the Excel sheet name and "back to the Excel sample". */
 export function PlanningHeader({ current, title, sheetName, isDefault, onReset }: {
     current: (typeof STEPS)[number]['href'];
@@ -58,16 +82,7 @@ export function PlanningHeader({ current, title, sheetName, isDefault, onReset }
 }) {
     return (
         <div className="bg-white border border-gray-200 rounded-card p-4 shadow-card flex flex-col gap-3">
-            <nav aria-label="ขั้นตอนวางแผน" className="flex flex-wrap items-center gap-1 text-[12px]">
-                {STEPS.map((s, i) => (
-                    <span key={s.href} className="flex items-center gap-1">
-                        {i > 0 && <RightOutlined className="text-gray-300 text-[10px]" />}
-                        {s.href === current
-                            ? <span className="px-2 py-0.5 rounded-full bg-orange-500 text-white font-semibold">{s.label}</span>
-                            : <Link href={s.href} className="px-2 py-0.5 rounded-full text-gray-600 hover:bg-orange-50">{s.label}</Link>}
-                    </span>
-                ))}
-            </nav>
+            <PlanningSteps current={current} />
             <div className="flex flex-wrap items-center gap-3">
                 <div className="min-w-0">
                     <Title level={4} style={{ margin: 0 }}>{title}</Title>

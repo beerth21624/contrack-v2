@@ -10,7 +10,9 @@
 //               An installment (งวด) row is kept with its first task, the total with the last task.
 //   Calendar  — each month is one fixed-height page (`.schp-month`, CAL_LAYOUT.pageHeight): the grid takes what the
 //               header and the overflow table leave, so a month can never run onto a second page. How many task
-//               chips a day shows, and the type scale, come from the model (fitMonth).
+//               chips a day shows, and the type scale, come from the model (fitMonth). Crew names (when the project
+//               has crews assigned) ride on the chip after the task, cut with "…" when the cell is narrow, and on a
+//               second line under the task in the overflow table.
 
 import {
     CAL_LAYOUT, SCHEDULE_PRINT_TEXT as T, monthSummaryText,
@@ -132,6 +134,9 @@ const CSS = `
 .schp-over-cols.schp-over-3 .schp-table { flex-basis: 33.4%; }
 .schp-over-cols .schp-table th, .schp-over-cols .schp-table td { padding: 0.2mm 1mm; }
 .schp-over-cols td.schp-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.schp-ocrew { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92em;
+  line-height: 1.25; color: #404040; }
+.schp-chip .schp-ccrew { color: #404040; }
 .schp-swatch { display: inline-block; width: 2.2mm; height: 2.2mm; border-radius: 0.4mm; margin-right: 1mm; vertical-align: -0.2mm; }
 `;
 
@@ -383,6 +388,7 @@ function DayCell({ c }: { c: CalendarPrintCell }) {
                 return (
                     <span key={t.id} className="schp-chip" style={{ background: tint(bg), boxShadow: `inset 0.7mm 0 0 ${bg}` }}>
                         <b>{t.id}</b> {t.name}
+                        {c.crews[t.id] !== undefined && <span className="schp-ccrew"> · {c.crews[t.id]}</span>}
                     </span>
                 );
             })}
@@ -422,6 +428,7 @@ function OverflowTables({ m }: { m: CalendarPrintMonth }) {
                                     <td className="schp-c">{t.id}</td>
                                     <td className="schp-name">
                                         <i className="schp-swatch" style={{ background: installmentColors(t.installment).background }} />{t.name}
+                                        {m.overflowCrews[t.id] !== undefined && <span className="schp-ocrew">{m.overflowCrews[t.id]}</span>}
                                     </td>
                                     <td className="schp-c">{t.installment}</td>
                                     <td className="schp-c">{formatDate(t.start)}{t.finish !== t.start ? ` – ${formatDate(t.finish)}` : ''}</td>
@@ -453,7 +460,7 @@ function MonthPage({ m, model }: { m: CalendarPrintMonth; model: CalendarPrintMo
                     ))}
                 </div>
                 <div className="schp-msum">{monthSummaryText(m)}</div>
-                <div className="schp-mspan">{T.calendarNote}</div>
+                <div className="schp-mspan">{T.calendarNote}{model.hasCrews ? ` · ${T.calendarCrewNote}` : ''}</div>
             </header>
             <div className="schp-grid" style={{ gridTemplateRows: `auto repeat(${rows}, minmax(0, 1fr))` }}>
                 {WEEKDAYS.map(w => <div key={w} className="schp-wd">{w}</div>)}

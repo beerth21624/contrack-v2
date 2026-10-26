@@ -5,7 +5,9 @@
 //                     number of weeks fits the page width.
 //   ปฏิทินงาน       — one page per chosen month: the Monday-first month grid of the on-screen calendar
 //                     (computeCrewCalendar), each day's tasks and crew. A day with more tasks than fit shows
-//                     "+N งาน"; those tasks are listed under the grid on the same page.
+//                     "+N งาน"; those tasks are listed under the grid on the same page. With crews assigned (workforce
+//                     module, หน้า ทีมงาน) each chip names the crews on that task that day and the overflow table
+//                     names them under the task; without crews the pages are exactly as before.
 // Every number comes from the computed schedule / Man-Day; nothing is recalculated here. The page-fitting
 // estimates below (millimetres) only decide how many task chips a day cell shows and the type scale.
 
@@ -13,6 +15,7 @@ import {
     INSTALLMENTS, bucketIndexOf, computeCrewCalendar, isoToSerial,
     type CrewCalendarDay, type CrewCalendarResult, type CrewCalendarTask, type ManDayResult, type ScheduleResult,
 } from '@/domain/planning';
+import { crewNamesInRange, crewNamesOnDay, crewNamesText, type TaskCrewMap } from '@/domain/workforce';
 import { formatDate, usedBucketCount } from '@/features/planning/shared/planning-format';
 import {
     crewText, keyToIso, monthCells, monthKey, monthTitle, parts,
@@ -51,6 +54,7 @@ export const SCHEDULE_PRINT_TEXT = {
     noTasks: 'ยังไม่มีงานที่กำหนดวันเริ่ม',
     ganttNote: 'วันเสร็จ = วันเริ่ม + ระยะเวลา − 1 (นับวันปฏิทิน ไม่เว้นวันหยุด) · แถบตามสัดส่วนวันที่ของแต่ละงาน',
     calendarNote: 'นับทุกวันปฏิทิน (ไม่เว้นวันหยุด) · จำนวนช่างและคนงานมาจากหน้า Man-Day',
+    calendarCrewNote: 'ชื่อทีมมาจากหน้าทีมงาน',
     planSpan: 'แผนงาน',
     tasksInMonth: 'งานในเดือนนี้',
     tasksUnit: 'งาน',
@@ -238,6 +242,8 @@ export interface CalendarPrintCell {
     inPlan: boolean;
     /** Tasks printed as chips (at most the month's `chipLimit`). */
     tasks: CrewCalendarTask[];
+    /** Chip task id → the crews on it that day ("ทีมช่างสมชาย, ทีมไฟฟ้าพงษ์"); only tasks with a crew. */
+    crews: Readonly<Record<string, string>>;
     /** Tasks that did not fit ("+N งาน"). */
     hidden: number;
     skilled: number;
@@ -268,6 +274,8 @@ export interface CalendarPrintMonth {
     peak: CalendarPeak | null;
     /** Tasks hidden behind "+N งาน" on at least one day, in plan order. */
     overflow: CrewCalendarTask[];
+    /** Overflow task id → the crews on it during the month; only tasks with a crew. */
+    overflowCrews: Readonly<Record<string, string>>;
     /** Columns the overflow table is printed in (side by side). */
     overflowColumns: number;
 }
@@ -278,6 +286,8 @@ export interface CalendarPrintModel {
     finish: string | null;
     months: CalendarPrintMonth[];
     legend: { no: number; label: string }[];
+    /** Some task has a crew (the crew names are printed). */
+    hasCrews: boolean;
 }
 
 const monthValue = (key: number) => keyToIso(key).slice(0, 7);
@@ -307,6 +317,8 @@ export const CAL_LAYOUT = {
     chip: 4.4,
     overflowHead: 11,
     overflowRow: 4.6,
+    /** The crew line under a task of the overflow table (rows grow by this when a hidden task has a crew). */
+    overflowCrewLine: 3.4,
     maxChips: 6,
 } as const;
 
@@ -315,16 +327,20 @@ const SCALES: CalendarScale[] = [1, 0.9, 0.8];
 /** Columns of the overflow table for `n` tasks. */
 export const overflowColumnsFor = (n: number) => (n <= 3 ? 1 : n <= 20 ? 2 : 3);
 
-function overflowHeight(n: number, scale: number): number {
+function overflowHeight(n: number, scale: number, crewLine: boolean): number {
     if (n === 0) return 0;
     const rows = Math.ceil(n / overflowColumnsFor(n));
-    return (CAL_LAYOUT.overflowHead + rows * CAL_LAYOUT.overflowRow) * scale;
+    const row = CAL_LAYOUT.overflowRow + (crewLine ? CAL_LAYOUT.overflowCrewLine : 0);
+    return (CAL_LAYOUT.overflowHead + rows * row) * scale;
 }
 
-/** Chips a cell can hold when the grid has `weeks` rows and the overflow table lists `hidden` tasks. */
-export function chipCapacity(weeks: number, hidden: number, scale: number): number {
+/**
+ * Chips a cell can hold when the grid has `weeks` rows and the overflow table lists `hidden` tasks (`crewLine`: its
+ * rows carry a crew line, counted on every row since any row may have one).
+ */
+export function chipCapacity(weeks: number, hidden: number, scale: number, crewLine = false): number {
     const L = CAL_LAYOUT;
-    const free = L.pageHeight - (L.header + L.weekdayRow + L.gaps) * scale - overflowHeight(hidden, scale);
+    const free = L.pageHeight - (L.header + L.weekdayRow + L.gaps) * scale - overflowHeight(hidden, scale, crewLine);
     const row = free / Math.max(1, weeks);
     return Math.max(0, Math.floor((row - L.cellFixed * scale) / (L.chip * scale)));
 }
@@ -339,15 +355,19 @@ function hiddenTasks(days: (CrewCalendarDay | undefined)[], limit: number, order
 /**
  * Chips per cell and type scale for a month: the most chips (up to CAL_LAYOUT.maxChips) such that the grid and the
  * overflow table of the tasks that still do not fit share one page; the type shrinks only when even one chip
- * per cell does not fit at the normal size.
+ * per cell does not fit at the normal size. `hasCrew(taskId)`: the task prints a crew line in the overflow table.
  */
-export function fitMonth(weeks: number, days: (CrewCalendarDay | undefined)[], order: Map<string, number>):
-    { chipLimit: number; scale: CalendarScale; overflow: CrewCalendarTask[] } {
+export function fitMonth(
+    weeks: number, days: (CrewCalendarDay | undefined)[], order: Map<string, number>,
+    hasCrew: (taskId: string) => boolean = () => false,
+): { chipLimit: number; scale: CalendarScale; overflow: CrewCalendarTask[] } {
     const most = Math.max(0, ...days.map(d => d?.tasks.length ?? 0));
     for (const scale of SCALES) {
         for (let limit = Math.min(most, CAL_LAYOUT.maxChips); limit >= 1; limit--) {
             const overflow = hiddenTasks(days, limit, order);
-            if (chipCapacity(weeks, overflow.length, scale) >= limit) return { chipLimit: limit, scale, overflow };
+            if (chipCapacity(weeks, overflow.length, scale, overflow.some(t => hasCrew(t.id))) >= limit) {
+                return { chipLimit: limit, scale, overflow };
+            }
         }
         if (most === 0) return { chipLimit: 0, scale, overflow: [] };
     }
@@ -355,17 +375,27 @@ export function fitMonth(weeks: number, days: (CrewCalendarDay | undefined)[], o
     return { chipLimit: 1, scale, overflow: hiddenTasks(days, 1, order) };
 }
 
+/** Task id → crew names text, for the tasks that have a crew. */
+function crewRecord(ids: readonly string[], names: (taskId: string) => string[]): Record<string, string> {
+    return Object.fromEntries(ids.flatMap(id => {
+        const text = crewNamesText(names(id));
+        return text === '' ? [] : [[id, text]];
+    }));
+}
+
 /**
  * The printed calendar for the chosen months ('YYYY-MM'; default: every month of the plan). Months outside the
- * plan span are ignored; the pages come in date order, each month once.
+ * plan span are ignored; the pages come in date order, each month once. `crews` (the project's crews per task, from
+ * the workforce module) adds the crew names; without it the model is exactly the plain calendar.
  */
 export function buildCalendarPrintModel(
-    schedule: ScheduleResult, manday: ManDayResult, months?: readonly string[], fallbackName = '',
+    schedule: ScheduleResult, manday: ManDayResult, months?: readonly string[], fallbackName = '', crews?: TaskCrewMap,
 ): CalendarPrintModel {
     const cal = computeCrewCalendar(schedule, manday);
     const projectName = schedule.projectName.trim() || fallbackName.trim();
     const legend = INSTALLMENTS.map(i => ({ no: i.no, label: i.label }));
-    if (cal.start === null || cal.finish === null) return { projectName, start: null, finish: null, months: [], legend };
+    const hasCrews = crews !== undefined && [...crews.values()].some(list => list.length > 0);
+    if (cal.start === null || cal.finish === null) return { projectName, start: null, finish: null, months: [], legend, hasCrews };
     const { start, finish } = cal;
 
     const firstKey = monthKey(start);
@@ -382,17 +412,22 @@ export function buildCalendarPrintModel(
         const cells = monthCells(key);
         const weekCount = cells.length / 7;
         const inMonthDays = cells.filter(c => c.inMonth).map(c => byDate.get(c.iso));
-        const fit = fitMonth(weekCount, inMonthDays, order);
+        const monthFirst = keyToIso(key);
+        const monthLast = cells.filter(c => c.inMonth).at(-1)?.iso ?? monthFirst;
+        const monthCrews = (taskId: string) => (crews === undefined ? [] : crewNamesInRange(crews, taskId, monthFirst, monthLast));
+        const fit = fitMonth(weekCount, inMonthDays, order, id => monthCrews(id).length > 0);
 
         const toCell = (c: { iso: string; inMonth: boolean }): CalendarPrintCell => {
             const d = c.inMonth ? byDate.get(c.iso) : undefined;
             const tasks = d?.tasks ?? [];
+            const chips = tasks.slice(0, fit.chipLimit);
             return {
                 iso: c.iso,
                 day: parts(c.iso).d,
                 inMonth: c.inMonth,
                 inPlan: c.inMonth && c.iso >= start && c.iso <= finish,
-                tasks: tasks.slice(0, fit.chipLimit),
+                tasks: chips,
+                crews: crews === undefined ? {} : crewRecord(chips.map(t => t.id), id => crewNamesOnDay(crews, id, c.iso)),
                 hidden: Math.max(0, tasks.length - fit.chipLimit),
                 skilled: d?.skilled ?? 0,
                 labourers: d?.labourers ?? 0,
@@ -418,11 +453,12 @@ export function buildCalendarPrintModel(
                 moreDays: peakDays.length - 1,
             },
             overflow: fit.overflow,
+            overflowCrews: crewRecord(fit.overflow.map(t => t.id), monthCrews),
             overflowColumns: overflowColumnsFor(fit.overflow.length),
         };
     });
 
-    return { projectName, start, finish, months: pages, legend };
+    return { projectName, start, finish, months: pages, legend, hasCrews };
 }
 
 /** "งานในเดือนนี้ 12 งาน · ใช้คนมากที่สุด 21 คน (ช่าง 8 · คนงาน 13) วันที่ 21/05/2026 และอีก 2 วัน". */

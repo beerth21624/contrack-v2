@@ -14,6 +14,7 @@ import {
     type CalendarPrintModel, type GanttPrintModel,
 } from '@/features/export/schedule-print-model';
 import { CalendarPrintDocument, GanttPrintDocument } from '@/features/export/SchedulePrintDocument';
+import { useProjectTaskCrews } from '@/features/workforce/project-team/project-workforce';
 
 export const SCHEDULE_PRINT_UI = {
     button: 'พิมพ์ / PDF',
@@ -45,6 +46,8 @@ export function SchedulePrintButton({ schedule, manday, fallbackName = '' }: {
     const [picking, setPicking] = useState(false);
     const [months, setMonths] = useState<string[]>([]);
     const options = useMemo(() => calendarMonthOptions(computeCrewCalendar(schedule, manday)), [schedule, manday]);
+    /** Crew names of a company project with the workforce module on (undefined otherwise: the plain calendar). */
+    const crews = useProjectTaskCrews();
     const ready = schedule.start !== null && options.length > 0;
 
     const print = (next: PrintJob) => runBrowserPrint({
@@ -60,7 +63,7 @@ export function SchedulePrintButton({ schedule, manday, fallbackName = '' }: {
     };
     const printCalendar = () => {
         setPicking(false);
-        print({ kind: 'calendar', model: buildCalendarPrintModel(schedule, manday, months, fallbackName) });
+        print({ kind: 'calendar', model: buildCalendarPrintModel(schedule, manday, months, fallbackName, crews) });
     };
 
     const button = (

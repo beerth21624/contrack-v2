@@ -2,6 +2,8 @@
 
 // ปฏิทินงาน: the plan of S-Curve_Plan_Basic as a month grid — the tasks running each day (coloured by งวด) and the
 // crew they take (Man-Day ช่าง / คนงาน). Read-only: dates are edited in the task table.
+// With the workforce module on a company project that has crews assigned (หน้า ทีมงาน), each task also names the
+// crews on it that day ("1.5 งานฐานราก · ทีมช่างสมชาย"); otherwise the calendar is exactly as before.
 import { useMemo, useState } from 'react';
 import { Button } from 'antd';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
@@ -11,6 +13,8 @@ import {
     INSTALLMENTS, computeCrewCalendar,
     type CrewCalendarDay, type CrewCalendarResult, type ManDayResult, type ScheduleResult,
 } from '@/domain/planning';
+import { crewNamesOnDay, crewNamesText, type TaskCrewMap } from '@/domain/workforce';
+import { useProjectTaskCrews } from '@/features/workforce/project-team/project-workforce';
 import { formatDate, installmentColors } from '../shared/planning-ui';
 import {
     WEEKDAYS_SHORT, crewText, firstPlanDayOf, longDate, monthCells, monthKey, monthTitle, parts,
@@ -23,6 +27,7 @@ const tint = (hex: string) => `${hex}24`;
 
 export function CrewCalendar({ schedule, manday }: { schedule: ScheduleResult; manday: ManDayResult }) {
     const cal = useMemo(() => computeCrewCalendar(schedule, manday), [schedule, manday]);
+    const crews = useProjectTaskCrews();
     const byDate = useMemo(() => new Map(cal.days.map(d => [d.date, d])), [cal]);
     const [today] = useState(() => dayjs().format('YYYY-MM-DD'));
     /** null = the default month / day (today when it is inside the plan, else the first day of work). */
@@ -81,21 +86,25 @@ export function CrewCalendar({ schedule, manday }: { schedule: ScheduleResult; m
                     </div>
                     <div className="grid grid-cols-7 gap-px bg-gray-100">
                         {cells.map(c => (
-                            <DayCell key={c.iso} iso={c.iso} day={byDate.get(c.iso)} inMonth={c.inMonth}
+                            <DayCell key={c.iso} iso={c.iso} day={byDate.get(c.iso)} inMonth={c.inMonth} crews={crews}
                                 inPlan={inPlan(c.iso)} isToday={c.iso === today} isSelected={c.iso === selected}
                                 onSelect={() => setPicked(c.iso)} />
                         ))}
                     </div>
                 </div>
-                <DayDetail iso={selected} day={selectedDay} />
+                <DayDetail iso={selected} day={selectedDay} crews={crews} />
             </div>
         </div>
     );
 }
 
-function DayCell({ iso, day, inMonth, inPlan, isToday, isSelected, onSelect }: {
+/** "ทีมช่างสมชาย, ทีมไฟฟ้าพงษ์" on that task that day; '' without crews. */
+const crewsOn = (crews: TaskCrewMap | undefined, taskId: string, iso: string) =>
+    (crews === undefined ? '' : crewNamesText(crewNamesOnDay(crews, taskId, iso)));
+
+function DayCell({ iso, day, inMonth, inPlan, isToday, isSelected, onSelect, crews }: {
     iso: string; day: CrewCalendarDay | undefined; inMonth: boolean; inPlan: boolean; isToday: boolean; isSelected: boolean;
-    onSelect: () => void;
+    onSelect: () => void; crews: TaskCrewMap | undefined;
 }) {
     const n = parts(iso).d;
     if (!inMonth) return <div className="bg-gray-50 min-h-[44px] md:min-h-[104px]" aria-hidden />;
@@ -133,10 +142,12 @@ function DayCell({ iso, day, inMonth, inPlan, isToday, isSelected, onSelect }: {
                 <span className="hidden md:flex flex-col gap-0.5 mt-1 min-w-0" aria-hidden>
                     {tasks.slice(0, MAX_CHIPS).map(t => {
                         const c = installmentColors(t.installment).background;
+                        const crew = crewsOn(crews, t.id, iso);
                         return (
                             <span key={t.id} className="block truncate rounded-[3px] pl-1.5 pr-1 text-[11px] leading-[18px] text-gray-800"
                                 style={{ background: tint(c), boxShadow: `inset 2px 0 0 ${c}` }}>
                                 <span className="tabular-nums text-gray-500">{t.id}</span> {t.name}
+                                {crew !== '' && <span className="text-gray-500"> · {crew}</span>}
                             </span>
                         );
                     })}
@@ -154,7 +165,7 @@ function DayCell({ iso, day, inMonth, inPlan, isToday, isSelected, onSelect }: {
     );
 }
 
-function DayDetail({ iso, day }: { iso: string; day: CrewCalendarDay | undefined }) {
+function DayDetail({ iso, day, crews }: { iso: string; day: CrewCalendarDay | undefined; crews: TaskCrewMap | undefined }) {
     const tasks = day?.tasks ?? [];
     return (
         <section aria-label="งานในวันที่เลือก" className="rounded-[6px] border border-gray-200 bg-white">
@@ -168,23 +179,31 @@ function DayDetail({ iso, day }: { iso: string; day: CrewCalendarDay | undefined
             </div>
             {tasks.length > 0 && (
                 <ul className="divide-y divide-gray-100">
-                    {tasks.map(t => (
-                        <li key={t.id} className="flex items-start gap-2 px-3 py-2">
-                            <span className="mt-1 h-8 w-1 shrink-0 rounded-full" style={{ background: installmentColors(t.installment).background }} />
-                            <div className="min-w-0 flex-1">
-                                <div className="text-[13px] text-gray-900">
-                                    <span className="tabular-nums text-gray-500 mr-1">{t.id}</span>{t.name}
+                    {tasks.map(t => {
+                        const crew = crewsOn(crews, t.id, iso);
+                        return (
+                            <li key={t.id} className="flex items-start gap-2 px-3 py-2">
+                                <span className="mt-1 h-8 w-1 shrink-0 rounded-full" style={{ background: installmentColors(t.installment).background }} />
+                                <div className="min-w-0 flex-1">
+                                    <div className="text-[13px] text-gray-900">
+                                        <span className="tabular-nums text-gray-500 mr-1">{t.id}</span>{t.name}
+                                    </div>
+                                    <div className="text-[12px] text-gray-500 tabular-nums">
+                                        {installmentLabel(t.installment)} · {formatDate(t.start)}{t.finish !== t.start ? ` – ${formatDate(t.finish)}` : ''}
+                                    </div>
+                                    {crews !== undefined && (
+                                        crew === ''
+                                            ? <div className="text-[12px] text-gray-400">ยังไม่มีทีมในวันนี้</div>
+                                            : <div className="text-[12px] text-gray-700">{crew}</div>
+                                    )}
                                 </div>
-                                <div className="text-[12px] text-gray-500 tabular-nums">
-                                    {installmentLabel(t.installment)} · {formatDate(t.start)}{t.finish !== t.start ? ` – ${formatDate(t.finish)}` : ''}
+                                <div className="shrink-0 text-right text-[12px] leading-snug text-gray-700 tabular-nums">
+                                    <div>ช่าง {t.skilled}</div>
+                                    <div>คนงาน {t.labourers}</div>
                                 </div>
-                            </div>
-                            <div className="shrink-0 text-right text-[12px] leading-snug text-gray-700 tabular-nums">
-                                <div>ช่าง {t.skilled}</div>
-                                <div>คนงาน {t.labourers}</div>
-                            </div>
-                        </li>
-                    ))}
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
         </section>
