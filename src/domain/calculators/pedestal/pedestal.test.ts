@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import golden from '../../boq/__tests__/golden.v5.json';
 import { computeProject, createProject } from '../../project';
 import { footing, type FootingRow } from '../footing';
-import { footingBackfillKey, footingRefFor, pedestal, pedestalRow, remapPedestalFootings, type PedestalRow } from '.';
+import {
+    footingBackfillKey, footingRefFor, newPedestalRow, pedestal, pedestalRow, pedestalsForFootings, remapPedestalFootings,
+    type PedestalRow,
+} from '.';
 
 const goldenLines = golden.lines as Record<string, { E?: number; H?: number }>;
 const goldenSections = golden.sections as Record<string, { M: number }>;
@@ -130,5 +133,45 @@ describe('เสาตอม่อ_Footing Column (sheet 26)', () => {
 
     it('without the footing sheet it supplies no backfill (BOQ R68 keeps its value)', () => {
         expect(pedestal.compute(input, noCtx).backfill).toBeUndefined();
+    });
+});
+
+describe('เสาตอม่อ_Footing Column — blank project (guided journey)', () => {
+    it('blank() has no pedestals; with blank footings every output is finite and every linked output 0', () => {
+        const blank = pedestal.blank?.();
+        expect(blank).toEqual({ rows: [] });
+        if (!blank) return;
+        const c = withFooting([]);
+        const o = pedestal.compute(blank, c);
+        expect(Object.values(o).every(Number.isFinite)).toBe(true);
+        for (const l of pedestal.boqLinks) expect(o[l.output], l.output).toBe(0);
+        expect(pedestal.boqSlots?.(blank, c)).toEqual({ rebar: [] });
+    });
+
+    it('pedestals left over after the footings were emptied still compute finite numbers', () => {
+        const o = pedestal.compute(pedestal.defaults(), withFooting([]));
+        expect(Object.values(o).every(Number.isFinite)).toBe(true);
+        expect(o.concrete).toBeCloseTo(0.63, 9);
+        expect(o.backfill).toBeCloseTo(-0.63, 9); // nothing dug: the journey page asks for footings first
+    });
+
+    it('a pedestal added in the journey sits on the next free footing, takes its count and standard bars', () => {
+        const footings: FootingRow[] = [...footing.defaults().rows, F2];
+        const a = newPedestalRow([], footings);
+        expect(a).toEqual({
+            name: 'C1', footing: 0, count: 21, width: 0, length: 0, height: 0,
+            mainBarSize: 'DB12', mainBarCount: 0, stirrupSize: 'RB6', stirrupSpacing: 0.15,
+        });
+        const b = newPedestalRow([a], footings);
+        expect([b.name, b.footing, b.count]).toEqual(['C2', 1, 4]);
+        // every footing has a pedestal → the first footing again
+        expect(newPedestalRow([a, b], footings).footing).toBe(0);
+        expect(pedestalsForFootings(footings).map(p => [p.name, p.footing, p.count])).toEqual([['C1', 0, 21], ['C2', 1, 4]]);
+        expect(pedestalsForFootings([])).toEqual([]);
+        // until the sizes are typed it adds nothing
+        const o = pedestal.compute({ rows: [a, b] }, withFooting(footings));
+        expect(o.concrete).toBe(0);
+        expect(o.formwork).toBe(0);
+        expect(o['rebar.DB12']).toBe(0);
     });
 });

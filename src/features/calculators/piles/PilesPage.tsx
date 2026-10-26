@@ -7,7 +7,9 @@ import {
 import type { BoqItemRow } from '@/domain/boq/types';
 import { CalcField, InputNumberField, InputTextField, SheetCard } from '@/components/sheet/SheetFields';
 import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
+import { PilesJourney } from './PilesJourney';
 import { useCalculator } from '../useCalculator';
 
 /** Labelled yellow dropdown, same layout as InputTextField. */
@@ -29,10 +31,19 @@ function InputSelectField({ label, value, onChange, options, placeholder }: {
 
 export default function PilesPage() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(piles);
+    const inJourney = useJourneyMode();
     const spec = composePileSpec(input);
     const missing = missingPileSpec(input);
     const cutHeads = result.boq.sections.flatMap(s => s.rows)
         .find((r): r is BoqItemRow => r.type === 'item' && r.key === 'R39');
+
+    if (inJourney) {
+        return (
+            <CalculatorShell def={piles} result={result} isDefault={isDefault} onReset={reset}>
+                <PilesJourney input={input} update={update} />
+            </CalculatorShell>
+        );
+    }
 
     return (
         <CalculatorShell def={piles} result={result} isDefault={isDefault} onReset={reset}

@@ -12,7 +12,7 @@
 // picks its footing row (`footing`, 0-based index); the default is the same row index.
 import { REBAR_SIZES, rebarSlotRows } from '../../boq/slots';
 import { roundUp } from '../../boq/engine';
-import { addWeight, emptyWeights, footingRowKey, kgPerMetre, type RebarWeights } from '../footing';
+import { addWeight, emptyWeights, footingRowKey, kgPerMetre, nextUnusedName, type RebarWeights } from '../footing';
 import { defineCalculator, type CalcContext } from '../types';
 
 export interface PedestalRow {
@@ -133,6 +133,27 @@ export const emptyPedestalRow = (footingIndex: number): PedestalRow => ({
     mainBarSize: '', mainBarCount: 0, stirrupSize: '', stirrupSpacing: 0,
 });
 
+/**
+ * A pedestal added in the guided journey. It sits on the first footing type no pedestal uses yet (else the
+ * first footing), starts with that footing's count (one pedestal per footing), keeps the Excel sample's
+ * standard bars (DB12 main, RB6 stirrups @ 0.15 m) and takes the next free name; sizes and bar count stay empty.
+ */
+export function newPedestalRow(pedestals: readonly PedestalRow[], footings: readonly { count: number }[]): PedestalRow {
+    const free = footings.findIndex((_, i) => !pedestals.some(p => p.footing === i));
+    const index = free >= 0 ? free : 0;
+    return {
+        ...emptyPedestalRow(index),
+        name: nextUnusedName(PEDESTAL_NAMES, pedestals.map(p => p.name)),
+        count: footings[index]?.count ?? 0,
+        mainBarSize: 'DB12', stirrupSize: 'RB6', stirrupSpacing: 0.15,
+    };
+}
+
+/** One new pedestal on each footing type (the journey's empty-state button). */
+export function pedestalsForFootings(footings: readonly { count: number }[]): PedestalRow[] {
+    return footings.reduce<PedestalRow[]>(rows => [...rows, newPedestalRow(rows, footings)], []);
+}
+
 const footingOf = (ctx: CalcContext) => ctx.outputs('footing');
 
 export const pedestal = defineCalculator<PedestalInput>({
@@ -149,6 +170,8 @@ export const pedestal = defineCalculator<PedestalInput>({
             stirrupSize: 'RB6', stirrupSpacing: 0.15,
         }],
     }),
+    // A real project: no pedestals until the user adds them (after the footing types they sit on).
+    blank: () => ({ rows: [] }),
     compute: (input, ctx) => {
         const fo = footingOf(ctx);
         const t = pedestalTotals(input.rows, fo);

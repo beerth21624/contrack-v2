@@ -9,6 +9,8 @@ import { footingBackfillKey, pedestal, remapPedestalFootings } from '@/domain/ca
 import { REBAR_SIZES } from '@/domain/boq/slots';
 import { calculatorInput } from '@/domain/project';
 import { useProjectStore } from '@/store/project-store';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
+import { FootingJourney } from './FootingJourney';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
@@ -47,6 +49,7 @@ export default function FootingPage() {
     const backfillOf = (r: FootingRow, i: number) => ped?.[footingBackfillKey(i)] ?? footingRow(r).backfillGross;
     const backfillTotal = ped?.backfill ?? t.backfillGross;
     const setCalculatorInput = useProjectStore(s => s.setCalculatorInput);
+    const inJourney = useJourneyMode();
     /** Deleting a footing row shifts the rows below it: keep every pedestal on the footing it sat on (D13). */
     const onRowsChange = (rows: FootingRow[]) => {
         const moved = remapPedestalFootings(calculatorInput(useProjectStore.getState().project, pedestal), input.rows, rows);
@@ -138,6 +141,14 @@ export default function FootingPage() {
             <CalcField label="ดิน ถมกลับ (→ BOQ 8.1)" value={backfillTotal} unit="ลบ.ม." digits={4} strong />
         </SheetCard>
     );
+
+    if (inJourney) {
+        return (
+            <CalculatorShell def={footing} result={result} isDefault={isDefault} onReset={reset}>
+                <FootingJourney rows={input.rows} onChange={onRowsChange} backfillTotal={backfillTotal} />
+            </CalculatorShell>
+        );
+    }
 
     return (
         <CalculatorShell def={footing} result={result} isDefault={isDefault} onReset={reset} aside={summary}>

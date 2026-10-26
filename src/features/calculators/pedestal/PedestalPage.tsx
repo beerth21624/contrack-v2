@@ -10,6 +10,8 @@ import {
 import { REBAR_SIZES } from '@/domain/boq/slots';
 import { calculatorInput } from '@/domain/project';
 import { useProjectStore } from '@/store/project-store';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
+import { PedestalJourney } from './PedestalJourney';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
@@ -32,6 +34,7 @@ export default function PedestalPage() {
     const project = useProjectStore(s => s.project);
     const footingRows = useMemo(() => calculatorInput(project, footing).rows, [project]);
     const fo = result.calcOutputs.footing;
+    const inJourney = useJourneyMode();
     const t = pedestalTotals(input.rows, fo);
     const calc = (r: PedestalRow) => pedestalRow(r, footingRefFor(fo, r.footing));
 
@@ -104,6 +107,15 @@ export default function PedestalPage() {
             <CalcField label="ดิน ถมกลับของฐานราก (→ BOQ 8.1)" value={outputs.backfill} unit="ลบ.ม." digits={4} strong />
         </SheetCard>
     );
+
+    if (inJourney) {
+        return (
+            <CalculatorShell def={pedestal} result={result} isDefault={isDefault} onReset={reset}>
+                <PedestalJourney rows={input.rows} onChange={rows => update({ rows })} footings={footingRows}
+                    footingSkipped={project.journey?.footing === 'skipped'} footingOutputs={fo} backfill={outputs.backfill} />
+            </CalculatorShell>
+        );
+    }
 
     return (
         <CalculatorShell def={pedestal} result={result} isDefault={isDefault} onReset={reset} aside={summary}>

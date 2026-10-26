@@ -148,6 +148,29 @@ export const emptyFootingRow = (): FootingRow => ({
     shortBarSize: '', shortBarCount: 0, longBarSize: '', longBarCount: 0, ringBarSize: '', ringBarCount: 0,
 });
 
+/** Sum of a weight table (kg of every bar size). */
+export const totalKg = (w: Partial<Record<RebarSize, number>>): number =>
+    REBAR_SIZES.reduce((sum, s) => sum + (w[s] ?? 0), 0);
+
+/** The first name of `options` no row uses yet ('' when all are taken). */
+export function nextUnusedName(options: readonly string[], used: readonly string[]): string {
+    return options.find(o => !used.includes(o)) ?? '';
+}
+
+/**
+ * A footing type added in the guided journey: the plan values (count, size, depth, bar counts) empty, the
+ * Excel sample's standard choices kept — sand and lean bed 0.05 m (J8/L8), bars DB12 / DB12 / RB9 (O8/T8/Y8) —
+ * and the next free name of the Excel list.
+ */
+export function newFootingRow(rows: readonly FootingRow[]): FootingRow {
+    return {
+        ...emptyFootingRow(),
+        name: nextUnusedName(FOOTING_NAMES, rows.map(r => r.name)),
+        sandThickness: 0.05, leanThickness: 0.05,
+        shortBarSize: 'DB12', longBarSize: 'DB12', ringBarSize: 'RB9',
+    };
+}
+
 export const footing = defineCalculator<FootingInput>({
     id: 'footing',
     sheetName: 'ฐานราก_Footing',
@@ -164,6 +187,8 @@ export const footing = defineCalculator<FootingInput>({
             ringBarSize: 'RB9', ringBarCount: 2,
         }],
     }),
+    // A real project: no footing types until the user adds them from the foundation plan.
+    blank: () => ({ rows: [] }),
     compute: (input) => {
         const t = footingTotals(input.rows);
         const out: Record<string, number> = {

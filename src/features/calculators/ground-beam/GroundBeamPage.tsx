@@ -8,7 +8,9 @@ import { REBAR_SIZES } from '@/domain/boq/slots';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
+import { GroundBeamJourney } from './GroundBeamJourney';
 import { useCalculator } from '../useCalculator';
 
 /** Column title with the Excel group header (row 3/4) above the column header (row 7). */
@@ -27,6 +29,7 @@ const td = 'border border-gray-200 px-2 py-1 text-[13px] text-right tabular-nums
 export default function GroundBeamPage() {
     const { input, update, reset, outputs, result, isDefault } = useCalculator(groundBeam);
     const totals = groundBeamTotals(input);
+    const inJourney = useJourneyMode();
 
     const newRow = (): GroundBeamRow => {
         const last = input.beams[input.beams.length - 1];
@@ -34,6 +37,14 @@ export default function GroundBeamPage() {
             ? { ...last, name: '', length: 0 }
             : { name: '', width: 0.2, depth: 0.4, length: 0, leanThickness: 0.05, mainSize: 'DB12', mainCount: 6, stirrupSize: 'RB6', stirrupSpacing: 0.15 };
     };
+
+    if (inJourney) {
+        return (
+            <CalculatorShell def={groundBeam} result={result} isDefault={isDefault} onReset={reset}>
+                <GroundBeamJourney beams={input.beams} onChange={beams => update({ beams })} />
+            </CalculatorShell>
+        );
+    }
 
     return (
         <CalculatorShell def={groundBeam} result={result} isDefault={isDefault} onReset={reset}>

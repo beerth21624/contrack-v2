@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groundBeam, groundBeamRow, groundBeamTotals, type GroundBeamRow } from '.';
+import { groundBeam, groundBeamRow, groundBeamTotals, newGroundBeamRow, type GroundBeamRow } from '.';
 import { precastSlab } from '../precast-slab';
 import { computeProject, createProject } from '../../project';
 import golden from '../../boq/__tests__/golden.v5.json';
@@ -148,5 +148,37 @@ describe('คานคอดิน_Beam (sheet 27)', () => {
         const { section } = run({ beams: [] });
         expect(section?.rows.some(r => r.key.startsWith('ground-beam:rebar:'))).toBe(false);
         expect(section?.rows.some(r => r.key === 'R71')).toBe(false);
+    });
+});
+
+describe('คานคอดิน_Beam — blank project (guided journey)', () => {
+    it('blank() has no beams; every output is finite and every linked output 0', () => {
+        const blank = groundBeam.blank?.();
+        expect(blank).toEqual({ beams: [] });
+        if (!blank) return;
+        const o = groundBeam.compute(blank, ctx);
+        expect(Object.values(o).every(Number.isFinite)).toBe(true);
+        for (const l of groundBeam.boqLinks) expect(o[l.output], l.output).toBe(0);
+        expect(groundBeam.boqSlots?.(blank, ctx)).toEqual({ rebar: [] });
+        const res = computeProject(createProject('blank'), [groundBeam]);
+        const s8 = res.boq.sections.find(s => s.no === 8)?.rows ?? [];
+        for (const k of ['R69', 'R77', 'R78', 'R79', 'R80']) {
+            const r = s8.find(x => x.key === k);
+            expect(r?.type === 'item' ? r.qty : undefined, k).toBe(0);
+        }
+        expect(s8.some(r => r.key.startsWith('ground-beam:rebar:'))).toBe(false);
+    });
+
+    it('a beam type added in the journey: first with standard bars, later ones copy the previous section', () => {
+        const a = newGroundBeamRow([]);
+        expect(a).toEqual({
+            name: 'B1', width: 0, depth: 0, length: 0, leanThickness: 0.05,
+            mainSize: 'DB12', mainCount: 0, stirrupSize: 'RB6', stirrupSpacing: 0.15,
+        });
+        const typed = { ...a, width: 0.2, depth: 0.4, length: 12, mainCount: 6 };
+        expect(newGroundBeamRow([typed])).toEqual({ ...typed, name: 'B2', length: 0 });
+        // nothing until a length is typed
+        const o = groundBeam.compute({ beams: [a, newGroundBeamRow([typed])] }, ctx);
+        expect([o.lean, o.formwork, o.concrete, o['rebar.DB12'], o['rebar.RB6']]).toEqual([0, 0, 0, 0, 0]);
     });
 });

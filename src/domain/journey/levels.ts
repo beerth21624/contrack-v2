@@ -68,7 +68,7 @@ export const JOURNEY: JourneyPhase[] = [
     {
         id: 'foundation', title: 'ฐานราก', levels: [
             {
-                id: 'piles', title: 'เสาเข็ม', kind: calc('piles'), sections: [5],
+                id: 'piles', title: 'เสาเข็ม', kind: calc('piles'), sections: [5], optional: true,
                 planHint: 'ดูแปลนฐานราก/เสาเข็ม: ชนิดเข็ม ขนาด ความยาว และจำนวนต้น',
             },
             {

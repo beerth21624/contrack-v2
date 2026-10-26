@@ -72,6 +72,15 @@ export const piles = defineCalculator<PilesInput>({
         pricePerPile: 2500,
         extraSpec: '',
     }),
+    // A real project: the spec and the count come from the foundation plan; the lump price keeps Excel's 2,500.
+    blank: () => ({
+        pileType: '',
+        section: '',
+        length: 0,
+        count: 0,
+        pricePerPile: 2500,
+        extraSpec: '',
+    }),
     compute: (input) => ({
         count: num(input.count),               // E35 จำนวน (ต้น)
         pricePerPile: num(input.pricePerPile), // K35 ราคาเหมาต่อต้น (labour column, material 0)

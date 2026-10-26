@@ -72,6 +72,22 @@ describe('งานเสาเข็ม (BOQ row 35, no Excel sheet)', () => {
         expect(composePileSpec({ ...piles.defaults(), pileType: '' })).toBe('(I - 22 x 22 ยาว 6 ม.)');
     });
 
+    it('blank (a new project): spec and count empty, price kept; R35 and R39 are 0', () => {
+        const blank = piles.blank?.();
+        expect(blank).toEqual({ pileType: '', section: '', length: 0, count: 0, pricePerPile: 2500, extraSpec: '' });
+        if (!blank) return;
+        expect(piles.compute(blank, ctx)).toEqual({ count: 0, pricePerPile: 2500 });
+        expect(composePileSpec(blank)).toBe('');
+        expect(missingPileSpec(blank)).toEqual(['ชนิดเสาเข็ม', 'หน้าตัด/รูปทรง', 'ความยาว']);
+        const result = computeProject(createProject('blank'), [piles]);
+        expect(boqRow(result, 'R35')?.qty).toBe(0);
+        expect(boqRow(result, 'R35')?.total).toBe(0);
+        expect(boqRow(result, 'R39')?.qty).toBe(0);
+        expect(boqRow(result, 'R39')?.total).toBe(0);
+        // defaults() is still the Excel sample
+        expect(piles.compute(piles.defaults(), ctx)).toEqual({ count: 21, pricePerPile: 2500 });
+    });
+
     it('non-numeric inputs give 0, not NaN', () => {
         expect(piles.compute({ ...piles.defaults(), count: NaN, pricePerPile: Infinity }, ctx))
             .toEqual({ count: 0, pricePerPile: 0 });

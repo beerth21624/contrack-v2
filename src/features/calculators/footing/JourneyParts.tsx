@@ -1,0 +1,171 @@
+'use client';
+
+// Building blocks of the guided-journey pages of the foundation levels (footing, pedestal, ground beam, piles):
+// one card per element type read off the plan, plain labelled fields, a short result line and a green summary.
+// Outside the journey those pages keep their Excel-mirror tables.
+import type { ReactNode } from 'react';
+import { Button, Popconfirm, Select } from 'antd';
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { NumberCell, TextCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { REBAR_SIZES } from '@/domain/boq/slots';
+
+const labelCls = 'text-[12px] text-gray-600 leading-tight';
+const hintCls = 'text-[11px] text-gray-400 leading-tight';
+
+/** Labelled yellow number box (label above, unit after). */
+export function JNumber({ label, value, onChange, unit, hint, digits = 2 }: {
+    label: string; value: number; onChange: (v: number) => void; unit?: string; hint?: ReactNode; digits?: number;
+}) {
+    return (
+        <label className="flex flex-col gap-1 min-w-0">
+            <span className={labelCls}>{label}</span>
+            <span className="flex items-center gap-1.5">
+                <span className="flex-1 min-w-0 max-w-[140px]">
+                    <NumberCell value={value} digits={digits} ariaLabel={label} onCommit={v => onChange(v ?? 0)} />
+                </span>
+                {unit && <span className="text-[12px] text-gray-500 whitespace-nowrap">{unit}</span>}
+            </span>
+            {hint && <span className={hintCls}>{hint}</span>}
+        </label>
+    );
+}
+
+/** Labelled yellow text box. */
+export function JText({ label, value, onChange, placeholder, wide }: {
+    label: string; value: string; onChange: (v: string) => void; placeholder?: string; wide?: boolean;
+}) {
+    return (
+        <label className={`flex flex-col gap-1 min-w-0 ${wide ? 'col-span-2' : ''}`}>
+            <span className={labelCls}>{label}</span>
+            <span className={wide ? 'max-w-[420px]' : 'max-w-[140px]'} style={{ background: SHEET_COLORS.input, borderRadius: 3 }}>
+                <TextCell value={value} placeholder={placeholder} ariaLabel={label} onCommit={v => onChange(v ?? '')} />
+            </span>
+        </label>
+    );
+}
+
+/** Labelled yellow dropdown. */
+export function JSelect<V extends string | number>({ label, value, onChange, options, placeholder, hint, width = 180 }: {
+    label: string; value: V | undefined; onChange: (v: V | undefined) => void; placeholder?: string; hint?: ReactNode;
+    options: { value: V; label?: string }[] | { label: string; options: { value: V; label?: string }[] }[];
+    width?: number;
+}) {
+    return (
+        <div className="flex flex-col gap-1 min-w-0">
+            <span className={labelCls}>{label}</span>
+            <div style={{ background: SHEET_COLORS.input, borderRadius: 3, maxWidth: width }}>
+                <Select<V> size="small" variant="borderless" style={{ width: '100%' }} aria-label={label} allowClear
+                    placeholder={placeholder} value={value} options={options} onChange={v => onChange(v)} />
+            </div>
+            {hint && <span className={hintCls}>{hint}</span>}
+        </div>
+    );
+}
+
+const sizeOptions = REBAR_SIZES.map(s => ({ value: s as string }));
+
+/** A bar group as written on a detail drawing: count and size (e.g. 5 เส้น DB12), or size and spacing. */
+export function JBar({ label, size, onSize, amount, onAmount, amountUnit = 'เส้น', amountDigits = 0, hint }: {
+    label: string; size: string; onSize: (v: string) => void; amount: number; onAmount: (v: number) => void;
+    amountUnit?: string; amountDigits?: number; hint?: ReactNode;
+}) {
+    return (
+        <div className="flex flex-col gap-1 min-w-0">
+            <span className={labelCls}>{label}</span>
+            <span className="flex items-center gap-1.5">
+                <span className="w-[84px] shrink-0" style={{ background: SHEET_COLORS.input, borderRadius: 3 }}>
+                    <Select<string> size="small" variant="borderless" style={{ width: '100%' }} aria-label={`${label} ขนาด`}
+                        placeholder="ขนาด" value={size || undefined} options={sizeOptions} onChange={v => onSize(v)} />
+                </span>
+                <span className="w-[64px] shrink-0">
+                    <NumberCell value={amount} digits={amountDigits} ariaLabel={`${label} ${amountUnit}`} onCommit={v => onAmount(v ?? 0)} />
+                </span>
+                <span className="text-[12px] text-gray-500 whitespace-nowrap">{amountUnit}</span>
+            </span>
+            {hint && <span className={hintCls}>{hint}</span>}
+        </div>
+    );
+}
+
+/** Section title inside an element card. */
+export function JGroup({ title, children }: { title: string; children: ReactNode }) {
+    return (
+        <div className="mt-3 first:mt-0">
+            <div className="text-[12px] font-semibold text-gray-500 mb-1.5">{title}</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-3">{children}</div>
+        </div>
+    );
+}
+
+/** One element type of the plan (F1, C1, GB1 …): title, delete, the fields, then its result line. */
+export function ElementCard({ title, onDelete, deleteTitle, result, warning, children }: {
+    title: ReactNode; onDelete?: () => void; deleteTitle?: string; result?: ReactNode; warning?: ReactNode; children: ReactNode;
+}) {
+    return (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100">
+                <span className="font-semibold text-[14px] text-gray-800">{title}</span>
+                {onDelete && (
+                    <Popconfirm title={deleteTitle ?? 'ลบรายการนี้?'} okText="ลบ" cancelText="ยกเลิก" onConfirm={onDelete}>
+                        <Button className="ml-auto" type="text" size="small" danger icon={<DeleteOutlined />} aria-label="ลบ" />
+                    </Popconfirm>
+                )}
+            </div>
+            <div className="p-4">
+                {children}
+                {warning && <div className="mt-3 text-[12px] text-orange-600">{warning}</div>}
+                {result && (
+                    <div className="mt-3 px-3 py-1.5 rounded text-[13px] text-gray-800 tabular-nums" style={{ background: SHEET_COLORS.calc }}>
+                        {result}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+/** Friendly prompt for an empty list, with one big add button. */
+export function EmptyState({ text, actionLabel, onAction, children }: {
+    text: ReactNode; actionLabel?: string; onAction?: () => void; children?: ReactNode;
+}) {
+    return (
+        <div className="bg-white border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">
+            <div className="text-[14px] text-gray-600">{text}</div>
+            {actionLabel && onAction && (
+                <Button className="mt-4" type="primary" size="large" icon={<PlusOutlined />} onClick={onAction}>{actionLabel}</Button>
+            )}
+            {children && <div className="mt-3">{children}</div>}
+        </div>
+    );
+}
+
+/** "Add one more" button under a list of element cards. */
+export function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
+    return (
+        <Button type="dashed" size="large" block icon={<PlusOutlined />} onClick={onClick}>{label}</Button>
+    );
+}
+
+export interface ResultPart { label: string; value: number | null | undefined; unit: string; digits?: number }
+
+/** "คอนกรีต 3.25 ลบ.ม. · เหล็ก 412 กก." */
+export function resultText(parts: ResultPart[]): string {
+    return parts.map(p => `${p.label} ${formatNumber(p.value ?? 0, p.digits ?? 2)} ${p.unit}`).join(' · ');
+}
+
+/** The level's green result summary. */
+export function ResultSummary({ title = 'ผลรวมด่านนี้', parts, note }: { title?: string; parts: ResultPart[]; note?: ReactNode }) {
+    return (
+        <div className="rounded-lg border border-green-200 px-4 py-3" style={{ background: SHEET_COLORS.calc }}>
+            <div className="text-[12px] font-semibold text-green-800">{title}</div>
+            <div className="mt-1 flex flex-wrap gap-x-6 gap-y-1">
+                {parts.map(p => (
+                    <div key={p.label} className="text-[14px] text-gray-800">
+                        {p.label} <span className="font-bold tabular-nums">{formatNumber(p.value ?? 0, p.digits ?? 2)}</span> {p.unit}
+                    </div>
+                ))}
+            </div>
+            {note && <div className="mt-1 text-[12px] text-gray-600">{note}</div>}
+        </div>
+    );
+}

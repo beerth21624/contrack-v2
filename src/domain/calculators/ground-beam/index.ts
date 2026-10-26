@@ -98,6 +98,19 @@ export function groundBeamRebar(input: GroundBeamInput): Record<RebarSize, numbe
     return Object.fromEntries(REBAR_SIZES.map(s => [s, t.main[s] + t.stirrup[s]])) as Record<RebarSize, number>;
 }
 
+/**
+ * A beam type added in the guided journey. The first one keeps the Excel sample's standard choices (lean 0.05 m,
+ * DB12 main bars, RB6 stirrups @ 0.15 m) with the plan values (size, length, bar count) empty; later ones copy the
+ * previous beam's section and bars (beams of one house are mostly alike) with the length empty. Next free name.
+ */
+export function newGroundBeamRow(beams: readonly GroundBeamRow[]): GroundBeamRow {
+    const name = BEAM_NAMES.find(n => !beams.some(b => b.name === n)) ?? '';
+    const last = beams[beams.length - 1];
+    return last
+        ? { ...last, name, length: 0 }
+        : { name, width: 0, depth: 0, length: 0, leanThickness: 0.05, mainSize: 'DB12', mainCount: 0, stirrupSize: 'RB6', stirrupSpacing: 0.15 };
+}
+
 export const groundBeam = defineCalculator<GroundBeamInput>({
     id: 'ground-beam',
     sheetName: 'คานคอดิน_Beam',
@@ -114,6 +127,8 @@ export const groundBeam = defineCalculator<GroundBeamInput>({
             { name: 'B4', width: 0.2, depth: 0.4, length: 16, leanThickness: 0.05, mainSize: 'DB12', mainCount: 10, stirrupSize: 'RB6', stirrupSpacing: 0.15 },
         ],
     }),
+    // A real project: no beam types until the user adds them from the ground-beam plan.
+    blank: () => ({ beams: [] }),
     compute: (input) => {
         const t = groundBeamTotals(input);
         const out: Record<string, number> = {

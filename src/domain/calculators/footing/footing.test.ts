@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import golden from '../../boq/__tests__/golden.v5.json';
 import { computeProject, createProject } from '../../project';
-import { footing, footingRow, footingTotals, type FootingRow } from '.';
+import { footing, footingRow, footingTotals, newFootingRow, totalKg, type FootingRow } from '.';
 import { pedestal } from '../pedestal';
 
 const ctx = { outputs: () => undefined };
@@ -128,5 +128,51 @@ describe('ฐานราก_Footing (sheet 25)', () => {
         const o = footing.compute(i, ctx);
         expect(o['rebar.RB9']).toBe(0);
         expect(footingRow(first(i.rows)).ringTotal).toBeCloseTo(100.8, 9);
+    });
+});
+
+describe('ฐานราก_Footing — blank project (guided journey)', () => {
+    it('blank() has no footing types; every output is finite and every linked output 0', () => {
+        const blank = footing.blank?.();
+        expect(blank).toEqual({ rows: [] });
+        if (!blank) return;
+        const o = footing.compute(blank, ctx);
+        expect(Object.values(o).every(Number.isFinite)).toBe(true);
+        for (const l of footing.boqLinks) expect(o[l.output], l.output).toBe(0);
+        expect(o.backfillGross).toBe(0);
+        expect(footing.boqSlots?.(blank, ctx)).toEqual({ rebar: [] });
+        // defaults() is still the Excel sample
+        expect(footing.compute(footing.defaults(), ctx).excavation).toBeCloseTo(53.508, 9);
+    });
+
+    it('in a blank project the footing and pedestal BOQ rows are 0 (R38–R41, R43–R49, R55–R58, R62–R65, R68)', () => {
+        const r = computeProject(createProject('blank'), [footing, pedestal]);
+        const rows = r.boq.sections.filter(s => [6, 7, 8].includes(s.no)).flatMap(s => s.rows);
+        const qty = (key: string) => {
+            const row = rows.find(x => x.key === key);
+            return row?.type === 'item' ? row.qty : undefined;
+        };
+        for (const k of ['R38', 'R40', 'R41', 'R55', 'R56', 'R57', 'R58', 'R62', 'R63', 'R64', 'R65', 'R68']) {
+            expect(qty(k), k).toBe(0);
+        }
+        expect(rows.some(x => x.key.startsWith('footing:') || x.key.startsWith('pedestal:'))).toBe(false);
+        expect(r.calcOutputs.pedestal?.backfill).toBe(0);
+    });
+
+    it('a footing type added in the journey: plan values empty, Excel standard bed and bars, next free name', () => {
+        const a = newFootingRow([]);
+        expect(a).toEqual({
+            name: 'F1', count: 0, width: 0, length: 0, depth: 0, excavationDepth: 0, sandThickness: 0.05, leanThickness: 0.05,
+            shortBarSize: 'DB12', shortBarCount: 0, longBarSize: 'DB12', longBarCount: 0, ringBarSize: 'RB9', ringBarCount: 0,
+        });
+        expect(newFootingRow([a]).name).toBe('F2');
+        expect(newFootingRow([a, { ...a, name: 'F2' }]).name).toBe('F4'); // Excel's list has no F3
+        expect(newFootingRow([a, { ...a, name: 'F2' }, { ...a, name: 'F4' }]).name).toBe('');
+        // until the plan values are typed it adds nothing
+        const o = footing.compute({ rows: [a] }, ctx);
+        for (const l of footing.boqLinks) expect(o[l.output]).toBe(0);
+        expect(totalKg(footingTotals([a]).rebar)).toBe(0);
+        // F2 of the hand-computed example: 4·6·2.0·1.58 + 4·7·2.2·1.58 + 4·2·4.4·0.499
+        expect(totalKg(footingTotals([F2]).rebar)).toBeCloseTo(4 * 6 * 2 * 1.58 + 4 * 7 * 2.2 * 1.58 + 4 * 2 * 4.4 * 0.499, 9);
     });
 });
