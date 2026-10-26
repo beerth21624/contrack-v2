@@ -68,13 +68,15 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
             <Header className="gap-2" style={{
                 display: 'flex', alignItems: 'center',
                 background: 'linear-gradient(135deg, #1a1a1a 0%, #2a2a2e 100%)',
-                borderBottom: '2px solid #fa8c16',
+                borderBottom: '2px solid #F97316',
                 padding: '0 28px', height: 64,
+                // Items are centred by flex; antd's 64px line-height would make text boxes (and pills) taller than the bar.
+                lineHeight: 1.5,
                 boxShadow: '0 2px 8px rgba(0,0,0,.15)',
             }}>
                 <div className="shrink-0 mr-auto xl:mr-4" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{
-                        background: 'linear-gradient(135deg, #fa8c16, #ffa940)',
+                        background: 'linear-gradient(135deg, #F97316, #FB923C)',
                         padding: 7, borderRadius: 8, display: 'flex',
                         boxShadow: '0 2px 6px rgba(250,140,22,.3)',
                     }}>
@@ -88,7 +90,9 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
                         mode="horizontal" theme="dark"
                         selectedKeys={[activeKey]}
                         items={menuItems}
-                        style={{ flex: 1, minWidth: 0, borderBottom: 'none', background: 'transparent' }}
+                        // The full bar height (64 − the 2 px bottom border): antd's header rule makes the menu inherit
+                        // the header's line-height, so it is set here.
+                        style={{ flex: 1, minWidth: 0, borderBottom: 'none', background: 'transparent', lineHeight: '62px' }}
                     />
                 </div>
 
@@ -120,7 +124,7 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
             <Drawer
                 title={
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ background: '#fa8c16', padding: 4, borderRadius: 4, display: 'flex' }}>
+                        <div style={{ background: '#F97316', padding: 4, borderRadius: 4, display: 'flex' }}>
                             <CalculatorOutlined style={{ fontSize: 16, color: '#000' }} />
                         </div>
                         <span style={{ fontWeight: 700 }}>Contrack</span>
@@ -141,7 +145,9 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
                 />
             </Drawer>
 
-            <Content style={{ padding: '24px 12px', maxWidth: 1400, margin: '0 auto', width: '100%', background: '#f5f5f7', minHeight: 'calc(100vh - 64px - 52px)' }}>
+            {/* One frame for every page: 1200 content width, 24 px gutters (16 on phones). */}
+            <Content className="px-4 py-4 sm:px-6 sm:py-6"
+                style={{ maxWidth: 1248, margin: '0 auto', width: '100%', background: '#F6F7F9', minHeight: 'calc(100vh - 64px - 52px)' }}>
                 {!hasHydrated ? (
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '60vh' }}>
                         <Spin size="large" />
@@ -172,34 +178,46 @@ export function AppLayoutUI({ children }: { children: React.ReactNode }) {
             theme={{
                 algorithm: theme.defaultAlgorithm,
                 cssVar: { key: 'app-theme' },
+                // docs/rebuild/DESIGN_SYSTEM.md — the same values as the tokens in globals.css.
                 token: {
-                    colorPrimary: '#fa8c16',
-                    colorInfo: '#1890ff',
-                    colorSuccess: '#52c41a',
-                    colorWarning: '#faad14',
-                    colorError: '#f5222d',
-                    borderRadius: 8,
+                    colorPrimary: '#F97316',
+                    colorInfo: '#2563EB',
+                    colorSuccess: '#16A34A',
+                    colorWarning: '#D97706',
+                    colorError: '#DC2626',
+                    colorText: '#111827',
+                    colorTextSecondary: '#4B5563',
+                    colorTextTertiary: '#9CA3AF',
+                    colorBorder: '#E5E7EB',
+                    colorBorderSecondary: '#F3F4F6',
+                    colorBgLayout: '#F6F7F9',
+                    borderRadius: 6,
+                    borderRadiusLG: 10,
+                    borderRadiusSM: 4,
+                    controlHeight: 36,
+                    controlHeightSM: 32,
+                    controlHeightLG: 40,
                     wireframe: false,
-                    fontFamily: "var(--font-sarabun), 'Sarabun', sans-serif",
-                    fontSize: 15,
+                    fontFamily: "var(--font-plex-thai), 'IBM Plex Sans Thai', system-ui, sans-serif",
+                    fontSize: 14,
+                    lineHeight: 1.55,
+                    boxShadowTertiary: '0 1px 2px rgb(16 24 40 / .04)',
                 },
                 components: {
-                    Layout: { headerBg: '#1e1e1e', headerColor: '#ffffff', bodyBg: '#f5f5f7' },
+                    Layout: { headerBg: '#1e1e1e', headerColor: '#ffffff', bodyBg: '#F6F7F9' },
                     Menu: {
                         darkItemBg: 'transparent',
                         darkItemColor: 'rgba(255,255,255,.6)',
-                        itemSelectedColor: '#fa8c16',
-                        darkItemSelectedColor: '#fa8c16',
+                        itemSelectedColor: '#F97316',
+                        darkItemSelectedColor: '#F97316',
                         darkItemSelectedBg: 'transparent',
                         darkItemHoverColor: '#ffffff',
                     },
-                    Button: { fontWeight: 600, controlHeight: 40 },
-                    Table: { headerBg: '#fafafa', headerColor: '#1f1f1f', borderColor: '#f0f0f0', cellPaddingBlock: 12 },
-                    Input: { controlHeight: 40 },
-                    InputNumber: { controlHeight: 40 },
-                    Select: { controlHeight: 40 },
+                    Button: { fontWeight: 500, primaryShadow: 'none', defaultShadow: 'none', dangerShadow: 'none' },
+                    Table: { headerBg: '#F9FAFB', headerColor: '#111827', borderColor: '#F3F4F6', cellPaddingBlock: 10 },
                     Card: { borderRadiusLG: 10 },
                     Collapse: { borderRadiusLG: 10 },
+                    Tag: { defaultBg: '#F3F4F6' },
                 },
             }}
         >

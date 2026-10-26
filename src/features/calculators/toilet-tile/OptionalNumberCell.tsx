@@ -47,9 +47,9 @@ export function OptionalNumberCell({ value, onCommit, ariaLabel, placeholder }: 
             }}
             style={{
                 width: '100%', minWidth: 0, textAlign: 'right', border: '1px solid transparent',
-                background: SHEET_COLORS.input, padding: '2px 4px', borderRadius: 3, font: 'inherit',
+                background: SHEET_COLORS.input, padding: '0 6px', borderRadius: 4, font: 'inherit',
             }}
-            className="focus:outline-none focus:border-orange-400"
+            className="sheet-cell focus:outline-none focus:border-orange-400"
         />
     );
 }

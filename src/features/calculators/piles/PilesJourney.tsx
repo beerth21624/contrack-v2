@@ -21,17 +21,17 @@ export function PilesJourney({ input, update }: { input: PilesInput; update: (pa
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+            <div className="bg-white border border-gray-200 rounded-card shadow-card p-4">
                 <JGroup title="เสาเข็ม (จากแปลนฐานราก / รายการประกอบแบบ)">
-                    <PlanField label="ชนิดเสาเข็ม" className="col-span-2">
+                    <PlanField label="ชนิดเสาเข็ม" fieldKey="pileType" className="col-span-2">
                         <ChoiceButtons<string> size="small" ariaLabel="ชนิดเสาเข็ม" value={input.pileType === '' ? undefined : input.pileType}
                             options={typeOptions} onChange={v => update({ pileType: v })} />
                     </PlanField>
-                    <JSelect<string> label="หน้าตัด / รูปทรง" value={input.section || undefined} placeholder="เลือกหน้าตัด"
+                    <JSelect<string> label="หน้าตัด / รูปทรง" fieldKey="section" value={input.section || undefined} placeholder="เลือกหน้าตัด"
                         options={PILE_SECTION_GROUPS.map(g => ({ label: g.label, options: g.options.map(o => ({ value: o })) }))}
                         onChange={v => update({ section: v ?? '' })} />
-                    <PlanNumber label="ความยาวต่อต้น" value={input.length} unit="ม." range={[1, 40]} onChange={v => update({ length: v })} />
-                    <JNumber label="จำนวนเสาเข็มทั้งหมด" value={input.count} unit="ต้น" digits={0} onChange={v => update({ count: v })}
+                    <PlanNumber label="ความยาวต่อต้น" fieldKey="length" value={input.length} unit="ม." range={[1, 40]} onChange={v => update({ length: v })} />
+                    <JNumber label="จำนวนเสาเข็มทั้งหมด" fieldKey="count" value={input.count} unit="ต้น" digits={0} onChange={v => update({ count: v })}
                         hint="นับจากแปลนฐานราก (ทุกฐานรวมกัน)" />
                 </JGroup>
                 <JGroup title="">

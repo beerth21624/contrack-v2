@@ -89,20 +89,20 @@ function FloorTileJourney({ input, update, outputs }: {
         const area = floorTileRowArea(r);
         const stair = isStair(r);
         return (
-            <PlanCard key={i} index={i + 1} state={state}
+            <PlanCard key={i} index={i + 1} state={state} scope={{ listKey: 'rows', itemIndex: i }}
                 title={<NameInput value={r.location} placeholder="ชื่อห้อง เช่น ห้องนอน 1" ariaLabel={`ชื่อห้องที่ ${String(i + 1)}`}
                     onChange={location => setRow(i, { location })} />}
                 result={area > 0 ? `${formatNumber(area)} ตร.ม.` : undefined}
                 onDuplicate={() => duplicate(i)} onDelete={() => setRows(rs => removeAt(rs, i))} hasData={r.width > 0 || r.length > 0}
                 deleteTitle="ลบห้องนี้?" missingText={`ยังขาด: ${missingOf(r).join(', ')}`}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                    <PlanField className="sm:col-span-2" label="ชนิดพื้น">
+                    <PlanField className="sm:col-span-2" label="ชนิดพื้น" fieldKey="code">
                         <ChoiceButtons ariaLabel="ชนิดพื้น" size="small" options={TYPE_CHOICES} value={r.code === '' ? undefined : r.code}
                             onChange={code => setRow(i, { code })} />
                     </PlanField>
-                    <PlanNumber label={stair ? 'ความกว้างบันได' : 'กว้าง'} unit="ม." value={r.width} range={[0.3, 30]}
+                    <PlanNumber label={stair ? 'ความกว้างบันได' : 'กว้าง'} fieldKey="width" unit="ม." value={r.width} range={[0.3, 30]}
                         missing={missing.has('กว้าง')} onChange={width => setRow(i, { width })} />
-                    <PlanNumber label={stair ? 'ลูกนอน + ลูกตั้ง' : 'ยาว'} unit="ม." value={r.length} range={[0.3, 30]}
+                    <PlanNumber label={stair ? 'ลูกนอน + ลูกตั้ง' : 'ยาว'} fieldKey="length" unit="ม." value={r.length} range={[0.3, 30]}
                         missing={missing.has('ยาว')} hint={stair ? 'เช่น 0.9+0.45' : undefined}
                         onChange={length => setRow(i, { length })} />
                 </div>

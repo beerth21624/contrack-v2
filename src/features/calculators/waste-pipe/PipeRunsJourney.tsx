@@ -15,18 +15,18 @@ import { SheetCard } from '@/components/sheet/SheetFields';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 import {
-    AddButton, ChoiceButtons, EmptyState, PlanCard, PlanField, ResultSummary, SumInput, fillState, outOfRange,
+    AddButton, ChoiceButtons, EmptyState, PlanCard, PlanField, RequiredArea, RequiredMark, ResultSummary, SumInput, fillState, outOfRange,
 } from '@/components/sheet/journey';
 
 const NO_DEPS = { outputs: () => undefined };
 const EMPTY_RUN: PipeRun = { label: '', size: '', horizontal: 0, vertical: 0 };
 
 /** A pipe length read off the plan (segments can be typed as a sum), with a plausibility note. */
-function LengthField({ label, hint, value, onChange }: {
-    label: string; hint?: string; value: number; onChange: (v: number) => void;
+function LengthField({ label, hint, value, onChange, fieldKey }: {
+    label: string; hint?: string; value: number; onChange: (v: number) => void; fieldKey: 'horizontal' | 'vertical';
 }) {
     return (
-        <PlanField label={label} hint={hint} note={outOfRange(value, 0.2, 200, 'ม.')}>
+        <PlanField label={label} hint={hint} note={outOfRange(value, 0.2, 200, 'ม.')} fieldKey={fieldKey}>
             <span className="max-w-[150px]">
                 <SumInput value={value} ariaLabel={label} placeholder="เช่น 4+3.5" onChange={onChange} />
             </span>
@@ -78,12 +78,12 @@ export function PipeRunsJourney({ def, input, onChange, result, items, sizes, li
 
     return (
         <>
-            <SheetCard title="ท่อหลัก">
+            <SheetCard title={<>ท่อหลัก<RequiredMark required /></>}>
                 <p className="mb-2 text-[13px] text-gray-600">
                     กรอกความยาวท่อแต่ละชนิดจากแบบ ถ้ามีหลายแนวให้พิมพ์ต่อกันด้วย + ได้ (เช่น 4+3.5+4)
                     ระบบบวกแนวราบกับแนวดิ่งให้เอง · ถ้าแบบไม่มีท่อชนิดนั้น ปล่อยว่างไว้
                 </p>
-                <div className="flex flex-col gap-2">
+                <RequiredArea className="flex flex-col gap-2">
                     {fixed.map((r, i) => {
                         const len = runLength(r);
                         return (
@@ -97,11 +97,11 @@ export function PipeRunsJourney({ def, input, onChange, result, items, sizes, li
                                         </div>
                                     </div>
                                     <div>
-                                        <LengthField label="แนวราบ (ม.)" value={r.horizontal}
+                                        <LengthField label="แนวราบ (ม.)" fieldKey="horizontal" value={r.horizontal}
                                             onChange={horizontal => setFixed(fixed.map((x, j) => (j === i ? { ...x, horizontal } : x)))} />
                                     </div>
                                     <div>
-                                        <LengthField label="แนวดิ่ง (ม.)" hint="ท่อขึ้น-ลงผนัง/พื้น" value={r.vertical}
+                                        <LengthField label="แนวดิ่ง (ม.)" fieldKey="vertical" hint="ท่อขึ้น-ลงผนัง/พื้น" value={r.vertical}
                                             onChange={vertical => setFixed(fixed.map((x, j) => (j === i ? { ...x, vertical } : x)))} />
                                     </div>
                                     <span className="md:self-center text-[13px] tabular-nums md:text-right">
@@ -113,7 +113,7 @@ export function PipeRunsJourney({ def, input, onChange, result, items, sizes, li
                             </div>
                         );
                     })}
-                </div>
+                </RequiredArea>
                 {mismatches.map(m => (
                     <div key={m.index} className="mt-2 flex flex-wrap items-center gap-2 rounded-md bg-orange-50 border border-orange-200 px-3 py-2 text-[13px] text-orange-700">
                         <span>
@@ -166,9 +166,9 @@ export function PipeRunsJourney({ def, input, onChange, result, items, sizes, li
                                                     value={size === '' ? undefined : size} onChange={v => setExtra({ size: v })} />
                                             </PlanField>
                                             <div className="hidden sm:block" />
-                                            <LengthField label="แนวราบ (ม.)" value={r.horizontal}
+                                            <LengthField label="แนวราบ (ม.)" fieldKey="horizontal" value={r.horizontal}
                                                 onChange={horizontal => setExtra({ horizontal })} />
-                                            <LengthField label="แนวดิ่ง (ม.)" hint="ท่อขึ้น-ลงผนัง/พื้น" value={r.vertical}
+                                            <LengthField label="แนวดิ่ง (ม.)" fieldKey="vertical" hint="ท่อขึ้น-ลงผนัง/พื้น" value={r.vertical}
                                                 onChange={vertical => setExtra({ vertical })} />
                                         </div>
                                     </PlanCard>

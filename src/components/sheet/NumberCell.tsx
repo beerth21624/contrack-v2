@@ -3,10 +3,13 @@
 import { useRef, useState } from 'react';
 import { evaluateNumber } from './evaluate';
 
-/** Excel-like cell colours: yellow = user input, green = formula. */
+/**
+ * Excel-like cell colours: yellow = user input, green = formula — softened so they read as fields, not
+ * highlighter (docs/rebuild/DESIGN_SYSTEM.md; --sheet-input / --sheet-calc in globals.css).
+ */
 export const SHEET_COLORS = {
-    input: '#fff2cc',
-    calc: '#e2f0d9',
+    input: '#FFF7D6',
+    calc: '#EAF6EC',
     header: '#e3ebf9',
     subtotal: '#f3f3f3',
 } as const;
@@ -106,7 +109,7 @@ export function NumberCell({
             }}
             style={{
                 width: '100%', minWidth: 0, textAlign: 'right', border: '1px solid transparent',
-                background: tone === 'calc' ? SHEET_COLORS.calc : SHEET_COLORS.input, padding: '2px 4px', borderRadius: 3,
+                background: tone === 'calc' ? SHEET_COLORS.calc : SHEET_COLORS.input, padding: '0 6px', borderRadius: 4,
                 ...INHERIT_FONT, fontWeight: edited ? 700 : 400,
             }}
             className="sheet-cell focus:outline-none focus:border-orange-400"
@@ -150,7 +153,8 @@ export function TextCell({ value, onCommit, edited, placeholder, ariaLabel }: Te
             }}
             style={{
                 width: '100%', minWidth: 0, border: '1px solid transparent', background: 'transparent',
-                padding: '2px 4px', borderRadius: 3, ...INHERIT_FONT, fontWeight: edited ? 700 : 400,
+                // (32 − 2 border − one 21.7 px line) / 2: one line sits centred in the 32 px cell, like the number cells.
+                padding: '4px 6px', borderRadius: 4, ...INHERIT_FONT, fontWeight: edited ? 700 : 400,
             }}
             className="sheet-text focus:outline-none focus:border-orange-400 focus:bg-white"
         />

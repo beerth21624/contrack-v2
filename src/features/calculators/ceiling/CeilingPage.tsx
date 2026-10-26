@@ -81,21 +81,21 @@ function CeilingJourney({ input, update, outputs }: {
         const eaves = r.code === 'C3';
         const area = ceilingRowArea(r);
         return (
-            <PlanCard key={i} index={i + 1} state={state}
+            <PlanCard key={i} index={i + 1} state={state} scope={{ listKey: 'rows', itemIndex: i }}
                 title={<NameInput value={r.location} placeholder="ชื่อห้อง เช่น ห้องนอน 1" ariaLabel={`ชื่อห้องที่ ${String(i + 1)}`}
                     onChange={location => setRow(i, { location })} />}
                 result={area > 0 ? `${formatNumber(area)} ตร.ม.` : undefined}
                 onDuplicate={() => duplicate(i)} onDelete={() => setRows(rs => removeAt(rs, i))} hasData={r.width > 0 || r.length > 0}
                 deleteTitle="ลบห้องนี้?" missingText={`ยังขาด: ${missingOf(r).join(', ')}`}>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3">
-                    <PlanField className="sm:col-span-3" label="ชนิดฝ้า">
+                    <PlanField className="sm:col-span-3" label="ชนิดฝ้า" fieldKey="code">
                         <ChoiceButtons ariaLabel="ชนิดฝ้า" size="small" options={TYPE_CHOICES} value={r.code === '' ? undefined : r.code}
                             onChange={code => editRow(i, row => setCeilingCode(row, code))} />
                     </PlanField>
-                    <PlanNumber label={eaves ? 'ระยะยื่นชายคา' : 'กว้าง'} unit="ม." value={r.width}
+                    <PlanNumber label={eaves ? 'ระยะยื่นชายคา' : 'กว้าง'} fieldKey="width" unit="ม." value={r.width}
                         range={eaves ? [0.2, 2] : [0.3, 30]} missing={missing.has(eaves ? 'ระยะยื่นชายคา' : 'กว้าง')}
                         onChange={width => setRow(i, { width })} />
-                    <PlanNumber label={eaves ? 'ความยาวรอบชายคา' : 'ยาว'} unit="ม." value={r.length}
+                    <PlanNumber label={eaves ? 'ความยาวรอบชายคา' : 'ยาว'} fieldKey="length" unit="ม." value={r.length}
                         range={eaves ? [1, 300] : [0.3, 30]} missing={missing.has(eaves ? 'ความยาวรอบชายคา' : 'ยาว')}
                         onChange={length => setRow(i, { length })} />
                     <PlanNumber label="ลาดเอียง" unit="องศา" digits={0} value={r.slope ?? 0} range={[5, 60]}

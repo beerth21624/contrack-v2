@@ -158,8 +158,8 @@ function ProjectsContent() {
     const list = showTools ? sortProjects(filterProjects(all, search), sort) : all;
 
     return (
-        <div className="flex flex-col gap-4 max-w-5xl mx-auto w-full">
-            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center gap-3">
+        <div className="flex flex-col gap-4 max-w-[1200px] mx-auto w-full">
+            <div className="bg-white border border-gray-200 rounded-card p-4 sm:p-5 shadow-card flex flex-col md:flex-row md:items-center gap-3">
                 <div className="flex-1 min-w-0">
                     <Title level={3} style={{ margin: 0 }}>โครงการทั้งหมด</Title>
                     <Text type="secondary" className="text-[13px]">บันทึกบนคลาวด์ อัตโนมัติ เปิดจากเครื่องไหนก็ทำต่อได้</Text>
@@ -176,13 +176,16 @@ function ProjectsContent() {
                 </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center gap-3">
-                <LaptopOutlined className="text-[22px] text-gray-500" />
+            <div className="bg-white border border-gray-200 rounded-card p-4 sm:p-5 shadow-card flex flex-col sm:flex-row sm:items-center gap-3">
+                {/* The icon stays beside the text on a phone too (it is not a line of its own). */}
+                <div className="flex flex-1 min-w-0 items-center gap-3">
+                <LaptopOutlined className="shrink-0 text-[22px] text-gray-500" />
                 <div className="flex-1 min-w-0">
                     <div className="font-semibold">โครงการในเครื่องนี้: {guest.meta.projectName === '' ? 'โครงการของฉัน' : guest.meta.projectName}</div>
                     <div className="text-[12px] text-gray-500 tabular-nums">
                         {guestDone}/{JOURNEY_LEVELS.length} ขั้นตอน · {formatNumber(guestTotal, 0)} บาท · เก็บในเบราว์เซอร์นี้เท่านั้น
                     </div>
+                </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {openId !== null && <Button icon={<FolderOpenOutlined />} onClick={() => { void openLocal(); }}>เปิด</Button>}
@@ -209,12 +212,12 @@ function ProjectsContent() {
             </div>
 
             {projects.isLoading ? spinner : projects.isError ? (
-                <div className="bg-white border border-gray-200 rounded-xl p-6 text-center text-gray-600">
+                <div className="bg-white border border-gray-200 rounded-card p-6 text-center text-gray-600">
                     {thaiErrorMessage(projects.error)}
                     <div className="mt-3"><Button onClick={() => { void projects.refetch(); }}>ลองใหม่</Button></div>
                 </div>
             ) : all.length === 0 ? (
-                <div className="bg-white border border-gray-200 rounded-xl p-10">
+                <div className="bg-white border border-gray-200 rounded-card p-10">
                     {archived || !can(role, 'projects.create')
                         ? <Empty description={archived ? 'ไม่มีโครงการที่เก็บถาวร' : 'ยังไม่มีโครงการในพื้นที่นี้'} />
                         : (
@@ -234,7 +237,7 @@ function ProjectsContent() {
                         )}
                 </div>
             ) : list.length === 0 ? (
-                <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-600">
+                <div className="bg-white border border-gray-200 rounded-card p-8 text-center text-gray-600">
                     ไม่พบโครงการที่ชื่อมี &quot;{search.trim()}&quot;
                     <div className="mt-2"><Button size="small" onClick={() => setSearch('')}>ล้างคำค้น</Button></div>
                 </div>
@@ -254,7 +257,7 @@ function ProjectsContent() {
                         const own = (fn?: () => void) => (e: React.MouseEvent) => { e.stopPropagation(); fn?.(); };
                         return (
                             <div key={p.id} onClick={activate}
-                                className={`bg-white border rounded-xl p-4 shadow-sm flex flex-col gap-2 transition
+                                className={`bg-white border rounded-card p-4 shadow-card flex flex-col gap-2 transition
                                     ${canOpen ? 'cursor-pointer hover:shadow-md hover:border-orange-300' : ''}
                                     ${p.id === openId ? 'border-orange-400 ring-2 ring-orange-100' : 'border-gray-200'}`}>
                                 <div className="flex items-start gap-2">
@@ -284,7 +287,7 @@ function ProjectsContent() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Progress percent={p.summary.levelsTotal === 0 ? 0 : Math.round((p.summary.levelsDone / p.summary.levelsTotal) * 100)}
-                                        showInfo={false} strokeColor="#fa8c16" className="flex-1 !mb-0" size="small" />
+                                        showInfo={false} strokeColor="#F97316" className="flex-1 !mb-0" size="small" />
                                     <span className="text-[12px] text-gray-600 whitespace-nowrap tabular-nums">{p.summary.levelsDone}/{p.summary.levelsTotal} ขั้นตอน</span>
                                 </div>
                                 {/* The whole card opens it: a quiet button, so "สร้างโครงการใหม่" stays the page's one primary action. */}
@@ -364,7 +367,7 @@ function CreateProjectModal({ open, workspaceId, upload, onClose, onCreated }: {
                 <div className="flex flex-col gap-2">
                     {START_CHOICES.map(c => (
                         <button key={c.start} type="button" onClick={() => setStart(c.start)}
-                            className={`text-left flex gap-3 rounded-lg border-2 p-3 transition cursor-pointer bg-white
+                            className={`text-left flex gap-3 rounded-card border-2 p-3 transition cursor-pointer bg-white
                                 ${start === c.start ? 'border-orange-400 bg-orange-50' : 'border-gray-200 hover:border-orange-300'}`}>
                             <span className="text-[22px] text-orange-500">{c.icon}</span>
                             <span>

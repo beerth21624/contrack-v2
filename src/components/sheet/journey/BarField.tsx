@@ -8,7 +8,7 @@ import { ChoiceButtons, PresetChips, outOfRange } from './Choices';
 import { PlanField } from './PlanField';
 
 export function BarField({
-    label, sizes, size, onSize, amount, onAmount, amountLabel, amountUnit = 'เส้น', amountDigits = 0, presets, range, hint,
+    label, sizes, size, onSize, amount, onAmount, amountLabel, amountUnit = 'เส้น', amountDigits = 0, presets, range, hint, fieldKey,
 }: {
     label: string;
     /** Bar sizes offered (the sheet's dropdown list). */
@@ -26,11 +26,13 @@ export function BarField({
     /** Usual [min, max] of the amount: outside it a quiet note asks to check the unit. */
     range?: readonly [number, number];
     hint?: ReactNode;
+    /** Key of the input field (see `PlanField`). */
+    fieldKey?: string;
 }) {
     const v = Number.isFinite(amount) ? amount : 0;
     const note = range === undefined ? undefined : outOfRange(v, range[0], range[1], amountUnit);
     return (
-        <PlanField label={label} hint={hint} note={note}>
+        <PlanField label={label} hint={hint} note={note} fieldKey={fieldKey}>
             <ChoiceButtons<string> size="small" ariaLabel={`${label} ขนาดเหล็ก`} value={size === '' ? undefined : size}
                 options={sizes.map(s => ({ value: s, label: s }))} onChange={onSize} />
             <span className="flex items-center gap-1.5 mt-0.5">

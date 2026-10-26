@@ -54,10 +54,10 @@ export function PresetChips({ values, current, onPick, format = sameDecimals(val
 }) {
     return (
         <div className="flex flex-wrap items-center gap-1" aria-label={label ?? 'ค่าที่ใช้บ่อย'}>
-            {label !== undefined && <span className="text-[11px] text-gray-400 mr-0.5">{label}</span>}
+            {label !== undefined && <span className="text-[12px] text-gray-400 mr-0.5">{label}</span>}
             {values.map(v => (
                 <button key={v} type="button" onClick={() => onPick(v)}
-                    className={`px-2 py-0.5 rounded-full border text-[11px] tabular-nums cursor-pointer transition
+                    className={`px-2 py-0.5 rounded-full border text-[12px] tabular-nums cursor-pointer transition
                         ${v === current ? 'bg-orange-50 border-orange-300 text-orange-700' : 'bg-white border-gray-200 text-gray-600 hover:border-orange-300'}`}>
                     {format(v)}
                 </button>

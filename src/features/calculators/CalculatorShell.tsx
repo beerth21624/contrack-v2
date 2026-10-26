@@ -27,7 +27,7 @@ export function BoqPreview({ result, sections, highlight, highlightPrefix, title
         (highlight?.has(key) ?? false) || (highlightPrefix !== undefined && key.startsWith(highlightPrefix));
     const secs = result.boq.sections.filter(s => sections.includes(s.no));
     return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-card shadow-card">
             <div className="px-4 py-2 border-b border-gray-100 font-semibold text-[14px] text-gray-800">
                 {title}
             </div>
@@ -109,16 +109,16 @@ export function CalculatorShell({ def, result, isDefault, onReset, children, asi
     }
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-3 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-3 bg-white border border-gray-200 rounded-card p-4 shadow-card">
                 <Link href={`/boq#boq-section-${def.sections[0] ?? 0}`}>
                     <Button icon={<ArrowLeftOutlined />} aria-label="กลับไปหน้าสรุป BOQ" />
                 </Link>
                 <div className="min-w-0">
-                    <Text className="text-[11px] font-bold tracking-widest text-orange-500 uppercase">
+                    <Text className="text-[12px] font-semibold tracking-wide text-orange-500 uppercase">
                         หมวด BOQ {def.sections.join(', ')}
                     </Text>
                     <Title level={4} style={{ margin: 0 }}>{def.title}</Title>
-                    <Text type="secondary" className="text-[12px]">ชีต Excel: {def.sheetName}</Text>
+                    <Text type="secondary" className="text-[12px] [overflow-wrap:anywhere]">ชีต Excel: {def.sheetName}</Text>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
                     {isDefault

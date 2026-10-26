@@ -37,9 +37,9 @@ export function ProjectInfoInputs() {
 
     return (
         <SheetCard>
-            <p className="mb-2 text-[12px] text-gray-500">เว้นว่างไว้แล้วกลับมากรอกทีหลังได้</p>
+            <p className="mb-2 text-[12px] text-gray-500">ช่องอื่นนอกจากชื่อโครงการ เว้นว่างไว้แล้วกลับมากรอกทีหลังได้</p>
             {FIELDS.map(f => (
-                <InputTextField key={f.field} label={f.label} value={meta[f.field]} placeholder={f.placeholder}
+                <InputTextField key={f.field} label={f.label} value={meta[f.field]} placeholder={f.placeholder} fieldKey={f.field}
                     onChange={v => setMeta({ [f.field]: v })} />
             ))}
             <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-center gap-2 py-1">
@@ -47,7 +47,7 @@ export function ProjectInfoInputs() {
                 <div className="flex flex-wrap items-center gap-2">
                     <DatePicker size="small" variant="borderless" format={DATE_FORMAT} value={date ?? null}
                         placeholder={legacyText ?? 'เลือกวันที่'} aria-label="วันที่เอกสาร"
-                        style={{ background: SHEET_COLORS.input, borderRadius: 3, minWidth: 150 }}
+                        style={{ background: SHEET_COLORS.input, borderRadius: 4, minWidth: 150, height: 32 }}
                         onChange={d => setMeta({ documentDate: d === null ? '' : d.format(DATE_FORMAT) })} />
                     <Button size="small" type="link" className="!px-1" onClick={() => setMeta({ documentDate: dayjs().format(DATE_FORMAT) })}>
                         วันนี้

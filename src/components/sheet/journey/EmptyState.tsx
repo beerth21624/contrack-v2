@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from 'antd';
 import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons';
 import { levelHref, levelTitle } from './levelRef';
+import { useRequiredAdd } from './RequiredContext';
 
 export interface EmptyAction { label: string; onClick: () => void }
 
@@ -25,8 +26,11 @@ export function EmptyState({ text, note, addLabel, onAdd, actions = [], goToLeve
     children?: ReactNode;
 }) {
     const buttons: EmptyAction[] = [...(addLabel !== undefined && onAdd ? [{ label: addLabel, onClick: onAdd }] : []), ...actions];
+    // After a failed confirm on a step that needs its first item, the thin missing ring.
+    const needed = useRequiredAdd() && buttons.length > 0;
     return (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center">
+        <div data-req-add=""
+            className={`flex flex-col items-center gap-3 rounded-[10px] border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center scroll-mt-24 ${needed ? 'ring-1 ring-red-300' : ''}`}>
             <div className="text-[14px] text-gray-600 max-w-xl">{text}</div>
             {note !== undefined && <div className="text-[12px] text-gray-500 max-w-xl">{note}</div>}
             {(buttons.length > 0 || goToLevel !== undefined) && (

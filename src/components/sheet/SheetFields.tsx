@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { NumberCell, TextCell, SHEET_COLORS, formatNumber } from './NumberCell';
+import { RequiredMark, useRequiredField } from './journey/RequiredContext';
 
 /** Labelled yellow number input (an Excel input cell). */
 export function InputNumberField({ label, value, onChange, unit, hint, digits = 2, percent }: {
@@ -19,13 +20,16 @@ export function InputNumberField({ label, value, onChange, unit, hint, digits = 
 }
 
 /** Labelled yellow text input. */
-export function InputTextField({ label, value, onChange, placeholder }: {
+export function InputTextField({ label, value, onChange, placeholder, fieldKey }: {
     label: string; value: string; onChange: (v: string) => void; placeholder?: string;
+    /** Key of the input field on a journey step: `*` when required, ring when still missing on confirm. */
+    fieldKey?: string;
 }) {
+    const req = useRequiredField(fieldKey);
     return (
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-center gap-2 py-1">
-            <span className="text-[13px] text-gray-700">{label}</span>
-            <div style={{ background: SHEET_COLORS.input, borderRadius: 3 }}>
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-center gap-2 py-1" data-req-field={req.targetId}>
+            <span className="text-[13px] text-gray-700">{label}<RequiredMark required={req.required} /></span>
+            <div className={`rounded ${req.highlighted ? 'ring-1 ring-red-300' : ''}`} style={{ background: SHEET_COLORS.input }}>
                 <TextCell value={value} placeholder={placeholder} ariaLabel={label} onCommit={v => onChange(v ?? '')} />
             </div>
         </div>
@@ -49,14 +53,14 @@ export function CalcField({ label, value, unit, digits = 2, strong }: {
 /** White card used to group a calculator's blocks. */
 export function SheetCard({ title, extra, children }: { title?: ReactNode; extra?: ReactNode; children: ReactNode }) {
     return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-card shadow-card">
             {(title !== undefined || extra !== undefined) && (
-                <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100">
-                    <span className="font-semibold text-[14px] text-gray-800">{title}</span>
-                    <span className="ml-auto">{extra}</span>
+                <div className="flex items-center gap-2 min-h-[44px] px-4 sm:px-5 py-2 border-b border-gray-100">
+                    <span className="font-semibold text-[14px] leading-snug text-gray-800">{title}</span>
+                    {extra !== undefined && <span className="ml-auto flex items-center">{extra}</span>}
                 </div>
             )}
-            <div className="p-4">{children}</div>
+            <div className="p-4 sm:p-5">{children}</div>
         </div>
     );
 }

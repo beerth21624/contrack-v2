@@ -1,27 +1,68 @@
 @import "tailwindcss";
 
+/* ── Design tokens (docs/rebuild/DESIGN_SYSTEM.md). The antd theme in AppLayoutUI.tsx uses the same values. ── */
 :root {
-  --background: #f5f5f7;
-  --foreground: #171717;
+  --background: #f6f7f9;
+  --foreground: #111827;
   --card-bg: #ffffff;
-  --card-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-  --card-shadow-hover: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.04);
-  --accent: #fa8c16;
-  --accent-light: #fff7e6;
+  --card-shadow: 0 1px 2px rgb(16 24 40 / .04);
+  --card-shadow-hover: 0 4px 12px rgb(16 24 40 / .08);
+  --accent: #f97316;
+  --accent-light: #fff7ed;
   --transition-base: 0.2s cubic-bezier(.4,0,.2,1);
+  /* Sheet cells: input (soft yellow) and calculated (soft green), as SHEET_COLORS in NumberCell.tsx. */
+  --sheet-input: #fff7d6;
+  --sheet-calc: #eaf6ec;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-plex-thai), 'IBM Plex Sans Thai', system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
+  --font-document: var(--font-sarabun), 'Sarabun', sans-serif;
+}
+
+@theme {
+  /* Brand: one accent only. */
+  --color-brand: #f97316;
+  --color-brand-hover: #ea580c;
+  --color-brand-soft: #fff7ed;
+  /* Page and sheet surfaces. */
+  --color-page: #f6f7f9;
+  --color-sheet-input: #fff7d6;
+  --color-sheet-calc: #eaf6ec;
+  /* Radius: 6 inputs / buttons · 10 cards · 16 hero. */
+  --radius-control: 6px;
+  --radius-card: 10px;
+  --radius-hero: 16px;
+  /* The one card shadow. */
+  --shadow-card: 0 1px 2px rgb(16 24 40 / .04);
+  /* Type scale (px): caption · secondary · body · section · card title · page title · key figure. */
+  --text-caption: 12px;
+  --text-caption--line-height: 1.5;
+  --text-secondary: 13px;
+  --text-secondary--line-height: 1.55;
+  --text-body: 14px;
+  --text-body--line-height: 1.55;
+  --text-section: 16px;
+  --text-section--line-height: 1.4;
+  --text-card-title: 18px;
+  --text-card-title--line-height: 1.25;
+  --text-page-title: 22px;
+  --text-page-title--line-height: 1.25;
+  --text-figure: 28px;
+  --text-figure--line-height: 1.25;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Sarabun', Arial, Helvetica, sans-serif;
+  font-family: var(--font-plex-thai), 'IBM Plex Sans Thai', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  /* Every amount and quantity lines up digit under digit. */
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -52,7 +93,7 @@ button.ant-btn {
     background-color: #fff;
 }
 button.ant-btn-primary {
-    background-color: #fa8c16;
+    background-color: #f97316;
     color: white;
 }
 button.ant-btn-text {
@@ -61,8 +102,21 @@ button.ant-btn-text {
 button.ant-btn-link {
     background-color: transparent;
 }
+/* Button icons centred on the button, not on the text baseline (Thai line boxes are taller: 1–2 px drift). */
+.ant-btn > .ant-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    line-height: 0;
+}
 input.ant-input, .ant-select-selector {
     background-color: #fff;
+}
+
+/* ── Sheet cells: 32 px like a small control (design system: 32 in tables), so a cell, a dropdown and a
+      date picker in one row share one height. Phones get 40 (below). ── */
+.sheet-cell,
+.sheet-text {
+    min-height: 32px;
 }
 
 /* ── Sheet text cells (TextCell): one line that grows to show the whole text instead of cutting it off ── */
@@ -102,7 +156,7 @@ input.ant-input, .ant-select-selector {
 /* ── Card utility class ── */
 .ui-card {
     background: var(--card-bg);
-    border: 1px solid #e8e8e8;
+    border: 1px solid #e5e7eb;
     border-radius: 10px;
     box-shadow: var(--card-shadow);
     transition: box-shadow var(--transition-base), transform var(--transition-base);
@@ -115,7 +169,7 @@ input.ant-input, .ant-select-selector {
 @media (max-width: 767px) {
     /* Header */
     .ant-layout-header {
-        padding: 0 12px !important;
+        padding: 0 16px !important;
     }
 
     /* Toast Messages mapping to bottom */
@@ -158,7 +212,8 @@ input.ant-input, .ant-select-selector {
         padding-top: 8px !important;
         padding-bottom: 8px !important;
     }
-    .ant-select-sm {
+    .ant-select-sm,
+    .ant-picker-small {
         min-height: 40px;
     }
 

@@ -50,12 +50,8 @@ export function SchedulePage() {
             <SummaryBanner headline={s.start && s.finish
                 ? <>ใช้เวลา {s.durationDays} วัน เริ่ม {formatDate(s.start)} เสร็จ {formatDate(s.finish)}</>
                 : <>ยังไม่ได้กำหนดวันเริ่มงาน</>}>
+                {/* Progress, spending and delay are the tiles below: not repeated here. */}
                 <span>งบประมาณโครงการ {money(s.budget)} บาท · {s.tasks.length} งาน ใน {s.installments.length} งวด</span>
-                <span>
-                    {status.lastUpdate
-                        ? <>อัปเดตล่าสุด {formatDate(status.lastUpdate)} · {status.delayText} · ใช้เงินไปแล้ว {money(status.spent)} บาท</>
-                        : <>ยังไม่มีการบันทึกผลงานจริง</>}
-                </span>
             </SummaryBanner>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
@@ -83,7 +79,7 @@ export function SchedulePage() {
                         value={status.delayText === null ? '–'
                             : <span className="flex items-center gap-1">
                                 {status.delayStatus === 'late' ? <ClockCircleOutlined /> : status.delayStatus === 'ahead' ? <RiseOutlined /> : <CheckCircleOutlined />}
-                                <span className="text-[15px]">{status.delayText}</span>
+                                <span>{status.delayText}</span>
                             </span>} />
                 </div>
             </div>

@@ -72,9 +72,9 @@ export default function RoofingJourney() {
         <CalculatorShell def={roofing} result={result} isDefault={isDefault} onReset={reset}>
             <SheetCard title="ขนาดหลังคา">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 items-start">
-                    <PlanNumber label="พื้นที่หลังคาตามแนวราบ" value={input.planArea} unit="ตร.ม." range={[10, 2000]}
+                    <PlanNumber label="พื้นที่หลังคาตามแนวราบ" fieldKey="planArea" value={input.planArea} unit="ตร.ม." range={[10, 2000]}
                         hint="มองจากด้านบน รวมชายคา" onChange={v => update({ planArea: v })} />
-                    <PlanNumber label="ความชันหลังคา" value={input.slopeDeg} unit="องศา" digits={0} range={[5, 60]}
+                    <PlanNumber label="ความชันหลังคา" fieldKey="slopeDeg" value={input.slopeDeg} unit="องศา" digits={0} range={[5, 60]}
                         presets={[30, 35, 40]} presetFormat={v => `${String(v)}°`} missing={slopeMissing}
                         hint="ดูจากรูปตัด" onChange={v => update(p => withRoofSlope(p, v))} />
                     {(outputs.slopeArea ?? 0) > 0 && (

@@ -434,12 +434,13 @@ const RULES: Record<string, StepRule> = {
         missing: p => pickListMissing(input(p, electricalEquipment), 'ระบุอุปกรณ์ไฟฟ้าพร้อมจำนวนอย่างน้อย 1 รายการ'),
     },
 
+    // "At least one run": no single field is required, so the * goes on the section title (PipeRunsJourney).
     'waste-pipe': {
-        fields: ['horizontal', 'vertical'],
+        fields: [],
         missing: p => pipeRunsMissing(input(p, wastePipe), 'กรอกความยาวท่อน้ำทิ้งอย่างน้อย 1 แนว'),
     },
     'water-pipe': {
-        fields: ['horizontal', 'vertical'],
+        fields: [],
         missing: p => pipeRunsMissing(input(p, waterPipe), 'กรอกความยาวท่อน้ำดีอย่างน้อย 1 แนว'),
     },
 

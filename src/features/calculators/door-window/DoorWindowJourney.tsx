@@ -119,7 +119,7 @@ export default function DoorWindowJourney() {
         const missing = state === 'missing' ? new Set(missingOf(r)) : new Set<string>();
         const c = openingRowCalc(r);
         return (
-            <PlanCard key={i} index={i + 1} state={state}
+            <PlanCard key={i} index={i + 1} state={state} scope={{ listKey: block, itemIndex: i }}
                 title={titleOf(r, `${b.title}ที่ ${String(i + 1)}`)}
                 result={c.total > 0 ? <>{formatNumber(c.total)} ตร.ม.</> : undefined}
                 onDuplicate={() => setBlock(block, rows => duplicateOpeningRow(rows, i, b.prefix))}
@@ -135,12 +135,12 @@ export default function DoorWindowJourney() {
                         <ChoiceButtons ariaLabel="วัสดุบาน" value={r.type.trim() === '' ? undefined : r.type.trim()} options={TYPE_CHOICES}
                             onChange={type => setRow(block, i, { type })} />
                     </PlanField>
-                    <PlanNumber label="จำนวน" unit="บาน" digits={0} value={r.count} missing={missing.has('จำนวน')}
+                    <PlanNumber label="จำนวน" fieldKey="count" unit="บาน" digits={0} value={r.count} missing={missing.has('จำนวน')}
                         onChange={count => setRow(block, i, { count })} />
-                    <PlanNumber label="กว้าง" unit="ม." value={r.width} presets={b.widths} presetFormat={v => v.toFixed(1)}
+                    <PlanNumber label="กว้าง" fieldKey="width" unit="ม." value={r.width} presets={b.widths} presetFormat={v => v.toFixed(1)}
                         range={b.widthRange} missing={missing.has('ความกว้าง')}
                         onChange={width => setRow(block, i, { width })} />
-                    <PlanNumber label="สูง" unit="ม." value={r.height} presets={b.heights} presetFormat={v => v.toFixed(1)}
+                    <PlanNumber label="สูง" fieldKey="height" unit="ม." value={r.height} presets={b.heights} presetFormat={v => v.toFixed(1)}
                         range={b.heightRange} missing={missing.has('ความสูง')}
                         onChange={height => setRow(block, i, { height })} />
                     <PlanField className="sm:col-span-2" label="ติดตั้งที่ผนัง">

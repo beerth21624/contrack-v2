@@ -57,9 +57,9 @@ function JourneyView({ calc }: { calc: UseCalculator<FillInput> }) {
         <>
             <SheetCard title="พื้นที่ที่ต้องถม">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
-                    <JNumber label="ความกว้างพื้นที่ถม" value={input.width} unit="ม." onChange={v => update({ width: v })} />
-                    <JNumber label="ความยาวพื้นที่ถม" value={input.length} unit="ม." onChange={v => update({ length: v })} />
-                    <PlanNumber label="ความสูงถม" value={input.height} unit="ม." range={[0.05, 3]}
+                    <JNumber label="ความกว้างพื้นที่ถม" fieldKey="width" value={input.width} unit="ม." onChange={v => update({ width: v })} />
+                    <JNumber label="ความยาวพื้นที่ถม" fieldKey="length" value={input.length} unit="ม." onChange={v => update({ length: v })} />
+                    <PlanNumber label="ความสูงถม" fieldKey="height" value={input.height} unit="ม." range={[0.05, 3]}
                         hint="ระดับที่ต้องการ ลบ ระดับดินเดิม" onChange={v => update({ height: v })} />
                     <JText wide label="วัสดุถม" value={input.material} placeholder="เช่น ดินถม, ทรายถม, ลูกค้าจัดหาเอง"
                         onChange={v => update({ material: v })} />

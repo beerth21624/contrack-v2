@@ -98,7 +98,7 @@ function JourneyView({ calc }: { calc: UseCalculator<DemolitionInput> }) {
                         const fixed = i < FIXED_ROWS;
                         const unit = r.unit === '' ? 'หน่วย' : r.unit;
                         return (
-                            <PlanCard key={i} index={i + 1} state={k.state} hasData={k.hasData} compact
+                            <PlanCard key={i} index={i + 1} state={k.state} hasData={k.hasData} compact scope={{ listKey: 'items', itemIndex: i }}
                                 missingText={k.missingText === undefined ? undefined
                                     : `${k.missingText} — รายการนี้ยังคิดเป็น 0 บาท`}
                                 title={fixed
@@ -116,7 +116,7 @@ function JourneyView({ calc }: { calc: UseCalculator<DemolitionInput> }) {
                                     )}
                                     <PlanNumber label="ปริมาณ" value={r.qty} unit={unit}
                                         onChange={v => setLine(i, { qty: v })} />
-                                    <PlanNumber label="ค่ารื้อต่อหน่วย" value={r.rate} unit={`บาท/${unit}`} digits={0}
+                                    <PlanNumber label="ค่ารื้อต่อหน่วย" value={r.rate} unit={`บาท/${unit}`} digits={0} fieldKey="rate"
                                         onChange={v => setLine(i, { rate: v })} />
                                 </div>
                             </PlanCard>

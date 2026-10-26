@@ -13,7 +13,8 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { NumberCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import {
-    AddButton, CountStepper, Hint, LevelLink, ResultSummary, blankIfZero, levelTitle,
+    AddButton, CountStepper, Hint, LevelLink, RequiredArea, RequiredMark, ResultSummary, blankIfZero, levelTitle,
+    useRequiredField,
 } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
@@ -249,12 +250,13 @@ function CountLine({ line, hint, suggestion, onQty }: {
                 {isCountUnit(line.unit)
                     ? <CountStepper value={qty} onChange={onQty} ariaLabel={`จำนวน ${line.label}`} unit={line.unit} />
                     : (
+                        // As wide as a stepper (− box +) and with the same unit column, so every line ends in one column.
                         <>
-                            <span className="w-[96px]">
+                            <span className="w-[120px]">
                                 <NumberCell value={qty} digits={qtyDigits(qty, line.unit)} blankZero placeholder="0"
                                     onCommit={v => onQty(v ?? 0)} ariaLabel={`ปริมาณ ${line.label} (${line.unit})`} />
                             </span>
-                            <span className="text-[12px] text-gray-500">{line.unit}</span>
+                            <span className="min-w-[40px] text-[12px] text-gray-500 whitespace-nowrap">{line.unit}</span>
                         </>
                     )}
             </div>
@@ -271,6 +273,8 @@ function JourneyPickList({
     catalogue, options, units = [], allowFreeText, journeyNotes, journeyTop, groups, itemHints, suggestions, calc,
 }: PickListPageProps & { calc: Calc }) {
     const { input, update, outputs } = calc;
+    // The step needs at least one counted item: the count sheet's title carries the `*`.
+    const qtyRequired = useRequiredField('qty').required;
     const rows = input.items;
     const { first, others } = splitByOption(rows, options);
     const setRow = (i: number, row: PickRow) => update(p => ({ ...p, items: p.items.map((r, j) => (j === i ? row : r)) }));
@@ -294,10 +298,10 @@ function JourneyPickList({
 
     return (
         <>
-            <SheetCard title="นับจากแบบ">
+            <SheetCard title={<>นับจากแบบ<RequiredMark required={qtyRequired} /></>}>
                 {journeyTop !== undefined && <div className="mb-3">{journeyTop}</div>}
                 <p className="mb-1 text-[12px] text-gray-500">ใส่จำนวนตามที่เห็นในแบบ รายการที่ไม่มีให้เว้นว่างไว้</p>
-                <div className="flex flex-col gap-3">
+                <RequiredArea className="flex flex-col gap-3">
                     {groupLines(lines, groups).map(g => (
                         <div key={g.title}>
                             {g.title !== '' && <div className="mt-1 text-[12px] font-semibold text-gray-500">{g.title}</div>}
@@ -311,7 +315,7 @@ function JourneyPickList({
                             </div>
                         </div>
                     ))}
-                </div>
+                </RequiredArea>
                 {journeyNotes}
             </SheetCard>
 

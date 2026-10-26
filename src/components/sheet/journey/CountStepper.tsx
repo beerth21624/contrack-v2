@@ -36,7 +36,8 @@ export function CountStepper({ value, onChange, ariaLabel, min = 0, step = 1, di
                 onClick={() => onChange(Number((v + step).toFixed(6)))}>
                 <PlusOutlined />
             </button>
-            {unit !== undefined && <span className="text-[12px] text-gray-500 whitespace-nowrap ml-0.5">{unit}</span>}
+            {/* A constant width, so steppers in a list line up whatever their unit (ตัว / ชุด / ท่อน). */}
+            {unit !== undefined && <span className="min-w-[40px] text-[12px] text-gray-500 whitespace-nowrap ml-0.5">{unit}</span>}
         </span>
     );
 }

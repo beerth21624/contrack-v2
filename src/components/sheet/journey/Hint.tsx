@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 
 /** Small grey hint under a field label. */
 export function Hint({ children }: { children: ReactNode }) {
-    return <div className="text-[11px] leading-tight text-gray-500">{children}</div>;
+    return <div className="text-[12px] leading-tight text-gray-500">{children}</div>;
 }
 
 /** Label + hint cell content of a journey table. */

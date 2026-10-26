@@ -66,7 +66,7 @@ export function PlanningHeader({ current, title, sheetName, isDefault, onReset }
     onReset: () => void;
 }) {
     return (
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col gap-3">
+        <div className="bg-white border border-gray-200 rounded-card p-4 shadow-card flex flex-col gap-3">
             <nav aria-label="ขั้นตอนวางแผน" className="flex flex-wrap items-center gap-1 text-[12px]">
                 {STEPS.map((s, i) => (
                     <span key={s.href} className="flex items-center gap-1">
@@ -80,7 +80,7 @@ export function PlanningHeader({ current, title, sheetName, isDefault, onReset }
             <div className="flex flex-wrap items-center gap-3">
                 <div className="min-w-0">
                     <Title level={4} style={{ margin: 0 }}>{title}</Title>
-                    <Text type="secondary" className="text-[12px]">ชีต Excel: {sheetName}</Text>
+                    <Text type="secondary" className="text-[12px] [overflow-wrap:anywhere]">ชีต Excel: {sheetName}</Text>
                 </div>
                 <div className="ml-auto">
                     {isDefault
@@ -129,12 +129,12 @@ export function StatTile({ label, value, unit, hint, tone = 'default' }: {
 }) {
     const color = tone === 'good' ? 'text-green-700' : tone === 'bad' ? 'text-red-600' : 'text-gray-900';
     return (
-        <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 min-w-0">
+        <div className="rounded-card border border-gray-200 bg-white px-3 py-2 min-w-0">
             <div className="text-[12px] text-gray-500 leading-tight">{label}</div>
             <div className={`text-[18px] font-semibold leading-tight mt-0.5 ${color}`}>
                 {value}{unit && <span className="ml-1 text-[12px] font-normal text-gray-500">{unit}</span>}
             </div>
-            {hint && <div className="text-[11px] text-gray-400 mt-0.5 leading-tight">{hint}</div>}
+            {hint && <div className="text-[12px] text-gray-400 mt-0.5 leading-tight">{hint}</div>}
         </div>
     );
 }
@@ -166,7 +166,7 @@ export function DateCell({ value, onCommit, ariaLabel, allowClear = true }: {
             allowClear={allowClear}
             value={value ? dayjs(value) : null}
             onChange={d => onCommit(d ? d.format('YYYY-MM-DD') : undefined)}
-            style={{ width: '100%', minWidth: 118, background: SHEET_COLORS.input, borderRadius: 3 }}
+            style={{ width: '100%', minWidth: 118, height: 32, background: SHEET_COLORS.input, borderRadius: 4 }}
         />
     );
 }
@@ -206,9 +206,9 @@ export function OptionalNumberCell({ value, onCommit, digits = 0, percent, ariaL
             }}
             style={{
                 width: '100%', minWidth: 0, textAlign: 'right', border: '1px solid transparent', background: SHEET_COLORS.input,
-                padding: '2px 4px', borderRadius: 3, font: 'inherit',
+                padding: '0 6px', borderRadius: 4, font: 'inherit',
             }}
-            className="focus:outline-none focus:border-orange-400"
+            className="sheet-cell focus:outline-none focus:border-orange-400"
         />
     );
 }

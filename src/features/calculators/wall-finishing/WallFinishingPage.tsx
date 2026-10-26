@@ -59,7 +59,7 @@ function WallFinishingJourney({ input, onChange, outputs }: {
         const state = stateOf(r);
         const length = wallFinishingLength(r) ?? 0;
         return (
-            <PlanCard key={i} index={n} state={state}
+            <PlanCard key={i} index={n} state={state} scope={{ listKey: 'rows', itemIndex: i }}
                 title={<NameInput value={r.location} placeholder="ตำแหน่ง เช่น ผนังภายนอก" ariaLabel={`ตำแหน่งบัวที่ ${String(n)}`}
                     onChange={location => setRow(i, x => ({ ...x, location }))} />}
                 result={length > 0 ? `${formatNumber(length)} ม.` : undefined}
@@ -70,7 +70,7 @@ function WallFinishingJourney({ input, onChange, outputs }: {
                         <ChoiceButtons ariaLabel="ขนาดบัว" size="small" options={MOULDING_OPTIONS} value={r.item.trim()}
                             onChange={item => setRow(i, x => ({ ...x, item }))} />
                     </PlanField>
-                    <PlanNumber label="ความยาวรวม" unit="ม." value={length} range={[0.5, 300]}
+                    <PlanNumber label="ความยาวรวม" fieldKey="length" unit="ม." value={length} range={[0.5, 300]}
                         missing={state === 'missing'} hint="รวมทุกช่วง เช่น 6+4.5+2.5"
                         onChange={v => setRow(i, x => setMouldingLength(x, v))} />
                 </div>
@@ -83,16 +83,16 @@ function WallFinishingJourney({ input, onChange, outputs }: {
         const missing = state === 'missing' ? new Set(missingOf(r)) : new Set<string>();
         const area = wallFinishingArea(r) ?? 0;
         return (
-            <PlanCard key={i} index={n} state={state}
+            <PlanCard key={i} index={n} state={state} scope={{ listKey: 'rows', itemIndex: i }}
                 title={<NameInput value={r.location} placeholder="ตำแหน่ง เช่น ผนังเฉลียง" ariaLabel={`ตำแหน่งผนังระแนงที่ ${String(n)}`}
                     onChange={location => setRow(i, x => ({ ...x, location }))} />}
                 result={area > 0 ? `${formatNumber(area)} ตร.ม.` : undefined}
                 onDuplicate={() => duplicate(i)} onDelete={() => remove(i)} hasData={r.width > 0 || r.length > 0}
                 deleteTitle="ลบผนังระแนงนี้?" missingText={`ยังขาด: ${missingOf(r).join(', ')}`}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                    <PlanNumber label="กว้าง" unit="ม." value={r.width} range={[0.3, 20]} missing={missing.has('กว้าง')}
+                    <PlanNumber label="กว้าง" fieldKey="width" unit="ม." value={r.width} range={[0.3, 20]} missing={missing.has('กว้าง')}
                         onChange={width => setRow(i, x => ({ ...x, width }))} />
-                    <PlanNumber label="สูง" unit="ม." value={r.length} range={[0.3, 6]} missing={missing.has('สูง')}
+                    <PlanNumber label="สูง" fieldKey="length" unit="ม." value={r.length} range={[0.3, 6]} missing={missing.has('สูง')}
                         onChange={length => setRow(i, x => ({ ...x, length }))} />
                 </div>
             </PlanCard>

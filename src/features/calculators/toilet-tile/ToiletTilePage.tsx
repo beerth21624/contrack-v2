@@ -12,7 +12,8 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber, SHEET_COLORS } from '@/components/sheet/NumberCell';
 import {
-    AddButton, EmptyState, FillProgress, NameInput, PlanCard, PlanField, PresetChips, ResultSummary, countFill, fillState,
+    AddButton, EmptyState, FillProgress, MissingRing, NameInput, PlanCard, PlanField, PresetChips, RequiredScope, ResultSummary, countFill,
+    fillState,
     outOfRange, type FillState,
 } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
@@ -60,15 +61,15 @@ const stateOf = (input: ToiletTileInput, group: BathroomGroup): FillState =>
     fillState([missingOf(input, group).length === 0], startedOf(input, group));
 
 /** A labelled blank-able number input of a bathroom card (a blank cell is not 0 here, as in Excel). */
-function Dim({ label, hint, value, onCommit, extra, note, missing }: {
+function Dim({ label, hint, value, onCommit, extra, note, missing, fieldKey }: {
     label: string; hint?: string; value: number | undefined; onCommit: (v: number | undefined) => void; extra?: ReactNode;
-    note?: string; missing?: boolean;
+    note?: string; missing?: boolean; fieldKey?: DimKey;
 }) {
     return (
-        <PlanField label={label} hint={hint} note={note}>
-            <span className={`block w-[120px] rounded ${missing ? 'ring-1 ring-red-300' : ''}`}>
+        <PlanField label={label} hint={hint} note={note} fieldKey={fieldKey} ringControl={false}>
+            <MissingRing fieldKey={fieldKey} missing={missing} className="block w-[120px]">
                 <OptionalNumberCell value={value} ariaLabel={label} onCommit={onCommit} />
-            </span>
+            </MissingRing>
             {extra}
         </PlanField>
     );
@@ -117,6 +118,76 @@ function BathroomCard({ index, group, input, update }: {
         ? `พื้น ${formatNumber(floorArea)} · ผนัง ${formatNumber(wallArea)} ตร.ม.`
         : undefined;
 
+    /** One floor / wall row of the bathroom (its fields belong to that row of the input). */
+    const rowView = (i: number, r: ToiletTileRow) => {
+        const kind = toiletRowKind(r);
+        const del = <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label="ลบแถว" onClick={() => removeRow(i)} />;
+        if (kind === 'floor') {
+            const need = missing.has('ขนาดพื้น');
+            return (
+                <div key={i} className="flex flex-wrap items-start gap-3 bg-gray-50 rounded-md px-3 py-2">
+                    <div className="w-full sm:w-[120px] text-[13px] font-medium text-gray-800 sm:pt-4">พื้น<div className="text-[12px] font-normal text-gray-500">กระเบื้องกันลื่น</div></div>
+                    <Dim label="กว้างห้อง (ม.)" fieldKey="width" value={r.width} missing={need && !filled(r.width)} note={plausible(r.width, 0.8, 6)}
+                        onCommit={v => update(p => setBathroomFloorSize(p, i, { width: v }))} />
+                    <Dim label="ยาวห้อง (ม.)" fieldKey="length" value={r.length} missing={need && !filled(r.length)} note={plausible(r.length, 0.8, 6)}
+                        onCommit={v => update(p => setBathroomFloorSize(p, i, { length: v }))} />
+                    <AreaOf row={r} />
+                    <div className="pt-4">{del}</div>
+                </div>
+            );
+        }
+        if (kind === 'wall') {
+            const canUse = perimeter !== undefined && Math.abs(perimeter - (r.length ?? NaN)) >= 1e-9;
+            const gross = (r.length ?? 0) * (r.height ?? 0);
+            const tooMuchOpening = gross > 0 && (r.openings ?? 0) > gross;
+            return (
+                <div key={i} className="flex flex-col gap-2 bg-gray-50 rounded-md px-3 py-2">
+                    <div className="flex flex-wrap items-start gap-3">
+                        <div className="w-full sm:w-[120px] text-[13px] font-medium text-gray-800 sm:pt-4">ผนัง<div className="text-[12px] font-normal text-gray-500">กรุกระเบื้อง</div></div>
+                        <Dim label="ความยาวรอบห้อง (ม.)" fieldKey="length" value={r.length} onCommit={v => setRow(i, { length: v })}
+                            missing={missing.has('ความยาวรอบห้อง') && !filled(r.length)} note={plausible(r.length, 2, 30)}
+                            hint="ใส่ขนาดพื้นแล้วคิดให้: 2 × (กว้าง + ยาว)"
+                            extra={canUse && (
+                                <Button size="small" type="link" className="!px-0 !h-auto self-start" onClick={() => setRow(i, { length: perimeter })}>
+                                    ใช้รอบห้อง {formatNumber(perimeter)} ม.
+                                </Button>
+                            )} />
+                        <Dim label="ความสูงที่กรุกระเบื้อง (ม.)" fieldKey="height" value={r.height} onCommit={v => setRow(i, { height: v })}
+                            missing={missing.has('ความสูงกระเบื้องผนัง') && !filled(r.height)} note={plausible(r.height, 0.3, 4)}
+                            extra={<PresetChips values={TILE_HEIGHTS} current={r.height ?? 0} format={tileHeightLabel}
+                                onPick={v => setRow(i, { height: v })} />} />
+                        <Dim label="หักช่องเปิด (ตร.ม.)" value={r.openings} onCommit={v => setRow(i, { openings: v })}
+                            hint="ประตู + หน้าต่าง เช่น 0.7*2+0.5*1.8" />
+                        <AreaOf row={r} />
+                        <div className="pt-4">{del}</div>
+                    </div>
+                    {tooMuchOpening && (
+                        <div className="text-[12px] text-red-600">ช่องเปิดมากกว่าพื้นที่ผนัง — ตรวจความยาวรอบห้อง ความสูง หรือขนาดช่องเปิด</div>
+                    )}
+                </div>
+            );
+        }
+        return (
+            <div key={i} className="flex flex-wrap items-start gap-3 bg-gray-50 rounded-md px-3 py-2">
+                <div className="w-[120px] text-[13px] text-gray-800 pt-1">
+                    <Select<string> size="small" style={{ width: 110 }} placeholder="พื้นหรือผนัง" value={undefined}
+                        options={[{ value: 'F3', label: 'พื้น' }, { value: 'P3', label: 'ผนัง' }]}
+                        onChange={(v: string) => {
+                            const d = CODE_DEFAULTS[v];
+                            setRow(i, d ? { code: v, surface: d.surface, item: d.item } : { code: v });
+                        }} />
+                    <div className="text-[12px] text-gray-400 mt-1">ยังไม่ได้เลือก — ไม่นับเข้า BOQ</div>
+                </div>
+                <Dim label="กว้าง (ม.)" value={r.width} onCommit={v => setRow(i, { width: v })} />
+                <Dim label="ยาว (ม.)" value={r.length} onCommit={v => setRow(i, { length: v })} />
+                <Dim label="สูง (ม.)" value={r.height} onCommit={v => setRow(i, { height: v })} />
+                <Dim label="หักช่องเปิด (ตร.ม.)" value={r.openings} onCommit={v => setRow(i, { openings: v })} />
+                <AreaOf row={r} />
+                <div className="pt-4">{del}</div>
+            </div>
+        );
+    };
+
     return (
         <PlanCard index={index} state={state}
             title={<NameInput value={group.name} placeholder="ชื่อห้องน้ำ" ariaLabel={`ชื่อห้องน้ำที่ ${String(index)}`}
@@ -129,72 +200,7 @@ function BathroomCard({ index, group, input, update }: {
             {group.rows.map(i => {
                 const r = input.rows[i];
                 if (!r) return null;
-                const kind = toiletRowKind(r);
-                const del = <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label="ลบแถว" onClick={() => removeRow(i)} />;
-                if (kind === 'floor') {
-                    const need = missing.has('ขนาดพื้น');
-                    return (
-                        <div key={i} className="flex flex-wrap items-start gap-3 bg-gray-50 rounded-md px-3 py-2">
-                            <div className="w-[120px] text-[13px] font-medium text-gray-800 pt-4">พื้น<div className="text-[11px] font-normal text-gray-500">กระเบื้องกันลื่น</div></div>
-                            <Dim label="กว้างห้อง (ม.)" value={r.width} missing={need && !filled(r.width)} note={plausible(r.width, 0.8, 6)}
-                                onCommit={v => update(p => setBathroomFloorSize(p, i, { width: v }))} />
-                            <Dim label="ยาวห้อง (ม.)" value={r.length} missing={need && !filled(r.length)} note={plausible(r.length, 0.8, 6)}
-                                onCommit={v => update(p => setBathroomFloorSize(p, i, { length: v }))} />
-                            <AreaOf row={r} />
-                            <div className="pt-4">{del}</div>
-                        </div>
-                    );
-                }
-                if (kind === 'wall') {
-                    const canUse = perimeter !== undefined && Math.abs(perimeter - (r.length ?? NaN)) >= 1e-9;
-                    const gross = (r.length ?? 0) * (r.height ?? 0);
-                    const tooMuchOpening = gross > 0 && (r.openings ?? 0) > gross;
-                    return (
-                        <div key={i} className="flex flex-col gap-2 bg-gray-50 rounded-md px-3 py-2">
-                            <div className="flex flex-wrap items-start gap-3">
-                                <div className="w-[120px] text-[13px] font-medium text-gray-800 pt-4">ผนัง<div className="text-[11px] font-normal text-gray-500">กรุกระเบื้อง</div></div>
-                                <Dim label="ความยาวรอบห้อง (ม.)" value={r.length} onCommit={v => setRow(i, { length: v })}
-                                    missing={missing.has('ความยาวรอบห้อง') && !filled(r.length)} note={plausible(r.length, 2, 30)}
-                                    hint="ใส่ขนาดพื้นแล้วคิดให้: 2 × (กว้าง + ยาว)"
-                                    extra={canUse && (
-                                        <Button size="small" type="link" className="!px-0 !h-auto self-start" onClick={() => setRow(i, { length: perimeter })}>
-                                            ใช้รอบห้อง {formatNumber(perimeter)} ม.
-                                        </Button>
-                                    )} />
-                                <Dim label="ความสูงที่กรุกระเบื้อง (ม.)" value={r.height} onCommit={v => setRow(i, { height: v })}
-                                    missing={missing.has('ความสูงกระเบื้องผนัง') && !filled(r.height)} note={plausible(r.height, 0.3, 4)}
-                                    extra={<PresetChips values={TILE_HEIGHTS} current={r.height ?? 0} format={tileHeightLabel}
-                                        onPick={v => setRow(i, { height: v })} />} />
-                                <Dim label="หักช่องเปิด (ตร.ม.)" value={r.openings} onCommit={v => setRow(i, { openings: v })}
-                                    hint="ประตู + หน้าต่าง เช่น 0.7*2+0.5*1.8" />
-                                <AreaOf row={r} />
-                                <div className="pt-4">{del}</div>
-                            </div>
-                            {tooMuchOpening && (
-                                <div className="text-[12px] text-red-600">ช่องเปิดมากกว่าพื้นที่ผนัง — ตรวจความยาวรอบห้อง ความสูง หรือขนาดช่องเปิด</div>
-                            )}
-                        </div>
-                    );
-                }
-                return (
-                    <div key={i} className="flex flex-wrap items-start gap-3 bg-gray-50 rounded-md px-3 py-2">
-                        <div className="w-[120px] text-[13px] text-gray-800 pt-1">
-                            <Select<string> size="small" style={{ width: 110 }} placeholder="พื้นหรือผนัง" value={undefined}
-                                options={[{ value: 'F3', label: 'พื้น' }, { value: 'P3', label: 'ผนัง' }]}
-                                onChange={(v: string) => {
-                                    const d = CODE_DEFAULTS[v];
-                                    setRow(i, d ? { code: v, surface: d.surface, item: d.item } : { code: v });
-                                }} />
-                            <div className="text-[11px] text-gray-400 mt-1">ยังไม่ได้เลือก — ไม่นับเข้า BOQ</div>
-                        </div>
-                        <Dim label="กว้าง (ม.)" value={r.width} onCommit={v => setRow(i, { width: v })} />
-                        <Dim label="ยาว (ม.)" value={r.length} onCommit={v => setRow(i, { length: v })} />
-                        <Dim label="สูง (ม.)" value={r.height} onCommit={v => setRow(i, { height: v })} />
-                        <Dim label="หักช่องเปิด (ตร.ม.)" value={r.openings} onCommit={v => setRow(i, { openings: v })} />
-                        <AreaOf row={r} />
-                        <div className="pt-4">{del}</div>
-                    </div>
-                );
+                return <RequiredScope key={i} scope={{ listKey: 'rows', itemIndex: i }}>{rowView(i, r)}</RequiredScope>;
             })}
 
             <div className="flex gap-2">

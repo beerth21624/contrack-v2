@@ -390,9 +390,11 @@ describe('requiredFields', () => {
     });
 
     it('returns keys only for steps with requirements', () => {
+        // Pipe steps only need "at least one run": the mark sits on the section title, not on a field.
+        const TITLE_MARKED = ['waste-pipe', 'water-pipe'];
         for (const l of JOURNEY_LEVELS) {
             const fields = requiredFields(l.id);
-            if (NONE.includes(l.id)) expect(fields.size, l.id).toBe(0);
+            if (NONE.includes(l.id) || TITLE_MARKED.includes(l.id)) expect(fields.size, l.id).toBe(0);
             else expect(fields.size, l.id).toBeGreaterThan(0);
         }
         expect([...requiredFields('footing')]).toEqual(['count', 'width', 'length', 'depth', 'excavationDepth']);

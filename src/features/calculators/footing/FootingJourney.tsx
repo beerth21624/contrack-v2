@@ -66,7 +66,7 @@ export function FootingJourney({ rows, onChange, backfillTotal }: {
                 const k = checksOf(r);
                 const warning = depthWarning(r);
                 return (
-                    <PlanCard key={i} index={i + 1} state={k.state} hasData={k.hasData} missingText={k.missingText}
+                    <PlanCard key={i} index={i + 1} scope={{ listKey: 'rows', itemIndex: i }} state={k.state} hasData={k.hasData} missingText={k.missingText}
                         title={`ฐานราก ${label(r, i)}`}
                         result={k.state === 'empty' ? undefined : resultText([
                             { label: 'คอนกรีต', value: c.concrete, unit: 'ลบ.ม.' },
@@ -76,13 +76,13 @@ export function FootingJourney({ rows, onChange, backfillTotal }: {
                         onDelete={() => onChange(removeAt(rows, i))} deleteTitle={`ลบฐานราก ${label(r, i)}?`}>
                         <PlanGroup title="จากแปลนฐานราก">
                             <JText label="ชื่อฐาน" value={r.name} placeholder="เช่น F1" onChange={v => set(i, { name: v })} />
-                            <PlanNumber label={L.count} value={r.count} unit="ฐาน" digits={0} onChange={v => set(i, { count: v })} />
+                            <PlanNumber label={L.count} fieldKey="count" value={r.count} unit="ฐาน" digits={0} onChange={v => set(i, { count: v })} />
                         </PlanGroup>
                         <PlanGroup title="ขนาดฐาน (จากรูปขยายฐานราก)">
-                            <PlanNumber label={L.width} value={r.width} unit="ม." range={[0.3, 5]} onChange={v => set(i, { width: v })} />
-                            <PlanNumber label={L.length} value={r.length} unit="ม." range={[0.3, 5]} onChange={v => set(i, { length: v })} />
-                            <PlanNumber label={L.depth} value={r.depth} unit="ม." range={[0.15, 2]} onChange={v => set(i, { depth: v })} />
-                            <PlanNumber label={L.pit} value={r.excavationDepth} unit="ม." range={[0.3, 5]}
+                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit="ม." range={[0.3, 5]} onChange={v => set(i, { width: v })} />
+                            <PlanNumber label={L.length} fieldKey="length" value={r.length} unit="ม." range={[0.3, 5]} onChange={v => set(i, { length: v })} />
+                            <PlanNumber label={L.depth} fieldKey="depth" value={r.depth} unit="ม." range={[0.15, 2]} onChange={v => set(i, { depth: v })} />
+                            <PlanNumber label={L.pit} fieldKey="excavationDepth" value={r.excavationDepth} unit="ม." range={[0.3, 5]}
                                 hint="ผิวดินถึงก้นหลุม รวมทรายและคอนกรีตหยาบ" onChange={v => set(i, { excavationDepth: v })} />
                         </PlanGroup>
                         <PlanGroup title="เหล็กเสริม ต่อ 1 ฐาน" hint="เช่น 5-DB12 → DB12, 5 เส้น" layout="wide">

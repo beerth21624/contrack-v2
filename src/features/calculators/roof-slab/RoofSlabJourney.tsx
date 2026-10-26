@@ -54,7 +54,7 @@ export function RoofSlabJourney({ input, outputs, onChange }: {
                 const c = roofSlabRow(r);
                 const k = checks[i] ?? checksOf(r);
                 return (
-                    <PlanCard key={i} index={i + 1} state={k.state} hasData={k.hasData} missingText={k.missingText} compact
+                    <PlanCard key={i} index={i + 1} scope={{ listKey: 'rows', itemIndex: i }} state={k.state} hasData={k.hasData} missingText={k.missingText} compact
                         title={`ผืนที่ ${String(i + 1)}`}
                         result={k.state === 'empty' ? undefined : resultText([
                             { label: 'คอนกรีต', value: c.concrete, unit: 'ลบ.ม.' },
@@ -67,9 +67,9 @@ export function RoofSlabJourney({ input, outputs, onChange }: {
                                 <ChoiceButtons<string> size="small" ariaLabel="ชื่อพื้น" value={r.name === '' ? undefined : r.name}
                                     options={nameOptions} onChange={v => set(i, { name: v })} />
                             </PlanField>
-                            <PlanNumber label={L.width} value={r.width} unit="ม." onChange={v => set(i, { width: v })} />
-                            <PlanNumber label={L.length} value={r.length} unit="ม." onChange={v => set(i, { length: v })} />
-                            <PlanNumber label={L.thickness} value={r.thickness} unit="ม." presets={[0.1, 0.12, 0.15]} range={[0.05, 0.4]}
+                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit="ม." onChange={v => set(i, { width: v })} />
+                            <PlanNumber label={L.length} fieldKey="length" value={r.length} unit="ม." onChange={v => set(i, { length: v })} />
+                            <PlanNumber label={L.thickness} fieldKey="thickness" value={r.thickness} unit="ม." presets={[0.1, 0.12, 0.15]} range={[0.05, 0.4]}
                                 onChange={v => set(i, { thickness: v })} />
                         </PlanGroup>
                         <PlanGroup title="เหล็กเสริม" hint="เช่น RB9 @0.20 ม. 2 ชั้น" layout="wide">

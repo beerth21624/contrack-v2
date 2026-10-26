@@ -243,7 +243,7 @@ export function BoqHomePage() {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-5 shadow-sm">
+            <div className="bg-white border border-gray-200 rounded-card p-4 sm:p-5 shadow-card">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                         <Title level={4} style={{ margin: 0 }}>{t('title')}</Title>
@@ -270,17 +270,17 @@ export function BoqHomePage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="bg-white border border-orange-200 rounded-lg p-4 shadow-sm">
+                <div className="bg-white border border-orange-200 rounded-card p-4 shadow-card">
                     <Text type="secondary" className="text-[13px]">{t('constructionTotal')}</Text>
                     <div className="text-2xl font-bold text-orange-500 tabular-nums">฿ {formatNumber(boq.constructionTotal)}</div>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <div className="bg-white border border-gray-200 rounded-card p-4 shadow-card">
                     <Text type="secondary" className="text-[13px]">{t('preConstruction')}</Text>
                     <div className="text-2xl font-semibold text-gray-700 tabular-nums">฿ {formatNumber(boq.preConstructionTotal)}</div>
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2 bg-white border border-gray-200 rounded-card px-3 py-2 shadow-card">
                 <Input allowClear prefix={<SearchOutlined className="text-gray-400" />} placeholder={tt.searchPh} aria-label={t('search')}
                     value={query} onChange={e => setQuery(e.target.value)} style={{ width: 300, maxWidth: '100%' }} />
                 <Select<number> showSearch={{ optionFilterProp: 'label' }} placeholder={tt.jump} aria-label={tt.jump}
@@ -289,13 +289,13 @@ export function BoqHomePage() {
                     onSelect={jumpTo} />
                 {filtering && <span className="text-[13px] text-gray-500">{tt.found(matchCount)}</span>}
                 <span className="ml-auto flex gap-2">
-                    <Button size="small" disabled={filtering} onClick={() => setCollapsed(new Set())}>{t('expandAll')}</Button>
-                    <Button size="small" disabled={filtering}
+                    <Button disabled={filtering} onClick={() => setCollapsed(new Set())}>{t('expandAll')}</Button>
+                    <Button disabled={filtering}
                         onClick={() => setCollapsed(new Set(boq.sections.map(s => s.no)))}>{t('collapseAll')}</Button>
                 </span>
             </div>
 
-            <div ref={boxRef} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-auto max-h-[75vh]">
+            <div ref={boxRef} className="bg-white border border-gray-200 rounded-card shadow-card overflow-auto max-h-[75vh]">
                 <table className="w-full border-collapse text-[13px]">
                     <thead ref={headRef} className="sticky top-0 z-10 bg-gray-100">
                         <tr>

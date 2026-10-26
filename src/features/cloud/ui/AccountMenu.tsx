@@ -77,8 +77,8 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
         <Dropdown menu={{ items, onClick }} trigger={['click']} placement="bottomRight">
             <button type="button" aria-label="บัญชีผู้ใช้"
                 title={workspace?.kind === 'company' ? workspace.name : user.displayName}
-                className="flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/20 transition pl-1 pr-2 py-1 min-h-10 md:min-h-0 cursor-pointer border-0">
-                <Avatar size={26} style={{ background: '#fa8c16', fontSize: 12, flexShrink: 0 }}>{initials(user.displayName)}</Avatar>
+                className="flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/20 transition pl-1 pr-2 h-10 md:h-8 cursor-pointer border-0">
+                <Avatar size={24} style={{ background: '#F97316', fontSize: 12, flexShrink: 0 }}>{initials(user.displayName)}</Avatar>
                 {/* The name needs room the horizontal menu takes at xl: shown beside the drawer (lg) and on wide screens. */}
                 {!compact && (
                     <span className="hidden lg:max-xl:block min-[1440px]:block text-[13px] text-white/90 max-w-[140px] truncate">

@@ -39,12 +39,12 @@ export function MissingPrices({ rows }: { rows: BoqItemRow[] }) {
                             </span>
                         </div>
                         <label className="flex flex-col gap-0.5">
-                            <span className="text-[11px] text-gray-500">ค่าวัสดุ/{r.unit} (บาท)</span>
+                            <span className="text-[12px] text-gray-500">ค่าวัสดุ/{r.unit} (บาท)</span>
                             <NumberCell value={r.matUnit} blankZero ariaLabel={`${r.desc} ค่าวัสดุ`}
                                 onCommit={v => setOverride(r.key, 'mat', v)} />
                         </label>
                         <label className="flex flex-col gap-0.5">
-                            <span className="text-[11px] text-gray-500">ค่าแรง/{r.unit} (บาท)</span>
+                            <span className="text-[12px] text-gray-500">ค่าแรง/{r.unit} (บาท)</span>
                             <NumberCell value={r.labUnit} blankZero ariaLabel={`${r.desc} ค่าแรง`}
                                 onCommit={v => setOverride(r.key, 'lab', v)} />
                         </label>

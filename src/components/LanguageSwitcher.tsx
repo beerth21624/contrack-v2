@@ -27,7 +27,8 @@ export const LanguageSwitcher: React.FC = () => {
           fontWeight: 600,
           fontSize: 13,
           border: '1px solid rgba(255,255,255,.15)',
-          borderRadius: 6,
+          // A pill like the project badge and the account button next to it.
+          borderRadius: 999,
           padding: '2px 10px',
           height: 32,
           background: 'rgba(255,255,255,.06)',

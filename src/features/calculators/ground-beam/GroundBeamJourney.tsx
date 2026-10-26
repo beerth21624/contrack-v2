@@ -50,7 +50,7 @@ export function GroundBeamJourney({ beams, onChange }: { beams: GroundBeamRow[];
                 const c = groundBeamRow(r);
                 const k = checksOf(r);
                 return (
-                    <PlanCard key={i} index={i + 1} state={k.state} hasData={k.hasData} missingText={k.missingText}
+                    <PlanCard key={i} index={i + 1} scope={{ listKey: 'beams', itemIndex: i }} state={k.state} hasData={k.hasData} missingText={k.missingText}
                         title={`คานคอดิน ${label(r, i)}`}
                         result={k.state === 'empty' ? undefined : resultText([
                             { label: 'คอนกรีต', value: c.concrete, unit: 'ลบ.ม.' },
@@ -60,12 +60,12 @@ export function GroundBeamJourney({ beams, onChange }: { beams: GroundBeamRow[];
                         onDelete={() => onChange(removeAt(beams, i))} deleteTitle={`ลบคาน ${label(r, i)}?`}>
                         <PlanGroup title="จากแปลนคานคอดิน">
                             <JText label="ชื่อคาน" value={r.name} placeholder="เช่น B1" onChange={v => set(i, { name: v })} />
-                            <PlanNumber label={L.length} value={r.length} unit="ม." placeholder="เช่น 4+3.5+4"
+                            <PlanNumber label={L.length} fieldKey="length" value={r.length} unit="ม." placeholder="เช่น 4+3.5+4"
                                 hint="บวกทุกช่วงของคานแบบนี้" onChange={v => set(i, { length: v })} />
                         </PlanGroup>
                         <PlanGroup title="ขนาดคาน (จากรูปตัดคาน)">
-                            <PlanNumber label={L.width} value={r.width} unit="ม." range={[0.1, 1]} onChange={v => set(i, { width: v })} />
-                            <PlanNumber label={L.depth} value={r.depth} unit="ม." range={[0.15, 1.5]} onChange={v => set(i, { depth: v })} />
+                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit="ม." range={[0.1, 1]} onChange={v => set(i, { width: v })} />
+                            <PlanNumber label={L.depth} fieldKey="depth" value={r.depth} unit="ม." range={[0.15, 1.5]} onChange={v => set(i, { depth: v })} />
                         </PlanGroup>
                         <PlanGroup title="เหล็กเสริม (จากรูปตัดคาน)" hint="บน 2-DB12 ล่าง 2-DB12 → DB12, 4 เส้น" layout="wide">
                             <BarField label={L.main} sizes={BEAM_BAR_SIZES} size={r.mainSize} onSize={v => set(i, { mainSize: v })}

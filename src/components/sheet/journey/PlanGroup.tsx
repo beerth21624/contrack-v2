@@ -20,7 +20,7 @@ export function PlanGroup({ title, hint, layout = 'fields', children }: {
         <div className="mt-4 first:mt-0">
             <div className="mb-1.5 flex flex-wrap items-baseline gap-x-2">
                 <span className="text-[12px] font-semibold text-gray-500">{title}</span>
-                {hint !== undefined && <span className="text-[11px] text-gray-400">{hint}</span>}
+                {hint !== undefined && <span className="text-[12px] text-gray-400">{hint}</span>}
             </div>
             <div className={grid}>{children}</div>
         </div>

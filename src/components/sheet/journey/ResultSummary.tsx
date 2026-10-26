@@ -44,7 +44,7 @@ export function ResultSummary({ items, minor, note, empty }: {
 }) {
     const nothingYet = !items.some(hasValue);
     return (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+        <div className="rounded-card border border-green-200 bg-green-50 px-4 py-3 sm:px-5">
             <div className="text-[12px] font-semibold text-green-800 mb-2">สรุปผลขั้นตอนนี้</div>
             {nothingYet
                 ? <div className="text-[13px] text-gray-600">{empty ?? DEFAULT_EMPTY}</div>
@@ -57,7 +57,7 @@ export function ResultSummary({ items, minor, note, empty }: {
                                     {shown(it.value, it.digits)}{' '}
                                     <span className="text-[12px] font-normal text-gray-500">{it.unit}</span>
                                 </div>
-                                {it.detail !== undefined && <div className="text-[11px] text-gray-500 tabular-nums">{it.detail}</div>}
+                                {it.detail !== undefined && <div className="text-[12px] text-gray-500 tabular-nums">{it.detail}</div>}
                             </div>
                         ))}
                     </div>

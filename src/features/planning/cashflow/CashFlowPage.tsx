@@ -85,7 +85,7 @@ export function CashFlowPage() {
                 {neg && <span>ควรเตรียมเงินสำรองไว้อย่างน้อย {money(-neg.value)} บาท ก่อนรับเงินงวดถัดไป</span>}
                 <span>
                     เสนอราคาลูกค้า <b>{money(cf.quotation)} บาท</b> (ต้นทุน {money(cf.cost)} × {formatNumber(ci.quotationFactor, 2)})
-                    · กำไรตามแผน {money(cf.evm.profitPlan)} บาท · จบโครงการเหลือเงินสด {money(endCash)} บาท
+                    · จบโครงการเหลือเงินสด {money(endCash)} บาท
                 </span>
             </SummaryBanner>
 
@@ -107,13 +107,12 @@ export function CashFlowPage() {
                     <InputNumberField label="กำไร" percent value={ci.profitRate} unit="ของต้นทุน" onChange={v => save({ ...ci, profitRate: v })} />
                     <div className="text-[12px] text-gray-500 mt-1">ไม่มี VAT / เงินประกันผลงาน (ตาม Excel)</div>
                 </SheetCard>
-                <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* The lowest cash point is the banner headline: not repeated as a tile. */}
+                <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-3">
                     <StatTile label="รับเงินรวม" value={money(cf.totalIncome)} unit="บาท" />
                     <StatTile label="จ่ายรวม (ต้นทุน + ดำเนินงาน)" value={money(cf.totalOutflow)} unit="บาท" />
-                    <StatTile label="เงินติดลบสูงสุด" value={neg ? money(neg.value) : '0'} unit="บาท" tone={neg ? 'bad' : 'good'}
-                        hint={neg ? bucketLabel(minBucket) : undefined} />
                     <StatTile label="กำไรตามแผน" value={money(cf.evm.profitPlan)} unit="บาท" tone="good" />
-                    <div className="col-span-2 md:col-span-4">
+                    <div className="col-span-2 md:col-span-3">
                         <SheetCard title="กราฟกระแสเงินสดรายสัปดาห์">
                             <CashFlowChart buckets={cf.buckets.slice(0, count)} income={cf.incomeWeekly.slice(0, count)}
                                 outflow={cf.outflowWeekly.slice(0, count)} cumulative={cf.cumulative.slice(0, count)}

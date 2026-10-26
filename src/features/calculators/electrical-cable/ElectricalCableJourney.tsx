@@ -56,7 +56,7 @@ export function ElectricalCableJourney({ calc }: { calc: Calc }) {
         const unassigned = r.cable?.unassigned ?? 0;
         const showDevice = device > 0 || w.deviceSize.trim() !== '';
         return (
-            <PlanCard key={r.circuit.id} index={i + 1} state={state} compact
+            <PlanCard key={r.circuit.id} index={i + 1} state={state} compact scope={{ listKey: 'circuits', itemIndex: i, itemKey: r.circuit.id }}
                 title={r.circuit.name.trim() === '' ? `วงจรที่ ${String(i + 1)}` : r.circuit.name}
                 result={sum > 0 ? <>สาย {formatNumber(sum)} ม.</> : undefined}
                 missingText={`ยังไม่ได้เลือก${w.conductors > 0 ? 'ขนาดสาย' : 'จำนวนสาย'} — สาย ${formatNumber(unassigned)} ม. ยังไม่ถูกคิดเงิน`}>
@@ -66,18 +66,18 @@ export function ElectricalCableJourney({ calc }: { calc: Calc }) {
                         : 'ยังไม่มีระยะท่อของวงจรนี้'}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-3 items-start">
-                    <PlanField label="สายเมนวงจร (ตร.มม.)">
+                    <PlanField label="สายเมนวงจร (ตร.มม.)" fieldKey="mainSize">
                         <ChoiceButtons ariaLabel="ขนาดสายเมนวงจร" size="small" options={MAIN_SIZE_CHOICES}
                             value={w.mainSize.trim() === '' ? undefined : w.mainSize.trim()}
                             onChange={mainSize => setWiring(r, { mainSize })} />
                     </PlanField>
                     {showDevice && (
-                        <PlanField label="สายเข้าโคม / จุด (ตร.มม.)">
+                        <PlanField label="สายเข้าโคม / จุด (ตร.มม.)" fieldKey="deviceSize">
                             <ChoiceButtons ariaLabel="ขนาดสายเข้าโคม / จุด" size="small" options={DEVICE_SIZE_CHOICES}
                                 value={w.deviceSize.trim()} onChange={deviceSize => setWiring(r, { deviceSize })} />
                         </PlanField>
                     )}
-                    <PlanField label="จำนวนสาย">
+                    <PlanField label="จำนวนสาย" fieldKey="conductors">
                         <ChoiceButtons ariaLabel="จำนวนสาย" size="small" options={CONDUCTOR_CHOICES}
                             value={w.conductors > 0 ? w.conductors : undefined}
                             onChange={conductors => setWiring(r, { conductors })} />

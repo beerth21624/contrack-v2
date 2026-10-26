@@ -15,7 +15,7 @@ import type { SyncState } from '../sync/engine';
 
 const STATUS_ICON: Record<SyncState, React.ReactNode> = {
     saved: <CheckCircleFilled style={{ color: '#52c41a' }} />,
-    saving: <LoadingOutlined style={{ color: '#ffa940' }} />,
+    saving: <LoadingOutlined style={{ color: '#FB923C' }} />,
     pending: <ClockCircleFilled style={{ color: '#faad14' }} />,
     offline: <DisconnectOutlined style={{ color: '#ff7875' }} />,
 };

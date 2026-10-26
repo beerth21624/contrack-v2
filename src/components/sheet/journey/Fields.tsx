@@ -7,21 +7,21 @@ import { Button, Popconfirm, Select } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { REBAR_SIZES } from '@/domain/boq/slots';
 import { NumberCell, TextCell, SHEET_COLORS } from '@/components/sheet/NumberCell';
+import { fieldHintCls as hintCls, fieldLabelCls as labelCls, missingRing, numberBoxCls } from './PlanField';
+import { RequiredMark, useRequiredField } from './RequiredContext';
 
-const labelCls = 'text-[12px] text-gray-600 leading-tight';
-const hintCls = 'text-[11px] text-gray-400 leading-tight';
-
-/** Labelled yellow number box (label above, unit after). */
-export function JNumber({ label, value, onChange, unit, hint, digits = 2, blankZero = true, placeholder }: {
+/** Labelled yellow number box (label above, unit after). ieldKey: see PlanField. */
+export function JNumber({ label, value, onChange, unit, hint, digits = 2, blankZero = true, placeholder, fieldKey }: {
     label: string; value: number; onChange: (v: number) => void; unit?: string; hint?: ReactNode; digits?: number;
     /** Empty box instead of "0.00" while 0 (a plan value not filled yet). Default on: journey fields are plan values. */
-    blankZero?: boolean; placeholder?: string;
+    blankZero?: boolean; placeholder?: string; fieldKey?: string;
 }) {
+    const req = useRequiredField(fieldKey);
     return (
-        <label className="flex flex-col gap-1 min-w-0">
-            <span className={labelCls}>{label}</span>
+        <label className="flex flex-col gap-1 min-w-0" data-req-field={req.targetId}>
+            <span className={labelCls}>{label}<RequiredMark required={req.required} /></span>
             <span className="flex items-center gap-1.5">
-                <span className="flex-1 min-w-0 max-w-[140px]">
+                <span className={`${numberBoxCls} rounded ${req.highlighted ? missingRing : ''}`}>
                     <NumberCell value={value} digits={digits} ariaLabel={label} blankZero={blankZero} placeholder={placeholder}
                         onCommit={v => onChange(v ?? 0)} />
                 </span>
@@ -33,13 +33,15 @@ export function JNumber({ label, value, onChange, unit, hint, digits = 2, blankZ
 }
 
 /** Labelled yellow text box. */
-export function JText({ label, value, onChange, placeholder, wide }: {
-    label: string; value: string; onChange: (v: string) => void; placeholder?: string; wide?: boolean;
+export function JText({ label, value, onChange, placeholder, wide, fieldKey }: {
+    label: string; value: string; onChange: (v: string) => void; placeholder?: string; wide?: boolean; fieldKey?: string;
 }) {
+    const req = useRequiredField(fieldKey);
     return (
-        <label className={`flex flex-col gap-1 min-w-0 ${wide ? 'col-span-2' : ''}`}>
-            <span className={labelCls}>{label}</span>
-            <span className={wide ? 'max-w-[420px]' : 'max-w-[140px]'} style={{ background: SHEET_COLORS.input, borderRadius: 3 }}>
+        <label className={`flex flex-col gap-1 min-w-0 ${wide ? 'col-span-2' : ''}`} data-req-field={req.targetId}>
+            <span className={labelCls}>{label}<RequiredMark required={req.required} /></span>
+            <span className={`rounded ${wide ? 'max-w-[420px]' : 'max-w-[120px]'} ${req.highlighted ? missingRing : ''}`}
+                style={{ background: SHEET_COLORS.input }}>
                 <TextCell value={value} placeholder={placeholder} ariaLabel={label} onCommit={v => onChange(v ?? '')} />
             </span>
         </label>
@@ -47,15 +49,16 @@ export function JText({ label, value, onChange, placeholder, wide }: {
 }
 
 /** Labelled yellow dropdown. */
-export function JSelect<V extends string | number>({ label, value, onChange, options, placeholder, hint, width = 180 }: {
+export function JSelect<V extends string | number>({ label, value, onChange, options, placeholder, hint, width = 180, fieldKey }: {
     label: string; value: V | undefined; onChange: (v: V | undefined) => void; placeholder?: string; hint?: ReactNode;
     options: { value: V; label?: string }[] | { label: string; options: { value: V; label?: string }[] }[];
-    width?: number;
+    width?: number; fieldKey?: string;
 }) {
+    const req = useRequiredField(fieldKey);
     return (
-        <div className="flex flex-col gap-1 min-w-0">
-            <span className={labelCls}>{label}</span>
-            <div style={{ background: SHEET_COLORS.input, borderRadius: 3, maxWidth: width }}>
+        <div className="flex flex-col gap-1 min-w-0" data-req-field={req.targetId}>
+            <span className={labelCls}>{label}<RequiredMark required={req.required} /></span>
+            <div className={`rounded ${req.highlighted ? missingRing : ''}`} style={{ background: SHEET_COLORS.input, maxWidth: width }}>
                 <Select<V> size="small" variant="borderless" style={{ width: '100%' }} aria-label={label} allowClear
                     placeholder={placeholder} value={value} options={options} onChange={v => onChange(v)} />
             </div>
@@ -105,16 +108,16 @@ export function ElementCard({ title, onDelete, deleteTitle, result, warning, chi
     title: ReactNode; onDelete?: () => void; deleteTitle?: string; result?: ReactNode; warning?: ReactNode; children: ReactNode;
 }) {
     return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100">
-                <span className="font-semibold text-[14px] text-gray-800">{title}</span>
+        <div className="bg-white border border-gray-200 rounded-card shadow-card">
+            <div className="flex items-center gap-2 min-h-[44px] px-4 sm:px-5 py-2 border-b border-gray-100">
+                <span className="font-semibold text-[14px] leading-snug text-gray-800">{title}</span>
                 {onDelete && (
                     <Popconfirm title={deleteTitle ?? 'ลบรายการนี้?'} okText="ลบ" cancelText="ยกเลิก" onConfirm={onDelete}>
                         <Button className="ml-auto" type="text" size="small" danger icon={<DeleteOutlined />} aria-label="ลบ" />
                     </Popconfirm>
                 )}
             </div>
-            <div className="p-4">
+            <div className="p-4 sm:p-5">
                 {children}
                 {warning && <div className="mt-3 text-[12px] text-orange-600">{warning}</div>}
                 {result && (
@@ -130,6 +133,6 @@ export function ElementCard({ title, onDelete, deleteTitle, result, warning, chi
 /** "Add one more" button under a list of element cards or table rows. */
 export function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
     return (
-        <Button type="dashed" size="large" block icon={<PlusOutlined />} onClick={onClick}>{label}</Button>
+        <Button data-req-add="" type="dashed" size="large" block icon={<PlusOutlined />} onClick={onClick} className="scroll-mt-24">{label}</Button>
     );
 }

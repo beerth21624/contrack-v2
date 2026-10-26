@@ -118,10 +118,10 @@ export function ManDayPage() {
                 isDefault={stored.manday === undefined} onReset={() => setPlanning({ manday: undefined })} />
             <NoBoqYet constructionTotal={result.boq.constructionTotal} />
 
-            <SummaryBanner headline={<>จัดคน {rows.length} งาน · รวม {formatNumber(res.totalDays, 0)} วันทำงาน · งบประมาณ {money(res.totalBudget)} บาท</>}>
+            {/* The totals (days, budget, project duration) are the tiles below: the banner says what they mean. */}
+            <SummaryBanner headline={<>จัดคน {rows.length} งาน</>}>
                 <span>
-                    &quot;รวมเวลา&quot; คือผลรวมวันของทุกงาน บางงานทำพร้อมกัน ระยะเวลาโครงการจริงคือ
-                    <b> {sched.durationDays} วัน</b>{sched.finish ? <> (เสร็จ {formatDate(sched.finish)})</> : null} ดูได้ในหน้า S-Curve
+                    &quot;รวมเวลา&quot; คือผลรวมวันของทุกงาน บางงานทำพร้อมกัน ระยะเวลาโครงการจริงจึงสั้นกว่า (ดูได้ในหน้า S-Curve)
                 </span>
                 <span>กรอกจำนวนช่าง/คนงาน ระบบคำนวณวันจากค่าแรงใน BOQ ให้ แล้วใส่วันที่คิดว่าจะใช้จริงในช่อง &quot;วันที่ใช้จริง&quot;</span>
             </SummaryBanner>

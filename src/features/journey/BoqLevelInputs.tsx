@@ -52,7 +52,7 @@ export function BoqLevelInputs({ sections }: { sections: number[] }) {
                 </FromLevel>
             )}
 
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-x-auto">
+            <div className="bg-white border border-gray-200 rounded-card shadow-card overflow-x-auto">
                 <table className="w-full border-collapse min-w-[420px]">
                     <thead>
                         <tr className="bg-gray-50 text-[12px] text-gray-700">

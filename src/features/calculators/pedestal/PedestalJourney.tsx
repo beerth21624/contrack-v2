@@ -83,7 +83,7 @@ export function PedestalJourney({ rows, onChange, footings, footingSkipped, foot
                 const onFooting = r.footing >= 0 && r.footing < footings.length;
                 const k = checksOf(r, onFooting);
                 return (
-                    <PlanCard key={i} index={i + 1} state={k.state} hasData={k.hasData} missingText={k.missingText}
+                    <PlanCard key={i} index={i + 1} scope={{ listKey: 'rows', itemIndex: i }} state={k.state} hasData={k.hasData} missingText={k.missingText}
                         title={`เสาตอม่อ ${label(r, i)}`}
                         result={k.state === 'empty' ? undefined : resultText([
                             { label: 'คอนกรีต', value: c.concrete, unit: 'ลบ.ม.' },
@@ -91,7 +91,7 @@ export function PedestalJourney({ rows, onChange, footings, footingSkipped, foot
                         ])}
                         onDelete={() => onChange(removeAt(rows, i))} deleteTitle={`ลบเสาตอม่อ ${label(r, i)}?`}>
                         <PlanGroup title="ตำแหน่งและจำนวน">
-                            <PlanField label={L.footing} className="col-span-2">
+                            <PlanField label={L.footing} fieldKey="footing" className="col-span-2">
                                 {footingOptions.length <= 5
                                     ? (
                                         <ChoiceButtons<number> size="small" ariaLabel={L.footing} value={onFooting ? r.footing : undefined}
@@ -103,13 +103,13 @@ export function PedestalJourney({ rows, onChange, footings, footingSkipped, foot
                                     )}
                             </PlanField>
                             <JText label="ชื่อเสาตอม่อ" value={r.name} placeholder="เช่น C1" onChange={v => set(i, { name: v })} />
-                            <PlanNumber label={L.count} value={r.count} unit="ต้น" digits={0} hint="ปกติเท่ากับจำนวนฐาน"
+                            <PlanNumber label={L.count} fieldKey="count" value={r.count} unit="ต้น" digits={0} hint="ปกติเท่ากับจำนวนฐาน"
                                 onChange={v => set(i, { count: v })} />
                         </PlanGroup>
                         <PlanGroup title="ขนาดเสา (จากรูปขยายตอม่อ)">
-                            <PlanNumber label={L.width} value={r.width} unit="ม." range={[0.1, 1.5]} onChange={v => set(i, { width: v })} />
-                            <PlanNumber label={L.length} value={r.length} unit="ม." range={[0.1, 1.5]} onChange={v => set(i, { length: v })} />
-                            <PlanNumber label={L.height} value={r.height} unit="ม." range={[0.1, 4]} hint="จากหลังฐานรากถึงคานคอดิน"
+                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit="ม." range={[0.1, 1.5]} onChange={v => set(i, { width: v })} />
+                            <PlanNumber label={L.length} fieldKey="length" value={r.length} unit="ม." range={[0.1, 1.5]} onChange={v => set(i, { length: v })} />
+                            <PlanNumber label={L.height} fieldKey="height" value={r.height} unit="ม." range={[0.1, 4]} hint="จากหลังฐานรากถึงคานคอดิน"
                                 onChange={v => set(i, { height: v })} />
                         </PlanGroup>
                         <PlanGroup title="เหล็กเสริม ต่อ 1 ต้น" hint="เช่น 4-DB12 ปลอก RB6 @0.15" layout="wide">

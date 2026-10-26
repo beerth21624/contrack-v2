@@ -89,7 +89,7 @@ export function ElectricalPipeJourney({ calc }: { calc: Calc }) {
         const pointLabel = kindInfo(circuitKind(r))?.pointLabel ?? 'จุด';
         const total = circuitTotal(r);
         return (
-            <PlanCard key={r.id} index={i + 1} state={state} compact
+            <PlanCard key={r.id} index={i + 1} state={state} compact scope={{ listKey: 'circuits', itemIndex: i }}
                 title={r.name.trim() === '' ? `วงจรที่ ${String(i + 1)}` : r.name}
                 result={total > 0 ? <>ท่อ {formatNumber(total)} ม.</> : undefined}
                 onDuplicate={() => duplicate(i)} onDelete={() => remove(i)} hasData={startedOf(r)}
@@ -106,7 +106,7 @@ export function ElectricalPipeJourney({ calc }: { calc: Calc }) {
                             value={r.breaker.trim() === '' ? undefined : r.breaker.trim()}
                             onChange={breaker => patchRow(i, { breaker })} />
                     </PlanField>
-                    <PlanNumber label="ท่อสายเมน" unit="ม." value={r.mainH} range={[0.5, 200]} missing={missing.has('ท่อสายเมน')}
+                    <PlanNumber label="ท่อสายเมน" fieldKey="mainH" unit="ม." value={r.mainH} range={[0.5, 200]} missing={missing.has('ท่อสายเมน')}
                         onChange={mainH => patchRow(i, { mainH })} />
                     {showsDeviceRun(r) && (
                         <PlanNumber label={circuitKind(r) === 'light' ? 'ท่อแยกเข้าโคม' : 'ท่อแยกเข้าจุด'} unit="ม." value={r.deviceH}

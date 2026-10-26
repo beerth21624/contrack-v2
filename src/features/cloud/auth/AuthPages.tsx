@@ -17,7 +17,7 @@ const { Title, Text } = Typography;
 function AuthCard({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
     return (
         <div className="flex justify-center py-6 sm:py-12">
-            <div className="w-full max-w-md bg-white border border-gray-200 rounded-xl shadow-sm p-6 sm:p-8">
+            <div className="w-full max-w-md bg-white border border-gray-200 rounded-card shadow-card p-6 sm:p-8">
                 <Title level={3} style={{ margin: 0 }}>{title}</Title>
                 <Text type="secondary" className="block mt-1 mb-5 text-[13px]">{subtitle}</Text>
                 {children}

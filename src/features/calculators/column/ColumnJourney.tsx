@@ -53,7 +53,7 @@ export function ColumnJourney({ input, outputs, onChange }: {
                 const c = columnRowCalc(r);
                 const k = checksOf(r);
                 return (
-                    <PlanCard key={i} index={i + 1} state={k.state} hasData={k.hasData} missingText={k.missingText}
+                    <PlanCard key={i} index={i + 1} scope={{ listKey: 'columns', itemIndex: i }} state={k.state} hasData={k.hasData} missingText={k.missingText}
                         title={`เสา ${label(r, i)}`}
                         result={k.state === 'empty' ? undefined : resultText([
                             { label: 'คอนกรีต', value: c.concrete, unit: 'ลบ.ม.' },
@@ -66,12 +66,12 @@ export function ColumnJourney({ input, outputs, onChange }: {
                                 <ChoiceButtons<string> size="small" ariaLabel="ชื่อเสา" value={r.name === '' ? undefined : r.name}
                                     options={nameOptions} onChange={v => set(i, { name: v })} />
                             </PlanField>
-                            <PlanNumber label={L.count} value={r.count} unit="ต้น" digits={0} onChange={v => set(i, { count: v })} />
+                            <PlanNumber label={L.count} fieldKey="count" value={r.count} unit="ต้น" digits={0} onChange={v => set(i, { count: v })} />
                         </PlanGroup>
                         <PlanGroup title="ขนาดเสา (จากรูปขยายเสา)">
-                            <PlanNumber label={L.width} value={r.width} unit="ม." range={[0.1, 1.5]} onChange={v => set(i, { width: v })} />
-                            <PlanNumber label={L.depth} value={r.depth} unit="ม." range={[0.1, 1.5]} onChange={v => set(i, { depth: v })} />
-                            <PlanNumber label={L.height} value={r.height} unit="ม." range={[1, 12]} placeholder="เช่น 0.55+3.5"
+                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit="ม." range={[0.1, 1.5]} onChange={v => set(i, { width: v })} />
+                            <PlanNumber label={L.depth} fieldKey="depth" value={r.depth} unit="ม." range={[0.1, 1.5]} onChange={v => set(i, { depth: v })} />
+                            <PlanNumber label={L.height} fieldKey="height" value={r.height} unit="ม." range={[1, 12]} placeholder="เช่น 0.55+3.5"
                                 hint="จากหลังฐานรากถึงใต้คานบน" onChange={v => set(i, { height: v })} />
                         </PlanGroup>
                         <PlanGroup title="เหล็กเสริม ต่อ 1 ต้น" hint="เช่น 6-DB12 ปลอก RB6 @0.15" layout="wide">

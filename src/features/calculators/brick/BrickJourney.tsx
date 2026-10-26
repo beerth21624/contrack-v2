@@ -10,7 +10,7 @@ import type { CalcContext } from '@/domain/calculators/types';
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber } from '@/components/sheet/NumberCell';
 import {
-    AddButton, ChoiceButtons, EmptyState, FillProgress, FromLevel, PlanCard, PlanField, PlanNumber, ResultSummary,
+    AddButton, ChoiceButtons, EmptyState, FillProgress, FromLevel, MissingRing, PlanCard, PlanField, PlanNumber, ResultSummary,
     SumInput, countFill, fillState, outOfRange, type FillState,
 } from '@/components/sheet/journey';
 import { CalculatorShell } from '../CalculatorShell';
@@ -86,7 +86,7 @@ export default function BrickJourney() {
         const triangle = w.shape === 'triangle';
         const net = r?.net ?? 0;
         return (
-            <PlanCard key={i} index={i + 1} state={state}
+            <PlanCard key={i} index={i + 1} state={state} scope={{ listKey: 'walls', itemIndex: i }}
                 title={w.wallPart.trim() === '' ? `ผนังที่ ${String(i + 1)}` : `${w.wallPart} · ${w.brickType} ${w.thickness}`}
                 result={(r?.area ?? 0) > 0
                     ? <span className={net < 0 ? 'text-red-600' : ''}>ก่อ {formatNumber(net)} ตร.ม.</span>
@@ -116,13 +116,13 @@ export default function BrickJourney() {
                             onChange={shape => setWall(i, { shape })} />
                     </PlanField>
                     <div className="hidden sm:block" />
-                    <PlanField label={triangle ? 'ความกว้างฐานจั่ว (ม.)' : 'ความยาวรวม (ม.)'}
+                    <PlanField label={triangle ? 'ความกว้างฐานจั่ว (ม.)' : 'ความยาวรวม (ม.)'} fieldKey="length" ringControl={false}
                         note={outOfRange(w.length, 0.3, 500, 'ม.')}>
-                        <span className={`max-w-[180px] rounded ${missing.has('ความยาว') ? 'ring-1 ring-red-300' : ''}`}>
+                        <MissingRing fieldKey="length" missing={missing.has('ความยาว')} className="max-w-[180px]">
                             <SumInput value={w.length} ariaLabel="ความยาวผนัง (ม.)" onChange={length => setWall(i, { length })} />
-                        </span>
+                        </MissingRing>
                     </PlanField>
-                    <PlanNumber label={triangle ? 'ความสูงยอดจั่ว' : 'ความสูงผนัง'} unit="ม." value={w.height}
+                    <PlanNumber label={triangle ? 'ความสูงยอดจั่ว' : 'ความสูงผนัง'} fieldKey="height" unit="ม." value={w.height}
                         range={[0.5, 10]} missing={missing.has('ความสูง')}
                         onChange={height => setWall(i, { height })} />
                 </div>

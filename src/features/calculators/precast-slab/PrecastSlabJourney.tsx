@@ -53,7 +53,7 @@ export function PrecastSlabJourney({ input, outputs, onChange }: {
                 const c = precastPanel(r);
                 const k = checks[i] ?? checksOf(r);
                 return (
-                    <PlanCard key={i} index={i + 1} state={k.state} hasData={k.hasData} missingText={k.missingText} compact
+                    <PlanCard key={i} index={i + 1} scope={{ listKey: 'panels', itemIndex: i }} state={k.state} hasData={k.hasData} missingText={k.missingText} compact
                         title={`ช่วงที่ ${String(i + 1)}`}
                         result={k.state === 'empty' ? undefined : resultText([
                             { label: 'พื้นที่', value: c.area, unit: 'ตร.ม.' },
@@ -61,8 +61,8 @@ export function PrecastSlabJourney({ input, outputs, onChange }: {
                         onDuplicate={() => duplicate(r, i)}
                         onDelete={() => onChange(removeAt(rows, i))} deleteTitle={`ลบช่วงที่ ${i + 1}?`}>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
-                            <PlanNumber label={L.width} value={r.width} unit="ม." onChange={v => set(i, { width: v })} />
-                            <PlanNumber label={L.length} value={r.length} unit="ม." onChange={v => set(i, { length: v })} />
+                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit="ม." onChange={v => set(i, { width: v })} />
+                            <PlanNumber label={L.length} fieldKey="length" value={r.length} unit="ม." onChange={v => set(i, { length: v })} />
                         </div>
                     </PlanCard>
                 );

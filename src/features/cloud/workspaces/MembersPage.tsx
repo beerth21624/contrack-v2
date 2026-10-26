@@ -53,8 +53,8 @@ function MembersContent() {
     if (isLoading) return spinner;
 
     return (
-        <div className="flex flex-col gap-4 max-w-5xl mx-auto w-full">
-            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center gap-3">
+        <div className="flex flex-col gap-4 max-w-[1200px] mx-auto w-full">
+            <div className="bg-white border border-gray-200 rounded-card p-5 shadow-card flex flex-col md:flex-row md:items-center gap-3">
                 <div className="flex-1 min-w-0">
                     <Title level={3} style={{ margin: 0 }}>สมาชิก</Title>
                     <Text type="secondary" className="text-[13px]">ใครอยู่ในพื้นที่ทำงานนี้ และทำอะไรได้บ้าง</Text>
@@ -117,7 +117,7 @@ function WorkspaceSection({ workspace, onCreate }: { workspace: WorkspaceDto; on
             title: 'สมาชิก', key: 'who',
             render: (_: unknown, m: MemberDto) => (
                 <div className="flex items-center gap-3">
-                    <Avatar style={{ background: '#fa8c16' }}>{initials(m.displayName)}</Avatar>
+                    <Avatar style={{ background: '#F97316' }}>{initials(m.displayName)}</Avatar>
                     <div className="min-w-0">
                         <div className="font-semibold">{m.displayName}{m.userId === me?.id && <Tag className="!ml-2">คุณ</Tag>}</div>
                         <div className="text-[12px] text-gray-500 truncate">{m.email}</div>
@@ -164,7 +164,7 @@ function WorkspaceSection({ workspace, onCreate }: { workspace: WorkspaceDto; on
 
     return (
         <>
-            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+            <div className="bg-white border border-gray-200 rounded-card p-4 shadow-card">
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                     <TeamOutlined className="text-orange-500 text-[18px]" />
                     <span className="font-semibold text-[16px]">{isCompany ? workspace.name : 'พื้นที่ส่วนตัว'}</span>
@@ -245,7 +245,7 @@ function InvitationsSection({ workspace }: { workspace: WorkspaceDto }) {
     ];
 
     return (
-        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-card p-4 shadow-card">
             <div className="flex items-center gap-2 mb-3">
                 <UserAddOutlined className="text-orange-500 text-[18px]" />
                 <span className="font-semibold text-[16px]">เชิญสมาชิก</span>

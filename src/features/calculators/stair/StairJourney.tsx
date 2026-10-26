@@ -58,7 +58,7 @@ export function StairJourney({ input, outputs, onChange }: {
                 const c = stairRow(r);
                 const k = checksOf(r);
                 return (
-                    <PlanCard key={i} index={i + 1} state={k.state} hasData={k.hasData} missingText={k.missingText}
+                    <PlanCard key={i} index={i + 1} scope={{ listKey: 'rows', itemIndex: i }} state={k.state} hasData={k.hasData} missingText={k.missingText}
                         title={label(r, i)}
                         result={k.state === 'empty' ? undefined : resultText([
                             { label: 'คอนกรีต', value: c.concrete, unit: 'ลบ.ม.' },
@@ -70,7 +70,7 @@ export function StairJourney({ input, outputs, onChange }: {
                                 <ChoiceButtons<string> size="small" ariaLabel="ชื่อบันได" value={r.name === '' ? undefined : r.name}
                                     options={nameOptions} onChange={v => set(i, { name: v })} />
                             </PlanField>
-                            <PlanNumber label={L.steps} value={r.steps} unit="ขั้น" digits={0}
+                            <PlanNumber label={L.steps} fieldKey="steps" value={r.steps} unit="ขั้น" digits={0}
                                 onChange={v => replace(i, withStepChange(r, { steps: v }))} />
                             <PlanNumber label={L.riser} value={r.riser} unit="ม." range={[0.1, 0.3]}
                                 onChange={v => replace(i, withStepChange(r, { riser: v }))} />
@@ -78,7 +78,7 @@ export function StairJourney({ input, outputs, onChange }: {
                                 onChange={v => replace(i, withStepChange(r, { tread: v }))} />
                         </PlanGroup>
                         <PlanGroup title="แม่บันได" hint="สูงรวมและยาวแนวราบ ระบบเติมจากจำนวนขั้นให้ — แก้เองได้ถ้ามีชานพัก">
-                            <PlanNumber label={L.width} value={r.width} unit="ม." range={[0.5, 5]} onChange={v => set(i, { width: v })} />
+                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit="ม." range={[0.5, 5]} onChange={v => set(i, { width: v })} />
                             <PlanNumber label={L.waist} value={r.waist} unit="ม." range={[0.05, 0.4]} onChange={v => set(i, { waist: v })} />
                             <PlanNumber label={L.rise} value={r.rise} unit="ม." onChange={v => set(i, { rise: v })} />
                             <PlanNumber label={L.run} value={r.run} unit="ม." onChange={v => set(i, { run: v })} />
