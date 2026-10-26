@@ -7,6 +7,7 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, InputNumberField, SheetCard } from '@/components/sheet/SheetFields';
 import { NumberCell, SHEET_COLORS, TextCell, formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
+import { ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -165,21 +166,12 @@ function JourneyView({ calc }: { calc: Calc }) {
                 </div>
             </AdvancedSection>
 
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                <div className="text-[12px] font-semibold text-green-700">ผลลัพธ์</div>
-                {counted
-                    ? (
-                        <div className="flex flex-wrap gap-x-6 gap-y-1 text-[14px] text-gray-800 tabular-nums">
-                            {LAYOUT_LIVE_PREVIEW.map(p => (
-                                <span key={p.output}>{p.label} <b>{formatNumber(outputs[p.output], 0)}</b> {p.unit}</span>
-                            ))}
-                        </div>
-                    )
-                    : <div className="text-[13px] text-gray-600">กรอกจำนวนจุดวางผังและจำนวนหมุด ระบบจะคิดไม้ที่ต้องสั่งให้</div>}
-                <div className="mt-1 text-[13px] text-gray-700">
-                    ค่าวางผัง / ปักหมุด คิดเป็นเหมา <b className="tabular-nums">{formatNumber(lumpSum, 0)}</b> บาท (ปรับราคาได้ที่หน้า BOQ)
-                </div>
-            </div>
+            <ResultSummary
+                items={counted
+                    ? LAYOUT_LIVE_PREVIEW.map(p => ({ label: p.label, value: outputs[p.output], unit: p.unit, digits: 0 }))
+                    : []}
+                empty="กรอกจำนวนจุดวางผังและจำนวนหมุด ระบบจะคิดไม้ที่ต้องสั่งให้"
+                note={<>ค่าวางผัง / ปักหมุด คิดเป็นเหมา <b className="tabular-nums">{formatNumber(lumpSum, 0)}</b> บาท (ปรับราคาได้ที่หน้า BOQ)</>} />
         </>
     );
 }

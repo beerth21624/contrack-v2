@@ -14,6 +14,7 @@ import { useProjectStore } from '@/store/project-store';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { EmptyState, FromLevel, ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -153,22 +154,21 @@ function JourneyCable({ calc }: { calc: Calc }) {
     if (rows.length === 0) {
         return (
             <SheetCard>
-                <div className="rounded-lg border border-dashed border-gray-300 px-4 py-6 text-center">
-                    <div className="text-[14px] text-gray-700">ยังไม่มีวงจร</div>
-                    <div className="text-[12px] text-gray-500 mt-1 mb-3">
-                        วงจรและระยะสายมาจากด่านท่อร้อยสายไฟ — เพิ่มวงจรที่ด่านนั้นก่อน
-                    </div>
-                    <Link href="/journey/electrical-pipe"><Button type="primary" size="large">ไปด่านท่อร้อยสายไฟ</Button></Link>
-                </div>
+                <EmptyState text="ยังไม่มีวงจร" note="วงจรและระยะสายมาจากด่านท่อร้อยสายไฟ — เพิ่มวงจรที่ด่านนั้นก่อน"
+                    goToLevel="electrical-pipe" />
             </SheetCard>
         );
     }
 
     return (
         <>
+            <FromLevel levelId="electrical-pipe">
+                วงจร {formatNumber(rows.length, 0)} วงจร และระยะสายของแต่ละวงจร — แก้ชื่อหรือเพิ่มวงจรที่ด่านนั้น
+            </FromLevel>
+
             <SheetCard title="ขนาดสายไฟแต่ละวงจร">
                 <p className="mb-2 text-[12px] text-gray-500">
-                    วงจรและระยะสายมาจากด่านท่อร้อยสายไฟ · ระบบเลือกขนาดสายตามชนิดวงจรไว้ให้ ตรวจกับไดอะแกรมไฟฟ้า
+                    ระบบเลือกขนาดสายตามชนิดวงจรไว้ให้ ตรวจกับไดอะแกรมไฟฟ้า
                     (ไฟแสงสว่าง: สายเมน 2.5 / เข้าโคม 1.5 ตร.มม. 2 เส้น · เต้ารับ: 4 / 2.5 ตร.มม. 3 เส้น ·
                     เครื่องทำน้ำอุ่น แอร์ ปั๊มน้ำ: 4 ตร.มม. 3 เส้น)
                 </p>
@@ -210,19 +210,16 @@ function JourneyCable({ calc }: { calc: Calc }) {
                 )}
             </SheetCard>
 
-            <SheetCard title="สรุป">
-                <div className="max-w-md">
-                    <CalcField label="สายไฟ THW 1.5 ตร.มม." value={total('THW 1.5')} unit="ม." />
-                    <CalcField label="สายไฟ THW 2.5 ตร.มม." value={total('THW 2.5')} unit="ม." />
-                    <CalcField label="สายไฟ THW 4 ตร.มม." value={total('THW 4')} unit="ม." />
-                    {total('THW 6') > 0 && <CalcField label="สายไฟ THW 6 ตร.มม." value={total('THW 6')} unit="ม." />}
-                </div>
-                {total('THW 6') > 0 && (
-                    <p className="mt-1 text-[12px] text-orange-600">
-                        สาย 6 ตร.มม. ยังไม่มีรายการราคา จึงยังไม่ถูกคิดเงิน
-                    </p>
-                )}
-            </SheetCard>
+            <ResultSummary
+                items={[
+                    { label: 'สายไฟ THW 1.5 ตร.มม.', value: total('THW 1.5'), unit: 'ม.' },
+                    { label: 'สายไฟ THW 2.5 ตร.มม.', value: total('THW 2.5'), unit: 'ม.' },
+                    { label: 'สายไฟ THW 4 ตร.มม.', value: total('THW 4'), unit: 'ม.' },
+                    ...(total('THW 6') > 0 ? [{ label: 'สายไฟ THW 6 ตร.มม.', value: total('THW 6'), unit: 'ม.' }] : []),
+                ]}
+                note={total('THW 6') > 0
+                    ? <span className="text-orange-600">สาย 6 ตร.มม. ยังไม่มีรายการราคา จึงยังไม่ถูกคิดเงิน</span>
+                    : undefined} />
         </>
     );
 }

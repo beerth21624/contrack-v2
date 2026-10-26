@@ -9,7 +9,7 @@ import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { FromLevel, LabelWithHint, ResultSummary, SumInput } from '../brick/JourneyBits';
+import { FromLevel, LabelWithHint, ResultSummary, SumInput } from '@/components/sheet/journey';
 import { isStructural, PlasterTable } from './PlasterTable';
 
 const SIDE_OPTIONS = [

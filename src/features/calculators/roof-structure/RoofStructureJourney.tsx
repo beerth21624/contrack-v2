@@ -16,7 +16,7 @@ import { LengthsCell } from '@/components/sheet/LengthsCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { EmptyPrompt, FromLevel, Hint, ResultSummary } from '../brick/JourneyBits';
+import { EmptyState, FromLevel, Hint, ResultSummary } from '@/components/sheet/journey';
 
 const th = 'border border-gray-200 px-2 py-1 text-[12px] font-semibold text-gray-700 bg-gray-50 text-center';
 const td = 'border border-gray-200 px-1 py-0.5 text-[13px] align-middle';
@@ -114,7 +114,7 @@ export default function RoofStructureJourney() {
 
             <SheetCard title="ดั้ง (เสาค้ำอกไก่)">
                 {parts.length === 0
-                    ? <EmptyPrompt text="ยังไม่มีดั้ง — ดูรูปตัดโครงหลังคา: ความสูงดั้งแต่ละแบบ และจำนวนต้น" addLabel="เพิ่มดั้ง" onAdd={addPart} />
+                    ? <EmptyState text="ยังไม่มีดั้ง — ดูรูปตัดโครงหลังคา: ความสูงดั้งแต่ละแบบ และจำนวนต้น" addLabel="เพิ่มดั้ง" onAdd={addPart} />
                     : (
                         <EditableTable<KingPostPart>
                             rows={parts}
@@ -205,7 +205,6 @@ export default function RoofStructureJourney() {
             </AdvancedSection>
 
             <ResultSummary
-                title={`เหล็กโครงหลังคา (ท่อนละ ${STICK_LENGTH} ม.)`}
                 items={[
                     { label: 'อะเส', value: outputs.R152, unit: 'ท่อน', digits: 0 },
                     { label: 'ดั้ง', value: outputs.R153, unit: 'ท่อน', digits: 0 },
@@ -214,7 +213,7 @@ export default function RoofStructureJourney() {
                     { label: 'จันทัน', value: outputs.R156, unit: 'ท่อน', digits: 0 },
                     { label: 'แป', value: outputs.R157, unit: 'ท่อน', digits: 0 },
                 ]}
-                note={<>ค่าแรงโครงหลังคาคิดจากพื้นที่หลังคา {formatNumber(outputs.R159)} ตร.ม.</>} />
+                note={<>เหล็กโครงหลังคาท่อนละ {STICK_LENGTH} ม. · ค่าแรงโครงหลังคาคิดจากพื้นที่หลังคา {formatNumber(outputs.R159)} ตร.ม.</>} />
         </CalculatorShell>
     );
 }

@@ -5,6 +5,7 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, InputNumberField, InputTextField, SheetCard } from '@/components/sheet/SheetFields';
 import { NumberCell, formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
+import { ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -173,23 +174,17 @@ function JourneyView({ calc, setPrice }: { calc: Calc; setPrice: (key: keyof Tem
                 ))}
             </AdvancedSection>
 
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                <div className="text-[12px] font-semibold text-green-700">ผลลัพธ์</div>
-                {nothingYet && (
-                    <div className="text-[13px] text-gray-600 mb-1">
-                        กรอกระยะจากมิเตอร์และจำนวนจุดใช้งาน ระบบจะคิดท่อ สายไฟ และอุปกรณ์ให้ (ตอนนี้คิดเฉพาะตู้ไฟชั่วคราว 1 ชุด)
-                    </div>
-                )}
-                <div className="flex flex-wrap gap-x-6 gap-y-1 text-[14px] text-gray-800 tabular-nums">
-                    <span>ท่อ PVC <b>{formatNumber(o('pipeQty'), 0)}</b> เส้น</span>
-                    <span>สายไฟ <b>{formatNumber(o('cableQty'), 0)}</b> ม้วน</span>
-                    <span>ค่าวัสดุน้ำ <b>{formatNumber(o('waterMaterial'), 0)}</b> บาท</span>
-                    <span>ค่าวัสดุไฟ <b>{formatNumber(o('powerMaterial'), 0)}</b> บาท</span>
-                </div>
-                <div className="mt-1 text-[15px] text-gray-800">
-                    ค่าวัสดุน้ำ-ไฟชั่วคราวรวม <b className="tabular-nums">{formatNumber(o('total'), 0)}</b> บาท
-                </div>
-            </div>
+            <ResultSummary
+                items={[
+                    { label: 'ท่อ PVC', value: o('pipeQty'), unit: 'เส้น', digits: 0 },
+                    { label: 'สายไฟ', value: o('cableQty'), unit: 'ม้วน', digits: 0 },
+                    { label: 'ค่าวัสดุน้ำ', value: o('waterMaterial'), unit: 'บาท', digits: 0 },
+                    { label: 'ค่าวัสดุไฟ', value: o('powerMaterial'), unit: 'บาท', digits: 0 },
+                    { label: 'ค่าวัสดุน้ำ-ไฟชั่วคราวรวม', value: o('total'), unit: 'บาท', digits: 0 },
+                ]}
+                note={nothingYet
+                    ? 'กรอกระยะจากมิเตอร์และจำนวนจุดใช้งาน ระบบจะคิดท่อ สายไฟ และอุปกรณ์ให้ (ตอนนี้คิดเฉพาะตู้ไฟชั่วคราว 1 ชุด)'
+                    : undefined} />
         </>
     );
 }

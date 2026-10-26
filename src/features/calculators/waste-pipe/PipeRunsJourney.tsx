@@ -4,7 +4,6 @@
 // BOQ prices) with only their lengths to fill, optional extra runs, prices folded away, and a short length summary.
 // Same input and calculation as the Excel-mirror table in PipeRunsSheet.
 import { Button, Tag } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
 import type { CalculatorDef } from '@/domain/calculators/types';
 import type { BoqItemRow } from '@/domain/boq/types';
 import type { ProjectResult } from '@/domain/project';
@@ -16,6 +15,7 @@ import { EditableTable, type SheetColumn } from '@/components/sheet/EditableTabl
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { formatNumber } from '@/components/sheet/NumberCell';
+import { EmptyState, ResultSummary } from '@/components/sheet/journey';
 
 const NO_DEPS = { outputs: () => undefined };
 const EMPTY_RUN: PipeRun = { label: '', size: '', horizontal: 0, vertical: 0 };
@@ -123,15 +123,9 @@ export function PipeRunsJourney({ def, input, onChange, result, items, sizes, li
             <SheetCard title={`${noun}เพิ่มเติม (ถ้ามี)`}>
                 {extras.length === 0
                     ? (
-                        <div className="flex flex-col items-center gap-3 py-3 text-center">
-                            <p className="text-[13px] text-gray-500 m-0">
-                                อยากแยกกรอกเป็นแนว ๆ (เช่น ห้องน้ำชั้น 2) เพิ่มได้ที่นี่
-                                — ความยาวจะรวมเข้ากับท่อขนาดเดียวกันข้างบน
-                            </p>
-                            <Button type="dashed" size="large" icon={<PlusOutlined />} onClick={addExtra}>
-                                เพิ่ม{noun}อีกแนว
-                            </Button>
-                        </div>
+                        <EmptyState
+                            text="อยากแยกกรอกเป็นแนว ๆ (เช่น ห้องน้ำชั้น 2) เพิ่มได้ที่นี่ — ความยาวจะรวมเข้ากับท่อขนาดเดียวกันข้างบน"
+                            addLabel={`เพิ่ม${noun}อีกแนว`} onAdd={addExtra} />
                     )
                     : (
                         <EditableTable<PipeRun>
@@ -193,24 +187,13 @@ export function PipeRunsJourney({ def, input, onChange, result, items, sizes, li
                 </ul>
             </AdvancedSection>
 
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                <div className="text-[12px] font-semibold text-green-800 mb-1">สรุปความยาว{noun}</div>
-                <div className="flex flex-col gap-0.5">
-                    {lines.map((l, i) => (
-                        <div key={l.line} className="flex items-baseline gap-2 text-[14px]">
-                            <span className="font-medium text-gray-800">ท่อ {l.size}</span>
-                            <span className="text-[12px] text-gray-500 truncate">{fixedName(i)}</span>
-                            <span className="ml-auto tabular-nums font-semibold">รวม {formatNumber(out[l.line])} ม.</span>
-                        </div>
-                    ))}
-                    {lines.length > 1 && (
-                        <div className="flex items-baseline gap-2 text-[13px] border-t border-green-200 mt-1 pt-1 text-gray-700">
-                            <span>ทุกขนาด</span>
-                            <span className="ml-auto tabular-nums">{formatNumber((out.total ?? 0) - (out.unlinked ?? 0))} ม.</span>
-                        </div>
-                    )}
-                </div>
-            </div>
+            <ResultSummary
+                items={[
+                    ...lines.map((l, i) => ({ label: `ท่อ ${l.size}`, value: out[l.line], unit: 'ม.', detail: fixedName(i) })),
+                    ...(lines.length > 1
+                        ? [{ label: `${noun}ทุกขนาด`, value: (out.total ?? 0) - (out.unlinked ?? 0), unit: 'ม.' }]
+                        : []),
+                ]} />
         </>
     );
 }

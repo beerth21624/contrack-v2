@@ -11,9 +11,10 @@ import type { CalcContext } from '@/domain/calculators/types';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber } from '@/components/sheet/NumberCell';
+import { EmptyState, FromLevel, ResultSummary, SumInput } from '@/components/sheet/journey';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { EmptyPrompt, FromLevel, ResultSummary, SumInput, parseWallType, wallTypeOptions, wallTypeValue } from './JourneyBits';
+import { parseWallType, wallTypeOptions, wallTypeValue } from './wallType';
 
 /** What each wall part means (the plaster level plasters them by these rules). */
 const WALL_PART_HINTS: Record<string, string> = {
@@ -63,7 +64,7 @@ export default function BrickJourney() {
             <SheetCard title="ผนังก่ออิฐ">
                 {input.walls.length === 0
                     ? (
-                        <EmptyPrompt
+                        <EmptyState
                             text="ยังไม่มีผนัง — ดูแปลนพื้นและรูปด้าน แล้วเพิ่มผนังทีละกลุ่ม (เช่น ผนังรอบบ้านอิฐมอญ) พิมพ์ความยาวแต่ละช่วงต่อกันได้ เช่น 9.5+7+2"
                             addLabel="เพิ่มผนัง" onAdd={() => addWall()} />
                     )

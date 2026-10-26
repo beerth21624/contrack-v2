@@ -1,7 +1,6 @@
 'use client';
 
-import { Button, Checkbox } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { Checkbox } from 'antd';
 import {
     landInspection, lineTotal, LAND_INSPECTION_CHECKLIST, type ChecklistAnswer, type CostLine, type LandInspectionInput,
 } from '@/domain/calculators/land-inspection';
@@ -9,6 +8,7 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, InputTextField, SheetCard } from '@/components/sheet/SheetFields';
 import { TextCell, formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
+import { EmptyState, ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -80,13 +80,9 @@ function JourneyView({ calc }: { calc: Calc }) {
             <SheetCard title="ค่าใช้จ่ายตรวจสอบที่ดิน">
                 {input.items.length === 0
                     ? (
-                        <div className="py-6 text-center">
-                            <p className="mb-3 text-[13px] text-gray-500">ยังไม่มีรายการค่าใช้จ่าย เช่น ค่าแรงตรวจ ค่าเดินทาง ค่าที่พัก</p>
-                            <Button type="primary" size="large" icon={<PlusOutlined />}
-                                onClick={() => update(p => ({ ...p, items: [...p.items, newCostLine()] }))}>
-                                เพิ่มรายการค่าใช้จ่าย
-                            </Button>
-                        </div>
+                        <EmptyState text="ยังไม่มีรายการค่าใช้จ่าย เช่น ค่าแรงตรวจ ค่าเดินทาง ค่าที่พัก"
+                            addLabel="เพิ่มรายการค่าใช้จ่าย"
+                            onAdd={() => update(p => ({ ...p, items: [...p.items, newCostLine()] }))} />
                     )
                     : (
                         <>
@@ -110,12 +106,7 @@ function JourneyView({ calc }: { calc: Calc }) {
                 <CostTable calc={calc} />
             </AdvancedSection>
 
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                <div className="text-[12px] font-semibold text-green-700">ผลลัพธ์</div>
-                <div className="text-[15px] text-gray-800">
-                    ค่าตรวจสอบที่ดินรวม <b className="tabular-nums">{formatNumber(total, 0)}</b> บาท
-                </div>
-            </div>
+            <ResultSummary items={[{ label: 'ค่าตรวจสอบที่ดินรวม', value: total, unit: 'บาท', digits: 0 }]} />
         </>
     );
 }

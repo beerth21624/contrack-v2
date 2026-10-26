@@ -7,7 +7,7 @@ import {
 } from '@/domain/calculators/piles';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { formatNumber } from '@/components/sheet/NumberCell';
-import { JGroup, JNumber, JSelect, JText, ResultSummary } from '../footing/JourneyParts';
+import { JGroup, JNumber, JSelect, JText, ResultSummary } from '@/components/sheet/journey';
 
 export function PilesJourney({ input, update }: { input: PilesInput; update: (patch: Partial<PilesInput>) => void }) {
     const spec = composePileSpec(input);
@@ -44,7 +44,7 @@ export function PilesJourney({ input, update }: { input: PilesInput; update: (pa
                 </JGroup>
             </AdvancedSection>
 
-            <ResultSummary parts={[
+            <ResultSummary items={[
                 { label: 'เสาเข็ม', value: count, unit: 'ต้น', digits: 0 },
                 { label: 'ราคาเหมา', value: price, unit: 'บาท/ต้น', digits: 0 },
                 { label: 'รวม', value: count * price, unit: 'บาท', digits: 0 },

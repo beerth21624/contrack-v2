@@ -9,7 +9,7 @@ import {
 } from '@/domain/calculators/wall-finishing';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
-import { formatNumber } from '@/components/sheet/NumberCell';
+import { EmptyState, ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
@@ -35,16 +35,10 @@ function WallFinishingJourney({ input, onChange, outputs }: {
     if (input.rows.length === 0) {
         return (
             <SheetCard>
-                <div className="flex flex-col items-center gap-3 py-8 text-center">
-                    <div className="text-[14px] text-gray-600">
-                        ยังไม่มีงานตกแต่งผนัง — ดูรูปด้านว่ามีบัวผนัง หรือผนังกรุไม้ระแนงไหม
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-2">
-                        <Button type="primary" size="large" icon={<PlusOutlined />} onClick={addMoulding}>เพิ่มบัวผนัง</Button>
-                        <Button type="primary" size="large" icon={<PlusOutlined />} onClick={addSlat}>เพิ่มผนังไม้ระแนง</Button>
-                    </div>
-                    <div className="text-[12px] text-gray-500">ถ้าแบบไม่มีงานนี้ กด &quot;ไม่มีงานนี้&quot; ที่แถบด้านล่าง</div>
-                </div>
+                <EmptyState text="ยังไม่มีงานตกแต่งผนัง — ดูรูปด้านว่ามีบัวผนัง หรือผนังกรุไม้ระแนงไหม"
+                    note={<>ถ้าแบบไม่มีงานนี้ กด &quot;ไม่มีงานนี้&quot; ที่แถบด้านล่าง</>}
+                    addLabel="เพิ่มบัวผนัง" onAdd={addMoulding}
+                    actions={[{ label: 'เพิ่มผนังไม้ระแนง', onClick: addSlat }]} />
             </SheetCard>
         );
     }
@@ -120,15 +114,13 @@ function WallFinishingJourney({ input, onChange, outputs }: {
                 </SheetCard>
             )}
 
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                <div className="text-[12px] font-semibold text-green-800 mb-1">สรุปงานตกแต่งผนัง</div>
-                <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-gray-700">
-                    <span>บัวใหญ่ 0.30 <b className="tabular-nums text-[15px]">{formatNumber(outputs.R218)}</b> ม.</span>
-                    <span>บัวเล็ก 0.10 <b className="tabular-nums text-[15px]">{formatNumber(outputs.R219)}</b> ม.</span>
-                    <span>ผนังไม้ระแนง <b className="tabular-nums text-[15px]">{formatNumber(outputs.R220)}</b> ตร.ม.</span>
-                </div>
-                <div className="mt-1 text-[12px] text-gray-600">ความยาวบัวและพื้นที่ระแนงนำไปใช้ต่อในด่านทาสีได้</div>
-            </div>
+            <ResultSummary
+                items={[
+                    { label: 'บัวใหญ่ 0.30', value: outputs.R218, unit: 'ม.' },
+                    { label: 'บัวเล็ก 0.10', value: outputs.R219, unit: 'ม.' },
+                    { label: 'ผนังไม้ระแนง', value: outputs.R220, unit: 'ตร.ม.' },
+                ]}
+                note="ความยาวบัวและพื้นที่ระแนงนำไปใช้ต่อในด่านทาสีได้" />
         </>
     );
 }

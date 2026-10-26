@@ -11,6 +11,7 @@ import {
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber, SHEET_COLORS, TextCell } from '@/components/sheet/NumberCell';
+import { EmptyState, ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -152,12 +153,8 @@ function ToiletTileJourney({ input, update, outputs }: {
             <SheetCard title="ห้องน้ำ">
                 {groups.length === 0
                     ? (
-                        <div className="flex flex-col items-center gap-3 py-8 text-center">
-                            <div className="text-[14px] text-gray-600">
-                                ยังไม่มีห้องน้ำ — เปิดแปลนห้องน้ำ แล้วเพิ่มทีละห้อง (ขนาดห้อง ความสูงที่กรุกระเบื้อง และช่องเปิด)
-                            </div>
-                            <Button type="primary" size="large" icon={<PlusOutlined />} onClick={add}>เพิ่มห้องน้ำ</Button>
-                        </div>
+                        <EmptyState text="ยังไม่มีห้องน้ำ — เปิดแปลนห้องน้ำ แล้วเพิ่มทีละห้อง (ขนาดห้อง ความสูงที่กรุกระเบื้อง และช่องเปิด)"
+                            addLabel="เพิ่มห้องน้ำ" onAdd={add} />
                     )
                     : (
                         <div className="flex flex-col gap-3">
@@ -170,13 +167,11 @@ function ToiletTileJourney({ input, update, outputs }: {
                     )}
             </SheetCard>
 
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                <div className="text-[12px] font-semibold text-green-800 mb-1">สรุปกระเบื้องห้องน้ำ ({groups.length} ห้อง)</div>
-                <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-gray-700">
-                    <span>ปูพื้น <b className="tabular-nums text-[15px]">{formatNumber(outputs.R210)}</b> ตร.ม.</span>
-                    <span>กรุผนัง <b className="tabular-nums text-[15px]">{formatNumber(outputs.R211)}</b> ตร.ม.</span>
-                </div>
-            </div>
+            <ResultSummary items={[
+                { label: 'ห้องน้ำ', value: groups.length, unit: 'ห้อง', digits: 0 },
+                { label: 'ปูกระเบื้องพื้น', value: outputs.R210, unit: 'ตร.ม.' },
+                { label: 'กรุกระเบื้องผนัง', value: outputs.R211, unit: 'ตร.ม.' },
+            ]} />
         </>
     );
 }

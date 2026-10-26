@@ -7,6 +7,7 @@ import {
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { TextCell, formatNumber } from '@/components/sheet/NumberCell';
+import { ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -108,20 +109,9 @@ function JourneyView({ calc, cell }: {
                 />
             </SheetCard>
 
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                <div className="text-[12px] font-semibold text-green-700">ผลลัพธ์</div>
-                {total > 0
-                    ? (
-                        <div className="text-[15px] text-gray-800">
-                            งานรื้อถอนรวม <b className="tabular-nums">{formatNumber(total, 0)}</b> บาท (คิดเป็นเหมา 1 งาน)
-                        </div>
-                    )
-                    : (
-                        <div className="text-[13px] text-gray-600">
-                            ยังไม่มีงานรื้อถอน — ถ้าที่ดินว่างไม่มีอะไรต้องรื้อ กด &quot;ไม่มีงานนี้&quot; ด้านล่างได้เลย
-                        </div>
-                    )}
-            </div>
+            <ResultSummary
+                items={total > 0 ? [{ label: 'งานรื้อถอนรวม', value: total, unit: 'บาท', digits: 0, detail: 'คิดเป็นเหมา 1 งาน' }] : []}
+                empty={<>ยังไม่มีงานรื้อถอน — ถ้าที่ดินว่างไม่มีอะไรต้องรื้อ กด &quot;ไม่มีงานนี้&quot; ด้านล่างได้เลย</>} />
         </>
     );
 }

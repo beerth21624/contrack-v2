@@ -17,6 +17,7 @@ import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { NumberCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { EmptyState, ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -150,11 +151,10 @@ function JourneyPipe({ calc }: { calc: Calc }) {
         updateCable(cable => rewireForKind(cable, row, next));
     };
 
-    const addButtons = (big: boolean) => (
+    const addButtons = (
         <div className="flex flex-wrap gap-2">
-            {CIRCUIT_KINDS.map((k, n) => (
-                <Button key={k.kind} icon={<PlusOutlined />} size={big ? 'large' : 'small'}
-                    type={big && n === 0 ? 'primary' : 'default'} onClick={() => addKind(k.kind)}>
+            {CIRCUIT_KINDS.map(k => (
+                <Button key={k.kind} icon={<PlusOutlined />} size="small" onClick={() => addKind(k.kind)}>
                     {k.label}
                 </Button>
             ))}
@@ -179,13 +179,9 @@ function JourneyPipe({ calc }: { calc: Calc }) {
 
                 {circuits.length === 0
                     ? (
-                        <div className="rounded-lg border border-dashed border-gray-300 px-4 py-6 text-center">
-                            <div className="text-[14px] text-gray-700">ยังไม่มีวงจร</div>
-                            <div className="text-[12px] text-gray-500 mt-1 mb-3">
-                                ดูตารางโหลดหรือแปลนไฟฟ้า แล้วเพิ่มทีละวงจรตามชนิด — ระบบตั้งเบรกเกอร์ ระยะแนวดิ่ง และขนาดสายให้
-                            </div>
-                            <div className="flex justify-center">{addButtons(true)}</div>
-                        </div>
+                        <EmptyState text="ยังไม่มีวงจร"
+                            note="ดูตารางโหลดหรือแปลนไฟฟ้า แล้วเพิ่มทีละวงจรตามชนิด — ระบบตั้งเบรกเกอร์ ระยะแนวดิ่ง และขนาดสายให้"
+                            actions={CIRCUIT_KINDS.map(k => ({ label: k.label, onClick: () => addKind(k.kind) }))} />
                     )
                     : (
                         <>
@@ -238,7 +234,7 @@ function JourneyPipe({ calc }: { calc: Calc }) {
                             />
                             <div className="mt-3 flex flex-wrap items-center gap-2">
                                 <span className="text-[12px] text-gray-500">เพิ่มวงจร:</span>
-                                {addButtons(false)}
+                                {addButtons}
                             </div>
                         </>
                     )}
@@ -279,12 +275,10 @@ function JourneyPipe({ calc }: { calc: Calc }) {
                 </AdvancedSection>
             )}
 
-            <SheetCard title="สรุป">
-                <div className="max-w-md">
-                    <CalcField label="จำนวนวงจร" value={circuits.length} unit="วงจร" digits={0} />
-                    <CalcField label="ท่อร้อยสายไฟรวม" value={outputs.total} unit="ม." strong />
-                </div>
-            </SheetCard>
+            <ResultSummary items={[
+                { label: 'จำนวนวงจร', value: circuits.length, unit: 'วงจร', digits: 0 },
+                { label: 'ท่อร้อยสายไฟรวม', value: outputs.total, unit: 'ม.' },
+            ]} />
         </>
     );
 }

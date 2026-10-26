@@ -27,14 +27,35 @@ interface NumberCellProps {
     ariaLabel?: string;
     /** 'calc' = value currently comes from a calculator (green) but can still be overridden. */
     tone?: 'input' | 'calc';
+    /** Shown while the cell is empty (see `blankZero`). */
+    placeholder?: string;
+    /** Show an empty cell (and the placeholder) instead of "0.00" while the value is 0, e.g. an unfilled plan value. */
+    blankZero?: boolean;
+}
+
+interface CellFormat { digits?: number; percent?: boolean; blankZero?: boolean }
+
+/** What a number cell shows while it is not being edited. */
+export function numberCellText(value: number, { digits = 2, percent, blankZero }: CellFormat = {}): string {
+    const shown = percent ? value * 100 : value;
+    if (blankZero && shown === 0) return '';
+    return percent ? `${formatNumber(shown, 0)}%` : formatNumber(shown, digits);
+}
+
+/** The text a number cell starts editing with (plain digits, no grouping). */
+export function numberCellEditText(value: number, { percent, blankZero }: CellFormat = {}): string {
+    const shown = percent ? value * 100 : value;
+    if (blankZero && shown === 0) return '';
+    return String(Number(shown.toFixed(6)));
 }
 
 /**
  * A yellow input cell that edits like a spreadsheet: type, then Enter/Tab/blur commits.
  * Clearing the cell commits `undefined` (back to the template default).
  */
-export function NumberCell({ value, onCommit, edited, digits = 2, percent, ariaLabel, tone = 'input' }: NumberCellProps) {
-    const shown = percent ? value * 100 : value;
+export function NumberCell({
+    value, onCommit, edited, digits = 2, percent, ariaLabel, tone = 'input', placeholder, blankZero,
+}: NumberCellProps) {
     // Draft text only while the cell is being edited; otherwise the formatted value is shown.
     const [text, setText] = useState<string | null>(null);
     // Text the cell started with on focus: leaving the cell without typing commits nothing, so a value that
@@ -58,9 +79,10 @@ export function NumberCell({ value, onCommit, edited, digits = 2, percent, ariaL
         <input
             aria-label={ariaLabel}
             inputMode="decimal"
-            value={text ?? (percent ? `${formatNumber(shown, 0)}%` : formatNumber(shown, digits))}
+            placeholder={placeholder}
+            value={text ?? numberCellText(value, { digits, percent, blankZero })}
             onFocus={(e) => {
-                const start = String(Number(shown.toFixed(6)));
+                const start = numberCellEditText(value, { percent, blankZero });
                 setText(start);
                 setInitial(start);
                 requestAnimationFrame(() => e.target.select());

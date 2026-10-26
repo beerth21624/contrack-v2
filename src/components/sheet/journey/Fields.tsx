@@ -1,27 +1,29 @@
 'use client';
 
-// Building blocks of the guided-journey pages of the foundation levels (footing, pedestal, ground beam, piles):
-// one card per element type read off the plan, plain labelled fields, a short result line and a green summary.
-// Outside the journey those pages keep their Excel-mirror tables.
+// Labelled fields and element cards of the card-style journey pages (one card per element type read off the
+// plan: F1, C1, GB1 …): plain labels above yellow inputs, a short result line per card.
 import type { ReactNode } from 'react';
 import { Button, Popconfirm, Select } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
-import { NumberCell, TextCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 import { REBAR_SIZES } from '@/domain/boq/slots';
+import { NumberCell, TextCell, SHEET_COLORS } from '@/components/sheet/NumberCell';
 
 const labelCls = 'text-[12px] text-gray-600 leading-tight';
 const hintCls = 'text-[11px] text-gray-400 leading-tight';
 
 /** Labelled yellow number box (label above, unit after). */
-export function JNumber({ label, value, onChange, unit, hint, digits = 2 }: {
+export function JNumber({ label, value, onChange, unit, hint, digits = 2, blankZero, placeholder }: {
     label: string; value: number; onChange: (v: number) => void; unit?: string; hint?: ReactNode; digits?: number;
+    /** Empty box instead of "0.00" while 0 (a plan value not filled yet). */
+    blankZero?: boolean; placeholder?: string;
 }) {
     return (
         <label className="flex flex-col gap-1 min-w-0">
             <span className={labelCls}>{label}</span>
             <span className="flex items-center gap-1.5">
                 <span className="flex-1 min-w-0 max-w-[140px]">
-                    <NumberCell value={value} digits={digits} ariaLabel={label} onCommit={v => onChange(v ?? 0)} />
+                    <NumberCell value={value} digits={digits} ariaLabel={label} blankZero={blankZero} placeholder={placeholder}
+                        onCommit={v => onChange(v ?? 0)} />
                 </span>
                 {unit && <span className="text-[12px] text-gray-500 whitespace-nowrap">{unit}</span>}
             </span>
@@ -75,7 +77,7 @@ export function JBar({ label, size, onSize, amount, onAmount, amountUnit = 'เ�
             <span className="flex items-center gap-1.5">
                 <span className="w-[84px] shrink-0" style={{ background: SHEET_COLORS.input, borderRadius: 3 }}>
                     <Select<string> size="small" variant="borderless" style={{ width: '100%' }} aria-label={`${label} ขนาด`}
-                        placeholder="ขนาด" value={size || undefined} options={sizeOptions} onChange={v => onSize(v)} />
+                        placeholder="ขนาด" value={size === '' ? undefined : size} options={sizeOptions} onChange={v => onSize(v)} />
                 </span>
                 <span className="w-[64px] shrink-0">
                     <NumberCell value={amount} digits={amountDigits} ariaLabel={`${label} ${amountUnit}`} onCommit={v => onAmount(v ?? 0)} />
@@ -124,48 +126,9 @@ export function ElementCard({ title, onDelete, deleteTitle, result, warning, chi
     );
 }
 
-/** Friendly prompt for an empty list, with one big add button. */
-export function EmptyState({ text, actionLabel, onAction, children }: {
-    text: ReactNode; actionLabel?: string; onAction?: () => void; children?: ReactNode;
-}) {
-    return (
-        <div className="bg-white border-2 border-dashed border-gray-200 rounded-xl p-8 text-center">
-            <div className="text-[14px] text-gray-600">{text}</div>
-            {actionLabel && onAction && (
-                <Button className="mt-4" type="primary" size="large" icon={<PlusOutlined />} onClick={onAction}>{actionLabel}</Button>
-            )}
-            {children && <div className="mt-3">{children}</div>}
-        </div>
-    );
-}
-
-/** "Add one more" button under a list of element cards. */
+/** "Add one more" button under a list of element cards or table rows. */
 export function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
     return (
         <Button type="dashed" size="large" block icon={<PlusOutlined />} onClick={onClick}>{label}</Button>
-    );
-}
-
-export interface ResultPart { label: string; value: number | null | undefined; unit: string; digits?: number }
-
-/** "คอนกรีต 3.25 ลบ.ม. · เหล็ก 412 กก." */
-export function resultText(parts: ResultPart[]): string {
-    return parts.map(p => `${p.label} ${formatNumber(p.value ?? 0, p.digits ?? 2)} ${p.unit}`).join(' · ');
-}
-
-/** The level's green result summary. */
-export function ResultSummary({ title = 'ผลรวมด่านนี้', parts, note }: { title?: string; parts: ResultPart[]; note?: ReactNode }) {
-    return (
-        <div className="rounded-lg border border-green-200 px-4 py-3" style={{ background: SHEET_COLORS.calc }}>
-            <div className="text-[12px] font-semibold text-green-800">{title}</div>
-            <div className="mt-1 flex flex-wrap gap-x-6 gap-y-1">
-                {parts.map(p => (
-                    <div key={p.label} className="text-[14px] text-gray-800">
-                        {p.label} <span className="font-bold tabular-nums">{formatNumber(p.value ?? 0, p.digits ?? 2)}</span> {p.unit}
-                    </div>
-                ))}
-            </div>
-            {note && <div className="mt-1 text-[12px] text-gray-600">{note}</div>}
-        </div>
     );
 }

@@ -9,6 +9,7 @@ import { EditableTable } from '@/components/sheet/EditableTable';
 import { InputNumberField, SheetCard } from '@/components/sheet/SheetFields';
 import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
+import { ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -157,27 +158,17 @@ function JourneyView({ calc }: { calc: Calc }) {
                 </div>
             </AdvancedSection>
 
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                <div className="text-[12px] font-semibold text-green-700">ผลลัพธ์</div>
-                {anyRoom
-                    ? (
-                        <>
-                            <div className="flex flex-col gap-0.5 text-[13px] text-gray-800 tabular-nums">
-                                {groups.filter(x => x.rooms > 0).map(x => (
-                                    <span key={x.g.id}>
-                                        {x.g.boqDesc} {formatNumber(x.rooms, 0)} ห้อง
-                                        <span className="text-gray-500"> (ห้องละ {formatNumber(x.perRoom, 0)} บาท)</span>
-                                        {' '}= <b>{formatNumber(x.total, 0)}</b> บาท
-                                    </span>
-                                ))}
-                            </div>
-                            <div className="mt-1 text-[15px] text-gray-800">
-                                แคมป์คนงานรวม <b className="tabular-nums">{formatNumber(total, 0)}</b> บาท
-                            </div>
-                        </>
-                    )
-                    : <div className="text-[13px] text-gray-600">กรอกจำนวนห้องพัก ห้องน้ำ ห้องอาบน้ำ หรือสโตร์ที่ต้องสร้าง ระบบจะคิดราคาให้</div>}
-            </div>
+            <ResultSummary
+                items={anyRoom
+                    ? [
+                        ...groups.filter(x => x.rooms > 0).map(x => ({
+                            label: x.g.boqDesc, value: x.total, unit: 'บาท', digits: 0,
+                            detail: `${formatNumber(x.rooms, 0)} ห้อง × ห้องละ ${formatNumber(x.perRoom, 0)} บาท`,
+                        })),
+                        { label: 'แคมป์คนงานรวม', value: total, unit: 'บาท', digits: 0 },
+                    ]
+                    : []}
+                empty="กรอกจำนวนห้องพัก ห้องน้ำ ห้องอาบน้ำ หรือสโตร์ที่ต้องสร้าง ระบบจะคิดราคาให้" />
         </>
     );
 }

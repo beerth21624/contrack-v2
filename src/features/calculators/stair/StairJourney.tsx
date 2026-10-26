@@ -3,42 +3,16 @@
 // Journey-mode body of the stair level: the stair sizes read off the stair detail (total rise and run follow
 // steps × riser / tread), then the bars of the waist slab and steps, the formulas folded away, and a short
 // result at the end. Same input and formulas as /calc.
-import { Button } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
 import {
     newStairRow, stairRow, withStepChange, STAIR_ANCHORAGE, STAIR_BAR_SIZES, STAIR_NAMES, type StairInput, type StairRow,
 } from '@/domain/calculators/stair';
-import { REBAR_SIZES } from '@/domain/boq/slots';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
-import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { EmptyState, ResultSummary, rebarSummaryItem } from '@/components/sheet/journey';
 
 const nameOptions = STAIR_NAMES.map(v => ({ value: v }));
 const sizeOptions = STAIR_BAR_SIZES.map(v => ({ value: v }));
-
-interface SummaryItem { label: string; value: number; unit: string; digits?: number; detail?: string }
-
-/** Green "what this level comes to" line. */
-function ResultSummary({ items }: { items: SummaryItem[] }) {
-    const text = (i: SummaryItem) => `${i.label} ${formatNumber(i.value, i.digits ?? 2)} ${i.unit}${i.detail ? ` (${i.detail})` : ''}`;
-    return (
-        <div className="rounded-lg border border-green-200 px-4 py-3" style={{ background: SHEET_COLORS.calc }}>
-            <div className="text-[12px] font-semibold text-green-800">ผลรวมด่านนี้</div>
-            <div className="text-[16px] font-semibold text-gray-900 tabular-nums">{items.map(text).join(' · ')}</div>
-        </div>
-    );
-}
-
-/** Rebar kg of the level, with the sizes used. */
-function rebar(outputs: Record<string, number>): SummaryItem {
-    const used = REBAR_SIZES.filter(s => (outputs[`rebar.${s}`] ?? 0) > 0);
-    const total = REBAR_SIZES.reduce((s, size) => s + (outputs[`rebar.${size}`] ?? 0), 0);
-    return {
-        label: 'เหล็กเสริม', value: total, unit: 'กก.', digits: 1,
-        detail: used.length > 1 ? used.map(s => `${s} ${formatNumber(outputs[`rebar.${s}`], 1)}`).join(', ') : used[0],
-    };
-}
 
 const rowKg = (r: StairRow) => {
     const c = stairRow(r);
@@ -57,12 +31,8 @@ export function StairJourney({ input, outputs, onChange }: {
             <SheetCard title="ขนาดบันได" extra={rows.length > 0 ? <span className="text-[12px] text-gray-500">{rows.length} ชุด</span> : undefined}>
                 {rows.length === 0
                     ? (
-                        <div className="flex flex-col items-center gap-3 py-8 text-center">
-                            <div className="text-[14px] text-gray-600">
-                                ยังไม่มีบันได — ดูรูปขยายบันได แล้วเพิ่มทีละชุด (กว้าง จำนวนขั้น ลูกตั้ง ลูกนอน)
-                            </div>
-                            <Button type="primary" size="large" icon={<PlusOutlined />} onClick={add}>เพิ่มบันไดชุดแรก</Button>
-                        </div>
+                        <EmptyState text="ยังไม่มีบันได — ดูรูปขยายบันได แล้วเพิ่มทีละชุด (กว้าง จำนวนขั้น ลูกตั้ง ลูกนอน)"
+                            addLabel="เพิ่มบันไดชุดแรก" onAdd={add} />
                     )
                     : (
                         <>
@@ -143,7 +113,7 @@ export function StairJourney({ input, outputs, onChange }: {
                 <ResultSummary items={[
                     { label: 'คอนกรีต', value: outputs.concrete ?? 0, unit: 'ลบ.ม.', digits: 3 },
                     { label: 'ไม้แบบ', value: outputs.formwork ?? 0, unit: 'ตร.ม.' },
-                    rebar(outputs),
+                    rebarSummaryItem(outputs),
                 ]} />
             )}
         </>

@@ -12,6 +12,7 @@ import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { NumberCell, SHEET_COLORS } from '@/components/sheet/NumberCell';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
+import { EmptyState, ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -227,14 +228,14 @@ function JourneyPickList({ catalogue, options, units = [], allowFreeText, journe
                         {
                             kind: 'label', key: 'qty', title: 'จำนวน', width: 110,
                             get: l => (
-                                <NumberCell value={l.row?.qty ?? 0} digits={qtyDigits(l.row?.qty ?? 0, l.unit)}
+                                <NumberCell value={l.row?.qty ?? 0} digits={qtyDigits(l.row?.qty ?? 0, l.unit)} blankZero placeholder="0"
                                     onCommit={v => setQty(l.option, v ?? 0)} ariaLabel={`จำนวน ${l.label}`} />
                             ),
                         },
                         { kind: 'label', key: 'unit', title: 'หน่วย', width: 80, get: l => <span className="block text-center text-gray-600">{l.unit}</span> },
                     ]}
                 />
-                <p className="mt-2 text-[12px] text-gray-500">ใส่จำนวนตามที่เห็นในแบบ รายการที่ไม่มีให้เว้นเป็น 0</p>
+                <p className="mt-2 text-[12px] text-gray-500">ใส่จำนวนตามที่เห็นในแบบ รายการที่ไม่มีให้เว้นว่างไว้</p>
                 {journeyNotes}
             </SheetCard>
 
@@ -242,14 +243,8 @@ function JourneyPickList({ catalogue, options, units = [], allowFreeText, journe
                 <SheetCard title={allowFreeText ? 'งานอื่นที่ไม่อยู่ในรายการ' : 'รายการเพิ่มเติม'}>
                     {otherLines.length === 0
                         ? (
-                            <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center">
-                                <div className="text-[13px] text-gray-600">
-                                    มีงานอื่นที่ไม่อยู่ในรายการด้านบนไหม? เพิ่มเองได้ พร้อมใส่ราคาต่อหน่วย
-                                </div>
-                                <Button type="primary" size="large" icon={<PlusOutlined />} className="mt-3" onClick={addOther}>
-                                    เพิ่มงานอื่น
-                                </Button>
-                            </div>
+                            <EmptyState text="มีงานอื่นที่ไม่อยู่ในรายการด้านบนไหม? เพิ่มเองได้ พร้อมใส่ราคาต่อหน่วย"
+                                addLabel="เพิ่มงานอื่น" onAdd={addOther} />
                         )
                         : (
                             <>
@@ -334,14 +329,12 @@ function JourneyPickList({ catalogue, options, units = [], allowFreeText, journe
                     )}
             </AdvancedSection>
 
-            <SheetCard title="สรุป">
-                <div className="max-w-md">
-                    <CalcField label="จำนวนรายการ" value={outputs.rows} unit="รายการ" digits={0} />
-                    <CalcField label="ค่าวัสดุ" value={outputs.mat} unit="บาท" />
-                    <CalcField label="ค่าแรง" value={outputs.lab} unit="บาท" />
-                    <CalcField label="รวม" value={outputs.total} unit="บาท" strong />
-                </div>
-            </SheetCard>
+            <ResultSummary items={[
+                { label: 'จำนวนรายการ', value: outputs.rows, unit: 'รายการ', digits: 0 },
+                { label: 'ค่าวัสดุ', value: outputs.mat, unit: 'บาท' },
+                { label: 'ค่าแรง', value: outputs.lab, unit: 'บาท' },
+                { label: 'รวม', value: outputs.total, unit: 'บาท' },
+            ]} />
         </>
     );
 }

@@ -11,7 +11,7 @@ import { LengthsCell } from '@/components/sheet/LengthsCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { Hint, LabelWithHint, ResultSummary } from '../brick/JourneyBits';
+import { Hint, LabelWithHint, ResultSummary } from '@/components/sheet/journey';
 
 /** What to measure on the roof plan for each material row (by the row's stable key). */
 const MEASURE_HINTS: Record<string, string> = {

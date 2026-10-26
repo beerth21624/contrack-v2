@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { Button } from 'antd';
 import { CheckOutlined } from '@ant-design/icons';
 import {
@@ -8,8 +7,8 @@ import {
     type MouldingRun, type PaintInput, type PaintLineKey, type PaintSuggestions,
 } from '@/domain/calculators/paint';
 import type { CalcContext } from '@/domain/calculators/types';
-import { getLevel } from '@/domain/journey';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
+import { LevelLink, ResultSummary, levelTitle } from '@/components/sheet/journey';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, InputNumberField, SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber, SHEET_COLORS } from '@/components/sheet/NumberCell';
@@ -46,11 +45,6 @@ function SourceHint({ sheet, value, current, unit, onUse }: {
 
 // ─── Journey mode: a review of the areas earlier levels gave, plus the three numbers to confirm ───
 
-/** A journey level's title and link (for "จากด่าน …"). */
-function levelRef(id: string) {
-    return { title: getLevel(id)?.title ?? id, href: `/journey/${id}` };
-}
-
 /** Where each line's area comes from, in plain words. */
 const JOURNEY_SOURCE: Partial<Record<PaintLineKey, { level: string; what: string }>> = {
     wallExterior: { level: 'plaster', what: 'ผนังฉาบภายนอก' },
@@ -65,14 +59,14 @@ const JOURNEY_SOURCE: Partial<Record<PaintLineKey, { level: string; what: string
 function UseFromLevel({ level, value, current, unit, onUse }: {
     level: string; value: number | undefined; current: number; unit: string; onUse: (v: number) => void;
 }) {
-    const ref = levelRef(level);
-    if (value === undefined) return <span className="text-[12px] text-gray-400">ด่าน{ref.title}ยังไม่มีค่านี้</span>;
+    const title = levelTitle(level);
+    if (value === undefined) return <span className="text-[12px] text-gray-400">ด่าน{title}ยังไม่มีค่านี้</span>;
     if (Math.abs(value - current) < 1e-9) {
-        return <span className="text-[12px] text-green-700"><CheckOutlined /> ตรงกับด่าน{ref.title}</span>;
+        return <span className="text-[12px] text-green-700"><CheckOutlined /> ตรงกับด่าน{title}</span>;
     }
     return (
         <Button type="primary" size="small" onClick={() => onUse(value)}>
-            ใช้ค่าจากด่าน{ref.title}: {formatNumber(value)} {unit}
+            ใช้ค่าจากด่าน{title}: {formatNumber(value)} {unit}
         </Button>
     );
 }
@@ -98,7 +92,6 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                     {fromLevels.map(l => {
                         const src = JOURNEY_SOURCE[l.key];
                         if (!src) return null;
-                        const ref = levelRef(src.level);
                         const area = outputs[l.key] ?? 0;
                         return (
                             <div key={l.key} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-1.5">
@@ -108,11 +101,13 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                                 </span>
                                 <span className="text-[12px] text-gray-500">
                                     {isLinked(l.key)
-                                        ? <>จาก<Link href={ref.href} className="mx-1">ด่าน{ref.title}</Link>({src.what})</>
-                                        : <>ค่าตัวอย่าง (ยังไม่มีด่าน{ref.title})</>}
+                                        ? <>จาก <LevelLink levelId={src.level} /> ({src.what})</>
+                                        : <>ค่าตัวอย่าง (ยังไม่มีด่าน{levelTitle(src.level)})</>}
                                 </span>
                                 {area === 0 && (
-                                    <Link href={ref.href} className="text-[12px] text-orange-600">ยังเป็น 0 — กลับไปด่าน{ref.title}</Link>
+                                    <LevelLink levelId={src.level} className="text-[12px] text-orange-600">
+                                        ยังเป็น 0 — กลับไปด่าน{levelTitle(src.level)}
+                                    </LevelLink>
                                 )}
                             </div>
                         );
@@ -188,15 +183,14 @@ function PaintJourney({ input, update, outputs, linked, suggest }: {
                 <p className="mt-1 text-[12px] text-gray-500">ราคาสีต่อ ตร.ม. ของแต่ละรอบ แก้ได้ที่หน้า BOQ</p>
             </AdvancedSection>
 
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                <div className="text-[12px] font-semibold text-green-800 mb-1">สรุปพื้นที่ทาสี (คิด 3 รอบ: รองพื้น, รอบที่ 1, รอบสุดท้าย)</div>
-                <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-gray-700">
-                    <span>ผนัง <b className="tabular-nums text-[15px]">{formatNumber(sum(['wallExterior', 'wallInterior']))}</b> ตร.ม.</span>
-                    <span>ฝ้า <b className="tabular-nums text-[15px]">{formatNumber(sum(['ceilingExterior', 'ceilingInterior']))}</b> ตร.ม.</span>
-                    <span>ระแนง บัว เชิงชาย <b className="tabular-nums text-[15px]">{formatNumber(sum(['ceilingSlat', 'wallSlat', 'moulding', 'fascia']))}</b> ตร.ม.</span>
-                    <span>ฉาบบาง (สกิมโค้ท) <b className="tabular-nums text-[15px]">{formatNumber(outputs.skim)}</b> ตร.ม.</span>
-                </div>
-            </div>
+            <ResultSummary
+                items={[
+                    { label: 'ทาสีผนัง', value: sum(['wallExterior', 'wallInterior']), unit: 'ตร.ม.' },
+                    { label: 'ทาสีฝ้า', value: sum(['ceilingExterior', 'ceilingInterior']), unit: 'ตร.ม.' },
+                    { label: 'ระแนง บัว เชิงชาย', value: sum(['ceilingSlat', 'wallSlat', 'moulding', 'fascia']), unit: 'ตร.ม.' },
+                    { label: 'ฉาบบาง (สกิมโค้ท)', value: outputs.skim, unit: 'ตร.ม.' },
+                ]}
+                note="พื้นที่ทาสีคิด 3 รอบ: รองพื้น, รอบที่ 1, รอบสุดท้าย" />
         </>
     );
 }

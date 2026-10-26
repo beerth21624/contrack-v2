@@ -10,7 +10,8 @@ import { NumberCell, formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { EmptyPrompt, ResultSummary, parseWallType, wallTypeOptions, wallTypeValue } from '../brick/JourneyBits';
+import { EmptyState, ResultSummary } from '@/components/sheet/journey';
+import { parseWallType, wallTypeOptions, wallTypeValue } from '../brick/wallType';
 import { newOpeningRow, priceCommit } from './rows';
 
 type Block = 'doors' | 'windows';
@@ -98,7 +99,7 @@ export default function DoorWindowJourney() {
                 return (
                     <SheetCard key={block} title={b.title}>
                         {rows.length === 0
-                            ? <EmptyPrompt text={b.empty} addLabel={b.add} onAdd={() => addRow(block)} />
+                            ? <EmptyState text={b.empty} addLabel={b.add} onAdd={() => addRow(block)} />
                             : (
                                 <EditableTable<OpeningRow>
                                     rows={rows}

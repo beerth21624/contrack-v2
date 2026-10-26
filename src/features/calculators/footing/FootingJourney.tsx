@@ -7,7 +7,7 @@ import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import { formatNumber } from '@/components/sheet/NumberCell';
 import {
     AddButton, ElementCard, EmptyState, JBar, JGroup, JNumber, JText, ResultSummary, resultText,
-} from './JourneyParts';
+} from '@/components/sheet/journey';
 
 const label = (r: FootingRow, i: number) => r.name.trim() || `แบบที่ ${i + 1}`;
 
@@ -34,7 +34,7 @@ export function FootingJourney({ rows, onChange, backfillTotal }: {
         return (
             <EmptyState
                 text={<>ยังไม่มีฐานราก — เปิดแปลนฐานรากดูว่ามีฐานกี่แบบ (F1, F2 …) แล้วเพิ่มทีละแบบ</>}
-                actionLabel="เพิ่มฐานราก F1" onAction={add} />
+                addLabel="เพิ่มฐานราก F1" onAdd={add} />
         );
     }
 
@@ -93,7 +93,7 @@ export function FootingJourney({ rows, onChange, backfillTotal }: {
                 </div>
             </AdvancedSection>
 
-            <ResultSummary parts={[
+            <ResultSummary items={[
                 { label: 'คอนกรีตฐานราก', value: t.concrete, unit: 'ลบ.ม.' },
                 { label: 'เหล็กเสริม', value: totalKg(t.rebar), unit: 'กก.' },
                 { label: 'ไม้แบบ', value: t.formwork, unit: 'ตร.ม.' },

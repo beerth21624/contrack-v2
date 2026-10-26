@@ -2,44 +2,18 @@
 
 // Journey-mode body of the slab-on-grade level: the panels read off the slab plan first, the sub-base
 // (backfill depth, sand bed) folded away, and a short result at the end. Same input and formulas as /calc.
-import { Button } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
 import {
     newSlabRow, slabRowCalc, SLAB_BAR_SIZES, SLAB_LAYERS, SLAB_NAMES, type SlabOnGradeInput, type SlabRow,
 } from '@/domain/calculators/slab-on-grade';
-import { REBAR_SIZES } from '@/domain/boq/slots';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { SheetCard } from '@/components/sheet/SheetFields';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
-import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { formatNumber } from '@/components/sheet/NumberCell';
+import { EmptyState, ResultSummary, rebarSummaryItem } from '@/components/sheet/journey';
 
 const nameOptions = SLAB_NAMES.map(v => ({ value: v }));
 const sizeOptions = SLAB_BAR_SIZES.map(v => ({ value: v }));
 const layerOptions = SLAB_LAYERS.map(v => ({ value: String(v), label: `${v} ชั้น` }));
-
-interface SummaryItem { label: string; value: number; unit: string; digits?: number; detail?: string }
-
-/** Green "what this level comes to" line. */
-function ResultSummary({ items, minor }: { items: SummaryItem[]; minor?: SummaryItem[] }) {
-    const text = (i: SummaryItem) => `${i.label} ${formatNumber(i.value, i.digits ?? 2)} ${i.unit}${i.detail ? ` (${i.detail})` : ''}`;
-    return (
-        <div className="rounded-lg border border-green-200 px-4 py-3" style={{ background: SHEET_COLORS.calc }}>
-            <div className="text-[12px] font-semibold text-green-800">ผลรวมด่านนี้</div>
-            <div className="text-[16px] font-semibold text-gray-900 tabular-nums">{items.map(text).join(' · ')}</div>
-            {minor && <div className="text-[12px] text-gray-600 tabular-nums mt-0.5">{minor.map(text).join(' · ')}</div>}
-        </div>
-    );
-}
-
-/** Rebar kg of the level, with the sizes used. */
-function rebar(outputs: Record<string, number>): SummaryItem {
-    const used = REBAR_SIZES.filter(s => (outputs[`rebar.${s}`] ?? 0) > 0);
-    const total = REBAR_SIZES.reduce((s, size) => s + (outputs[`rebar.${size}`] ?? 0), 0);
-    return {
-        label: 'เหล็กเสริม', value: total, unit: 'กก.', digits: 1,
-        detail: used.length > 1 ? used.map(s => `${s} ${formatNumber(outputs[`rebar.${s}`], 1)}`).join(', ') : used[0],
-    };
-}
 
 export function SlabOnGradeJourney({ input, outputs, onChange }: {
     input: SlabOnGradeInput; outputs: Record<string, number>; onChange: (slabs: SlabRow[]) => void;
@@ -52,12 +26,8 @@ export function SlabOnGradeJourney({ input, outputs, onChange }: {
             <SheetCard title="พื้นแต่ละผืน" extra={rows.length > 0 ? <span className="text-[12px] text-gray-500">{rows.length} ผืน</span> : undefined}>
                 {rows.length === 0
                     ? (
-                        <div className="flex flex-col items-center gap-3 py-8 text-center">
-                            <div className="text-[14px] text-gray-600">
-                                ยังไม่มีพื้น — ดูแปลนพื้น แล้วเพิ่มทีละผืน (กว้าง × ยาว × หนา และเหล็กเสริม)
-                            </div>
-                            <Button type="primary" size="large" icon={<PlusOutlined />} onClick={add}>เพิ่มพื้นผืนแรก</Button>
-                        </div>
+                        <EmptyState text="ยังไม่มีพื้น — ดูแปลนพื้น แล้วเพิ่มทีละผืน (กว้าง × ยาว × หนา และเหล็กเสริม)"
+                            addLabel="เพิ่มพื้นผืนแรก" onAdd={add} />
                     )
                     : (
                         <>
@@ -121,7 +91,7 @@ export function SlabOnGradeJourney({ input, outputs, onChange }: {
                 <ResultSummary
                     items={[
                         { label: 'คอนกรีต', value: outputs.concrete ?? 0, unit: 'ลบ.ม.' },
-                        rebar(outputs),
+                        rebarSummaryItem(outputs),
                     ]}
                     minor={[
                         { label: 'ทรายหยาบ', value: outputs.sand ?? 0, unit: 'ลบ.ม.' },

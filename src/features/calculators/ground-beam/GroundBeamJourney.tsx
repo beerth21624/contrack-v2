@@ -9,7 +9,7 @@ import { totalKg } from '@/domain/calculators/footing';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
 import {
     AddButton, ElementCard, EmptyState, JBar, JGroup, JNumber, JText, ResultSummary, resultText,
-} from '../footing/JourneyParts';
+} from '@/components/sheet/journey';
 
 const label = (r: GroundBeamRow, i: number) => r.name.trim() || `แบบที่ ${i + 1}`;
 
@@ -21,7 +21,7 @@ export function GroundBeamJourney({ beams, onChange }: { beams: GroundBeamRow[];
         return (
             <EmptyState
                 text={<>ยังไม่มีคานคอดิน — เปิดแปลนคานคอดินดูว่ามีคานกี่แบบ แล้วเพิ่มทีละแบบพร้อมความยาวรวมทุกช่วง</>}
-                actionLabel="เพิ่มคานคอดินแบบแรก" onAction={add} />
+                addLabel="เพิ่มคานคอดินแบบแรก" onAdd={add} />
         );
     }
 
@@ -76,7 +76,7 @@ export function GroundBeamJourney({ beams, onChange }: { beams: GroundBeamRow[];
                 </div>
             </AdvancedSection>
 
-            <ResultSummary parts={[
+            <ResultSummary items={[
                 { label: 'คอนกรีตคาน', value: t.concrete, unit: 'ลบ.ม.' },
                 { label: 'เหล็กเสริม', value: totalKg(groundBeamRebar({ beams })), unit: 'กก.' },
                 { label: 'ไม้แบบ', value: t.formwork, unit: 'ตร.ม.' },

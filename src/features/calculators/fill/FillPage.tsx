@@ -4,6 +4,7 @@ import { fill, type FillInput } from '@/domain/calculators/fill';
 import { CalcField, InputNumberField, InputTextField, SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber } from '@/components/sheet/NumberCell';
 import { AdvancedSection } from '@/components/sheet/AdvancedSection';
+import { ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
@@ -72,23 +73,12 @@ function JourneyView({ calc }: { calc: UseCalculator<FillInput> }) {
                 </div>
             </AdvancedSection>
 
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                <div className="text-[12px] font-semibold text-green-700">ผลลัพธ์</div>
-                {volume > 0
-                    ? (
-                        <div className="text-[15px] text-gray-800">
-                            ดินที่ต้องสั่ง <b className="tabular-nums">{formatNumber(volume)}</b> คิว
-                            <span className="ml-2 text-[12px] text-gray-500">
-                                (พื้นที่ {formatNumber(area)} ตร.ม. × สูง {formatNumber(input.height)} ม. + เผื่อยุบตัว {formatNumber(input.settlementPct, 0)}%)
-                            </span>
-                        </div>
-                    )
-                    : (
-                        <div className="text-[13px] text-gray-600">
-                            กรอกความกว้าง ความยาว และความสูงถม ระบบจะคิดปริมาณดินให้ — ถ้าไม่ต้องถมดิน กด &quot;ไม่มีงานนี้&quot; ด้านล่าง
-                        </div>
-                    )}
-            </div>
+            <ResultSummary
+                items={volume > 0 ? [{
+                    label: 'ดินที่ต้องสั่ง', value: volume, unit: 'คิว',
+                    detail: `พื้นที่ ${formatNumber(area)} ตร.ม. × สูง ${formatNumber(input.height)} ม. + เผื่อยุบตัว ${formatNumber(input.settlementPct, 0)}%`,
+                }] : []}
+                empty={<>กรอกความกว้าง ความยาว และความสูงถม ระบบจะคิดปริมาณดินให้ — ถ้าไม่ต้องถมดิน กด &quot;ไม่มีงานนี้&quot; ด้านล่าง</>} />
         </>
     );
 }

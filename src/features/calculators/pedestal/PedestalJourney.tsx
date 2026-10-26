@@ -2,9 +2,7 @@
 
 // Guided-journey view of the pedestal sheet: one card per pedestal type, each standing on a footing type of
 // the footing level. Same input and calculation as the Excel-mirror table.
-import Link from 'next/link';
 import { Button, Popconfirm } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
 import { totalKg, type FootingRow } from '@/domain/calculators/footing';
 import {
     footingRefFor, newPedestalRow, pedestalRow, pedestalTotals, pedestalsForFootings, type PedestalRow,
@@ -12,7 +10,7 @@ import {
 import { formatNumber } from '@/components/sheet/NumberCell';
 import {
     AddButton, ElementCard, EmptyState, JBar, JGroup, JNumber, JSelect, JText, ResultSummary, resultText,
-} from '../footing/JourneyParts';
+} from '@/components/sheet/journey';
 
 const label = (r: PedestalRow, i: number) => r.name.trim() || `แบบที่ ${i + 1}`;
 const footingLabel = (f: FootingRow, i: number) => f.name.trim() || `ฐานแบบที่ ${i + 1}`;
@@ -36,10 +34,9 @@ export function PedestalJourney({ rows, onChange, footings, footingSkipped, foot
             <EmptyState text={<>
                 {footingSkipped ? 'ด่านฐานรากถูกกำหนดว่า "ไม่มีงานนี้"' : 'ยังไม่มีฐานราก'} — เสาตอม่อตั้งอยู่บนฐานราก
                 กรอกฐานรากแต่ละแบบในด่านฐานรากก่อน แล้วกลับมาที่ด่านนี้
-            </>}>
-                <Link href="/journey/footing"><Button type="primary" size="large" icon={<ArrowLeftOutlined />}>ไปด่านฐานราก</Button></Link>
+            </>} goToLevel="footing">
                 {rows.length > 0 && (
-                    <div className="mt-4 text-[12px] text-orange-600">
+                    <div className="mt-1 text-[12px] text-orange-600">
                         ยังมีเสาตอม่อค้างอยู่ {rows.length} แบบ (คอนกรีต {formatNumber(t.concrete)} ลบ.ม.) ซึ่งไม่ได้ตั้งบนฐานรากใด
                         <Popconfirm title="ลบเสาตอม่อทั้งหมด?" okText="ลบ" cancelText="ยกเลิก" onConfirm={() => onChange([])}>
                             <Button className="ml-2" size="small" danger>ลบเสาตอม่อทั้งหมด</Button>
@@ -55,8 +52,8 @@ export function PedestalJourney({ rows, onChange, footings, footingSkipped, foot
         return (
             <EmptyState
                 text={<>ยังไม่มีเสาตอม่อ — ปกติฐานรากแต่ละแบบมีเสาตอม่อ 1 แบบ ({names}) ดูขนาดจากรูปขยายตอม่อ</>}
-                actionLabel={footings.length > 1 ? `เพิ่มเสาตอม่อให้ฐานราก ${names}` : `เพิ่มเสาตอม่อบนฐาน ${names}`}
-                onAction={() => onChange(pedestalsForFootings(footings))} />
+                addLabel={footings.length > 1 ? `เพิ่มเสาตอม่อให้ฐานราก ${names}` : `เพิ่มเสาตอม่อบนฐาน ${names}`}
+                onAdd={() => onChange(pedestalsForFootings(footings))} />
         );
     }
 
@@ -103,7 +100,7 @@ export function PedestalJourney({ rows, onChange, footings, footingSkipped, foot
 
             <AddButton label="เพิ่มเสาตอม่อแบบถัดไป" onClick={add} />
 
-            <ResultSummary parts={[
+            <ResultSummary items={[
                 { label: 'คอนกรีตเสาตอม่อ', value: t.concrete, unit: 'ลบ.ม.' },
                 { label: 'เหล็กเสริม', value: totalKg(t.rebar), unit: 'กก.' },
                 { label: 'ไม้แบบ', value: t.formwork, unit: 'ตร.ม.' },

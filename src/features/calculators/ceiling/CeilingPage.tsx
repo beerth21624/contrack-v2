@@ -10,6 +10,7 @@ import {
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
 import { formatNumber } from '@/components/sheet/NumberCell';
+import { EmptyState, ResultSummary } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
@@ -44,12 +45,8 @@ function CeilingJourney({ input, onChange, outputs }: {
             <SheetCard title="ห้องและชนิดฝ้า">
                 {input.rows.length === 0
                     ? (
-                        <div className="flex flex-col items-center gap-3 py-8 text-center">
-                            <div className="text-[14px] text-gray-600">
-                                ยังไม่มีห้อง — เปิดแปลนฝ้าเพดาน แล้วเพิ่มทีละห้อง (ชื่อห้อง ชนิดฝ้า กว้าง × ยาว)
-                            </div>
-                            <Button type="primary" size="large" icon={<PlusOutlined />} onClick={add}>เพิ่มห้อง</Button>
-                        </div>
+                        <EmptyState text="ยังไม่มีห้อง — เปิดแปลนฝ้าเพดาน แล้วเพิ่มทีละห้อง (ชื่อห้อง ชนิดฝ้า กว้าง × ยาว)"
+                            addLabel="เพิ่มห้อง" onAdd={add} />
                     )
                     : (
                         <>
@@ -89,20 +86,12 @@ function CeilingJourney({ input, onChange, outputs }: {
                     )}
             </SheetCard>
 
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                <div className="text-[12px] font-semibold text-green-800 mb-1">สรุปพื้นที่ฝ้า</div>
-                <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-gray-700">
-                    {usedTypes.map(c => (
-                        <span key={c}>{PLAIN_TYPE[c]} <b className="tabular-nums">{formatNumber(outputs[c])}</b> ตร.ม.</span>
-                    ))}
-                    <span className="font-semibold text-gray-900">
-                        รวม <b className="tabular-nums text-[15px]">{formatNumber(outputs.total)}</b> ตร.ม.
-                    </span>
-                </div>
-                <div className="mt-1 text-[12px] text-gray-600">
-                    ส่งต่อด่านทาสี: {CEILING_PAINT_GROUPS.map(g => `${PLAIN_PAINT[g]} ${formatNumber(outputs[paintKey(g)])}`).join(' · ')} ตร.ม.
-                </div>
-            </div>
+            <ResultSummary
+                items={[
+                    ...usedTypes.map(c => ({ label: PLAIN_TYPE[c], value: outputs[c], unit: 'ตร.ม.' })),
+                    { label: 'พื้นที่ฝ้ารวม', value: outputs.total, unit: 'ตร.ม.' },
+                ]}
+                note={<>ส่งต่อด่านทาสี: {CEILING_PAINT_GROUPS.map(g => `${PLAIN_PAINT[g]} ${formatNumber(outputs[paintKey(g)])}`).join(' · ')} ตร.ม.</>} />
         </>
     );
 }
