@@ -34,6 +34,8 @@ export const ERROR_CODES = [
     'unprocessable',
     'rate_limited',
     'internal',
+    /** The business module (workforce, …) is switched off for the platform. */
+    'module_disabled',
 ] as const;
 export const errorCodeSchema = z.enum(ERROR_CODES);
 export type ErrorCode = z.infer<typeof errorCodeSchema>;

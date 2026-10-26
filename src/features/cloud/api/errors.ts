@@ -62,5 +62,6 @@ export function thaiErrorMessage(e: unknown): string {
         case 'unprocessable': return 'ข้อมูลนี้ใช้คำนวณไม่ได้ ระบบจึงไม่บันทึก';
         case 'rate_limited': return 'ทำรายการถี่เกินไป รอสักครู่แล้วลองใหม่';
         case 'internal': return 'เซิร์ฟเวอร์ขัดข้อง ลองใหม่อีกครั้ง';
+        case 'module_disabled': return 'ระบบส่วนนี้ยังไม่เปิดใช้งาน';
     }
 }

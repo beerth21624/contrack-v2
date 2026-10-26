@@ -25,6 +25,7 @@ export const STATUS_OF: Record<ErrorCode, number> = {
     unprocessable: 422,
     rate_limited: 429,
     internal: 500,
+    module_disabled: 404,
 };
 
 /** Thrown at the edge to turn a DomainError into a response (domain/application code never throws it). */
