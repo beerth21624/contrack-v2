@@ -44,7 +44,8 @@ interface LineCalc {
  * construction total. Pure — the same input always gives the same result.
  *
  * Sub-totals sum every item row of the section (decision D1 fixes Excel's short ranges at
- * J95/L95, J216/L216, L243; M sub-totals are unchanged).
+ * J14/L14/M14 — section 1 leaves out row 12 demolition —, J95/L95, J216/L216, L243). Sections whose Excel
+ * ranges already cover every row are unchanged.
  */
 export function computeBoq({ sections: rawSections, overrides = {}, linked = {}, slots = {} }: ComputeBoqInput): BoqResult {
     const sections = rawSections.map(s => ({ ...s, lines: expandSlots(s.lines, slots) }));
