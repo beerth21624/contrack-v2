@@ -5,7 +5,9 @@
 // top, then every planned task by งวด with its planned days, the crew Man-Day asks for, its trade and the crews
 // assigned. Owners, admins and estimators assign; viewers read. Guest projects and module-off projects get a short
 // explanation instead. W2 adds the wait after each task (ช่วงรอหลังงาน, editable by those who assign) and a red mark
-// on a crew chip whose crew is booked elsewhere on the same days. Nothing here changes a planning number.
+// on a crew chip whose crew is booked elsewhere on the same days. W3 adds the finish and labour as crewed against the
+// plan (TeamMetrics) and a quiet note on a task whose crew starts before the tasks before it and their waits are over.
+// Nothing here changes a planning number.
 import { useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { Alert, Button, Spin, Typography } from 'antd';
@@ -24,7 +26,9 @@ import {
 } from './project-workforce';
 import { SupervisorsCard } from './SupervisorsCard';
 import { TeamTable } from './TeamTable';
+import { TeamMetrics } from './TeamMetrics';
 import { WaitEditModal } from './WaitEditModal';
+import { earlyStartSummaryText, earlyStarts, finishMetric, labourMetric } from './team-metrics';
 import {
     buildTeamRows, chipConflicts, conflictLines, conflictSummaryText, otherProjectConflictCount, teamSummary, teamSummaryText,
     type BusyContext, type TeamTaskRow,
@@ -135,6 +139,23 @@ function ProjectTeam({ cloud }: { cloud: OpenCloudProject }) {
     );
     const conflictText = conflictSummaryText(otherProjectConflictCount(clashes, cloud.projectId));
 
+    // W3: starts before the wait is over (once the waits are known), and the finish and labour as crewed.
+    const early = useMemo(
+        () => (waitsReady ? earlyStarts(assignments.data ?? [], overrides) : []),
+        [waitsReady, assignments.data, overrides],
+    );
+    const earlyById = useMemo(() => new Map(early.map(e => [e.taskId, e])), [early]);
+    const earlyText = earlyStartSummaryText(early.length);
+    const finish = useMemo(() => finishMetric(groups), [groups]);
+    const costs = useMemo(
+        () => new Map((crews.data ?? []).map(c => [c.id, c.wagesHidden ? null : c.dailyCost])),
+        [crews.data],
+    );
+    const labour = useMemo(
+        () => (abilities.seeCrewCost ? labourMetric(groups, planning.manday, id => costs.get(id)) : undefined),
+        [abilities.seeCrewCost, groups, planning.manday, costs],
+    );
+
     return (
         <div className="flex flex-col gap-4 min-w-0">
             <Header>
@@ -142,9 +163,11 @@ function ProjectTeam({ cloud }: { cloud: OpenCloudProject }) {
                     <>
                         {teamSummaryText(summary)}
                         {conflictText !== '' && <span className="text-red-600"> · {conflictText}</span>}
+                        {earlyText !== '' && <span className="text-amber-700"> · {earlyText}</span>}
                     </>
                 )}
             </Header>
+            {!loading && <TeamMetrics finish={finish} labour={labour} />}
             <NoBoqYet constructionTotal={result.boq.constructionTotal} />
             <SupervisorsCard cloud={cloud} canEdit={abilities.assign} />
 
@@ -174,7 +197,8 @@ function ProjectTeam({ cloud }: { cloud: OpenCloudProject }) {
                                 onEdit={(task, assignment) => setEditing({ task, assignment })}
                                 waitOf={waitsReady ? taskId => effectiveTaskLag(taskId, overrides) : undefined}
                                 onEditWait={canEditWaits ? task => setWaitTask(task) : undefined}
-                                conflictsOf={a => clashLines.get(a.id) ?? NO_CLASHES} />
+                                conflictsOf={a => clashLines.get(a.id) ?? NO_CLASHES}
+                                earlyStartOf={taskId => earlyById.get(taskId)} />
                         )}
                     <div className="text-[12px] text-gray-500 mt-2">
                         ช่วงวันตามแผนมาจากหน้า S-Curve · คนที่ต้องใช้มาจากหน้า Man-Day · ทีมเดียวจัดได้หลายงาน

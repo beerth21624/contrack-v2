@@ -3,17 +3,19 @@
 // The 32 planned tasks by งวด (like the Gantt table) with the wait after each and the crews assigned to it.
 // Presentational: rows come from buildTeamRows; the page opens the assign / edit / wait forms. A crew chip whose crew
 // is booked elsewhere on the same days carries a small red mark (the clashes in its tooltip). Wide on purpose (desktop
-// first): on a phone the table scrolls sideways inside its card.
+// first): on a phone the table scrolls sideways inside its card. W3: a task whose crew starts before the tasks before
+// it have ended and their waits have passed gets a quiet amber note under its chips (advice; the plan is unchanged).
 import { Fragment } from 'react';
 import { Button, Tooltip } from 'antd';
-import { EditOutlined, PlusOutlined } from '@ant-design/icons';
+import { ClockCircleOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import type { EffectiveTaskLag } from '@/domain/workforce';
 import { WORKFORCE_TRADE_LABEL } from '@/shared/contract/workforce';
 import { cls, formatDate, installmentColors } from '@/features/planning/shared/planning-ui';
 import { dayMonthRange, needText, waitCellText, type TeamAssignment, type TeamInstallment, type TeamTaskRow } from './team-model';
+import { earlyStartLines, type EarlyStart } from './team-metrics';
 
 export function TeamTable<A extends TeamAssignment>({
-    groups, crewName, canAssign, onAdd, onEdit, waitOf, onEditWait, conflictsOf,
+    groups, crewName, canAssign, onAdd, onEdit, waitOf, onEditWait, conflictsOf, earlyStartOf,
 }: {
     groups: readonly TeamInstallment<A>[];
     /** The crew's name (a fallback for a crew the workspace no longer lists). */
@@ -27,6 +29,8 @@ export function TeamTable<A extends TeamAssignment>({
     onEditWait: ((task: TeamTaskRow<A>) => void) | undefined;
     /** Clash lines of a chip ("ชนกับ …"); empty when the crew is free elsewhere. */
     conflictsOf: (assignment: A) => readonly string[];
+    /** The task's crewed start before its ready day (team-metrics earlyStarts); undefined = none, or not known yet. */
+    earlyStartOf?: (taskId: string) => EarlyStart | undefined;
 }) {
     const cols = canAssign ? 8 : 7;
     return (
@@ -56,7 +60,7 @@ export function TeamTable<A extends TeamAssignment>({
                                 <TaskRow key={t.id} t={t} crewName={crewName} canAssign={canAssign}
                                     onAdd={() => onAdd(t)} onEdit={a => onEdit(t, a)}
                                     wait={waitOf?.(t.id)} onEditWait={onEditWait === undefined ? undefined : () => onEditWait(t)}
-                                    conflictsOf={conflictsOf} />
+                                    conflictsOf={conflictsOf} early={earlyStartOf?.(t.id)} />
                             ))}
                         </Fragment>
                     ))}
@@ -66,7 +70,7 @@ export function TeamTable<A extends TeamAssignment>({
     );
 }
 
-function TaskRow<A extends TeamAssignment>({ t, crewName, canAssign, onAdd, onEdit, wait, onEditWait, conflictsOf }: {
+function TaskRow<A extends TeamAssignment>({ t, crewName, canAssign, onAdd, onEdit, wait, onEditWait, conflictsOf, early }: {
     t: TeamTaskRow<A>;
     crewName: (crewId: string) => string;
     canAssign: boolean;
@@ -75,6 +79,7 @@ function TaskRow<A extends TeamAssignment>({ t, crewName, canAssign, onAdd, onEd
     wait: EffectiveTaskLag | undefined;
     onEditWait: (() => void) | undefined;
     conflictsOf: (assignment: A) => readonly string[];
+    early: EarlyStart | undefined;
 }) {
     const { coverage } = t;
     return (
@@ -105,6 +110,7 @@ function TaskRow<A extends TeamAssignment>({ t, crewName, canAssign, onAdd, onEd
                         มีทีม {coverage.coveredDays} จาก {coverage.plannedDays} วันตามแผน
                     </div>
                 )}
+                {early !== undefined && <div><EarlyStartNote early={early} /></div>}
                 {coverage.status === 'none' && !canAssign && <span className="text-[12px] text-gray-400">ยังไม่มีทีม</span>}
             </td>
             {canAssign && (
@@ -115,6 +121,25 @@ function TaskRow<A extends TeamAssignment>({ t, crewName, canAssign, onAdd, onEd
                 </td>
             )}
         </tr>
+    );
+}
+
+/** "เริ่มก่อนครบช่วงรอ 4 วัน" with why in a tooltip (focusable, the same text read out). */
+function EarlyStartNote({ early }: { early: EarlyStart }) {
+    const lines = earlyStartLines(early);
+    return (
+        <Tooltip title={(
+            <div className="flex flex-col gap-0.5 text-[12px]">
+                {lines.map(l => <span key={l}>{l}</span>)}
+                <span className="opacity-75">เป็นคำแนะนำ วันในแผนงานไม่เปลี่ยน</span>
+            </div>
+        )}>
+            <span tabIndex={0} data-early-start={early.taskId} aria-label={`เริ่มก่อนครบช่วงรอ ${String(early.days)} วัน · ${lines.join(' · ')}`}
+                className="inline-flex items-center gap-1 rounded-control text-[12px] text-amber-700 tabular-nums cursor-help focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400">
+                <ClockCircleOutlined aria-hidden className="text-[11px]" />
+                {`เริ่มก่อนครบช่วงรอ ${String(early.days)} วัน`}
+            </span>
+        </Tooltip>
     );
 }
 
