@@ -126,39 +126,47 @@ export function ManDayPage() {
                 <span>กรอกจำนวนช่าง/คนงาน ระบบคำนวณวันจากค่าแรงใน BOQ ให้ แล้วใส่วันที่คิดว่าจะใช้จริงในช่อง &quot;วันที่ใช้จริง&quot;</span>
             </SummaryBanner>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <SheetCard title="ค่าแรงต่อวัน" className="h-full">
-                    <div className="text-[12px] text-gray-500 mb-1">ชุด A (งานทั่วไป)</div>
-                    <InputNumberField label="ช่าง" unit="บาท/วัน" digits={0} value={md.wageSets.A.skilled} onChange={v => setWage('A', 'skilled', v)} />
-                    <InputNumberField label="คนงาน" unit="บาท/วัน" digits={0} value={md.wageSets.A.labourer} onChange={v => setWage('A', 'labourer', v)} />
-                    <div className="text-[12px] text-gray-500 mt-2 mb-1">ชุด B (หลังคา ไฟฟ้า ฝ้า สี อลูมิเนียม เบ็ดเตล็ด)</div>
-                    <InputNumberField label="ช่าง" unit="บาท/วัน" digits={0} value={md.wageSets.B.skilled} onChange={v => setWage('B', 'skilled', v)} />
-                    <InputNumberField label="คนงาน" unit="บาท/วัน" digits={0} value={md.wageSets.B.labourer} onChange={v => setWage('B', 'labourer', v)} />
-                    <InputNumberField label="งานเหมา: ค่าแรง % ของยอดรวม" percent value={md.subcontractLabourShare}
-                        onChange={v => save({ ...md, subcontractLabourShare: v })} />
-                </SheetCard>
-                <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-4 auto-rows-fr">
-                    <StatTile label="รวมเวลา (ผลรวมวันทุกงาน)" value={formatNumber(res.totalDays, 0)} unit="วัน" />
-                    <StatTile label="ระยะเวลาโครงการ (S-Curve)" value={sched.durationDays} unit="วัน"
-                        hint={sched.start && sched.finish ? `${formatDate(sched.start)} – ${formatDate(sched.finish)}` : undefined} />
-                    <StatTile label="รวมงบประมาณ" value={money(res.totalBudget)} unit="บาท" />
-                    <div className="col-span-2 sm:col-span-3 lg:col-span-1 rounded-card border border-gray-200 bg-white shadow-card px-4 sm:px-5 py-3 text-[13px] text-gray-700 flex flex-wrap items-center gap-2">
-                        {differs.length === 0
-                            ? <span>วันประเมินทุกงานเท่ากับค่าที่คำนวณ (ปัดเศษ)</span>
-                            : (
-                                <>
-                                    <span>วันประเมิน {differs.length} งาน ต่างจากค่าที่คำนวณ (ปัดเศษ)</span>
-                                    <Popconfirm title="ตั้งวันประเมินทุกงาน = ค่าที่คำนวณ (ปัดเศษ)?" okText="ตั้งค่า" cancelText="ยกเลิก"
-                                        onConfirm={applyAllSuggested}>
-                                        <Button size="small" icon={<UndoOutlined />}>ใช้ค่าที่คำนวณทุกงาน</Button>
-                                    </Popconfirm>
-                                </>
-                            )}
-                    </div>
-                </div>
+            {/* Summary numbers in one slim row, then the five wage inputs side by side: nothing tall sits beside
+                something short, so the blocks keep their natural heights and still line up. */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <StatTile label="รวมเวลา (ผลรวมวันทุกงาน)" value={formatNumber(res.totalDays, 0)} unit="วัน" />
+                <StatTile label="ระยะเวลาโครงการ (S-Curve)" value={sched.durationDays} unit="วัน"
+                    hint={sched.start && sched.finish ? `${formatDate(sched.start)} – ${formatDate(sched.finish)}` : undefined} />
+                <StatTile label="รวมงบประมาณ" value={money(res.totalBudget)} unit="บาท" />
             </div>
 
-            <SheetCard title="วางแผน Man-Day และงบประมาณ">
+            <SheetCard title="ค่าแรงต่อวัน">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-3">
+                    <div>
+                        <div className="text-[12px] text-gray-500 mb-1">ชุด A (งานทั่วไป)</div>
+                        <InputNumberField label="ช่าง" unit="บาท/วัน" digits={0} value={md.wageSets.A.skilled} onChange={v => setWage('A', 'skilled', v)} />
+                        <InputNumberField label="คนงาน" unit="บาท/วัน" digits={0} value={md.wageSets.A.labourer} onChange={v => setWage('A', 'labourer', v)} />
+                    </div>
+                    <div>
+                        <div className="text-[12px] text-gray-500 mb-1">ชุด B (หลังคา ไฟฟ้า ฝ้า สี อลูมิเนียม เบ็ดเตล็ด)</div>
+                        <InputNumberField label="ช่าง" unit="บาท/วัน" digits={0} value={md.wageSets.B.skilled} onChange={v => setWage('B', 'skilled', v)} />
+                        <InputNumberField label="คนงาน" unit="บาท/วัน" digits={0} value={md.wageSets.B.labourer} onChange={v => setWage('B', 'labourer', v)} />
+                    </div>
+                    <div>
+                        <div className="text-[12px] text-gray-500 mb-1">งานเหมา</div>
+                        <InputNumberField label="ค่าแรง % ของยอดรวม" percent value={md.subcontractLabourShare}
+                            onChange={v => save({ ...md, subcontractLabourShare: v })} />
+                    </div>
+                </div>
+            </SheetCard>
+
+            <SheetCard title="วางแผน Man-Day และงบประมาณ"
+                extra={differs.length === 0
+                    ? <span className="text-[12px] text-gray-500">วันประเมินทุกงานเท่ากับค่าที่คำนวณ (ปัดเศษ)</span>
+                    : (
+                        <span className="text-[12px] text-gray-500 flex items-center gap-2">
+                            <span>วันประเมิน {differs.length} งาน ต่างจากค่าที่คำนวณ (ปัดเศษ)</span>
+                            <Popconfirm title="ตั้งวันประเมินทุกงาน = ค่าที่คำนวณ (ปัดเศษ)?" okText="ตั้งค่า" cancelText="ยกเลิก"
+                                onConfirm={applyAllSuggested}>
+                                <Button size="small" icon={<UndoOutlined />}>ใช้ค่าที่คำนวณทุกงาน</Button>
+                            </Popconfirm>
+                        </span>
+                    )}>
                 <EditableTable rows={rows} columns={columns} onChange={saveRows} canDelete={false} footer={footer} />
                 <div className="text-[12px] text-gray-500 mt-2">
                     ช่องเหลือง = กรอกเอง · ช่องเขียว = ระบบคำนวณ · ปุ่ม <UndoOutlined /> ข้างวันประเมิน = ใช้ค่าที่คำนวณ (ปัดเศษ)
