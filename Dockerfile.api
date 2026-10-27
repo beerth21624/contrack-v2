@@ -3,7 +3,7 @@
 # On start: migrations, the demo data once into an empty database (SEED_DEMO, default true), then the API on :4000.
 # Required env: DATABASE_URL, JWT_ACCESS_SECRET (≥ 32 chars), CORS_ORIGINS. See docs/deploy/01-dev-docker.md.
 
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 WORKDIR /app
 COPY backend/package.json backend/package-lock.json ./backend/
 RUN cd backend && npm ci
@@ -15,7 +15,7 @@ COPY src/domain ./src/domain
 COPY backend ./backend
 RUN cd backend && npm run build && npm prune --omit=dev
 
-FROM node:22-alpine
+FROM node:24-alpine
 WORKDIR /app/backend
 ENV NODE_ENV=production \
     PORT=4000 \
