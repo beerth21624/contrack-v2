@@ -2,16 +2,18 @@
 
 // S-Curve_Plan_Basic (Excel v5 sheet 03): 32 tasks in 8 งวด, typed start dates, durations from Man-Day,
 // weekly plan/actual shares, the S-curve and the status block Q4–Q7.
+import { useMemo } from 'react';
 import { Tag, Tooltip } from 'antd';
 import { CheckCircleOutlined, ClockCircleOutlined, RiseOutlined } from '@ant-design/icons';
 import { InputTextField, SheetCard } from '@/components/sheet/SheetFields';
-import { bucketIndexOf, isoToSerial, serialToIso, type ScheduleInput, type ScheduleTaskInput } from '@/domain/planning';
+import { bucketIndexOf, isoToSerial, paceFromSchedule, serialToIso, type ScheduleInput, type ScheduleTaskInput } from '@/domain/planning';
 import { SCurveChart } from '../shared/charts';
 import {
     DateCell, DetailSection, NoBoqYet, PlanningHeader, StatTile, SummaryBanner, formatDate, money, usePlanning, usedBucketCount,
 } from '../shared/planning-ui';
 import { ActualTable } from './ActualTable';
 import { GanttTable } from './GanttTable';
+import { PaceCard, PaceStrip } from './PaceCard';
 import { ScheduleDetailGrid } from './ScheduleDetailGrid';
 
 export function SchedulePage() {
@@ -40,6 +42,7 @@ export function SchedulePage() {
     const count = usedBucketCount(s.buckets, s.planWeekly, s.actualWeekly);
     const actualCount = s.tasks.filter(t => t.actual.finish !== null).length;
     const delayTone = status.delayStatus === 'late' ? 'bad' : status.delayStatus === null ? 'default' : 'good';
+    const pace = useMemo(() => paceFromSchedule(s), [s]);
 
     return (
         <div className="flex flex-col gap-4">
@@ -84,10 +87,13 @@ export function SchedulePage() {
                 </div>
             </div>
 
+            <PaceCard pace={pace} />
+
             <SheetCard title="S-Curve แผนงานเทียบผลงาน (สะสม)">
                 <SCurveChart buckets={s.buckets.slice(0, count)} plan={s.planCumulative.slice(0, count)}
                     actual={s.actualCumulative.slice(0, count)} actualUntil={Math.min(lastBucket, count - 1)}
                     planWeekly={s.planWeekly.slice(0, count)} />
+                <PaceStrip pace={pace} buckets={s.buckets.slice(0, count)} />
             </SheetCard>
 
             <SheetCard title="ตารางงาน" extra={<span className="text-[12px] text-gray-500 flex items-center gap-2">
