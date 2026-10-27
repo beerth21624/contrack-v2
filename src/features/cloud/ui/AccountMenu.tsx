@@ -3,7 +3,7 @@
 // ─── Header: "เข้าสู่ระบบ" for guests; for signed-in users a menu (workspace, projects, members, sign out) ───
 import { useRouter } from 'next/navigation';
 import { Avatar, Button, Dropdown, type MenuProps } from 'antd';
-import { CheckOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, TeamOutlined, ToolOutlined } from '@ant-design/icons';
+import { CheckOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, ScheduleOutlined, TeamOutlined, ToolOutlined } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useWorkforceEnabled } from '../api/workforce';
 import { initials, useSession } from '../auth/session';
@@ -59,7 +59,10 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
         { key: 'projects', icon: <FolderOpenOutlined />, label: 'โครงการทั้งหมด' },
         { key: 'members', icon: <TeamOutlined />, label: 'สมาชิก' },
         // Business module: the entry exists only while the platform offers it.
-        ...(workforceOn ? [{ key: 'crews', icon: <ToolOutlined />, label: 'ทีมช่างและบุคลากร' }] : []),
+        ...(workforceOn ? [
+            { key: 'crews', icon: <ToolOutlined />, label: 'ทีมช่างและบุคลากร' },
+            { key: 'board', icon: <ScheduleOutlined />, label: 'กระดานจัดคน' },
+        ] : []),
         { type: 'divider' },
         { key: 'logout', icon: <LogoutOutlined />, label: 'ออกจากระบบ', danger: true },
     ];
@@ -74,6 +77,8 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
             router.push('/workspace/members');
         } else if (key === 'crews') {
             router.push('/workspace/crews');
+        } else if (key === 'board') {
+            router.push('/workspace/board');
         } else if (key === 'logout') {
             void signOut(qc).then(() => { router.push('/journey'); });
         }

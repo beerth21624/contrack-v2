@@ -5,7 +5,8 @@
 // module the page says so and the account menu hides its entry. Owners / admins manage; everyone else reads (wages
 // arrive hidden from the server for roles that may not see them).
 import { useMemo, useState } from 'react';
-import { Result, Select, Tabs, Typography } from 'antd';
+import Link from 'next/link';
+import { Button, Result, Select, Tabs, Typography } from 'antd';
 import type { WorkspaceDto } from '@/shared/contract';
 import { PLAN_TASKS } from '@/domain/planning/tasks';
 import { isApiError } from '@/features/cloud/api/errors';
@@ -90,6 +91,7 @@ function WorkspaceCrews({ workspace, workspaces, onSelect }: {
                         {!abilities.manage && ' · ดูได้อย่างเดียว เจ้าของหรือผู้ดูแลเป็นผู้จัดการทีม'}
                     </Text>
                 </div>
+                <Link href="/workspace/board"><Button>กระดานจัดคน</Button></Link>
                 {workspaces.length > 1 && (
                     <Select value={workspace.id} onChange={onSelect} aria-label="พื้นที่ทำงาน" className="w-full md:!w-[240px]"
                         options={workspaces.map(w => ({ value: w.id, label: w.kind === 'personal' ? 'ส่วนตัว' : w.name }))} />
