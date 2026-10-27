@@ -9,7 +9,7 @@ import { PackageDirectory, type PackageView } from '../../../shared/ports';
 import { Bid } from '../../domain/entities/bid.entity';
 import { type BidInput, checkBidShape, priceBid } from '../../domain/policies/bid-pricing.policy';
 import { BiddingAccess } from '../bidding-access';
-import { biddingOpen, invitationActive, linesOfBidVersion } from '../bidding-rules';
+import { biddingOpen, linesOfBidVersion, vendorInvitationActive } from '../bidding-rules';
 import { BidPresenter } from '../bid-presenter';
 import { bidChangedMeanwhile } from '../concurrency';
 import { BidRepository, BidVersionTaken } from '../ports/bid.repository';
@@ -49,7 +49,7 @@ export class SaveBidDraftUseCase {
         const now = this.clock.now();
         const open = biddingOpen(pkg, now);
         if (!open.ok) return open;
-        const active = invitationActive(invitation);
+        const active = vendorInvitationActive(invitation);
         if (!active.ok) return active;
 
         const draft = await this.bids.findDraft(invitation.id);

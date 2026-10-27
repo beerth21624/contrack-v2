@@ -85,7 +85,7 @@ describe('SaveBidDraftUseCase', () => {
         expect((await kit.bids.findDraft(INV_A))?.content.note).toBe('หนึ่ง');
     });
 
-    it('closed package, deadline passed, withdrawn invitation → conflict', async () => {
+    it('closed package, deadline passed → conflict; withdrawn invitation → not_found (gone for the crew)', async () => {
         const kit = biddingKit();
         kit.seed({ status: 'awarded' });
         expect(codeOf(await kit.saveDraft.execute({ userId: VENDOR_A.owner, invitationId: INV_A, body: {} }))).toBe('conflict');
@@ -96,7 +96,7 @@ describe('SaveBidDraftUseCase', () => {
         const gone = biddingKit();
         gone.seed();
         gone.invitation(INV_A, gone.packages.invitations.get(INV_A)?.vendorWorkspaceId ?? null, { status: 'withdrawn' });
-        expect(codeOf(await gone.saveDraft.execute({ userId: VENDOR_A.owner, invitationId: INV_A, body: {} }))).toBe('conflict');
+        expect(codeOf(await gone.saveDraft.execute({ userId: VENDOR_A.owner, invitationId: INV_A, body: {} }))).toBe('not_found');
     });
 
     it('buyer module off → module_disabled; platform off → module_disabled', async () => {

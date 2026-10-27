@@ -217,7 +217,10 @@ function computeRoofing(input: RoofingInput): Record<string, number> {
     BOQ_LINES.forEach((line, i) => { out[line] = qtys[i] ?? 0; });
     // E175 ค่าแรงมุงหลังคา = K7; E176 ค่าแรงติดตั้งไม้เชิงชาย = E16 (fascia take-off).
     out.R175 = k7;
-    out.R176 = takeoffs[FASCIA_ROW] ?? 0;
+    // Found by the row's key, not its position: deleting or adding a row above it must not turn another take-off
+    // (e.g. the foil slope area) into the fascia length. Excel's fixed row 16 is the fallback for keyless data.
+    const fasciaIdx = input.rows.findIndex(r => r.key === 'fascia');
+    out.R176 = takeoffs[fasciaIdx >= 0 ? fasciaIdx : FASCIA_ROW] ?? 0;
     // Named outputs for other sheets (the Paint sheet reads the fascia length).
     out.fasciaLength = out.R176;
     return out;

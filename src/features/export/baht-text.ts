@@ -39,7 +39,9 @@ function integerWords(n: number): string {
 /** e.g. 1,850,317.34 → "หนึ่งล้านแปดแสนห้าหมื่นสามร้อยสิบเจ็ดบาทสามสิบสี่สตางค์"; 21 → "ยี่สิบเอ็ดบาทถ้วน". */
 export function bahtText(amount: number): string {
     if (!Number.isFinite(amount)) return '';
-    const satangTotal = Math.round(Math.abs(amount) * 100);
+    // ×100 in binary floating point turns 1.005 into 100.49999…; 15 significant digits (Excel's precision) restore
+    // the decimal value, so half a satang rounds up like Excel's BAHTTEXT.
+    const satangTotal = Math.round(Number((Math.abs(amount) * 100).toPrecision(15)));
     const baht = Math.floor(satangTotal / 100);
     const satang = satangTotal % 100;
     const sign = amount < 0 && satangTotal > 0 ? 'ลบ' : '';

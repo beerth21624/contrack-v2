@@ -6,7 +6,7 @@ import { type DomainError, type Result, type UserId, ok } from '../../../../../s
 import type { ScInvitationId } from '../../../shared/ids';
 import { VendorDirectory } from '../../../shared/ports';
 import { BiddingAccess } from '../bidding-access';
-import { biddingOpen, invitationActive } from '../bidding-rules';
+import { biddingOpen, vendorInvitationActive } from '../bidding-rules';
 import { BidPresenter } from '../bid-presenter';
 import { BidSubmission } from '../bid-submission';
 
@@ -35,7 +35,7 @@ export class SubmitBidUseCase {
         if (!on.ok) return on;
         const open = biddingOpen(pkg, this.clock.now());
         if (!open.ok) return open;
-        const active = invitationActive(invitation);
+        const active = vendorInvitationActive(invitation);
         if (!active.ok) return active;
 
         const bid = await this.submission.submit({ userId: input.userId, pkg, invitation, input: input.body, enteredByBuyer: false });

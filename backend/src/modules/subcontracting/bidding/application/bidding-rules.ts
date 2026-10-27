@@ -21,6 +21,14 @@ export function invitationActive(invitation: InvitationView): Result<undefined, 
         : okVoid();
 }
 
+/**
+ * The crew's own routes (save draft, submit): an invitation the buyer withdrew no longer exists for the crew, so it
+ * answers 404 like GET /vendor/invitations/:id (API-module1.md), not 409.
+ */
+export function vendorInvitationActive(invitation: InvitationView): Result<undefined, DomainError> {
+    return invitation.status === 'withdrawn' ? err(DomainError.notFound('invitation')) : invitationActive(invitation);
+}
+
 /** Packages a buyer can still enter a price for: sent and not yet decided. */
 export function acceptsManualBid(pkg: PackageView): Result<undefined, DomainError> {
     return pkg.status === 'open' || pkg.status === 'reviewing' || pkg.status === 'expired'

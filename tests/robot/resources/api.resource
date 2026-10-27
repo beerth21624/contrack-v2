@@ -20,7 +20,8 @@ Register User Via API
     ...    token, id, displayName. The session ``${alias}`` carries the Bearer token.
     [Arguments]    ${prefix}=robot    ${display_name}=${EMPTY}    ${password}=${TEST_PASSWORD}
     ${email}=    Unique Email    ${prefix}
-    ${name}=    Set Variable If    '${display_name}' == '${EMPTY}'    ผู้ทดสอบ ${prefix}    ${display_name}
+    VAR    ${name}    ${display_name}
+    IF    $display_name == ''    VAR    ${name}    ผู้ทดสอบ ${prefix}
     ${alias}=    Unique Suffix
     Create Anonymous Session    ${alias}
     VAR    &{body}    email=${email}    password=${password}    displayName=${name}
@@ -66,7 +67,10 @@ Workspace Id By Name
 Create Company Workspace Via API
     [Documentation]    New company workspace owned by ``${user}``. Returns its id.
     [Arguments]    ${user}    ${name}=${EMPTY}
-    ${ws_name}=    Run Keyword If    '${name}' == '${EMPTY}'    Unique Name    บริษัททดสอบ    ELSE    Set Variable    ${name}
+    VAR    ${ws_name}    ${name}
+    IF    $name == ''
+        ${ws_name}=    Unique Name    บริษัททดสอบ
+    END
     VAR    &{body}    name=${ws_name}
     ${resp}=    POST On Session    ${user}[alias]    /workspaces    json=${body}    expected_status=201
     RETURN    ${resp.json()}[id]
@@ -74,7 +78,10 @@ Create Company Workspace Via API
 Create Project Via API
     [Documentation]    New cloud project in ``${workspace_id}``. Returns the ``ProjectDetailDto`` (``project``, ``docs``).
     [Arguments]    ${user}    ${workspace_id}    ${name}=${EMPTY}    ${start}=blank    &{extra}
-    ${p_name}=    Run Keyword If    '${name}' == '${EMPTY}'    Unique Name    ELSE    Set Variable    ${name}
+    VAR    ${p_name}    ${name}
+    IF    $name == ''
+        ${p_name}=    Unique Name
+    END
     VAR    &{body}    name=${p_name}    start=${start}
     Set To Dictionary    ${body}    &{extra}
     ${resp}=    POST On Session    ${user}[alias]    /workspaces/${workspace_id}/projects    json=${body}

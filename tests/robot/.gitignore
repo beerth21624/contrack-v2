@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 browser/
 playwright-log.txt
+.pabotsuitenames

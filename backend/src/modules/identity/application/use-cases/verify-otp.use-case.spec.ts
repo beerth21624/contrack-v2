@@ -95,7 +95,7 @@ describe('VerifyOtpUseCase', () => {
         const result = await kit.verifyOtp.execute({ ip: SOMCHAI.ip, phone: SOMCHAI.phone, code });
         expect(result.ok).toBe(false);
         if (!result.ok) {
-            expect(result.error.code).toBe('validation_failed');
+            expect(result.error.code).toBe('unprocessable');
             expect(result.error.details).toMatchObject({ reason: 'name_required' });
         }
         // The check counted as an attempt, but the code is not consumed.

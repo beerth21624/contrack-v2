@@ -144,6 +144,9 @@ export function spreadOverBuckets(
     });
 }
 
+/** Longest S-Curve axis (20 years): far beyond any house build, short enough to stay instant. */
+export const MAX_AXIS_MONTHS = 240;
+
 const cumulative = (xs: number[]): number[] => {
     let acc = 0;
     return xs.map(x => (acc += x));
@@ -192,9 +195,11 @@ export function computeSchedule(input: ScheduleInput, manday: ManDayResult): Sch
         projFinish ?? -Infinity,
         ...base.flatMap(t => (t.actual.finish === null ? [] : [t.actual.finish])),
     );
-    const months = Number.isFinite(anchor)
+    // Capped at MAX_AXIS_MONTHS: a typo such as 1,000,000 days made a 131,000-week axis and froze the planning
+    // pages for ~9 s on every edit. Anything past 20 years is off the chart (its share is not drawn).
+    const months = Math.min(MAX_AXIS_MONTHS, Number.isFinite(anchor)
         ? Math.max(Math.max(1, Math.round(finite(input.minMonths))), Number.isFinite(lastDate) ? monthSpan(anchor, lastDate) : 1)
-        : Math.max(1, Math.round(finite(input.minMonths)));
+        : Math.max(1, Math.round(finite(input.minMonths))));
     const buckets = Number.isFinite(anchor) ? buildWeekBuckets(anchor, months) : [];
 
     const tasks: ScheduleTaskResult[] = base.map(t => {
@@ -211,7 +216,11 @@ export function computeSchedule(input: ScheduleInput, manday: ManDayResult): Sch
             finish: t.finish === null ? null : serialToIso(t.finish),
             budget: t.budget,
             weight,
-            plan: spreadOverBuckets(buckets, t.start, t.finish, t.duration, weight),
+            // A task typed as 0 days still costs its budget: it lands on its start day (Excel's grid drops it, so
+            // the S-curve stopped short of 100 % and the cash-out lost that money).
+            plan: t.duration === 0 && t.start !== null
+                ? spreadOverBuckets(buckets, t.start, t.start, 1, weight)
+                : spreadOverBuckets(buckets, t.start, t.finish, t.duration, weight),
             actual: {
                 duration: t.actual.days,
                 start: t.actual.start === null ? null : serialToIso(t.actual.start),
