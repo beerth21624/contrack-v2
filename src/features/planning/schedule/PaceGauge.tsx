@@ -96,8 +96,8 @@ export function PaceGauge({ pace, status, headline, caption }: {
 export function PaceStatusChip({ pace }: { pace: SchedulePace }) {
     const started = pace.status !== 'not-started';
     return (
-        <span className="flex items-center gap-2 text-[12px] text-gray-500">
-            {started && pace.labels.latestReported && <span>ณ {pace.labels.latestReported}</span>}
+        <span className="flex items-center gap-2 text-[12px] text-gray-500 whitespace-nowrap">
+            {started && pace.labels.latestReported && <span className="hidden sm:inline">ณ {pace.labels.latestReported}</span>}
             <span className={`px-2 py-0.5 rounded-full border text-[12px] font-medium ${STATUS_BG[pace.status]} ${STATUS_TEXT[pace.status]}`}>
                 {PACE_STATUS_LABEL[pace.status]}
             </span>
