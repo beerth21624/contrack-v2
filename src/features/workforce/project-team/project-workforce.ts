@@ -9,7 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { Role } from '@/shared/contract';
 import { buildTaskCrewMap, type TaskCrewMap } from '@/domain/workforce';
 import { useSession } from '@/features/cloud/auth/session';
-import { assignmentsKey, crewsKey, platformModulesKey, workforceApi } from '@/features/cloud/api/workforce';
+import { assignmentsKey, crewsKey, useWorkforceState, workforceApi } from '@/features/cloud/api/workforce';
 import { useProjectStore } from '@/store/project-store';
 
 export interface OpenCloudProject { workspaceId: string; projectId: string; role: Role }
@@ -37,15 +37,8 @@ export function useOpenCloudProject(): OpenCloudProject | undefined {
  */
 export function useProjectWorkforceState(): 'off' | 'loading' | 'on' {
     const cloud = useOpenCloudProject();
-    const q = useQuery({
-        queryKey: platformModulesKey,
-        queryFn: () => workforceApi.platformModules(),
-        staleTime: 5 * 60_000,
-        enabled: cloud !== undefined,
-    });
-    if (cloud === undefined) return 'off';
-    if (q.data === undefined) return q.isError ? 'off' : 'loading';
-    return q.data.includes('workforce') ? 'on' : 'off';
+    const state = useWorkforceState(cloud?.workspaceId);
+    return cloud === undefined ? 'off' : state;
 }
 
 /**

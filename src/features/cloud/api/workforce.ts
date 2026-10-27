@@ -7,14 +7,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import {
-    crewAssignmentDtoSchema, crewDtoSchema, personDtoSchema, platformModulesDtoSchema, projectSupervisorsDtoSchema,
+    crewAssignmentDtoSchema, crewDtoSchema, personDtoSchema, projectSupervisorsDtoSchema,
     projectTaskLagsDtoSchema, workspaceTaskLagsDtoSchema, type ProjectTaskLagsDto, type TaskLag,
     workforceConflictDetailsSchema,
     type CreateCrewAssignmentRequest, type CreateCrewRequest, type CreatePersonRequest, type CrewAssignmentDto,
-    type CrewAssignmentQuery, type CrewDto, type ModuleId, type PersonDto, type ProjectSupervisorsDto, type Role,
+    type CrewAssignmentQuery, type CrewDto, type PersonDto, type ProjectSupervisorsDto, type Role,
     type UpdateCrewAssignmentRequest, type UpdateCrewRequest, type UpdatePersonRequest, type WorkforceConflictDetails,
 } from '@/shared/contract';
+import { useModuleEnabled, usePlatformModules } from '@/features/modules/modules';
 import { useSession } from '../auth/session';
+import { useCurrentWorkspace } from '../query/hooks';
 import { apiClient, type ApiClient } from './client';
 import { isApiError } from './errors';
 
@@ -30,8 +32,6 @@ function queryString(q: CrewAssignmentQuery): string {
 
 export function createWorkforceApi(client: ApiClient) {
     return {
-        platformModules: (): Promise<ModuleId[]> =>
-            client.request('GET', '/platform/modules', { schema: platformModulesDtoSchema, auth: false }).then(r => r.modules),
 
         listPeople: (workspaceId: string): Promise<PersonDto[]> =>
             client.request('GET', `${ws(workspaceId)}/people`, { schema: z.array(personDtoSchema) }),
@@ -72,7 +72,6 @@ export type WorkforceApi = ReturnType<typeof createWorkforceApi>;
 export const workforceApi: WorkforceApi = createWorkforceApi(apiClient);
 
 // ─── Query keys (under the workspace / project keys, so dropping those drops these) ───
-export const platformModulesKey = ['platform', 'modules'] as const;
 export const peopleKey = (workspaceId: string) => ['workspaces', workspaceId, 'people'] as const;
 export const crewsKey = (workspaceId: string) => ['workspaces', workspaceId, 'crews'] as const;
 export const assignmentsKey = (workspaceId: string, q: CrewAssignmentQuery = {}) =>
@@ -114,15 +113,25 @@ export function workforceConflictMessage(error: unknown): string | undefined {
 
 const useSignedIn = () => useSession(s => s.status === 'signed-in');
 
-/** The modules this server offers (public). While loading, nothing is offered. */
-export function usePlatformModules() {
-    return useQuery({ queryKey: platformModulesKey, queryFn: () => workforceApi.platformModules(), staleTime: 5 * 60_000 });
+/**
+ * The workforce module for `workspaceId` (default: the open cloud project's workspace, else the current one): 'on' when
+ * the platform offers it AND that company switched it on (โมดูลเสริม); 'loading' until the platform list, the workspace
+ * and its switches are known, so nothing flashes in or out.
+ */
+export function useWorkforceState(workspaceId?: string): 'loading' | 'on' | 'off' {
+    const platform = usePlatformModules();
+    const current = useCurrentWorkspace();
+    const m = useModuleEnabled('workforce', workspaceId);
+    if (platform.isLoading) return 'loading';
+    if (platform.data?.includes('workforce') !== true) return 'off';
+    if (m.workspaceId === undefined) return current.isLoading ? 'loading' : 'off';
+    if (m.loading) return 'loading';
+    return m.enabled ? 'on' : 'off';
 }
 
-/** true once the server says the workforce module is on. */
-export function useWorkforceEnabled(): boolean {
-    const q = usePlatformModules();
-    return q.data?.includes('workforce') ?? false;
+/** true once the workforce module is known to be on for the workspace (see useWorkforceState). */
+export function useWorkforceEnabled(workspaceId?: string): boolean {
+    return useWorkforceState(workspaceId) === 'on';
 }
 
 function listHook<T>(key: readonly unknown[], fn: () => Promise<T>, enabled: boolean) {
@@ -131,21 +140,21 @@ function listHook<T>(key: readonly unknown[], fn: () => Promise<T>, enabled: boo
 
 export function usePeople(workspaceId: string | undefined) {
     const signedIn = useSignedIn();
-    const on = useWorkforceEnabled();
+    const on = useWorkforceEnabled(workspaceId);
     return useQuery(listHook(peopleKey(workspaceId ?? '-'), () => workforceApi.listPeople(workspaceId ?? ''),
         signedIn && on && workspaceId !== undefined));
 }
 
 export function useCrews(workspaceId: string | undefined) {
     const signedIn = useSignedIn();
-    const on = useWorkforceEnabled();
+    const on = useWorkforceEnabled(workspaceId);
     return useQuery(listHook(crewsKey(workspaceId ?? '-'), () => workforceApi.listCrews(workspaceId ?? ''),
         signedIn && on && workspaceId !== undefined));
 }
 
 export function useCrewAssignments(workspaceId: string | undefined, q: CrewAssignmentQuery = {}) {
     const signedIn = useSignedIn();
-    const on = useWorkforceEnabled();
+    const on = useWorkforceEnabled(workspaceId);
     return useQuery(listHook(assignmentsKey(workspaceId ?? '-', q), () => workforceApi.listAssignments(workspaceId ?? '', q),
         signedIn && on && workspaceId !== undefined));
 }
@@ -267,7 +276,7 @@ export function useProjectTaskLags(projectId: string | undefined) {
 
 export function useWorkspaceTaskLags(workspaceId: string | undefined) {
     const signedIn = useSignedIn();
-    const on = useWorkforceEnabled();
+    const on = useWorkforceEnabled(workspaceId);
     return useQuery(listHook(workspaceTaskLagsKey(workspaceId ?? '-'), () => taskLagsApi.workspace(workspaceId ?? ''),
         signedIn && on && workspaceId !== undefined));
 }

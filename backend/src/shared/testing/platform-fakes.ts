@@ -8,7 +8,7 @@ import { DomainError, type ProjectId, type Result, type UserId, type WorkspaceId
 
 /** Every module on for every workspace unless switched off with `set`. */
 export class FakeModuleFlags extends ModuleFlags {
-    platform = new Set<ModuleId>(['subcontracting', 'materials', 'owner-leads', 'ai-assist']);
+    platform = new Set<ModuleId>(['subcontracting', 'materials', 'owner-leads', 'ai-assist', 'workforce']);
     private readonly off = new Set<string>();
 
     set(workspaceId: WorkspaceId, module: ModuleId, enabled: boolean): void {

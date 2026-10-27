@@ -1,9 +1,10 @@
 // ─── Authorization of every workforce use case ───
 // Not a member of the workspace (or of the project's workspace) → not_found (never reveal that another tenant exists).
-// Member without the permission → forbidden.
+// Module switched off for that workspace (or not offered by the platform) → module_disabled. Member without the
+// permission → forbidden.
 import { Injectable } from '@nestjs/common';
 import type { Role } from '@contrack/contract';
-import { ProjectStatusLookup, WorkspaceAccess } from '../../../shared/application/ports';
+import { ModuleFlags, ProjectStatusLookup, WorkspaceAccess } from '../../../shared/application/ports';
 import { DomainError, type ProjectId, type Result, type UserId, type WorkspaceId, err, ok } from '../../../shared/domain';
 import { can, type Permission } from '../../../shared/domain/permissions';
 
@@ -15,13 +16,20 @@ export interface ProjectGrant {
 
 export const projectArchived = (): DomainError => DomainError.conflict('The project is archived; restore it to edit');
 
+export const workforceDisabled = (): DomainError => new DomainError('module_disabled', 'The workforce module is switched off');
+
 @Injectable()
 export class WorkforceAccess {
-    constructor(private readonly workspaces: WorkspaceAccess, private readonly projects: ProjectStatusLookup) {}
+    constructor(
+        private readonly workspaces: WorkspaceAccess,
+        private readonly projects: ProjectStatusLookup,
+        private readonly flags: ModuleFlags,
+    ) {}
 
     async inWorkspace(userId: UserId, workspaceId: WorkspaceId, permission: Permission): Promise<Result<Role, DomainError>> {
         const role = await this.workspaces.roleOf(userId, workspaceId);
         if (role === undefined) return err(DomainError.notFound('Workspace'));
+        if (!(await this.flags.isEnabled(workspaceId, 'workforce'))) return err(workforceDisabled());
         if (!can(role, permission)) return err(DomainError.forbidden());
         return ok(role);
     }
@@ -32,6 +40,7 @@ export class WorkforceAccess {
         if (project === undefined) return err(DomainError.notFound('Project'));
         const role = await this.workspaces.roleOf(userId, project.workspaceId);
         if (role === undefined) return err(DomainError.notFound('Project'));
+        if (!(await this.flags.isEnabled(project.workspaceId, 'workforce'))) return err(workforceDisabled());
         if (!can(role, permission)) return err(DomainError.forbidden());
         return ok({ role, workspaceId: project.workspaceId, archived: project.archived });
     }

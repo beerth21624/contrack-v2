@@ -21,7 +21,7 @@ import {
 import { scenarioMetrics } from '@/domain/workforce/scenario';
 import { isApiError } from '@/features/cloud/api/errors';
 import {
-    assignmentsKey, useCrews, usePeople, usePlatformModules, useWorkspaceTaskLags, workforceAbilities, workforceApi,
+    assignmentsKey, useCrews, usePeople, useWorkforceState, useWorkspaceTaskLags, workforceAbilities, workforceApi,
 } from '@/features/cloud/api/workforce';
 import { useCurrentWorkspace, useProjects } from '@/features/cloud/query/hooks';
 import { RequireSignIn, spinner } from '@/features/cloud/ui/common';
@@ -51,9 +51,9 @@ export function BoardPage() {
 }
 
 function ModuleGate() {
-    const modules = usePlatformModules();
-    if (modules.isLoading) return spinner;
-    if (modules.data?.includes('workforce') !== true) return <ModuleOff />;
+    const state = useWorkforceState();
+    if (state === 'loading') return spinner;
+    if (state === 'off') return <ModuleOff />;
     return <BoardContent />;
 }
 

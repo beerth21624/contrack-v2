@@ -116,6 +116,8 @@ export async function seedWorkforce({ call, tokens, workspaceId, projectId, proj
         return;
     }
     const ws = `/workspaces/${workspaceId}`;
+    // The platform offers it; the company switches it on (owner/admin, like the โมดูลเสริม page).
+    await call('PUT', `${ws}/modules/workforce`, { enabled: true }, tokens.owner);
     const counts = { cards: 0, people: 0, crews: 0, assigned: 0, moved: 0 };
 
     // Rate cards (by name).

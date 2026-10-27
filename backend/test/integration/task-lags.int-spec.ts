@@ -19,6 +19,7 @@ import { type DatabaseContext, DrizzleUnitOfWork } from '../../src/shared/infras
 import { projectTaskLags, projects, workspaces } from '../../src/shared/infrastructure/database/schema';
 import { FixedClock } from '../../src/shared/infrastructure/system';
 import { describeIfDatabase, skipIfNoDatabase } from '../support/database';
+import { FakeModuleFlags } from '../../src/shared/testing/platform-fakes';
 import { T0, expectPgError, must, seedMember, seedProject, seedTwoTenants, seedUser, seedWorkspace } from '../support/seed';
 
 const later = (ms: number): Date => new Date(T0.getTime() + ms);
@@ -138,6 +139,7 @@ describeIfDatabase('task lags use cases on PostgreSQL (integration)', db => {
         const access = new WorkforceAccess(
             new RepositoryWorkspaceAccess(new DrizzleMembershipRepository(ctx)),
             new RepositoryProjectStatusLookup(new DrizzleProjectRepository(ctx)),
+            new FakeModuleFlags(),
         );
         const uow = new DrizzleUnitOfWork(ctx);
         const clock = new FixedClock(new Date('2026-03-01T08:00:00.000Z'));

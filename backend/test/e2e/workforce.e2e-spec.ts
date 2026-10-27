@@ -39,6 +39,10 @@ describe('workforce (e2e)', () => {
         outsider = await register(t, 'Outsider');
         ws = (await createCompany(t, owner, 'บริษัท ตัวอย่าง')).id;
         otherWs = (await createCompany(t, outsider, 'Other Co')).id;
+        // The module is offered by the platform (testEnv) and switched on by each company owner.
+        for (const [w, s] of [[ws, owner], [otherWs, outsider]] as const) {
+            expectStatus(await t.http().put(`/workspaces/${w}/modules/workforce`).set(bearer(s.accessToken)).send({ enabled: true }), 200);
+        }
         await addMember(t, owner, ws, admin, 'admin');
         await addMember(t, owner, ws, estimator, 'estimator');
         await addMember(t, owner, ws, viewer, 'viewer');
@@ -441,6 +445,26 @@ describe('workforce (e2e)', () => {
             expectError(await o.del(`${assignments(otherWs)}/${a.id}`), 404, 'not_found');
             expect((await o.get(people(otherWs))).body).not.toContainEqual(expect.objectContaining({ id: p.id }));
             expectError(await req(owner).patch(`${people()}/not-a-uuid`, { note: 'x' }), 404, 'not_found');
+        });
+    });
+
+    describe('switched off for the workspace', () => {
+        it('the owner switches it off: every route of that workspace answers 404 module_disabled, data kept', async () => {
+            const c = await newCrew();
+            const off = `/workspaces/${ws}/modules/workforce`;
+            expectStatus(await req(owner).put(off, { enabled: false }), 200);
+            try {
+                for (const res of [
+                    await req(owner).get(people()), await req(owner).get(crews()), await req(viewer).get(assignments()),
+                    await req(owner).post(people(), { name: 'x', role: 'skilled', employment: 'daily' }),
+                    await req(owner).get(supervisors()), await req(owner).get(taskLags()), await req(owner).get(wsTaskLags()),
+                ]) expectError(res, 404, 'module_disabled');
+                // Another company that has it on is not affected.
+                expectStatus(await req(outsider).get(crews(otherWs)), 200);
+            } finally {
+                expectStatus(await req(owner).put(off, { enabled: true }), 200);
+            }
+            expect((await listCrews(owner)).map(x => x.id)).toContain(c.id);
         });
     });
 });

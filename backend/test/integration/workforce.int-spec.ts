@@ -38,6 +38,7 @@ import {
 } from '../../src/shared/infrastructure/database/schema';
 import { FixedClock, RandomIdGenerator } from '../../src/shared/infrastructure/system';
 import { describeIfDatabase, skipIfNoDatabase } from '../support/database';
+import { FakeModuleFlags } from '../../src/shared/testing/platform-fakes';
 import { T0, expectPgError, must, seedProject, seedUser, seedWorkspace } from '../support/seed';
 
 const later = (ms: number): Date => new Date(T0.getTime() + ms);
@@ -322,6 +323,7 @@ describeIfDatabase('workforce use cases on PostgreSQL (integration)', db => {
         const access = new WorkforceAccess(
             new RepositoryWorkspaceAccess(new DrizzleMembershipRepository(ctx)),
             new RepositoryProjectStatusLookup(new DrizzleProjectRepository(ctx)),
+            new FakeModuleFlags(),
         );
         const refs = new WorkforceReferences(r.people, r.crews, lookup);
         const uow = new DrizzleUnitOfWork(ctx);

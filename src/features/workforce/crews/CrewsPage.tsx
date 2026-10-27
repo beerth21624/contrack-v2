@@ -12,7 +12,7 @@ import { PLAN_TASKS } from '@/domain/planning/tasks';
 import { isApiError } from '@/features/cloud/api/errors';
 import { useRateCards } from '@/features/cloud/api/rate-cards';
 import {
-    useCrewAssignments, useCrews, usePeople, usePlatformModules, workforceAbilities,
+    useCrewAssignments, useCrews, usePeople, useWorkforceState, workforceAbilities,
 } from '@/features/cloud/api/workforce';
 import { useCurrentWorkspace, useProjects } from '@/features/cloud/query/hooks';
 import { RequireSignIn, spinner } from '@/features/cloud/ui/common';
@@ -37,14 +37,14 @@ export function CrewsPage() {
 export function ModuleOff() {
     return (
         <Result status="info" title="ยังไม่เปิดใช้งาน"
-            subTitle="ระบบทีมช่างและการจัดคนยังไม่เปิดให้ใช้ในระบบนี้ ข้อมูลที่เคยบันทึกไว้ยังอยู่ครบ" />
+            subTitle="ระบบทีมช่างและการจัดคนยังไม่เปิดใช้สำหรับบริษัทนี้ เจ้าของหรือผู้ดูแลเปิดได้ที่เมนู โมดูลเสริม · ข้อมูลที่เคยบันทึกไว้ยังอยู่ครบ" />
     );
 }
 
 function ModuleGate() {
-    const modules = usePlatformModules();
-    if (modules.isLoading) return spinner;
-    if (modules.data?.includes('workforce') !== true) return <ModuleOff />;
+    const state = useWorkforceState();
+    if (state === 'loading') return spinner;
+    if (state === 'off') return <ModuleOff />;
     return <CrewsContent />;
 }
 

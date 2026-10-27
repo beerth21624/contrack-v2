@@ -11,6 +11,7 @@ import {
 import { InMemoryUnitOfWork } from '../../../shared/infrastructure/database/database';
 import { FixedClock, SequentialIdGenerator } from '../../../shared/infrastructure/system';
 import { CrewPricing } from '../application/crew-pricing';
+import { FakeModuleFlags } from '../../../shared/testing/platform-fakes';
 import { WorkforceAccess } from '../application/workforce-access';
 import { WorkforceReferences } from '../application/workforce-references';
 import { ArchiveCrewUseCase } from '../application/use-cases/archive-crew.use-case';
@@ -112,7 +113,8 @@ export function workforceKit() {
     const assignments = new InMemoryCrewAssignmentRepository();
     const supervisors = new InMemoryProjectSupervisorRepository();
     const taskLags = new InMemoryProjectTaskLagRepository();
-    const access = new WorkforceAccess(workspaces, projects);
+    const flags = new FakeModuleFlags();
+    const access = new WorkforceAccess(workspaces, projects, flags);
     const refs = new WorkforceReferences(people, crews, rateCards);
     const pricing = new CrewPricing(rateCards);
 
@@ -185,7 +187,7 @@ export function workforceKit() {
     }
 
     return {
-        clock, ids, workspaces, projects, rateCards, uow, lock, people, crews, assignments, supervisors, taskLags, access, refs,
+        clock, ids, workspaces, projects, flags, rateCards, uow, lock, people, crews, assignments, supervisors, taskLags, access, refs,
         pricing,
         ...useCases, seedPerson, seedCrew, seedAssignment,
     };
