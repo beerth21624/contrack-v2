@@ -51,9 +51,13 @@ export function CalcField({ label, value, unit, digits = 2, strong }: {
 }
 
 /** White card used to group a calculator's blocks. */
-export function SheetCard({ title, extra, children }: { title?: ReactNode; extra?: ReactNode; children: ReactNode }) {
+export function SheetCard({ title, extra, children, className = '' }: {
+    title?: ReactNode; extra?: ReactNode; children: ReactNode;
+    /** Extra classes on the card itself, e.g. `h-full` to fill a grid row. */
+    className?: string;
+}) {
     return (
-        <div className="bg-white border border-gray-200 rounded-card shadow-card">
+        <div className={`bg-white border border-gray-200 rounded-card shadow-card ${className}`}>
             {(title !== undefined || extra !== undefined) && (
                 <div className="flex items-center gap-2 min-h-[44px] px-4 sm:px-5 py-2 border-b border-gray-100">
                     <span className="font-semibold text-[14px] leading-snug text-gray-800">{title}</span>

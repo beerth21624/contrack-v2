@@ -97,8 +97,8 @@ export function CashFlowPage() {
                     ].filter(Boolean).join(' · ')} />
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-                <SheetCard title="ราคาและค่าใช้จ่าย">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <SheetCard title="ราคาและค่าใช้จ่าย" className="h-full">
                     <CalcField label="ต้นทุนก่อสร้าง" value={cf.cost} unit="บาท" />
                     <InputNumberField label="ตัวคูณราคาเสนอ" value={ci.quotationFactor} unit="เท่า" onChange={v => save({ ...ci, quotationFactor: v })} />
                     <CalcField label="ราคาเสนอลูกค้า" value={cf.quotation} unit="บาท" strong />
@@ -108,12 +108,12 @@ export function CashFlowPage() {
                     <div className="text-[12px] text-gray-500 mt-1">ไม่มี VAT / เงินประกันผลงาน (ตาม Excel)</div>
                 </SheetCard>
                 {/* The lowest cash point is the banner headline: not repeated as a tile. */}
-                <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-4 md:grid-rows-[auto_1fr]">
                     <StatTile label="รับเงินรวม" value={money(cf.totalIncome)} unit="บาท" />
                     <StatTile label="จ่ายรวม (ต้นทุน + ดำเนินงาน)" value={money(cf.totalOutflow)} unit="บาท" />
                     <StatTile label="กำไรตามแผน" value={money(cf.evm.profitPlan)} unit="บาท" tone="good" />
                     <div className="col-span-2 md:col-span-3">
-                        <SheetCard title="กราฟกระแสเงินสดรายสัปดาห์">
+                        <SheetCard title="กราฟกระแสเงินสดรายสัปดาห์" className="h-full">
                             <CashFlowChart buckets={cf.buckets.slice(0, count)} income={cf.incomeWeekly.slice(0, count)}
                                 outflow={cf.outflowWeekly.slice(0, count)} cumulative={cf.cumulative.slice(0, count)}
                                 min={min && min.bucket < count ? min : null} />

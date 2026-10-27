@@ -126,8 +126,8 @@ export function ManDayPage() {
                 <span>กรอกจำนวนช่าง/คนงาน ระบบคำนวณวันจากค่าแรงใน BOQ ให้ แล้วใส่วันที่คิดว่าจะใช้จริงในช่อง &quot;วันที่ใช้จริง&quot;</span>
             </SummaryBanner>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-                <SheetCard title="ค่าแรงต่อวัน">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <SheetCard title="ค่าแรงต่อวัน" className="h-full">
                     <div className="text-[12px] text-gray-500 mb-1">ชุด A (งานทั่วไป)</div>
                     <InputNumberField label="ช่าง" unit="บาท/วัน" digits={0} value={md.wageSets.A.skilled} onChange={v => setWage('A', 'skilled', v)} />
                     <InputNumberField label="คนงาน" unit="บาท/วัน" digits={0} value={md.wageSets.A.labourer} onChange={v => setWage('A', 'labourer', v)} />
@@ -137,12 +137,12 @@ export function ManDayPage() {
                     <InputNumberField label="งานเหมา: ค่าแรง % ของยอดรวม" percent value={md.subcontractLabourShare}
                         onChange={v => save({ ...md, subcontractLabourShare: v })} />
                 </SheetCard>
-                <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-4 auto-rows-fr">
                     <StatTile label="รวมเวลา (ผลรวมวันทุกงาน)" value={formatNumber(res.totalDays, 0)} unit="วัน" />
                     <StatTile label="ระยะเวลาโครงการ (S-Curve)" value={sched.durationDays} unit="วัน"
                         hint={sched.start && sched.finish ? `${formatDate(sched.start)} – ${formatDate(sched.finish)}` : undefined} />
                     <StatTile label="รวมงบประมาณ" value={money(res.totalBudget)} unit="บาท" />
-                    <div className="col-span-2 sm:col-span-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-[13px] text-gray-700 flex flex-wrap items-center gap-2">
+                    <div className="col-span-2 sm:col-span-3 lg:col-span-1 rounded-card border border-gray-200 bg-white shadow-card px-4 sm:px-5 py-3 text-[13px] text-gray-700 flex flex-wrap items-center gap-2">
                         {differs.length === 0
                             ? <span>วันประเมินทุกงานเท่ากับค่าที่คำนวณ (ปัดเศษ)</span>
                             : (

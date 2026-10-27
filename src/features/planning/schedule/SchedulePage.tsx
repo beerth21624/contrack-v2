@@ -54,8 +54,8 @@ export function SchedulePage() {
                 <span>งบประมาณโครงการ {money(s.budget)} บาท · {s.tasks.length} งาน ใน {s.installments.length} งวด</span>
             </SummaryBanner>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-                <SheetCard title="ข้อมูลโครงการ">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <SheetCard title="ข้อมูลโครงการ" className="h-full">
                     <InputTextField label="ชื่อโครงการ" value={sc.projectName} onChange={v => save({ ...sc, projectName: v })} />
                     <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-center gap-2 py-1">
                         <span className="text-[13px] text-gray-700">วันที่โครงการเริ่ม</span>
@@ -68,7 +68,7 @@ export function SchedulePage() {
                         จำนวนวันมาจากหน้า Man-Day
                     </div>
                 </SheetCard>
-                <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="lg:col-span-2 grid grid-cols-2 gap-4 auto-rows-fr">
                     <StatTile label="บันทึกผลงานล่าสุด" value={status.lastUpdate ? formatDate(status.lastUpdate) : '–'}
                         hint={actualCount ? `บันทึกผลงานแล้ว ${actualCount} งาน` : 'กรอกในส่วนบันทึกผลงานจริง'} />
                     <StatTile label={<Tooltip title="Excel เรียกว่างบประมาณตามแผน แต่คิดจาก % คืบหน้า × น้ำหนักงาน × งบ (มูลค่างานที่ทำได้)">
