@@ -13,7 +13,7 @@ import {
 } from '../shared/planning-ui';
 import { ActualTable } from './ActualTable';
 import { GanttTable } from './GanttTable';
-import { PaceCard, PaceStrip } from './PaceCard';
+import { PaceGaugePanel, PaceStatusChip } from './PaceGauge';
 import { ScheduleDetailGrid } from './ScheduleDetailGrid';
 
 export function SchedulePage() {
@@ -87,13 +87,16 @@ export function SchedulePage() {
                 </div>
             </div>
 
-            <PaceCard pace={pace} />
-
-            <SheetCard title="S-Curve แผนงานเทียบผลงาน (สะสม)" collapsible>
-                <SCurveChart buckets={s.buckets.slice(0, count)} plan={s.planCumulative.slice(0, count)}
-                    actual={s.actualCumulative.slice(0, count)} actualUntil={Math.min(lastBucket, count - 1)}
-                    planWeekly={s.planWeekly.slice(0, count)} />
-                <PaceStrip pace={pace} buckets={s.buckets.slice(0, count)} />
+            {/* The pace gauge lives inside the S-curve card (no section of its own): gauge left, curve right. */}
+            <SheetCard title="S-Curve แผนงานเทียบผลงาน (สะสม)" collapsible extra={<PaceStatusChip pace={pace} />}>
+                <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] gap-4 lg:gap-6 items-center">
+                    <div className="lg:border-r lg:border-gray-100 lg:pr-6">
+                        <PaceGaugePanel pace={pace} />
+                    </div>
+                    <SCurveChart buckets={s.buckets.slice(0, count)} plan={s.planCumulative.slice(0, count)}
+                        actual={s.actualCumulative.slice(0, count)} actualUntil={Math.min(lastBucket, count - 1)}
+                        planWeekly={s.planWeekly.slice(0, count)} />
+                </div>
             </SheetCard>
 
             <SheetCard title="ตารางงาน" extra={<span className="text-[12px] text-gray-500 flex items-center gap-2">
