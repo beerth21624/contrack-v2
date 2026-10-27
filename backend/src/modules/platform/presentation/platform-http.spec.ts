@@ -71,7 +71,7 @@ describe('platform HTTP edge', () => {
     describe('modules', () => {
         it('GET /platform/modules is public', async () => {
             const res = await request(http()).get('/platform/modules').expect(200);
-            expect(res.body).toEqual({ modules: ['subcontracting', 'ai-assist'] });
+            expect(res.body).toEqual({ modules: ['subcontracting', 'ai-assist', 'workforce'] });
         });
 
         it('a member lists, the owner switches on, ModuleFlags agrees at once', async () => {

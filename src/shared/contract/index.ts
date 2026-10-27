@@ -9,3 +9,5 @@ export * from './phone-auth';
 export * from './notifications';
 export * from './subcontracting';
 export * from './ai-assist';
+export * from './rate-cards';
+export * from './workforce';

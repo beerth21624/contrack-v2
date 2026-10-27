@@ -119,9 +119,13 @@ export class AppConfig {
         return this.env.NODE_ENV === 'production';
     }
 
-    /** Business modules the platform offers (env MODULES_ENABLED). */
+    /** The business modules this server offers (in MODULE_IDS order). */
     get modulesEnabled(): readonly ModuleId[] {
         return this.env.MODULES_ENABLED;
+    }
+
+    isModuleEnabled(id: ModuleId): boolean {
+        return this.env.MODULES_ENABLED.includes(id);
     }
 }
 
@@ -134,13 +138,13 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
     return parsed.data;
 }
 
-/** Configuration for tests and the in-memory e2e app. */
+/** Configuration for tests and the in-memory e2e app: every business module on (`MODULES_ENABLED: ''` turns them off). */
 export function testEnv(overrides: Partial<Record<keyof Env, string>> = {}): Env {
     return loadEnv({
         NODE_ENV: 'test',
         PERSISTENCE: 'memory',
         JWT_ACCESS_SECRET: 'test-secret-test-secret-test-secret-123',
-        MODULES_ENABLED: 'subcontracting,ai-assist',
+        MODULES_ENABLED: 'subcontracting,ai-assist,workforce',
         FILE_STORAGE: 'memory',
         ...overrides,
     });

@@ -48,6 +48,106 @@ Max-Age = refresh TTL.
 | PUT | `/projects/:projectId/assignments/:levelId` | `PutAssignmentRequest` → `LevelAssignmentDto \| null` | `levels.assign`; a level id not in the journey → 422 `unprocessable`; an assignee who is not a member of the workspace → 422 `unprocessable`; `userId: null` removes it (answers JSON `null`) |
 | GET | `/projects/:projectId/activity?before=<id>&limit=50` | → `ActivityDto[]` (newest first) | `projects.read` |
 
+## rate cards (workspace library of daily wage sets, คลังอัตราค่าแรงของบริษัท)
+Schemas: `../src/shared/contract/rate-cards.ts`. A card is `{ name, skilledRate, labourerRate, note }`; rates are **whole
+baht per day** (integers 0–100,000), name trimmed 1–60 characters, note trimmed ≤ 500 (blank → `null`). Names are unique
+per workspace among active cards, ignoring case; an archived card frees its name. A workspace keeps at most
+`MAX_ACTIVE_RATE_CARDS` (50) active cards. Projects copy the rates of the card they pick, so editing or archiving a card
+never changes a project. No realtime event: clients refetch after their own writes.
+
+| Method | Path | Body → Response | Permission |
+|---|---|---|---|
+| GET | `/workspaces/:workspaceId/rate-cards` | → `RateCardDto[]` (active only, oldest first) | `rateCards.read` (every role) |
+| POST | `/workspaces/:workspaceId/rate-cards` | `CreateRateCardRequest` → `RateCardDto` (201) | `rateCards.create` (owner, admin, estimator); name taken or 50 active cards → 409 `conflict` with `RateCardConflictDetails` (`{ reason: 'name_taken', name }` / `{ reason: 'limit_reached', limit }`) |
+| PATCH | `/workspaces/:workspaceId/rate-cards/:rateCardId` | `UpdateRateCardRequest` → `RateCardDto` | `rateCards.edit` (owner, admin); any subset of the fields, at least one (`note: null` clears it); an unchanged value is a no-op; an archived card → 404; name taken → 409 `conflict` (`name_taken`) |
+| DELETE | `/workspaces/:workspaceId/rate-cards/:rateCardId` | → 204 | `rateCards.archive` (owner, admin); soft delete (`archived_at`); archiving an archived card again → 204 |
+
+## platform (business modules that can be switched on and off)
+Schemas: `../src/shared/contract/modules.ts`. Env `MODULES_ENABLED` = comma-separated module ids (`MODULE_IDS`: `workforce`);
+empty (the default) = ConTrack is plain BOQ estimation. An unknown id refuses the start. A module that is off answers
+**404 `module_disabled`** on every one of its routes, signed in or not (`ModuleGuard`, a global guard that runs before
+authentication; controllers are marked `@RequiresModule('<id>')`, `src/shared/presentation/modules.ts`). Its tables and
+data are kept, and deleting a project still removes its rows.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/platform/modules` **public** | → `PlatformModulesDto` `{ modules }` | what this server offers (MODULE_IDS order) |
+
+## workforce: crews and people (ทีมช่างและบุคลากร), business module `workforce` (W1)
+Schemas: `../src/shared/contract/workforce.ts`; design: `../docs/workforce/00-crew-management-design.md`. Every route below
+answers 404 `module_disabled` while `workforce` is not in `MODULES_ENABLED`. Not a member of the workspace (or of the
+project's workspace) → 404 on every route; ids of another workspace (or malformed ids) → 404. No realtime event: clients
+refetch after their own writes.
+
+**Permissions** (`src/shared/domain/permissions.ts`): `workforce.read` every role; `workforce.manage` (people and crews:
+create, edit, archive) owner and admin; `workforce.assign` (crew assignments and site supervisors) owner, admin and
+estimator. **Wages** are hidden in the response mapper by role: a person's `dailyWage` only for owner/admin
+(`workforce.seeWages`); a crew's `dailyCost` and `dailyCostOverride` for owner/admin/estimator (`workforce.seeCrewCost`).
+Hidden values are `null` with `wagesHidden: true`.
+
+**Rules.** People and crews are archived (soft delete, `archived_at`) and leave the lists; lists show active ones, oldest
+first. Crew names are unique among the workspace's active crews, ignoring case (an archived crew frees its name); people may
+share a name. Limits: `MAX_ACTIVE_PEOPLE` (500) and `MAX_ACTIVE_CREWS` (100) active per workspace, `MAX_CREW_HEADCOUNT`
+(200) per count and named members. Writes of one workspace are serialised by a transaction-scoped advisory lock, so limits,
+names and the in-use check cannot be raced. A crew's `dailyCost` = `dailyCostOverride` if set, else
+`skilledCount × card.skilledRate + labourerCount × card.labourerRate` from its rate card, else `null` (a card archived
+after it was picked still prices the crew). Days are `'YYYY-MM-DD'` calendar days (real dates; `2026-02-30` → 400);
+"today" is the Bangkok day (UTC+7).
+
+**Body references** (`leaderId`, `memberIds`, `rateCardId`, an assignment's `crewId`, supervisors' `personIds`) must be
+active and of the same workspace, else **422 `unprocessable`** with details `{ field, ids }` (the stale ids). On a crew
+PATCH only changed references are checked (a crew keeps a rate card archived after it was picked). An assignment's
+`projectId` of another workspace or unknown → **404**; an archived project → **409 `conflict`** (no details) on every
+assignment write and on PUT supervisors.
+
+**409 details** (`WorkforceConflictDetails`): `{ reason: 'name_taken', name }`, `{ reason: 'limit_reached', limit }`,
+`{ reason: 'in_use', assignments }`.
+
+| Method | Path | Body → Response | Permission / notes |
+|---|---|---|---|
+| GET | `/workspaces/:workspaceId/people` | → `PersonDto[]` (active, oldest first) | `workforce.read` |
+| POST | `/workspaces/:workspaceId/people` | `CreatePersonRequest` → `PersonDto` (201) | `workforce.manage`; 500 active → 409 `limit_reached` |
+| PATCH | `/workspaces/:workspaceId/people/:personId` | `UpdatePersonRequest` → `PersonDto` | `workforce.manage`; any subset, at least one (null clears an optional field); unchanged → no-op; archived → 404 |
+| DELETE | `/workspaces/:workspaceId/people/:personId` | → 204 | `workforce.manage`; archive. Refused with 409 `in_use` while a crew the person **leads or belongs to** has an assignment ending today or later. Otherwise the person is **taken out of every crew (leader → null, removed from members) and off every project's supervisors**, then archived. Again → 204 |
+| GET | `/workspaces/:workspaceId/crews` | → `CrewDto[]` (active, oldest first) | `workforce.read` |
+| POST | `/workspaces/:workspaceId/crews` | `CreateCrewRequest` → `CrewDto` (201) | `workforce.manage`; name taken → 409 `name_taken`; 100 active → 409 `limit_reached`; members deduplicated, order kept |
+| PATCH | `/workspaces/:workspaceId/crews/:crewId` | `UpdateCrewRequest` → `CrewDto` | `workforce.manage`; any subset (`memberIds` replaces the list); archived → 404 |
+| DELETE | `/workspaces/:workspaceId/crews/:crewId` | → 204 | `workforce.manage`; archive. Refused with 409 `in_use` while the crew has an assignment ending today or later (past ones stay as history). Again → 204 |
+| GET | `/workspaces/:workspaceId/crew-assignments?projectId&crewId&from&to` | → `CrewAssignmentDto[]` (by start, end, creation) | `workforce.read`; every filter optional; `from`/`to` keep the assignments whose days **overlap** `[from, to]` (`end ≥ from` and `start ≤ to`); `from > to` → 400; a project / crew of another workspace matches nothing |
+| POST | `/workspaces/:workspaceId/crew-assignments` | `CreateCrewAssignmentRequest` → `CrewAssignmentDto` (201) | `workforce.assign`; the project must be of this workspace (404) and not archived (409); the crew active (422); `taskId` is a plan task id (`"1.1"` … `"8.6"`, format checked only); `start ≤ end`. **Overlapping assignments of one crew are allowed** (the UI warns) |
+| PATCH | `/workspaces/:workspaceId/crew-assignments/:assignmentId` | `UpdateCrewAssignmentRequest` → `CrewAssignmentDto` | `workforce.assign`; days, crew, note (the project and task stay); the merged range keeps `start ≤ end` (400); the crew it ends up with must be active (422: an assignment of an archived crew can only move to another crew) |
+| DELETE | `/workspaces/:workspaceId/crew-assignments/:assignmentId` | → 204 | `workforce.assign`; hard delete |
+| GET | `/projects/:projectId/supervisors` | → `ProjectSupervisorsDto` `{ projectId, personIds }` | `workforce.read` in the project's workspace (also for an archived project) |
+| PUT | `/projects/:projectId/supervisors` | `PutProjectSupervisorsRequest` `{ personIds }` (≤ 20) → `ProjectSupervisorsDto` | `workforce.assign`; replaces the list (order kept, duplicates dropped, `[]` clears) |
+| GET | `/projects/:projectId/task-lags` | → `ProjectTaskLagsDto` `{ projectId, lags }` | `workforce.read` (every role) in the project's workspace, also for an archived project; `lags` in numeric task order (`"1.9"` before `"1.10"`); `[]` for a project that kept every default |
+| PUT | `/projects/:projectId/task-lags` | `PutProjectTaskLagsRequest` `{ lags }` (≤ 64) → `ProjectTaskLagsDto` | `workforce.assign` (owner/admin/estimator); **replaces all** of the project's overrides (tasks left out are deleted, `[]` clears them); archived project → 409 `conflict` |
+| GET | `/workspaces/:workspaceId/task-lags` | → `WorkspaceTaskLagsDto` `[{ projectId, lags }]` | `workforce.read`; every **non-archived** project of the workspace **that has at least one override** (a project without one is left out: its waits are all the defaults), by project id, each in task order. For the crew board |
+
+### Waiting windows after planned tasks (ช่วงรอ, W2)
+Concrete curing, plaster drying before paint, …: the days the work waits after a planned task before the next step.
+Schemas: `taskLagSchema`, `projectTaskLagsDtoSchema`, `putProjectTaskLagsRequestSchema`, `workspaceTaskLagsDtoSchema`
+in `../src/shared/contract/workforce.ts`. **The server stores only a project's overrides and never applies the defaults**
+(`../src/domain/workforce/task-lags.ts`, e.g. 1.5 ฐานราก 7 days, 5.1 ฉาบปูน 14 days): the client computes the effective
+wait (the override, else the default, else 0). Waits never move the S-Curve dates.
+- A lag is `{ taskId, days, note? }`: `taskId` a plan task id (`/^[1-9]\.[1-9]\d?$/`, format checked only), `days` a whole
+  number `0 … MAX_TASK_LAG_DAYS` (90; `0` = no wait, a valid override of a non-zero default), `note` ≤ 200 characters,
+  trimmed, blank → `null` (responses always carry `note`, `null` when there is none).
+- PUT validation → **400 `validation_failed`**: days out of range or not an integer, a bad task id, a note over 200, more
+  than 64 lags, or **the same `taskId` twice** (the contract's refine; the use case checks it again).
+- PUT is serialised per workspace by the workforce advisory lock, so two concurrent PUTs never merge: the result is one of
+  them. A changed or new row is stamped `updated_by` / `updated_at`; an unchanged row keeps its stamp.
+- Not a member, a project of another workspace, an unknown or malformed id → 404 `not_found`.
+- Table `project_task_lags` (migration `0003_task_lags`): `(project_id, workspace_id)` composite FK to `projects`
+  `ON DELETE CASCADE`, primary key `(project_id, task_id)`, `days` check `between 0 and 90`, task-id and note-length checks,
+  `updated_by` (a user id, no FK, like `project_docs.updated_by`), `updated_at`; index `(workspace_id, project_id)`.
+
+Deleting a project deletes its crew assignments, supervisors and task waits (FK `ON DELETE CASCADE` on
+`(project_id, workspace_id)`, and explicitly through `ProjectDependents` in the same transaction). Tables: `people`, `crews`,
+`crew_members`, `crew_assignments`, `project_supervisors` (migration `0002_workforce`), `project_task_lags` (migration
+`0003_task_lags`); every child row names `(…_id, workspace_id)` together, so it can only reference rows of its own workspace.
+
+Not a member of the workspace → 404 on every route; a card of another workspace (or a malformed id) → 404.
+
 ## realtime (Socket.IO namespace `/realtime`, `io(url + '/realtime', { auth: { token } })`)
 Events and payloads: `../src/shared/contract/realtime.ts`. A bad/missing token → the server disconnects.
 `project.join` checks `projects.read`; after joining the client receives `presence.state`, then live

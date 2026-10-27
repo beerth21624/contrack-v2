@@ -2,29 +2,29 @@
 // One block per planned BOQ category. Excel duplicates the whole BOQ into columns A..M; the app
 // reads the category's labour / total straight from the BOQ result instead (design §1.6, oddity 1).
 //   Q = O + P                        crew size
-//   R = rate_skilled·O + rate_lab·P  daily crew wage (wage set A 800/500 or B 1000/600)
+//   R = rate_skilled·O + rate_lab·P  daily crew wage (wage set A 800/500, B 1000/600 or a user set — ./wage-sets)
 //   S = labour ÷ R                   calculated days (variants: 20 % of total, none for piles)
 //   T = typed estimate               → S-Curve duration
 //   U = block total (BOQ M)          → S-Curve budget
 // docs/excel-spec/06-manday-scurve-cashflow.md §1.4.
 import type { BoqItemRow, BoqResult } from '../boq/types';
 import { PLAN_TASKS, type ManDayBlockDef, type ManDayLabourBasis, type PlanTaskDef, type WageSetId } from './tasks';
-
-export interface WageRate {
-    skilled: number;    // ฿/day per ช่าง
-    labourer: number;   // ฿/day per คนงาน
-}
+import { normaliseWageSets, resolveWageSet, type WageSet } from './wage-sets';
 
 export interface ManDayBlockInput {
     skilled: number;      // O 1.ช่าง
     labourers: number;    // P 2.คนงาน
-    wageSet: WageSetId;   // which wage set R uses
+    wageSet: WageSetId;   // which wage set R uses (an unknown id → the task's Excel set)
     days: number;         // T 6.ประเมิน (วัน)
 }
 
 export interface ManDayInput {
-    /** Daily wages per set. Excel hard-codes them in the R formulas (A 800/500, B 1000/600) — decision D16. */
-    wageSets: Record<WageSetId, WageRate>;
+    /**
+     * Wage sets in display order. A and B are the Excel sets hard-coded in the R formulas (800/500,
+     * 1000/600, decision D16) and always present; users may add more. Stored inputs may still hold the
+     * older `{ A: {...}, B: {...} }` record — resolvePlanningInput / normaliseWageSets read both.
+     */
+    wageSets: WageSet[];
     /** Share of the total treated as labour for 'shareOfTotal' blocks (Excel 0.2 in S233 / S278). */
     subcontractLabourShare: number;
     /** Keyed by task id ("1.1" … "8.6"); the 32 blocks map 1:1 to the S-Curve tasks. */
@@ -41,6 +41,7 @@ export interface ManDayBlockResult {
     skilled: number;          // O
     labourers: number;        // P
     crew: number;             // Q
+    /** The set R used (the block's own, or the task's Excel set when the block's id is unknown). */
     wageSet: WageSetId;
     dailyWage: number;        // R
     /** Labour total of the block's BOQ rows (BOQ L / Man-Day K). */
@@ -85,7 +86,7 @@ export function computeManDayBlock(
     const def = task.manday;
     const skilled = finite(block.skilled);
     const labourers = finite(block.labourers);
-    const rate = input.wageSets[block.wageSet];
+    const rate = resolveWageSet(input.wageSets, block.wageSet, task.sample.wageSet);
     const dailyWage = finite(rate.skilled) * skilled + finite(rate.labourer) * labourers;
     const { labour, total } = blockBoqTotals(def, boq);
     const labourCost = def.labourBasis === 'labour' ? labour
@@ -101,7 +102,7 @@ export function computeManDayBlock(
         skilled,
         labourers,
         crew: skilled + labourers,
-        wageSet: block.wageSet,
+        wageSet: rate.id,
         dailyWage,
         boqLabour: labour,
         labourCost,
@@ -114,12 +115,14 @@ export function computeManDayBlock(
 
 /** Evaluates every Man-Day block from the BOQ. `input.blocks` must hold every task id (see resolvePlanningInput). */
 export function computeManDay(input: ManDayInput, boq: BoqResult): ManDayResult {
+    // Also accepts the older { A, B } record (an input that did not go through resolvePlanningInput).
+    const resolved: ManDayInput = { ...input, wageSets: normaliseWageSets(input.wageSets) };
     const blocks = PLAN_TASKS.map(task => {
         const block = input.blocks[task.id] ?? {
             skilled: task.sample.skilled, labourers: task.sample.labourers,
             wageSet: task.sample.wageSet, days: task.sample.days,
         };
-        return computeManDayBlock(task, block, input, boq);
+        return computeManDayBlock(task, block, resolved, boq);
     });
     return {
         blocks,

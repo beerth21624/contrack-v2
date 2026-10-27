@@ -2,6 +2,9 @@
 
 import React, { useState } from 'react';
 import { Layout, Menu, Typography, Drawer, Button, ConfigProvider, theme, App as AntdApp, Spin } from 'antd';
+import thTH from 'antd/locale/th_TH';
+import dayjs from 'dayjs';
+import 'dayjs/locale/th';
 import { usePathname, useRouter } from 'next/navigation';
 import {
     FlagOutlined,
@@ -9,7 +12,6 @@ import {
     MoneyCollectOutlined, TeamOutlined, ToolOutlined,
 } from '@ant-design/icons';
 import { useTranslations } from 'next-intl';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useProjectStore } from '@/store/project-store';
 import { CloudRuntime } from '@/features/cloud/CloudRuntime';
 import { AccountMenu } from '@/features/cloud/ui/AccountMenu';
@@ -18,6 +20,11 @@ import { ReadOnlyBanner } from '@/features/cloud/ui/ReadOnlyBanner';
 import { useModuleEnabled } from '@/features/modules/modules';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 import { useHasVendorWorkspace } from '@/features/subcontracting/shared/useHasVendorWorkspace';
+
+// Thai names in the date picker (months, weekdays) and in every antd built-in text (placeholders, Popconfirm buttons,
+// Empty, pagination). Module level, so the server render and the client agree. Only the language changes: dates are
+// still shown with explicit formats (DD/MM/YYYY, Christian-era year), never the Buddhist year.
+dayjs.locale('th');
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -112,8 +119,6 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
 
                 <div className="shrink-0"><NotificationBell /></div>
 
-                <div className="shrink-0"><LanguageSwitcher /></div>
-
                 <div className="shrink-0" style={{ display: 'flex', alignItems: 'center' }}>
                     <AccountMenu />
                 </div>
@@ -187,6 +192,7 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
 export function AppLayoutUI({ children }: { children: React.ReactNode }) {
     return (
         <ConfigProvider
+            locale={thTH}
             theme={{
                 algorithm: theme.defaultAlgorithm,
                 cssVar: { key: 'app-theme' },

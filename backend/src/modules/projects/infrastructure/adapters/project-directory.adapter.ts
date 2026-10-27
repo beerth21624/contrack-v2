@@ -1,7 +1,9 @@
 // ─── Shared ports the projects module provides to the others (realtime) ───
 import { Injectable } from '@nestjs/common';
 import type { ProjectDocDto } from '@contrack/contract';
-import { ProjectDirectory, ProjectDocLookup } from '../../../../shared/application/ports';
+import {
+    ProjectDirectory, ProjectDocLookup, type ProjectStatus, ProjectStatusLookup,
+} from '../../../../shared/application/ports';
 import type { ProjectId, WorkspaceId } from '../../../../shared/domain';
 import { ProjectDocRepository } from '../../application/ports/project-doc.repository';
 import { ProjectRepository } from '../../application/ports/project.repository';
@@ -15,6 +17,18 @@ export class RepositoryProjectDirectory extends ProjectDirectory {
 
     async workspaceOf(projectId: ProjectId): Promise<WorkspaceId | undefined> {
         return (await this.projects.findById(projectId))?.workspaceId;
+    }
+}
+
+@Injectable()
+export class RepositoryProjectStatusLookup extends ProjectStatusLookup {
+    constructor(private readonly projects: ProjectRepository) {
+        super();
+    }
+
+    async find(projectId: ProjectId): Promise<ProjectStatus | undefined> {
+        const project = await this.projects.findById(projectId);
+        return project === undefined ? undefined : { workspaceId: project.workspaceId, archived: project.isArchived };
     }
 }
 

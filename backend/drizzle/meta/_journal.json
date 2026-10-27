@@ -12,8 +12,29 @@
     {
       "idx": 1,
       "version": "7",
+      "when": 1793020000000,
+      "tag": "0001_rate_cards",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793025000000,
+      "tag": "0002_workforce",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793026000000,
+      "tag": "0003_task_lags",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
       "when": 1793029278823,
-      "tag": "0001_subcontracting",
+      "tag": "0004_subcontracting",
       "breakpoints": true
     }
   ]

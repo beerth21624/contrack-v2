@@ -6,13 +6,16 @@ import { computeCashFlow, type CashFlowInput, type CashFlowResult, type CashInst
 import { computeManDay, type ManDayBlockInput, type ManDayInput, type ManDayResult } from './manday';
 import { computeSchedule, type ScheduleInput, type ScheduleResult, type ScheduleTaskInput } from './schedule';
 import { PLAN_TASKS } from './tasks';
+import { builtInWageSets, normaliseWageSets } from './wage-sets';
 
 export * from './calendar';
 export * from './cashflow';
+export * from './crew-calendar';
 export * from './manday';
 export * from './pace';
 export * from './schedule';
 export * from './tasks';
+export * from './wage-sets';
 
 export interface PlanningInput {
     manday: ManDayInput;
@@ -47,7 +50,7 @@ function sampleEvProgress(): Record<string, number> {
 
 export function defaultManDayInput(): ManDayInput {
     return {
-        wageSets: { A: { skilled: 800, labourer: 500 }, B: { skilled: 1000, labourer: 600 } },
+        wageSets: builtInWageSets(),
         subcontractLabourShare: 0.2,
         blocks: Object.fromEntries(PLAN_TASKS.map(t => [t.id, {
             skilled: t.sample.skilled, labourers: t.sample.labourers, wageSet: t.sample.wageSet, days: t.sample.days,
@@ -141,7 +144,8 @@ export function resolvePlanningInput(stored?: Partial<PlanningInput>, base?: Pla
         manday: {
             ...d.manday,
             ...md,
-            wageSets: mergeRecord(d.manday.wageSets, md.wageSets) as ManDayInput['wageSets'],
+            // The list, or the older { A, B } record (each set over its default).
+            wageSets: normaliseWageSets(md.wageSets, d.manday.wageSets),
             blocks: mergeRecord(d.manday.blocks, md.blocks),
         },
         schedule: {

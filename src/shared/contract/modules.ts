@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { isoDateTimeSchema } from './common';
 
-export const MODULE_IDS = ['subcontracting', 'materials', 'owner-leads', 'ai-assist'] as const;
+export const MODULE_IDS = ['subcontracting', 'materials', 'owner-leads', 'ai-assist', 'workforce'] as const;
 export const moduleIdSchema = z.enum(MODULE_IDS);
 export type ModuleId = z.infer<typeof moduleIdSchema>;
 
@@ -16,6 +16,8 @@ export const MODULE_LABEL: Record<ModuleId, string> = {
     'owner-leads': 'เจ้าของงานหาผู้รับเหมา',
     /** Decision-model assistance (./ai-assist.ts): BOQ review flags and pick-list item matching. */
     'ai-assist': 'ผู้ช่วย AI (ตรวจ BOQ, จับคู่รายการ)',
+    /** Crews, people, assignments and the company crew board (./workforce.ts). */
+    workforce: 'ทีมช่างและการจัดคน',
 };
 
 /** GET /platform/modules (public): what this server offers at all. */

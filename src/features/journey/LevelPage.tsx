@@ -11,8 +11,8 @@ import {
 import { useProjectStore } from '@/store/project-store';
 import { computeProject } from '@/domain/project';
 import {
-    JOURNEY_LEVELS, currentLevel, getLevel, isUnlocked, levelTotal, missingRequirements, nextLevel, phaseOf, previousLevel,
-    requiredFields, type MissingValue,
+    JOURNEY_LEVELS, blockingLevels, firstStepToward, getLevel, isUnlocked, levelTotal, missingRequirements, nextLevel,
+    nextOpenLevel, phaseOf, previousLevel, requiredFields, type JourneyLevel, type JourneyProgress, type MissingValue,
 } from '@/domain/journey';
 import { CALCULATOR_PAGES } from '@/features/calculators/pages';
 import { formatNumber } from '@/components/sheet/NumberCell';
@@ -106,6 +106,23 @@ function MissingList({ missing, onPick }: { missing: readonly MissingValue[]; on
     );
 }
 
+/** A step opened before what it waits for is passed: what is missing, and the open step to do first on the way. */
+function StepNotReady({ level, progress }: { level: JourneyLevel; progress: JourneyProgress }) {
+    const waiting = blockingLevels(level.id, progress);
+    // May be further back than what the step waits for directly.
+    const step = firstStepToward(level.id, progress);
+    return (
+        <Result
+            icon={<LockOutlined className="!text-gray-400" />}
+            title={`ขั้นตอน "${level.title}" ยังไม่พร้อมทำ`}
+            subTitle={`ต้องทำให้เสร็จก่อน: ${waiting.map(l => l.title).join(', ')}`}
+            extra={step && (
+                <Link href={`/journey/${step.id}`}><Button type="primary">ทำต่อ: {step.title}</Button></Link>
+            )}
+        />
+    );
+}
+
 /** One journey level: what to read from the plan, the inputs, and the way on to the next level. */
 export function LevelPage({ levelId }: { levelId: string }) {
     const router = useRouter();
@@ -124,8 +141,11 @@ export function LevelPage({ levelId }: { levelId: string }) {
 
     const progress = project.journey ?? {};
     const mark = level ? progress[level.id] : undefined;
-    const next = level ? nextLevel(level.id) : undefined;
-    const prev = level ? previousLevel(level.id) : undefined;
+    // Confirming (or "ไม่มีในโครงการนี้") goes on to the next step that can be worked on now; from a step already
+    // decided, → steps to the next open one (passed or available), as ← does backwards.
+    const next = level === undefined ? undefined
+        : mark === undefined ? nextLevel(level.id, progress) : nextOpenLevel(level.id, progress);
+    const prev = level ? previousLevel(level.id, progress) : undefined;
     const unlocked = level !== undefined && isUnlocked(level.id, progress);
     const nextId = next?.id;
     const prevId = prev?.id;
@@ -170,19 +190,7 @@ export function LevelPage({ levelId }: { levelId: string }) {
     const remaining = JOURNEY_LEVELS.filter(l => progress[l.id] === undefined).length;
     const passedCount = JOURNEY_LEVELS.length - remaining;
 
-    if (!isUnlocked(level.id, progress)) {
-        const current = currentLevel(progress);
-        return (
-            <Result
-                icon={<LockOutlined className="!text-gray-400" />}
-                title={`ขั้นตอน "${level.title}" รอขั้นตอนก่อนหน้า`}
-                subTitle="กรุณาทำขั้นตอนก่อนหน้าให้เสร็จก่อน จึงจะเริ่มขั้นตอนนี้ได้"
-                extra={current && (
-                    <Link href={`/journey/${current.id}`}><Button type="primary">ทำต่อ: {current.title}</Button></Link>
-                )}
-            />
-        );
-    }
+    if (!isUnlocked(level.id, progress)) return <StepNotReady level={level} progress={progress} />;
 
     const Page = level.kind.type === 'calc' ? CALCULATOR_PAGES[level.kind.calc] : undefined;
     const goNext = goNextCb;

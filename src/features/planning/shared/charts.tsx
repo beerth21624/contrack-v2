@@ -1,24 +1,14 @@
 'use client';
 
 // Plain-SVG charts of the planning pages (the project has no chart library).
-// Colours: reference categorical slots 1 (blue) and 2 (orange); ink/grid from the reference chrome.
+// Colours: CHART_COLORS (planning-format.ts, shared with the print documents).
 import { useState, type ReactNode } from 'react';
 import type { WeekBucket } from '@/domain/planning';
 import { formatNumber } from '@/components/sheet/NumberCell';
+import { CHART_COLORS } from './planning-format';
 import { bucketLabel, bucketRange } from './planning-ui';
 
-export const CHART_COLORS = {
-    plan: '#2a78d6',
-    actual: '#eb6834',
-    income: '#2a78d6',
-    outflow: '#eb6834',
-    line: '#0b0b0b',
-    ink2: '#52514e',
-    muted: '#898781',
-    grid: '#e1e0d9',
-    axis: '#c3c2b7',
-    surface: '#fcfcfb',
-} as const;
+export { CHART_COLORS };
 
 const W = 1000;
 const M = { left: 64, right: 20, top: 18, bottom: 40 };

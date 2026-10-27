@@ -10,7 +10,13 @@ import { useJourneyMode } from '@/features/journey/JourneyMode';
 export type SheetColumn<R> =
     | { kind: 'text'; key: string; title: ReactNode; width?: number; get: (row: R) => string; set: (row: R, v: string) => R; placeholder?: string }
     | { kind: 'number'; key: string; title: ReactNode; width?: number; get: (row: R) => number; set: (row: R, v: number) => R; digits?: number; percent?: boolean }
-    | { kind: 'select'; key: string; title: ReactNode; width?: number; get: (row: R) => string; set: (row: R, v: string) => R; options: { value: string; label?: string }[] }
+    | {
+        kind: 'select'; key: string; title: ReactNode; width?: number; get: (row: R) => string; set: (row: R, v: string) => R;
+        /** label = what the dropdown lists; selectedLabel = a shorter text shown in the cell (default: label). */
+        options: { value: string; label?: ReactNode; selectedLabel?: ReactNode }[];
+        /** Minimum width of the dropdown when its options need more room than the cell. */
+        popupWidth?: number;
+    }
     /** Computed (green) cell. */
     | { kind: 'calc'; key: string; title: ReactNode; width?: number; get: (row: R, index: number) => number | null; digits?: number }
     /** Read-only text (e.g. a fixed label from the Excel sheet). */
@@ -89,6 +95,8 @@ export function EditableTable<R>({
                                                     aria-label={typeof c.title === 'string' ? c.title : undefined}
                                                     value={c.get(row) || undefined}
                                                     options={c.options.map(o => ({ value: o.value, label: o.label ?? o.value }))}
+                                                    labelRender={({ value, label }) => c.options.find(o => o.value === value)?.selectedLabel ?? label}
+                                                    popupMatchSelectWidth={c.popupWidth ?? true}
                                                     onChange={v => replace(i, c.set(row, v))} />
                                             </td>
                                         );

@@ -1,14 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Button, Tag } from 'antd';
 import { ArrowRightOutlined, CheckOutlined, DownOutlined, RightOutlined, TableOutlined } from '@ant-design/icons';
 import { useProjectStore } from '@/store/project-store';
 import { computeProject, type ProjectResult } from '@/domain/project';
 import {
-    JOURNEY, JOURNEY_LEVELS, currentLevel, journeyComplete, levelStates, levelTotal, missingRequirements, phaseOf,
-    type JourneyLevel, type JourneyPhase, type LevelState,
+    JOURNEY, JOURNEY_LEVELS, availableLevels, blockingLevels, journeyComplete, levelStates, levelTotal, missingRequirements,
+    phaseOf, type JourneyLevel, type JourneyPhase, type LevelState,
 } from '@/domain/journey';
 import { formatNumber } from '@/components/sheet/NumberCell';
 import { NewProjectButton } from './NewProjectButton';
@@ -34,29 +34,51 @@ function StepMark({ state, n }: { state: LevelState; n: number }) {
     return <span className={`${base} border border-gray-200 text-gray-400`}>{n}</span>;
 }
 
-function StepRow({ level, state, value, team, incomplete }: {
+/** "รอ: ฉาบปูน": what a locked step waits for (one or two names, else the first one and how many more). */
+function waitingText(waiting: readonly JourneyLevel[]): string {
+    const [first] = waiting;
+    if (first === undefined) return '';
+    if (waiting.length <= 2) return waitingList(waiting);
+    return `รอ: ${first.title} และอีก ${String(waiting.length - 1)} ขั้นตอน`;
+}
+
+/** "รอ: ฉาบปูน, ก่ออิฐ": every name (phones, where there is no tooltip to show the rest). */
+function waitingList(waiting: readonly JourneyLevel[]): string {
+    return waiting.length === 0 ? '' : `รอ: ${waiting.map(l => l.title).join(', ')}`;
+}
+
+function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
     level: JourneyLevel; state: LevelState; value: number; team: CloudLevelInfo;
+    /** The step the overview's main action leads to (several steps can be open at once; only this one is tinted). */
+    primary: boolean;
+    /** Unpassed steps a locked step waits for. */
+    waiting: readonly JourneyLevel[];
     /** Required values a done step now lacks (a small amber dot; the step page lists them). */
     incomplete: number;
 }) {
     const open = state !== 'locked';
+    const waits = state === 'locked' && waiting.length > 0;
     const right = state === 'current'
         ? <span className="text-[13px] font-medium text-orange-600 whitespace-nowrap">ทำต่อ <ArrowRightOutlined className="text-[11px]" /></span>
         : state === 'skipped' ? <span className="text-[12px] text-gray-400 whitespace-nowrap">ไม่มีในโครงการนี้</span>
             : state === 'done' && level.kind.type !== 'meta' ? <span className="text-[13px] tabular-nums text-gray-700 whitespace-nowrap">{baht(value)}</span>
-                : null;
+                // Wider screens: one line beside the name (the row's tooltip names every step). Phones: under the name.
+                : waits
+                    ? <span className="hidden sm:inline text-[12px] text-gray-400 truncate max-w-[280px]">{waitingText(waiting)}</span>
+                    : null;
     const warn = state === 'done' && incomplete > 0 && (
         <span role="img" aria-label={`ข้อมูลยังไม่ครบ ${String(incomplete)} รายการ`} title={`ข้อมูลยังไม่ครบ ${String(incomplete)} รายการ`}
             className="shrink-0 w-1.5 h-1.5 rounded-full bg-amber-500" />
     );
     const row = (
         <div className={`group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 transition-colors
-            ${state === 'current' ? 'bg-orange-50/70' : open ? 'hover:bg-gray-50' : ''}`}>
+            ${primary ? 'bg-orange-50/70' : open ? 'hover:bg-gray-50' : ''}`}>
             <StepMark state={state} n={numberOf(level)} />
             <div className="min-w-0">
-                <div className={`text-[14px] leading-[22px] truncate ${open ? 'text-gray-900' : 'text-gray-400'} ${state === 'current' ? 'font-semibold' : ''}`}>
+                <div className={`text-[14px] leading-[22px] truncate ${open ? 'text-gray-900' : 'text-gray-400'} ${primary ? 'font-semibold' : ''}`}>
                     {level.title}
                 </div>
+                {waits && <div className="sm:hidden text-[12px] leading-[18px] text-gray-400 line-clamp-2">{waitingList(waiting)}</div>}
                 {team.enabled && <div className="mt-0.5"><LevelAssignee info={team} levelId={level.id} /></div>}
             </div>
             <div className="flex items-center gap-2">
@@ -69,20 +91,27 @@ function StepRow({ level, state, value, team, incomplete }: {
     return (
         <li>
             {open
-                ? <Link href={`/journey/${level.id}`} aria-current={state === 'current' ? 'step' : undefined} className="block">{row}</Link>
-                : <div title="ทำขั้นตอนก่อนหน้าให้เสร็จก่อน">{row}</div>}
+                ? <Link href={`/journey/${level.id}`} aria-current={primary ? 'step' : undefined} className="block">{row}</Link>
+                : <div title={waitingList(waiting)}>{row}</div>}
         </li>
     );
 }
 
-function PhaseSection({ phase, index, states, progress, result, team, expanded, onToggle, incomplete }: {
+const NO_LEVELS: readonly JourneyLevel[] = [];
+
+function PhaseSection({ phase, index, states, primaryId, waiting, progress, result, team, expanded, onToggle, incomplete }: {
     phase: JourneyPhase; index: number; states: Record<string, LevelState>; progress: Record<string, string>;
+    /** The step of the overview's main action. */
+    primaryId: string | undefined;
+    /** What each locked step waits for. */
+    waiting: ReadonlyMap<string, readonly JourneyLevel[]>;
     result: ProjectResult; team: CloudLevelInfo; expanded: boolean; onToggle: () => void;
     incomplete: ReadonlyMap<string, number>;
 }) {
     const done = phase.levels.filter(l => progress[l.id] !== undefined).length;
     const all = done === phase.levels.length;
-    const current = phase.levels.some(l => states[l.id] === 'current');
+    // "กำลังทำ" marks the group of the main next step only (other groups may have steps open beside it).
+    const current = phase.levels.some(l => l.id === primaryId);
     const future = phase.levels.every(l => states[l.id] === 'locked');
     const money = phaseMoney(phase, progress, result);
     return (
@@ -101,7 +130,8 @@ function PhaseSection({ phase, index, states, progress, result, team, expanded, 
             {expanded && (
                 <ol className="border-t border-gray-100 divide-y divide-gray-100 m-0 p-0 list-none">
                     {phase.levels.map(l => (
-                        <StepRow key={l.id} level={l} state={states[l.id] ?? 'locked'} team={team} incomplete={incomplete.get(l.id) ?? 0}
+                        <StepRow key={l.id} level={l} state={states[l.id] ?? 'locked'} primary={l.id === primaryId}
+                            waiting={waiting.get(l.id) ?? NO_LEVELS} team={team} incomplete={incomplete.get(l.id) ?? 0}
                             value={progress[l.id] === 'skipped' ? 0 : levelTotal(l, result)} />
                     ))}
                 </ol>
@@ -159,7 +189,11 @@ export function JourneyMapPage() {
         .filter(l => project.journey?.[l.id] === 'done')
         .map(l => [l.id, missingRequirements(l.id, project).length] as const)), [project]);
     const states = levelStates(progress);
-    const next = currentLevel(progress);
+    // Steps open by what must be finished first, so several can be open at once: the first one is the main action.
+    const available = availableLevels(progress);
+    const next = available[0];
+    const alsoOpen = available.slice(1);
+    const waiting = new Map(JOURNEY_LEVELS.filter(l => states[l.id] === 'locked').map(l => [l.id, blockingLevels(l.id, progress)] as const));
     const complete = journeyComplete(progress);
     const passed = JOURNEY_LEVELS.filter(l => progress[l.id] !== undefined).length;
     const team = useCloudLevelInfo();
@@ -182,8 +216,8 @@ export function JourneyMapPage() {
             <header className="flex flex-wrap items-end gap-3">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-[12px] text-gray-500">
-                        <span>ภาพรวมโครงการ</span>
-                        {project.start !== 'blank' && <Tag variant="filled" className="!text-[12px] !m-0">บ้านตัวอย่าง Excel v5</Tag>}
+                        <span className="whitespace-nowrap">ภาพรวมโครงการ</span>
+                        {project.start !== 'blank' && <Tag variant="filled" className="!text-[12px] !m-0 min-w-0 truncate">บ้านตัวอย่าง Excel v5</Tag>}
                     </div>
                     <h1 className="m-0 mt-1 text-[26px] leading-tight font-semibold text-gray-900" style={{ overflowWrap: 'anywhere' }}>{title}</h1>
                     {project.meta.siteAddress !== '' && <div className="mt-1 text-[13px] text-gray-500">{project.meta.siteAddress}</div>}
@@ -203,6 +237,20 @@ export function JourneyMapPage() {
                                     </div>
                                     <div className="mt-1 text-[22px] font-semibold leading-tight">{next.title}</div>
                                     <div className="mt-1.5 text-[13px] text-white/60 line-clamp-2">{next.planHint}</div>
+                                    {alsoOpen.length > 0 && (
+                                        <div className="mt-3 text-[13px] text-white/50">
+                                            ทำพร้อมกันได้อีก {alsoOpen.length} ขั้นตอน:{' '}
+                                            {alsoOpen.map((l, i) => (
+                                                <Fragment key={l.id}>
+                                                    {i > 0 && ' · '}
+                                                    <Link href={`/journey/${l.id}`}
+                                                        className="!text-white/80 hover:!text-white underline decoration-white/30 underline-offset-2">
+                                                        {l.title}
+                                                    </Link>
+                                                </Fragment>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                                 <Link href={`/journey/${next.id}`} className="shrink-0">
                                     <Button type="primary" size="large" className="!h-11 !px-6">
@@ -225,7 +273,8 @@ export function JourneyMapPage() {
                     </div>
 
                     {JOURNEY.map((phase, i) => (
-                        <PhaseSection key={phase.id} phase={phase} index={i} states={states} progress={progress} result={result}
+                        <PhaseSection key={phase.id} phase={phase} index={i} states={states} primaryId={next?.id} waiting={waiting}
+                            progress={progress} result={result}
                             team={team} expanded={expanded.has(phase.id)} onToggle={() => { toggle(phase.id); }} incomplete={incomplete} />
                     ))}
                 </div>
