@@ -89,7 +89,7 @@ export function SchedulePage() {
 
             <PaceCard pace={pace} />
 
-            <SheetCard title="S-Curve แผนงานเทียบผลงาน (สะสม)">
+            <SheetCard title="S-Curve แผนงานเทียบผลงาน (สะสม)" collapsible>
                 <SCurveChart buckets={s.buckets.slice(0, count)} plan={s.planCumulative.slice(0, count)}
                     actual={s.actualCumulative.slice(0, count)} actualUntil={Math.min(lastBucket, count - 1)}
                     planWeekly={s.planWeekly.slice(0, count)} />

@@ -166,7 +166,7 @@ export function PaceCard({ pace }: { pace: SchedulePace }) {
     const finishTone = p.isComplete ? 'good' : farOff ? 'bad' : toneOfDelta(p.finishDeltaWeeks);
 
     return (
-        <SheetCard title="ความเร็วโครงการ"
+        <SheetCard title="ความเร็วโครงการ" collapsible
             extra={(
                 <span className="flex items-center gap-2 text-[12px] text-gray-500">
                     {started && p.labels.latestReported && <span>ณ {p.labels.latestReported}</span>}

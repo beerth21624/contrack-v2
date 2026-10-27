@@ -1,6 +1,7 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { DownOutlined } from '@ant-design/icons';
 import { NumberCell, TextCell, SHEET_COLORS, formatNumber } from './NumberCell';
 import { RequiredMark, useRequiredField } from './journey/RequiredContext';
 
@@ -51,20 +52,35 @@ export function CalcField({ label, value, unit, digits = 2, strong }: {
 }
 
 /** White card used to group a calculator's blocks. */
-export function SheetCard({ title, extra, children, className = '' }: {
+export function SheetCard({ title, extra, children, className = '', collapsible = false, defaultOpen = true }: {
     title?: ReactNode; extra?: ReactNode; children: ReactNode;
     /** Extra classes on the card itself, e.g. `h-full` to fill a grid row. */
     className?: string;
+    /** Lets the body fold away behind the header (a chevron; the title toggles too). Open by default. */
+    collapsible?: boolean;
+    defaultOpen?: boolean;
 }) {
+    const [open, setOpen] = useState(defaultOpen);
+    const shown = !collapsible || open;
+    const toggle = () => setOpen(o => !o);
     return (
         <div className={`bg-white border border-gray-200 rounded-card shadow-card ${className}`}>
-            {(title !== undefined || extra !== undefined) && (
-                <div className="flex items-center gap-2 min-h-[44px] px-4 sm:px-5 py-2 border-b border-gray-100">
-                    <span className="font-semibold text-[14px] leading-snug text-gray-800">{title}</span>
+            {(title !== undefined || extra !== undefined || collapsible) && (
+                <div className={`flex items-center gap-2 min-h-[44px] px-4 sm:px-5 py-2 ${shown ? 'border-b border-gray-100' : ''}`}>
+                    {collapsible
+                        ? (
+                            <button type="button" onClick={toggle} aria-expanded={open}
+                                className="flex items-center gap-2 min-w-0 text-left font-semibold text-[14px] leading-snug text-gray-800 bg-transparent border-0 p-0 cursor-pointer">
+                                <DownOutlined className="text-[10px] text-gray-400 transition-transform"
+                                    style={{ transform: open ? 'none' : 'rotate(-90deg)' }} />
+                                <span>{title}</span>
+                            </button>
+                        )
+                        : <span className="font-semibold text-[14px] leading-snug text-gray-800">{title}</span>}
                     {extra !== undefined && <span className="ml-auto flex items-center">{extra}</span>}
                 </div>
             )}
-            <div className="p-4 sm:p-5">{children}</div>
+            {shown && <div className="p-4 sm:p-5">{children}</div>}
         </div>
     );
 }
