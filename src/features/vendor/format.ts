@@ -6,9 +6,10 @@ import { round2 } from '@/domain/subcontracting/snapshot';
 
 const MONEY = new Intl.NumberFormat('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const QTY = new Intl.NumberFormat('th-TH', { maximumFractionDigits: 2 });
-const DATE = new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
-const DATE_TIME = new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' });
-const MONTH = new Intl.DateTimeFormat('th-TH', { month: 'short', year: '2-digit' });
+// Thai months with the Christian-era year, like the rest of the app.
+const DATE = new Intl.DateTimeFormat('th-TH-u-ca-gregory', { day: 'numeric', month: 'short', year: '2-digit' });
+const DATE_TIME = new Intl.DateTimeFormat('th-TH-u-ca-gregory', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+const MONTH = new Intl.DateTimeFormat('th-TH-u-ca-gregory', { month: 'short', year: '2-digit' });
 
 /** 125000 → "125,000" (up to 2 decimals). */
 export function formatMoney(n: number): string {
