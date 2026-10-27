@@ -29,8 +29,13 @@ export function RequireSignIn({ children, next, title }: { children: React.React
     return <>{children}</>;
 }
 
-const DATE_FORMAT = new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+// Thai months with the Christian-era year, like the rest of the app (calendar, S-Curve, crew board): plain 'th-TH'
+// prints the Buddhist year (69 for 2026).
+const DATE_FORMAT = new Intl.DateTimeFormat('th-TH-u-ca-gregory', {
+    day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit',
+});
 
+/** "26 ต.ค. 26 11:17" ('' for an invalid date). */
 export function formatDateTime(iso: string): string {
     const d = new Date(iso);
     return Number.isNaN(d.getTime()) ? '' : DATE_FORMAT.format(d);
