@@ -23,6 +23,9 @@ import { ListCrewAssignmentsUseCase } from '../application/use-cases/list-crew-a
 import { ListCrewsUseCase } from '../application/use-cases/list-crews.use-case';
 import { ListPeopleUseCase } from '../application/use-cases/list-people.use-case';
 import { GetProjectSupervisorsUseCase, PutProjectSupervisorsUseCase } from '../application/use-cases/project-supervisors.use-case';
+import {
+    GetProjectTaskLagsUseCase, ListWorkspaceTaskLagsUseCase, PutProjectTaskLagsUseCase,
+} from '../application/use-cases/project-task-lags.use-case';
 import { UpdateCrewAssignmentUseCase } from '../application/use-cases/update-crew-assignment.use-case';
 import { UpdateCrewUseCase } from '../application/use-cases/update-crew.use-case';
 import { UpdatePersonUseCase } from '../application/use-cases/update-person.use-case';
@@ -31,7 +34,7 @@ import type { Crew } from '../domain/entities/crew.entity';
 import type { Person } from '../domain/entities/person.entity';
 import {
     InMemoryCrewAssignmentRepository, InMemoryCrewRepository, InMemoryPersonRepository, InMemoryProjectSupervisorRepository,
-    InMemoryWorkforceLock,
+    InMemoryProjectTaskLagRepository, InMemoryWorkforceLock,
 } from '../infrastructure/adapters/in-memory-workforce.repositories';
 
 export class FakeWorkspaceAccess extends WorkspaceAccess {
@@ -108,6 +111,7 @@ export function workforceKit() {
     const crews = new InMemoryCrewRepository();
     const assignments = new InMemoryCrewAssignmentRepository();
     const supervisors = new InMemoryProjectSupervisorRepository();
+    const taskLags = new InMemoryProjectTaskLagRepository();
     const access = new WorkforceAccess(workspaces, projects);
     const refs = new WorkforceReferences(people, crews, rateCards);
     const pricing = new CrewPricing(rateCards);
@@ -141,6 +145,9 @@ export function workforceKit() {
         deleteAssignment: new DeleteCrewAssignmentUseCase(access, assignments, lock, uow),
         getSupervisors: new GetProjectSupervisorsUseCase(access, supervisors),
         putSupervisors: new PutProjectSupervisorsUseCase(access, supervisors, refs, lock, uow),
+        getTaskLags: new GetProjectTaskLagsUseCase(access, taskLags),
+        putTaskLags: new PutProjectTaskLagsUseCase(access, taskLags, lock, uow, clock),
+        listTaskLags: new ListWorkspaceTaskLagsUseCase(access, taskLags),
     };
 
     let seq = 0;
@@ -178,7 +185,8 @@ export function workforceKit() {
     }
 
     return {
-        clock, ids, workspaces, projects, rateCards, uow, lock, people, crews, assignments, supervisors, access, refs, pricing,
+        clock, ids, workspaces, projects, rateCards, uow, lock, people, crews, assignments, supervisors, taskLags, access, refs,
+        pricing,
         ...useCases, seedPerson, seedCrew, seedAssignment,
     };
 }

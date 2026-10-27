@@ -54,6 +54,11 @@ also fills the company's ทีมช่างและบุคลากร (`s
   electrical 4.2/5.2/8.1, plumbing 8.2/8.4, painting 6.5/7.2/8.6), and the supervisor on the project.
 - **บ้านคุณสมศรี (เริ่มจากแบบ)** (created if missing) gets the structure crew earlier and **ทีมก่อฉาบช่างแดง** on brickwork
   from 2 days after today, while it is still plastering คุณวิชัย's house: 3 overlapping days, for W2's conflict detection.
+- **Waiting windows (ช่วงรอ, W2)** on the showcase (`SHOWCASE_TASK_LAGS`): the job runs through the rainy season, so two
+  waits differ from the defaults: **5.1 ฉาบปูน 21 days** "ช่วงฝนตก ปูนแห้งช้า" (default 14) and **1.5 ฐานราก 10 days**
+  "ฝนตกระหว่างบ่ม" (default 7). Every other task keeps its default (nothing stored). บ้านคุณสมศรี gets none.
 
 Re-running matches rate cards, people and crews by name and assignments by (project, task, crew): no duplicates; moved
-plan days are updated in place.
+plan days are updated in place. The waits are matched by task: the seed's two tasks are set back to the seed's values,
+any other override someone added to the showcase is kept, and nothing is written when they already match (PUT
+`/task-lags` replaces the whole list, so the seed reads it first and sends the merged list).

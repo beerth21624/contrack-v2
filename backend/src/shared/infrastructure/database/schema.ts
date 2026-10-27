@@ -291,7 +291,29 @@ export const projectSupervisors = pgTable('project_supervisors', {
     index('project_supervisors_person_idx').on(t.workspaceId, t.personId),
 ]);
 
+/**
+ * The waiting windows after planned tasks (W2, ช่วงรอ) a project changed from the defaults: at most one per task. Only
+ * overrides are stored (the defaults live in src/domain/workforce/task-lags.ts).
+ */
+export const projectTaskLags = pgTable('project_task_lags', {
+    projectId: uuid('project_id').notNull(),
+    workspaceId: uuid('workspace_id').notNull(),
+    taskId: text('task_id').notNull(),
+    days: integer('days').notNull(),
+    note: text('note'),
+    updatedBy: uuid('updated_by').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+    primaryKey({ columns: [t.projectId, t.taskId] }),
+    tenantFk('project_task_lags', t),
+    index('project_task_lags_workspace_idx').on(t.workspaceId, t.projectId),
+    check('project_task_lags_days_check', sql`${t.days} between 0 and 90`),
+    check('project_task_lags_task_check', sql`${t.taskId} ~ '^[1-9]\\.[1-9][0-9]?$'`),
+    check('project_task_lags_note_check', sql`${t.note} is null or char_length(${t.note}) <= 200`),
+]);
+
 export const schema = {
     users, refreshTokens, workspaces, memberships, invitations, projects, projectDocs, projectRevisions,
     levelAssignments, activityLog, rateCards, people, crews, crewMembers, crewAssignments, projectSupervisors,
+    projectTaskLags,
 };

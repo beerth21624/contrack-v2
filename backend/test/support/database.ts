@@ -41,7 +41,7 @@ export function describeIfDatabase(name: string, body: (db: () => DatabaseContex
         beforeEach(async () => {
             if (ctx === undefined) return;
             await ctx.db.execute(sql`truncate table project_supervisors, crew_assignments, crew_members, crews, people,
-                rate_cards, activity_log, level_assignments, project_revisions, project_docs,
+                project_task_lags, rate_cards, activity_log, level_assignments, project_revisions, project_docs,
                 projects, invitations, memberships, workspaces, refresh_tokens, users restart identity cascade`);
         });
         afterAll(async () => {

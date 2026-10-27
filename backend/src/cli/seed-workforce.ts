@@ -1,11 +1,14 @@
 // ─── Crews and people for the showcase (part of `npm run db:seed:showcase`; business module `workforce`) ───
 // Puts realistic Thai crews and people into the company workspace, assigns them to the showcase project's planned tasks
 // on its schedule dates, names its site supervisor, and gives "บ้านคุณสมศรี (เริ่มจากแบบ)" crews too: the masonry crew
-// works both houses on overlapping days, so W2's conflict detection has data. Goes through the HTTP API.
+// works both houses on overlapping days, so W2's conflict detection has data. The showcase also gets two waiting-window
+// overrides (ช่วงรอ, W2) for a rainy season. Goes through the HTTP API.
 // Idempotent: rate cards, people and crews are matched by name, assignments by (project, task, crew) and moved to the
-// wanted days; nothing is duplicated and nothing else is touched. Skipped when the server does not offer `workforce`.
+// wanted days, the waits by task (merged into the project's other overrides); nothing is duplicated and nothing else is
+// touched. Skipped when the server does not offer `workforce`.
 import type {
-    CrewAssignmentDto, CrewDto, PersonDto, PersonRole, EmploymentType, RateCardDto, WorkforceTradeId,
+    CrewAssignmentDto, CrewDto, PersonDto, PersonRole, EmploymentType, ProjectTaskLagsDto, RateCardDto, TaskLag,
+    WorkforceTradeId,
 } from '@contrack/contract';
 import type { Project } from '@contrack/domain/project';
 import { computeProject } from '@contrack/domain/project';
@@ -74,6 +77,15 @@ const CREWS: CrewSeed[] = [
 
 /** "บ้านคุณสมศรี": the structure crew finished its footings; the masonry crew starts there before plastering at คุณวิชัย ends. */
 /** Days relative to today. */
+/**
+ * Waits of the showcase that differ from the defaults (src/domain/workforce/task-lags.ts: 1.5 → 7 days, 5.1 → 14): the
+ * job runs through the rainy season, so concrete cures and plaster dries more slowly.
+ */
+export const SHOWCASE_TASK_LAGS: readonly TaskLag[] = [
+    { taskId: '1.5', days: 10, note: 'ฝนตกระหว่างบ่ม' },
+    { taskId: '5.1', days: 21, note: 'ช่วงฝนตก ปูนแห้งช้า' },
+];
+
 const SECOND_PROJECT_PLAN: readonly { crew: string; taskId: string; from: number; to: number; note: string }[] = [
     { crew: 'ทีมโครงสร้างช่างสมชาย', taskId: '1.5', from: -30, to: -19, note: 'ฐานราก' },
     { crew: 'ทีมโครงสร้างช่างสมชาย', taskId: '1.7', from: -14, to: -3, note: 'คานคอดิน' },
@@ -195,6 +207,17 @@ export async function seedWorkforce({ call, tokens, workspaceId, projectId, proj
     // Site supervisor of the showcase.
     await call('PUT', `/projects/${projectId}/supervisors`, { personIds: [idOf('prasert')] }, tokens.estimator);
 
+    // Waits (ช่วงรอ) of the showcase: the seed's tasks get the seed's values, every other override is kept; PUT only
+    // when something differs (PUT replaces the whole list).
+    const lagsPath = `/projects/${projectId}/task-lags`;
+    const current = (await call<ProjectTaskLagsDto>('GET', lagsPath, undefined, tokens.estimator)).lags;
+    const seeded = new Set(SHOWCASE_TASK_LAGS.map(l => l.taskId));
+    const wanted = [...current.filter(l => !seeded.has(l.taskId)), ...SHOWCASE_TASK_LAGS];
+    const same = (a: TaskLag, b: TaskLag | undefined): boolean =>
+        b?.days === a.days && (a.note ?? null) === (b.note ?? null);
+    const lagsChanged = SHOWCASE_TASK_LAGS.some(l => !same(l, current.find(c => c.taskId === l.taskId)));
+    if (lagsChanged) await call('PUT', lagsPath, { lags: wanted }, tokens.estimator);
+
     // The second house, sharing the masonry crew on overlapping days.
     const rows = await call<{ id: string; name: string }[]>('GET', `${ws}/projects?archived=false`, undefined, tokens.owner);
     let second = rows.find(r => r.name === SECOND_PROJECT_NAME);
@@ -211,5 +234,6 @@ export async function seedWorkforce({ call, tokens, workspaceId, projectId, proj
 
     console.log(`workforce: ${String(PEOPLE.length)} people, ${String(CREWS.length)} crews, ${String(CARDS.length)} rate cards`
         + ` (new: ${String(counts.people)} people, ${String(counts.crews)} crews, ${String(counts.cards)} cards;`
-        + ` assignments added ${String(counts.assigned)}, moved ${String(counts.moved)})`);
+        + ` assignments added ${String(counts.assigned)}, moved ${String(counts.moved)};`
+        + ` waits ${lagsChanged ? 'set' : 'unchanged'}: ${SHOWCASE_TASK_LAGS.map(l => `${l.taskId} ${String(l.days)} วัน`).join(', ')})`);
 }

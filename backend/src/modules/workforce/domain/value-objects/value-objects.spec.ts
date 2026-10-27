@@ -1,8 +1,11 @@
-import { MAX_CREW_HEADCOUNT, WORKFORCE_NAME_MAX, WORKFORCE_NOTE_MAX, WORKFORCE_WAGE_MAX } from '@contrack/contract';
+import {
+    MAX_CREW_HEADCOUNT, MAX_TASK_LAG_DAYS, WORKFORCE_NAME_MAX, WORKFORCE_NOTE_MAX, WORKFORCE_WAGE_MAX,
+} from '@contrack/contract';
 import { bangkokToday, dayRange, overlaps, planDay, planTaskId } from './plan-day.value-object';
 import {
     bahtPerDay, distinct, employment, headcount, nickname, optionalText, personRole, phone, trade, trades, workforceNote,
 } from './workforce-fields';
+import { MAX_TASK_LAGS, compareTaskIds, sortTaskLags, taskLagDays, taskLagSet } from './task-lag.value-object';
 import { WorkforceName } from './workforce-name.value-object';
 
 const code = (r: { ok: boolean; error?: { code: string } }): string | undefined => (r.ok ? undefined : r.error?.code);
@@ -107,5 +110,35 @@ describe('plan days', () => {
         expect(overlaps(a, { start: '2026-02-20', end: '2026-03-01' })).toBe(true);
         expect(overlaps(a, { start: '2026-03-11', end: '2026-03-12' })).toBe(false);
         expect(overlaps(a, { start: '2026-02-01', end: '2026-02-28' })).toBe(false);
+    });
+});
+
+describe('task lags (ช่วงรอ)', () => {
+    it('task ids sort numerically', () => {
+        expect(['2.1', '1.10', '1.9', '10.1', '1.1'].sort(compareTaskIds)).toEqual(['1.1', '1.9', '1.10', '2.1', '10.1']);
+        expect(sortTaskLags([{ taskId: '5.1', days: 1, note: null }, { taskId: '1.5', days: 2, note: null }]).map(l => l.taskId))
+            .toEqual(['1.5', '5.1']);
+    });
+
+    it('days: whole numbers from 0 to MAX_TASK_LAG_DAYS', () => {
+        expect(taskLagDays(0)).toEqual({ ok: true, value: 0 });
+        expect(taskLagDays(MAX_TASK_LAG_DAYS)).toEqual({ ok: true, value: MAX_TASK_LAG_DAYS });
+        for (const bad of [-1, MAX_TASK_LAG_DAYS + 1, 2.5, Number.NaN]) expect(code(taskLagDays(bad))).toBe('validation_failed');
+    });
+
+    it('a set: plan task ids, one per task, trimmed notes (blank → null, max 200), at most MAX_TASK_LAGS, in task order', () => {
+        expect(taskLagSet([{ taskId: '5.1', days: 21, note: ' ช่วงฝนตก ' }, { taskId: '1.5', days: 10, note: ' ' }, { taskId: '2.4', days: 0 }]))
+            .toEqual({ ok: true, value: [
+                { taskId: '1.5', days: 10, note: null }, { taskId: '2.4', days: 0, note: null }, { taskId: '5.1', days: 21, note: 'ช่วงฝนตก' },
+            ] });
+        expect(taskLagSet([])).toEqual({ ok: true, value: [] });
+        expect(code(taskLagSet([{ taskId: '1.5', days: 1 }, { taskId: '1.5', days: 2 }]))).toBe('validation_failed');
+        expect(code(taskLagSet([{ taskId: '1.05', days: 1 }]))).toBe('validation_failed');
+        expect(code(taskLagSet([{ taskId: '1.5', days: 1, note: 'x'.repeat(201) }]))).toBe('validation_failed');
+        const many = Array.from({ length: MAX_TASK_LAGS + 1 }, (_, i) => ({
+            taskId: `${String(1 + Math.floor(i / 20))}.${String(1 + (i % 20))}`, days: 1,
+        }));
+        expect(code(taskLagSet(many))).toBe('validation_failed');
+        expect(taskLagSet(many.slice(0, MAX_TASK_LAGS)).ok).toBe(true);
     });
 });

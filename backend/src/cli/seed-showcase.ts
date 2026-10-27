@@ -3,8 +3,9 @@
 // accounts (`npm run db:seed` first), through the same HTTP API the web app uses: the owner, estimator and admin
 // each save their own steps (so the activity reads like a team), levels are assigned, Rev 00 and Rev 01 issued.
 // Idempotent: a project with the showcase name is updated in place (its documents replaced, missing revisions and
-// assignments added). With the `workforce` module on, crews, people, crew assignments and the site supervisor are added
-// too (./seed-workforce.ts), matched by name, so a re-run creates no duplicates. Nothing else in the database is touched.
+// assignments added). With the `workforce` module on, crews, people, crew assignments, the site supervisor and two
+// waiting-window overrides (ช่วงรอ: 1.5 ฐานราก 10 days, 5.1 ฉาบปูน 21 days) are added too (./seed-workforce.ts), matched by
+// name / task, so a re-run creates no duplicates. Nothing else in the database is touched.
 //   --api <url>      a running backend (default: $CONTRACK_API_URL or http://localhost:4000)
 //   --in-process     start the API in this process on $DATABASE_URL instead (like db:seed)
 //   --recreate       delete the showcase project first and build it again (fresh revisions and activity)

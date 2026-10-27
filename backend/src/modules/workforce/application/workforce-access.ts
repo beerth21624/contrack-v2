@@ -43,4 +43,10 @@ export class WorkforceAccess {
         if (project.archived) return err(projectArchived());
         return ok(undefined);
     }
+
+    /** The ids among `projectIds` that are projects of `workspaceId` and not archived. */
+    async activeProjectsOf(workspaceId: WorkspaceId, projectIds: readonly ProjectId[]): Promise<Set<ProjectId>> {
+        const found = await Promise.all(projectIds.map(async id => ({ id, project: await this.projects.find(id) })));
+        return new Set(found.filter(f => f.project?.workspaceId === workspaceId && !f.project.archived).map(f => f.id));
+    }
 }

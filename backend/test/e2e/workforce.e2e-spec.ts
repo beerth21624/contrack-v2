@@ -1,10 +1,11 @@
 // ─── E2E: crews and people (business module `workforce`) over HTTP, in-memory persistence ───
-// People, crews, crew assignments, project supervisors; wages hidden by role; tenant isolation; the module switch.
+// People, crews, crew assignments, project supervisors, task waits (W2); wages hidden by role; tenant isolation; the
+// module switch.
 import { z } from 'zod';
 import {
     type CrewAssignmentDto, type CrewDto, type PersonDto, type Role, crewAssignmentDtoSchema, crewDtoSchema, personDtoSchema,
-    platformModulesDtoSchema, projectDetailDtoSchema, projectSupervisorsDtoSchema, rateCardDtoSchema,
-    workforceConflictDetailsSchema,
+    platformModulesDtoSchema, projectDetailDtoSchema, projectSupervisorsDtoSchema, projectTaskLagsDtoSchema, rateCardDtoSchema,
+    workforceConflictDetailsSchema, workspaceTaskLagsDtoSchema,
 } from '@contrack/contract';
 import {
     type Session, type TestApp, addMember, bearer, createCompany, expectError, expectStatus, register, startApp,
@@ -72,6 +73,8 @@ describe('workforce (e2e)', () => {
     const crews = (w = ws) => `/workspaces/${w}/crews`;
     const assignments = (w = ws) => `/workspaces/${w}/crew-assignments`;
     const supervisors = (p = projectId) => `/projects/${p}/supervisors`;
+    const taskLags = (p = projectId) => `/projects/${p}/task-lags`;
+    const wsTaskLags = (w = ws) => `/workspaces/${w}/task-lags`;
 
     let seq = 0;
     async function newPerson(body: Record<string, unknown> = {}, by: Session = owner, w = ws): Promise<PersonDto> {
@@ -113,7 +116,8 @@ describe('workforce (e2e)', () => {
             for (const res of [
                 await t.http().get(people()), await t.http().post(crews()).send({}), await t.http().get(assignments()),
                 await t.http().patch(`${crews()}/${UNKNOWN_ID}`).send({ note: 'x' }), await t.http().get(supervisors()),
-                await t.http().put(supervisors()).send({ personIds: [] }),
+                await t.http().put(supervisors()).send({ personIds: [] }), await t.http().get(taskLags()),
+                await t.http().put(taskLags()).send({ lags: [] }), await t.http().get(wsTaskLags()),
             ]) expectError(res, 401, 'unauthenticated');
         });
     });
@@ -300,16 +304,20 @@ describe('workforce (e2e)', () => {
             expectError(await req(owner).post(assignments(), { ...base, projectId, crewId: gone.id }), 422, 'unprocessable');
         });
 
-        it('deleting a project deletes its assignments and supervisors', async () => {
+        it('deleting a project deletes its assignments, supervisors and task waits', async () => {
             const doomed = await newProject(owner, ws, 'จะลบ');
             const crew = await newCrew();
             const p = await newPerson();
             const a = await newAssignment(crew.id, { projectId: doomed });
             expectStatus(await req(owner).put(supervisors(doomed), { personIds: [p.id] }), 200);
+            expectStatus(await req(owner).put(taskLags(doomed), { lags: [{ taskId: '1.5', days: 10 }] }), 200);
             expectStatus(await req(owner).del(`/projects/${doomed}`), 204);
             const left = z.array(crewAssignmentDtoSchema).parse((await req(owner).get(assignments())).body);
             expect(left.map(x => x.id)).not.toContain(a.id);
             expectError(await req(owner).get(supervisors(doomed)), 404, 'not_found');
+            expectError(await req(owner).get(taskLags(doomed)), 404, 'not_found');
+            const board = workspaceTaskLagsDtoSchema.parse((await req(owner).get(wsTaskLags())).body);
+            expect(board.map(x => x.projectId)).not.toContain(doomed);
             // The crew and the person are free again.
             expectStatus(await req(owner).del(`${crews()}/${crew.id}`), 204);
         });
@@ -330,6 +338,81 @@ describe('workforce (e2e)', () => {
         });
     });
 
+    describe('task lags (ช่วงรอ)', () => {
+        const plaster = { taskId: '5.1', days: 21, note: 'ช่วงฝนตก ปูนแห้งช้า' };
+        const footing = { taskId: '1.5', days: 10, note: 'ฝนตกระหว่างบ่ม' };
+
+        it('a new project has none; PUT replaces all (task order, blank note → null); every role reads', async () => {
+            const p = await newProject(owner, ws, 'บ้านช่วงรอ');
+            expect(projectTaskLagsDtoSchema.parse((await req(viewer).get(taskLags(p))).body)).toEqual({ projectId: p, lags: [] });
+            const res = await req(estimator).put(taskLags(p), { lags: [plaster, { taskId: '1.10', days: 0, note: '  ' }, footing] });
+            expectStatus(res, 200);
+            const stored = [footing, { taskId: '1.10', days: 0, note: null }, plaster];
+            expect(projectTaskLagsDtoSchema.parse(res.body)).toEqual({ projectId: p, lags: stored });
+            for (const role of ['owner', 'admin', 'estimator', 'viewer'] as const) {
+                expect(projectTaskLagsDtoSchema.parse((await req(as[role]).get(taskLags(p))).body).lags).toEqual(stored);
+            }
+            // Replace-all: what is left out goes.
+            const replaced = await req(admin).put(taskLags(p), { lags: [{ taskId: '1.5', days: 8 }] });
+            expect(projectTaskLagsDtoSchema.parse(replaced.body).lags).toEqual([{ taskId: '1.5', days: 8, note: null }]);
+            expect(projectTaskLagsDtoSchema.parse((await req(owner).put(taskLags(p), { lags: [] })).body).lags).toEqual([]);
+            expect(projectTaskLagsDtoSchema.parse((await req(owner).get(taskLags(p))).body).lags).toEqual([]);
+        });
+
+        it.each<[Role, number]>([['owner', 200], ['admin', 200], ['estimator', 200], ['viewer', 403]])(
+            'PUT as %s → %i',
+            async (role, status) => {
+                const res = await req(as[role]).put(taskLags(), { lags: [footing] });
+                if (status === 200) expectStatus(res, 200);
+                else expectError(res, status, 'forbidden');
+            },
+        );
+
+        it('validation: days out of range or fractional, duplicate taskId, bad taskId, long note, missing body → 400', async () => {
+            for (const lags of [
+                [{ taskId: '1.5', days: -1 }], [{ taskId: '1.5', days: 91 }], [{ taskId: '1.5', days: 2.5 }], [{ taskId: '1.5', days: '7' }],
+                [footing, { taskId: '1.5', days: 3 }],
+                [{ taskId: '1', days: 1 }], [{ taskId: '0.1', days: 1 }], [{ taskId: '1.0', days: 1 }], [{ taskId: '1.100', days: 1 }],
+                [{ taskId: 'ฐานราก', days: 1 }], [{ taskId: 15, days: 1 }],
+                [{ taskId: '1.5', days: 1, note: 'x'.repeat(201) }],
+            ]) expectError(await req(owner).put(taskLags(), { lags }), 400, 'validation_failed');
+            expectError(await req(owner).put(taskLags(), {}), 400, 'validation_failed');
+            expectStatus(await req(owner).put(taskLags(), { lags: [{ taskId: '9.99', days: 90, note: null }, { taskId: '1.1', days: 0 }] }), 200);
+        });
+
+        it('an archived project: PUT → 409 conflict, GET still reads; left out of the workspace list', async () => {
+            const p = await newProject(owner, ws, 'บ้านเก็บถาวร');
+            expectStatus(await req(owner).put(taskLags(p), { lags: [footing] }), 200);
+            expectStatus(await req(owner).patch(`/projects/${p}`, { archived: true }), 200);
+            expectError(await req(owner).put(taskLags(p), { lags: [] }), 409, 'conflict');
+            expect(projectTaskLagsDtoSchema.parse((await req(viewer).get(taskLags(p))).body).lags).toEqual([footing]);
+            const board = workspaceTaskLagsDtoSchema.parse((await req(owner).get(wsTaskLags())).body);
+            expect(board.map(x => x.projectId)).not.toContain(p);
+            expectStatus(await req(owner).patch(`/projects/${p}`, { archived: false }), 200);
+            const back = workspaceTaskLagsDtoSchema.parse((await req(owner).get(wsTaskLags())).body);
+            expect(back).toContainEqual({ projectId: p, lags: [footing] });
+        });
+
+        it('workspace list: the projects with overrides only, each in task order; every role reads', async () => {
+            const a = await newProject(owner, ws, 'บ้านกระดาน A');
+            const b = await newProject(owner, ws, 'บ้านกระดาน B');
+            const none = await newProject(owner, ws, 'บ้านไม่มีช่วงรอ');
+            expectStatus(await req(owner).put(taskLags(a), { lags: [plaster, footing] }), 200);
+            expectStatus(await req(owner).put(taskLags(b), { lags: [{ taskId: '2.4', days: 21 }] }), 200);
+            expectStatus(await req(owner).put(taskLags(none), { lags: [] }), 200);
+            for (const role of ['owner', 'admin', 'estimator', 'viewer'] as const) {
+                const res = await req(as[role]).get(wsTaskLags());
+                expectStatus(res, 200);
+                const board = workspaceTaskLagsDtoSchema.parse(res.body);
+                expect(board).toContainEqual({ projectId: a, lags: [footing, plaster] });
+                expect(board).toContainEqual({ projectId: b, lags: [{ taskId: '2.4', days: 21, note: null }] });
+                expect(board.map(x => x.projectId)).not.toContain(none);
+                expect(board.every(x => x.lags.length > 0)).toBe(true);
+                expect(board.map(x => x.projectId)).toEqual([...board.map(x => x.projectId)].sort());
+            }
+        });
+    });
+
     describe('tenant isolation', () => {
         it('a non-member gets 404 on every route; ids of another workspace are 404 too', async () => {
             const p = await newPerson();
@@ -341,8 +424,17 @@ describe('workforce (e2e)', () => {
                 await o.post(people(), { name: 'x', role: 'skilled', employment: 'daily' }),
                 await o.patch(`${people()}/${p.id}`, { note: 'x' }), await o.del(`${crews()}/${c.id}`),
                 await o.patch(`${assignments()}/${a.id}`, { note: 'x' }), await o.get(supervisors()),
-                await o.put(supervisors(), { personIds: [] }),
+                await o.put(supervisors(), { personIds: [] }), await o.get(taskLags()), await o.put(taskLags(), { lags: [] }),
+                await o.get(wsTaskLags()), await req(owner).get(taskLags(foreignProjectId)),
+                await req(owner).put(taskLags(foreignProjectId), { lags: [] }), await req(owner).get(wsTaskLags(otherWs)),
+                await req(owner).get(taskLags(UNKNOWN_ID)), await req(owner).put(taskLags('not-a-uuid'), { lags: [] }),
             ]) expectError(res, 404, 'not_found');
+            // Their board never shows our projects.
+            expectStatus(await o.put(taskLags(foreignProjectId), { lags: [{ taskId: '1.5', days: 4 }] }), 200);
+            expect(workspaceTaskLagsDtoSchema.parse((await o.get(wsTaskLags(otherWs))).body))
+                .toEqual([{ projectId: foreignProjectId, lags: [{ taskId: '1.5', days: 4, note: null }] }]);
+            expect(workspaceTaskLagsDtoSchema.parse((await req(owner).get(wsTaskLags())).body).map(x => x.projectId))
+                .not.toContain(foreignProjectId);
             // Through their own workspace: our ids do not exist there.
             expectError(await o.patch(`${people(otherWs)}/${p.id}`, { note: 'x' }), 404, 'not_found');
             expectError(await o.del(`${crews(otherWs)}/${c.id}`), 404, 'not_found');
@@ -382,6 +474,10 @@ describe('workforce switched off (e2e)', () => {
             await t.http().get(`/workspaces/${ws}/crew-assignments`).set(auth),
             await t.http().get(`/projects/${UNKNOWN_ID}/supervisors`).set(auth),
             await t.http().put(`/projects/${UNKNOWN_ID}/supervisors`).set(auth).send({ personIds: [] }),
+            await t.http().get(`/projects/${UNKNOWN_ID}/task-lags`).set(auth),
+            await t.http().put(`/projects/${UNKNOWN_ID}/task-lags`).set(auth).send({ lags: [] }),
+            await t.http().get(`/workspaces/${ws}/task-lags`).set(auth),
+            await t.http().get(`/workspaces/${ws}/task-lags`),
             await t.http().get(`/workspaces/${ws}/people`),
         ]) expectError(res, 404, 'module_disabled');
         expectStatus(await t.http().get(`/workspaces/${ws}/rate-cards`).set(auth), 200);

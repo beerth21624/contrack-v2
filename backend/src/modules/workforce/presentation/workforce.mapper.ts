@@ -1,10 +1,13 @@
 // ─── Workforce entities → contract DTOs (dates as ISO strings); wages hidden here, by the caller's role ───
 // A person's daily wage: owner/admin only (`workforce.seeWages`). A crew's daily cost and its typed override:
 // owner/admin/estimator (`workforce.seeCrewCost`). Hidden values are null with `wagesHidden: true`.
-import type { CrewAssignmentDto, CrewDto, PersonDto, ProjectSupervisorsDto, Role } from '@contrack/contract';
+import type {
+    CrewAssignmentDto, CrewDto, PersonDto, ProjectSupervisorsDto, ProjectTaskLagsDto, Role,
+} from '@contrack/contract';
 import { can } from '../../../shared/domain/permissions';
 import type { PricedCrew } from '../application/crew-pricing';
 import type { ProjectSupervisors } from '../application/use-cases/project-supervisors.use-case';
+import type { ProjectTaskLags } from '../application/use-cases/project-task-lags.use-case';
 import type { CrewAssignment } from '../domain/entities/crew-assignment.entity';
 import type { Person } from '../domain/entities/person.entity';
 
@@ -68,4 +71,8 @@ export function assignmentToDto(a: CrewAssignment): CrewAssignmentDto {
 
 export function supervisorsToDto(s: ProjectSupervisors): ProjectSupervisorsDto {
     return { projectId: s.projectId, personIds: [...s.personIds] };
+}
+
+export function taskLagsToDto(t: ProjectTaskLags): ProjectTaskLagsDto {
+    return { projectId: t.projectId, lags: t.lags.map(l => ({ taskId: l.taskId, days: l.days, note: l.note })) };
 }

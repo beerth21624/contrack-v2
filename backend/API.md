@@ -119,11 +119,32 @@ assignment write and on PUT supervisors.
 | DELETE | `/workspaces/:workspaceId/crew-assignments/:assignmentId` | → 204 | `workforce.assign`; hard delete |
 | GET | `/projects/:projectId/supervisors` | → `ProjectSupervisorsDto` `{ projectId, personIds }` | `workforce.read` in the project's workspace (also for an archived project) |
 | PUT | `/projects/:projectId/supervisors` | `PutProjectSupervisorsRequest` `{ personIds }` (≤ 20) → `ProjectSupervisorsDto` | `workforce.assign`; replaces the list (order kept, duplicates dropped, `[]` clears) |
+| GET | `/projects/:projectId/task-lags` | → `ProjectTaskLagsDto` `{ projectId, lags }` | `workforce.read` (every role) in the project's workspace, also for an archived project; `lags` in numeric task order (`"1.9"` before `"1.10"`); `[]` for a project that kept every default |
+| PUT | `/projects/:projectId/task-lags` | `PutProjectTaskLagsRequest` `{ lags }` (≤ 64) → `ProjectTaskLagsDto` | `workforce.assign` (owner/admin/estimator); **replaces all** of the project's overrides (tasks left out are deleted, `[]` clears them); archived project → 409 `conflict` |
+| GET | `/workspaces/:workspaceId/task-lags` | → `WorkspaceTaskLagsDto` `[{ projectId, lags }]` | `workforce.read`; every **non-archived** project of the workspace **that has at least one override** (a project without one is left out: its waits are all the defaults), by project id, each in task order. For the crew board |
 
-Deleting a project deletes its crew assignments and supervisors (FK `ON DELETE CASCADE` on `(project_id, workspace_id)`,
-and explicitly through `ProjectDependents` in the same transaction). Tables: `people`, `crews`, `crew_members`,
-`crew_assignments`, `project_supervisors` (migration `0002_workforce`); every child row names `(…_id, workspace_id)`
-together, so it can only reference rows of its own workspace.
+### Waiting windows after planned tasks (ช่วงรอ, W2)
+Concrete curing, plaster drying before paint, …: the days the work waits after a planned task before the next step.
+Schemas: `taskLagSchema`, `projectTaskLagsDtoSchema`, `putProjectTaskLagsRequestSchema`, `workspaceTaskLagsDtoSchema`
+in `../src/shared/contract/workforce.ts`. **The server stores only a project's overrides and never applies the defaults**
+(`../src/domain/workforce/task-lags.ts`, e.g. 1.5 ฐานราก 7 days, 5.1 ฉาบปูน 14 days): the client computes the effective
+wait (the override, else the default, else 0). Waits never move the S-Curve dates.
+- A lag is `{ taskId, days, note? }`: `taskId` a plan task id (`/^[1-9]\.[1-9]\d?$/`, format checked only), `days` a whole
+  number `0 … MAX_TASK_LAG_DAYS` (90; `0` = no wait, a valid override of a non-zero default), `note` ≤ 200 characters,
+  trimmed, blank → `null` (responses always carry `note`, `null` when there is none).
+- PUT validation → **400 `validation_failed`**: days out of range or not an integer, a bad task id, a note over 200, more
+  than 64 lags, or **the same `taskId` twice** (the contract's refine; the use case checks it again).
+- PUT is serialised per workspace by the workforce advisory lock, so two concurrent PUTs never merge: the result is one of
+  them. A changed or new row is stamped `updated_by` / `updated_at`; an unchanged row keeps its stamp.
+- Not a member, a project of another workspace, an unknown or malformed id → 404 `not_found`.
+- Table `project_task_lags` (migration `0003_task_lags`): `(project_id, workspace_id)` composite FK to `projects`
+  `ON DELETE CASCADE`, primary key `(project_id, task_id)`, `days` check `between 0 and 90`, task-id and note-length checks,
+  `updated_by` (a user id, no FK, like `project_docs.updated_by`), `updated_at`; index `(workspace_id, project_id)`.
+
+Deleting a project deletes its crew assignments, supervisors and task waits (FK `ON DELETE CASCADE` on
+`(project_id, workspace_id)`, and explicitly through `ProjectDependents` in the same transaction). Tables: `people`, `crews`,
+`crew_members`, `crew_assignments`, `project_supervisors` (migration `0002_workforce`), `project_task_lags` (migration
+`0003_task_lags`); every child row names `(…_id, workspace_id)` together, so it can only reference rows of its own workspace.
 
 Not a member of the workspace → 404 on every route; a card of another workspace (or a malformed id) → 404.
 

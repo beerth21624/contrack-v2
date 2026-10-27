@@ -22,6 +22,13 @@
       "when": 1793025000000,
       "tag": "0002_workforce",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793026000000,
+      "tag": "0003_task_lags",
+      "breakpoints": true
     }
   ]
 }

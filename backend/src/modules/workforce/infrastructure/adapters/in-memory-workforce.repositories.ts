@@ -1,19 +1,22 @@
 // ─── In-memory adapters of the workforce ports (unit tests, e2e, PERSISTENCE=memory) ───
 // Each mirrors its Drizzle twin, including the unique index and the ordering.
 import type {
-    CrewAssignmentId, CrewId, PersonId, ProjectId, WorkspaceId,
+    CrewAssignmentId, CrewId, PersonId, ProjectId, UserId, WorkspaceId,
 } from '../../../../shared/domain';
 import { type CrewAssignmentFilter, CrewAssignmentRepository } from '../../application/ports/crew-assignment.repository';
 import { CrewRepository } from '../../application/ports/crew.repository';
 import { PersonRepository } from '../../application/ports/person.repository';
 import { ProjectSupervisorRepository } from '../../application/ports/project-supervisor.repository';
+import { type ProjectTaskLagRows, ProjectTaskLagRepository } from '../../application/ports/project-task-lag.repository';
 import { WorkforceLock } from '../../application/ports/workforce-lock.port';
 import { CrewAssignment } from '../../domain/entities/crew-assignment.entity';
 import { Crew } from '../../domain/entities/crew.entity';
 import { Person } from '../../domain/entities/person.entity';
+import { type TaskLag, sortTaskLags } from '../../domain/value-objects/task-lag.value-object';
 import type { WorkforceName } from '../../domain/value-objects/workforce-name.value-object';
 
 const byId = (a: { id: string }, b: { id: string }): number => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+const toLag = (l: TaskLag): TaskLag => ({ taskId: l.taskId, days: l.days, note: l.note });
 const oldestFirst = (a: { createdAt: Date; id: string }, b: { createdAt: Date; id: string }): number =>
     a.createdAt.getTime() - b.createdAt.getTime() || byId(a, b);
 
@@ -208,3 +211,60 @@ export class InMemoryProjectSupervisorRepository extends ProjectSupervisorReposi
         return Promise.resolve();
     }
 }
+
+interface StoredTaskLag extends TaskLag {
+    workspaceId: WorkspaceId;
+    projectId: ProjectId;
+    updatedBy: UserId;
+    updatedAt: Date;
+}
+
+export class InMemoryProjectTaskLagRepository extends ProjectTaskLagRepository {
+    /** `${projectId}|${taskId}` → row (the primary key). */
+    private readonly rows = new Map<string, StoredTaskLag>();
+
+    list(workspaceId: WorkspaceId, projectId: ProjectId): Promise<TaskLag[]> {
+        return Promise.resolve(sortTaskLags(this.of(workspaceId, projectId).map(toLag)));
+    }
+
+    listByWorkspace(workspaceId: WorkspaceId): Promise<ProjectTaskLagRows[]> {
+        const byProject = new Map<ProjectId, TaskLag[]>();
+        for (const r of this.rows.values()) {
+            if (r.workspaceId !== workspaceId) continue;
+            byProject.set(r.projectId, [...(byProject.get(r.projectId) ?? []), toLag(r)]);
+        }
+        return Promise.resolve([...byProject]
+            .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+            .map(([projectId, lags]) => ({ projectId, lags: sortTaskLags(lags) })));
+    }
+
+    replace(workspaceId: WorkspaceId, projectId: ProjectId, lags: readonly TaskLag[], updatedBy: UserId, at: Date): Promise<void> {
+        const keep = new Set(lags.map(l => l.taskId));
+        for (const r of this.of(workspaceId, projectId)) {
+            if (!keep.has(r.taskId)) this.rows.delete(`${projectId}|${r.taskId}`);
+        }
+        for (const l of lags) {
+            const key = `${projectId}|${l.taskId}`;
+            const now = this.rows.get(key);
+            if (now?.workspaceId === workspaceId && now.days === l.days && now.note === l.note) continue;
+            this.rows.set(key, { ...toLag(l), workspaceId, projectId, updatedBy, updatedAt: new Date(at.getTime()) });
+        }
+        return Promise.resolve();
+    }
+
+    deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void> {
+        for (const r of this.of(workspaceId, projectId)) this.rows.delete(`${projectId}|${r.taskId}`);
+        return Promise.resolve();
+    }
+
+    /** Who changed a row last, and when (tests). */
+    stampOf(projectId: ProjectId, taskId: string): { updatedBy: UserId; updatedAt: Date } | undefined {
+        const r = this.rows.get(`${projectId}|${taskId}`);
+        return r === undefined ? undefined : { updatedBy: r.updatedBy, updatedAt: new Date(r.updatedAt.getTime()) };
+    }
+
+    private of(workspaceId: WorkspaceId, projectId: ProjectId): StoredTaskLag[] {
+        return [...this.rows.values()].filter(r => r.workspaceId === workspaceId && r.projectId === projectId);
+    }
+}
+
