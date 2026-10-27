@@ -162,9 +162,11 @@ export interface EarlyStart {
 
 /**
  * Tasks of the project whose first crewed day comes before the day they may start (task-order.ts + the waits), in
- * site order. Only crewed tasks count on both sides: a task with no crew passes its own predecessors on.
+ * site order. Only crewed tasks count on both sides: a task with no crew passes its own predecessors on. Only tasks not
+ * started yet (first crewed day after `today`) are listed: a start already past cannot be changed any more.
  */
-export function earlyStarts(assignments: readonly TeamAssignment[], lags: readonly TaskLag[]): EarlyStart[] {
+export function earlyStarts(assignments: readonly TeamAssignment[], lags: readonly TaskLag[], today: string): EarlyStart[] {
+    const t = serial(today);
     const valid = assignments.filter(a => span(a) !== null);
     const present = new Set(valid.map(a => a.taskId));
     const starts = new Map<string, number>();
@@ -178,7 +180,7 @@ export function earlyStarts(assignments: readonly TeamAssignment[], lags: readon
     const out: EarlyStart[] = [];
     for (const taskId of Object.keys(TASK_AFTER)) {
         const s = starts.get(taskId);
-        if (s === undefined) continue;
+        if (s === undefined || t === null || s <= t) continue;
         const ready = readyDay(valid, taskId, lags);
         const r = serial(ready);
         if (ready === null || r === null || s >= r) continue;

@@ -28,6 +28,7 @@ import { SupervisorsCard } from './SupervisorsCard';
 import { TeamTable } from './TeamTable';
 import { TeamMetrics } from './TeamMetrics';
 import { WaitEditModal } from './WaitEditModal';
+import { isoDay } from '../crews/logic';
 import { earlyStartSummaryText, earlyStarts, finishMetric, labourMetric } from './team-metrics';
 import {
     buildTeamRows, chipConflicts, conflictLines, conflictSummaryText, otherProjectConflictCount, teamSummary, teamSummaryText,
@@ -139,10 +140,12 @@ function ProjectTeam({ cloud }: { cloud: OpenCloudProject }) {
     );
     const conflictText = conflictSummaryText(otherProjectConflictCount(clashes, cloud.projectId));
 
-    // W3: starts before the wait is over (once the waits are known), and the finish and labour as crewed.
+    // W3: starts not yet reached that come before the wait is over (once the waits are known), and the finish and
+    // labour as crewed.
+    const [today] = useState(() => isoDay(new Date()));
     const early = useMemo(
-        () => (waitsReady ? earlyStarts(assignments.data ?? [], overrides) : []),
-        [waitsReady, assignments.data, overrides],
+        () => (waitsReady ? earlyStarts(assignments.data ?? [], overrides, today) : []),
+        [waitsReady, assignments.data, overrides, today],
     );
     const earlyById = useMemo(() => new Map(early.map(e => [e.taskId, e])), [early]);
     const earlyText = earlyStartSummaryText(early.length);

@@ -121,11 +121,13 @@ describe('labour as crewed vs the Man-Day labour of the same tasks', () => {
 });
 
 describe('starts before the wait is over', () => {
+    /** Before every start in these tests (the plan sample starts in January 2026). */
+    const TODAY = '2025-12-31';
     const footing = asg('1.5', 'c1', '2026-10-15', '2026-10-24');
     const stumps = asg('1.6', 'c1', '2026-10-28', '2026-10-29');
 
     it('a task starting before the task before it + its wait: the ready day, how early and why', () => {
-        const [e, ...rest] = earlyStarts([stumps, footing], []);
+        const [e, ...rest] = earlyStarts([stumps, footing], [], TODAY);
         expect(rest).toEqual([]);
         expect(e).toEqual({
             taskId: '1.6', crewStart: '2026-10-28', ready: '2026-11-01', days: 4,
@@ -142,9 +144,9 @@ describe('starts before the wait is over', () => {
     });
 
     it('the project’s own wait counts; starting on the ready day or later is fine', () => {
-        expect(earlyStarts([stumps, footing], [{ taskId: '1.5', days: 3, note: null }])).toEqual([]);
-        expect(earlyStarts([{ ...stumps, start: '2026-11-01', end: '2026-11-02' }, footing], [])).toEqual([]);
-        const noWait = earlyStarts([{ ...stumps, start: '2026-10-20' }, footing], [{ taskId: '1.5', days: 0, note: null }]);
+        expect(earlyStarts([stumps, footing], [{ taskId: '1.5', days: 3, note: null }], TODAY)).toEqual([]);
+        expect(earlyStarts([{ ...stumps, start: '2026-11-01', end: '2026-11-02' }, footing], [], TODAY)).toEqual([]);
+        const noWait = earlyStarts([{ ...stumps, start: '2026-10-20' }, footing], [{ taskId: '1.5', days: 0, note: null }], TODAY);
         expect(noWait.map(e => [e.taskId, e.days])).toEqual([['1.6', 5]]);
         expect(noWait[0] && earlyStartLines(noWait[0])[0]).toBe('งานก่อนหน้า (งานฐานราก) จบ 24 ต.ค. → เริ่มได้ 25 ต.ค.');
     });
@@ -152,22 +154,28 @@ describe('starts before the wait is over', () => {
     it('a task with no crew passes its predecessors on; a first task never warns', () => {
         // 1.7 waits for 1.6, which has no crew here: so it waits for 1.5 (+ 7 days).
         const ground = asg('1.7', 'c1', '2026-10-26', '2026-10-27');
-        expect(earlyStarts([ground, footing], []).map(e => [e.taskId, e.ready])).toEqual([['1.7', '2026-11-01']]);
-        expect(earlyStarts([asg('1.1', 'c1', '2026-01-01', '2026-01-02')], [])).toEqual([]);
+        expect(earlyStarts([ground, footing], [], TODAY).map(e => [e.taskId, e.ready])).toEqual([['1.7', '2026-11-01']]);
+        expect(earlyStarts([asg('1.1', 'c1', '2026-01-01', '2026-01-02')], [], TODAY)).toEqual([]);
     });
 
     it('the planned sample crewed on its S-Curve days: every warning matches readyDay', () => {
         const all = onPlan();
-        for (const e of earlyStarts(all, [])) {
+        for (const e of earlyStarts(all, [], TODAY)) {
             expect(e.ready).toBe(readyDay(all, e.taskId, []));
             expect(e.days).toBeGreaterThan(0);
             expect(e.causes.length).toBeGreaterThan(0);
         }
     });
 
+    it('only tasks not started yet: a start on or before today is past and not marked', () => {
+        expect(earlyStarts([stumps, footing], [], '2026-10-27').map(e => e.taskId)).toEqual(['1.6']);
+        expect(earlyStarts([stumps, footing], [], '2026-10-28')).toEqual([]);
+        expect(earlyStarts([stumps, footing], [], '2026-11-05')).toEqual([]);
+    });
+
     it('the table marks the row quietly with the reason in its label', () => {
         const groups = buildTeamRows(schedule, manday, [footing, stumps]);
-        const [e] = earlyStarts([footing, stumps], []);
+        const [e] = earlyStarts([footing, stumps], [], TODAY);
         const html = renderToStaticMarkup(createElement(TeamTable<TeamAssignment>, {
             groups, crewName: () => 'ทีมช่างสมชาย', canAssign: true, onAdd: () => undefined, onEdit: () => undefined,
             waitOf: undefined, onEditWait: undefined, conflictsOf: () => [],
