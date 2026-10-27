@@ -18,6 +18,7 @@ import { RevisionButtons } from '@/features/cloud/revisions/RevisionButtons';
 import { SubcontractSectionLink } from '@/features/subcontracting/shared/SubcontractSectionLink';
 import { useBoqReview } from './review/useBoqReview';
 import { REVIEW_TEXT, ReviewPanel } from './review/ReviewPanel';
+import { AiConsentModal } from './review/AiConsentModal';
 
 const { Title, Text } = Typography;
 
@@ -345,6 +346,7 @@ export function BoqHomePage() {
                 </span>
             </div>
 
+            <AiConsentModal open={review.consent} onConfirm={review.confirmAi} onRulesOnly={review.rulesOnly} onCancel={review.cancelAi} />
             {review.open && (
                 <div id="boq-review">
                     <ReviewPanel findings={review.findings} ai={review.ai} onPick={jumpToRow} onClose={review.close} />
