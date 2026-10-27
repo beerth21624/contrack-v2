@@ -3,21 +3,24 @@
 // ─── The panel of a clicked bar: project, task, dates, crew, conflicts, the wait after; for `assign` roles move it ───
 // Mounted per assignment version (key = id + updatedAt), so its draft starts from what is saved every time. Moving
 // onto days the crew already works elsewhere is allowed (the board warns, it does not block) after a confirm.
+// While the draft differs from what is saved, "ผลของการเปลี่ยนนี้" shows the what-if (scenario.ts, W3): finish of the
+// projects touched, conflicts, idle crew-days, and the later tasks of the project that would have to move along; with
+// such knock-ons the save asks whether to move them too (saved one by one, useSaveSteps) or this task only.
 import { useMemo, useState } from 'react';
 import { App, Button, DatePicker, Drawer, Popconfirm, Select } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import type { CrewAssignmentDto, CrewDto, TaskLag } from '@/shared/contract';
 import { crewBusy, crewsByFit, effectiveTaskLag, spanDays, taskTrade, type CrewBusySpan } from '@/domain/workforce';
-import { addDays, thaiDayRange, type BoardConflict } from '@/domain/workforce/board';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
-import {
-    useCrewAssignments, useDeleteCrewAssignment, useUpdateCrewAssignment, workforceConflictMessage,
-} from '@/features/cloud/api/workforce';
-import { taskLabel, type BoardNames, type ProjectColour } from './view';
+import { addDays, thaiDayRange, type BoardConflict, type BoardWindow } from '@/domain/workforce/board';
+import { whatIf, type ChangedAssignment } from '@/domain/workforce/scenario';
+import { useCrewAssignments, useDeleteCrewAssignment, useUpdateCrewAssignment } from '@/features/cloud/api/workforce';
+import { ImpactList } from './ImpactList';
+import { changeLine, changeNamesOf, followOns, impactLines, saveSteps, type SaveStep } from './suggest-view';
+import { showSaveFailure, useSaveSteps, writeError } from './useSaveSteps';
+import { boardCrews, taskLabel, type BoardNames, type ProjectColour } from './view';
 
 const FORMAT = 'DD/MM/YYYY';
-const writeError = (e: unknown) => workforceConflictMessage(e) ?? thaiErrorMessage(e);
 
 export interface BarPanelProps {
     workspaceId: string;
@@ -26,6 +29,11 @@ export interface BarPanelProps {
     conflicts: readonly BoardConflict<CrewAssignmentDto>[];
     lags: readonly TaskLag[];
     crews: readonly CrewDto[];
+    /** What the board loaded, its waits and window: the live before/after reads the same data as the board. */
+    assignments: readonly CrewAssignmentDto[];
+    lagsByProject: ReadonlyMap<string, readonly TaskLag[]>;
+    boardWindow: BoardWindow;
+    today: string;
     names: BoardNames;
     colour: ProjectColour;
     canAssign: boolean;
@@ -47,7 +55,10 @@ export function BarPanel(props: BarPanelProps) {
     );
 }
 
-function PanelBody({ workspaceId, assignment: a, conflicts, lags, crews, names, colour, canAssign, onOpen, onClose }: BarPanelProps) {
+function PanelBody({
+    workspaceId, assignment: a, conflicts, lags, crews, assignments, lagsByProject, boardWindow, today, names, colour, canAssign,
+    onOpen, onClose,
+}: BarPanelProps) {
     const { message, modal } = App.useApp();
     const [crewId, setCrewId] = useState(a.crewId);
     const [start, setStart] = useState(a.start);
@@ -72,6 +83,17 @@ function PanelBody({ workspaceId, assignment: a, conflicts, lags, crews, names, 
     };
     const selectedBusy = busyFor(crewId);
     const changed = crewId !== a.crewId || start !== a.start || end !== a.end;
+    const steps = useSaveSteps(workspaceId);
+    const lineNames = useMemo(() => changeNamesOf(names), [names]);
+
+    // The what-if of the draft (pushes only: nothing is brought earlier by itself).
+    const preview = useMemo(() => {
+        if (!changed) return undefined;
+        const w = whatIf(boardCrews(crews, assignments, boardWindow), assignments, lagsByProject,
+            [{ assignmentId: a.id, crewId, start, end }], boardWindow, today);
+        return { w, follow: followOns(w.result.changed) };
+    }, [changed, crews, assignments, boardWindow, lagsByProject, a.id, crewId, start, end, today]);
+    const moneyVisible = crews.some(c => c.dailyCost !== null);
 
     const save = async () => {
         try {
@@ -87,8 +109,65 @@ function PanelBody({ workspaceId, assignment: a, conflicts, lags, crews, names, 
         }
     };
 
+    const stepLine = (s: SaveStep) => changeLine(s.change, lineNames);
+    const saveWithFollowOns = async () => {
+        if (preview === undefined) return;
+        const list = saveSteps(preview.w.result.changed);
+        const result = await steps.run(list);
+        if (result.failed === undefined) void message.success(`บันทึกแล้ว พร้อมเลื่อนงานที่ตามมา ${String(list.length - 1)} งาน`);
+        else showSaveFailure(modal, result, list.length, stepLine);
+    };
+
+    // Knock-ons: move them along (every change, one by one) or save this task only (as before W3).
+    const askFollowOns = (follow: readonly ChangedAssignment<CrewAssignmentDto>[]) => {
+        // Overlaps with a task that moves along only hold when this task is saved alone.
+        const followIds = new Set(follow.map(c => c.after.id));
+        const busyStays = selectedBusy.filter(b => !followIds.has(b.assignment.id));
+        const busyIfAlone = selectedBusy.length - busyStays.length;
+        const busyNote = (busyStays.length > 0 || busyIfAlone > 0) && (
+            <div className="flex flex-col gap-1">
+                {busyStays.length > 0 && (
+                    <>
+                        <div className="text-gray-900 font-medium">{names.crew(crewId)} ติดงานในช่วงนี้</div>
+                        <ul className="list-disc pl-5 text-gray-700">
+                            {busyStays.map(b => <li key={b.assignment.id}>{busyLine(b, names)} (ซ้อน {b.days} วัน)</li>)}
+                        </ul>
+                    </>
+                )}
+                {busyIfAlone > 0 && (
+                    <div className="text-gray-600">ถ้าบันทึกเฉพาะงานนี้ {names.crew(crewId)} จะถูกจัดซ้อนกับงานที่ควรเลื่อนตาม</div>
+                )}
+                <div className="text-gray-600">บันทึกซ้อนกันได้ ทีมจะต้องแบ่งเวลาระหว่างงาน</div>
+            </div>
+        );
+        const dialog = modal.confirm({
+            title: `มีงานที่ต้องเลื่อนตาม ${String(follow.length)} งาน`,
+            width: 520,
+            content: (
+                <div className="flex flex-col gap-3 text-[13px]">
+                    <div className="flex flex-col gap-1">
+                        <div className="text-gray-600">ถ้าไม่เลื่อนตาม งานเหล่านี้จะเริ่มก่อนงานก่อนหน้าจบและรอครบ</div>
+                        <ul className="list-disc pl-5 text-gray-800">
+                            {follow.map(c => <li key={c.after.id} className="break-words">{changeLine(c, lineNames)}</li>)}
+                        </ul>
+                    </div>
+                    {busyNote}
+                </div>
+            ),
+            footer: (_, { CancelBtn }) => (
+                <div className="flex flex-wrap justify-end gap-2 mt-4">
+                    <CancelBtn />
+                    <Button onClick={() => { dialog.destroy(); void save(); }}>บันทึกเฉพาะงานนี้</Button>
+                    <Button type="primary" onClick={() => { dialog.destroy(); void saveWithFollowOns(); }}>บันทึกพร้อมเลื่อนงานที่ตามมา</Button>
+                </div>
+            ),
+            cancelText: 'กลับไปแก้',
+        });
+    };
+
     const submit = () => {
         if (!changed) return;
+        if (preview !== undefined && preview.follow.length > 0) { askFollowOns(preview.follow); return; }
         if (selectedBusy.length === 0) { void save(); return; }
         modal.confirm({
             title: `${names.crew(crewId)} ติดงานในช่วงนี้`,
@@ -197,6 +276,23 @@ function PanelBody({ workspaceId, assignment: a, conflicts, lags, crews, names, 
                             </span>
                         )}
                     </label>
+                    {preview !== undefined && (
+                        <div className="rounded-[6px] border border-gray-200 bg-gray-50 px-3 py-2.5 flex flex-col gap-2 min-w-0" aria-live="polite">
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-[13px] font-medium text-gray-900">ผลของการเปลี่ยนนี้</span>
+                                <span className="text-[12px] text-gray-500">ยังไม่ได้บันทึก</span>
+                            </div>
+                            <ImpactList compact lines={impactLines(preview.w, { projectName: names.project, moneyVisible, today })} />
+                            {preview.follow.length > 0 && (
+                                <div className="flex flex-col gap-1 border-t border-gray-200 pt-2">
+                                    <span className="text-[13px] text-amber-700">มีงานที่ต้องเลื่อนตาม {preview.follow.length} งาน</span>
+                                    <ul className="list-disc pl-5 m-0 text-[12px] text-gray-700">
+                                        {preview.follow.map(c => <li key={c.after.id} className="break-words">{changeLine(c, lineNames)}</li>)}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    )}
                     <div className="flex items-center gap-2">
                         <Popconfirm title="เอาทีมนี้ออกจากงาน?" description="ลบเฉพาะการจัดทีมของงานนี้ ทีมยังอยู่ในบริษัท"
                             okText="เอาออก" cancelText="ยกเลิก" okButtonProps={{ danger: true, loading: remove.isPending }} onConfirm={deleteIt}>
@@ -204,7 +300,7 @@ function PanelBody({ workspaceId, assignment: a, conflicts, lags, crews, names, 
                         </Popconfirm>
                         <span className="ml-auto" />
                         {changed && <Button onClick={() => { setCrewId(a.crewId); setStart(a.start); setEnd(a.end); }}>คืนค่า</Button>}
-                        <Button type="primary" disabled={!changed} loading={update.isPending} onClick={submit}>บันทึก</Button>
+                        <Button type="primary" disabled={!changed} loading={update.isPending || steps.saving} onClick={submit}>บันทึก</Button>
                     </div>
                 </div>
             ) : (

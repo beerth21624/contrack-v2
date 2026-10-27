@@ -4,10 +4,12 @@
 // docs/workforce/00-crew-management-design.md §3.3, §4 (detection only) and §5. Signed-in only, module on (same states
 // as ทีมช่างและบุคลากร). The board is computed by src/domain/workforce/board.ts from the crews, the assignments around
 // the window and each project's waits (a missing task-lags endpoint means defaults only).
+// W3 (§4 step 2): คำแนะนำ below the board (SuggestionsPanel), the live before/after of a bar being moved (BarPanel),
+// and มูลค่าวันว่าง in the summary when wages are visible.
 import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Button, Result, Segmented, Select, Spin, Switch, Typography } from 'antd';
-import { LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { Button, Result, Segmented, Select, Spin, Switch, Tooltip, Typography } from 'antd';
+import { InfoCircleOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
     MAX_TASK_LAG_DAYS, WORKFORCE_TRADE_LABEL, type CrewAssignmentDto, type CrewAssignmentQuery, type TaskLag, type WorkspaceDto,
@@ -16,6 +18,7 @@ import {
     BOARD_PRESET_LABEL, boardDays, boardQueryRange, boardTotals, buildCrewBoard, presetWindow, stepWindow,
     type BoardPreset, type BoardWindow,
 } from '@/domain/workforce/board';
+import { scenarioMetrics } from '@/domain/workforce/scenario';
 import { isApiError } from '@/features/cloud/api/errors';
 import {
     assignmentsKey, useCrews, usePeople, usePlatformModules, useWorkspaceTaskLags, workforceAbilities, workforceApi,
@@ -26,6 +29,8 @@ import { ModuleOff } from '../crews/CrewsPage';
 import { isoDay } from '../crews/logic';
 import { BarPanel } from './BarPanel';
 import { CrewTimeline } from './CrewTimeline';
+import { SuggestionsPanel } from './SuggestionsPanel';
+import { idleValueCell } from './suggest-view';
 import {
     barDomId, boardCrews, conflictText, filterRows, percent, projectColours, projectsInRows, windowLabel,
     type BoardNames, type RowFilter,
@@ -83,7 +88,10 @@ function WorkspaceBoard({ workspace, workspaces, onSelect }: {
     const projects = useProjects(workspace.id);
     const lags = useWorkspaceTaskLags(workspace.id);
     const range = boardQueryRange(win, today, MAX_TASK_LAG_DAYS);
-    const assignments = useBoardAssignments(workspace.id, range);
+    // Open-ended forward (no `to`): the before/after (W3) needs every later task of a project for its finish and its
+    // knock-ons; the board itself only draws the window.
+    const query = useMemo((): CrewAssignmentQuery => ({ from: range.from }), [range.from]);
+    const assignments = useBoardAssignments(workspace.id, query);
 
     const names = useMemo((): BoardNames => {
         const project = new Map((projects.data ?? []).map(p => [p.id, p.name]));
@@ -105,6 +113,11 @@ function WorkspaceBoard({ workspace, workspaces, onSelect }: {
     const days = useMemo(() => boardDays(win), [win]);
     const rows = useMemo(() => filterRows(board.rows, filter, today), [board.rows, filter, today]);
     const totals = boardTotals(rows);
+    // มูลค่าวันว่าง of the shown crews (the same rows as the other numbers of the summary).
+    const idleValue = useMemo(() => {
+        const shownCrews = rows.map(r => r.crew);
+        return idleValueCell(scenarioMetrics(shownCrews, all ?? [], lagsByProject, win, today), shownCrews);
+    }, [rows, all, lagsByProject, win, today]);
     const conflicts = useMemo(
         () => rows.flatMap(r => r.conflicts).sort((x, y) => (x.from < y.from ? -1 : x.from > y.from ? 1 : 0)),
         [rows],
@@ -162,7 +175,7 @@ function WorkspaceBoard({ workspace, workspaces, onSelect }: {
                 </div>
             ) : (
                 <>
-                    <Summary totals={totals} />
+                    <Summary totals={totals} idleValue={idleValue} />
 
                     <div className="bg-white border border-gray-200 rounded-card shadow-card min-w-0">
                         <div className="flex flex-col gap-3 p-4 md:px-5 md:pt-5 md:pb-4">
@@ -223,12 +236,17 @@ function WorkspaceBoard({ workspace, workspaces, onSelect }: {
                             </ul>
                         </div>
                     )}
+
+                    <SuggestionsPanel workspaceId={workspace.id} crews={crews.data ?? []} assignments={all}
+                        ready={all !== undefined && !assignments.isPlaceholderData && crews.data !== undefined && !lags.isLoading && !projects.isLoading}
+                        lagsByProject={lagsByProject} window={win} today={today} names={names} canAct={abilities.assign} />
                 </>
             )}
 
             {selected !== undefined && (
                 <BarPanel workspaceId={workspace.id} assignment={selected} conflicts={selectedConflicts}
                     lags={lagsByProject.get(selected.projectId) ?? NO_LAGS} crews={crews.data ?? []} names={names}
+                    assignments={all ?? []} lagsByProject={lagsByProject} boardWindow={win} today={today}
                     colour={colours.get(selected.projectId) ?? { fill: '#E5E7EB', accent: '#6B7280', text: '#111827' }}
                     canAssign={abilities.assign} onOpen={openAndScroll} onClose={() => setSelectedId(undefined)} />
             )}
@@ -236,8 +254,10 @@ function WorkspaceBoard({ workspace, workspaces, onSelect }: {
     );
 }
 
-function Summary({ totals }: { totals: ReturnType<typeof boardTotals> }) {
-    const cells: { label: string; value: string; note: string; tone?: string }[] = [
+const IDLE_VALUE_HINT = 'คิดจากค่าแรงต่อวันของทีม × วันว่าง (กรณีจ่ายทีมทุกวัน)';
+
+function Summary({ totals, idleValue }: { totals: ReturnType<typeof boardTotals>; idleValue: ReturnType<typeof idleValueCell> }) {
+    const cells: { label: string; value: string; note: string; tone?: string; hint?: string }[] = [
         { label: 'อัตราการใช้ทีมเฉลี่ย', value: percent(totals.averageUtilisation), note: `${String(totals.crews)} ทีม ในช่วงที่แสดง` },
         {
             label: 'จุดชน', value: String(totals.conflicts),
@@ -250,12 +270,27 @@ function Summary({ totals }: { totals: ReturnType<typeof boardTotals> }) {
         },
         { label: 'ทีมที่ว่างวันนี้', value: String(totals.crewsIdleToday), note: `จาก ${String(totals.crews)} ทีม` },
     ];
+    // Shown only when some crew's ฿/day is visible to this role (never ฿0 for an unknown cost).
+    if (idleValue !== null) {
+        cells.push({
+            label: 'มูลค่าวันว่าง', value: idleValue.value, hint: IDLE_VALUE_HINT,
+            note: idleValue.partial ? 'บางทีมไม่มีค่าแรง' : 'กรณีจ่ายทีมทุกวัน',
+        });
+    }
+    const five = cells.length === 5;
+    // 1px gaps over a grey ground draw the dividers, whatever the number of cells per row.
     return (
-        <div className="bg-white border border-gray-200 rounded-card shadow-card grid grid-cols-2 md:grid-cols-4">
+        <div className={`bg-gray-100 border border-gray-200 rounded-card shadow-card overflow-hidden grid gap-px grid-cols-2 ${five ? 'lg:grid-cols-5' : 'md:grid-cols-4'}`}>
             {cells.map((c, i) => (
-                <div key={c.label} className={`p-4 md:p-5 min-w-0 ${i % 2 === 1 ? 'border-l border-gray-100' : ''} ${i >= 2 ? 'border-t md:border-t-0 border-gray-100' : ''} ${i === 2 ? 'md:border-l' : ''}`}>
-                    <div className="text-[13px] text-gray-600 truncate">{c.label}</div>
-                    <div className={`text-[28px] leading-[1.25] font-semibold tabular-nums ${c.tone ?? 'text-gray-900'}`}>{c.value}</div>
+                <div key={c.label} className={`bg-white p-4 md:p-5 min-w-0 ${five && i === 4 ? 'col-span-2 lg:col-span-1' : ''}`}>
+                    <div className="text-[13px] text-gray-600 truncate">
+                        {c.hint === undefined ? c.label : (
+                            <Tooltip title={c.hint}>
+                                <span className="cursor-help">{c.label} <InfoCircleOutlined className="text-[12px] text-gray-400" aria-label={c.hint} /></span>
+                            </Tooltip>
+                        )}
+                    </div>
+                    <div className={`text-[28px] leading-[1.25] font-semibold tabular-nums truncate ${c.tone ?? 'text-gray-900'}`} title={c.value}>{c.value}</div>
                     <div className="text-[12px] text-gray-500 truncate">{c.note}</div>
                 </div>
             ))}
