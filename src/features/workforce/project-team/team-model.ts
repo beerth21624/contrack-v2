@@ -4,12 +4,12 @@
 import type { ManDayResult, ScheduleResult } from '@/domain/planning';
 import { PLAN_TASKS } from '@/domain/planning/tasks';
 import {
-    assignmentCoverage, byDates, crewBusy, taskTrade,
-    type AssignmentCoverage, type AssignmentSpan, type CrewBusySpan,
+    DEFAULT_TASK_LAGS, assignmentCoverage, byDates, crewBusy, lagOverrides, taskTrade,
+    type AssignmentCoverage, type AssignmentSpan, type CrewBusySpan, type EffectiveTaskLag,
 } from '@/domain/workforce';
 import { isoToSerial, serialToIso } from '@/domain/planning/calendar';
 import { formatDayMonth } from '@/features/planning/shared/planning-format';
-import type { WorkforceTradeId } from '@/shared/contract/workforce';
+import { MAX_TASK_LAG_DAYS, type TaskLag, type WorkforceTradeId } from '@/shared/contract/workforce';
 
 /** An assignment as the page reads it (CrewAssignmentDto has these fields). */
 export interface TeamAssignment extends AssignmentSpan {
@@ -207,4 +207,84 @@ export function assignmentPatch(
     const note = after.note.trim() === '' ? null : after.note.trim();
     if (note !== before.note) patch.note = note;
     return Object.keys(patch).length === 0 ? undefined : patch;
+}
+
+// ─── Conflicts: a crew booked on two assignments at once (any project of the workspace) ───
+
+/** "28–30/10" within one month, else like dayMonthRange ("30/12–02/01"); one day: "28/10". */
+export function compactDayMonthRange(start: string, end: string): string {
+    if (start !== end && start.slice(0, 7) === end.slice(0, 7)) return `${start.slice(8, 10)}–${formatDayMonth(end)}`;
+    return dayMonthRange(start, end);
+}
+
+/**
+ * The assignments of the same crew in other projects of the workspace that share a day with `a`. Overlaps inside one
+ * project are left out: on one site a crew moving between overlapping planned tasks is normal, not a double booking.
+ */
+export function chipConflicts<A extends TeamAssignment>(a: A, all: readonly A[]): CrewBusySpan<A>[] {
+    return crewBusy(all, a.crewId, a.start, a.end, a.id).filter(b => b.assignment.projectId !== a.projectId);
+}
+
+/** Tooltip lines of a crew chip: "ชนกับ บ้านคุณสมศรี 4.1 งานก่ออิฐ 28–30/10 (3 วัน)", the shared days of each clash. */
+export function conflictLines(busy: readonly CrewBusySpan<TeamAssignment>[], ctx: BusyContext): string[] {
+    return busy.map(b => `ชนกับ ${projectLabel(b.assignment.projectId, ctx)} ${taskLabel(b.assignment.taskId)} `
+        + `${compactDayMonthRange(b.from, b.to)} (${String(b.days)} วัน)`);
+}
+
+/** Chips of this project whose crew is also booked on another project on a shared day (from chipConflicts per chip). */
+export function otherProjectConflictCount(
+    conflicts: ReadonlyMap<string, readonly CrewBusySpan<TeamAssignment>[]>, projectId: string,
+): number {
+    let n = 0;
+    for (const busy of conflicts.values()) if (busy.some(b => b.assignment.projectId !== projectId)) n += 1;
+    return n;
+}
+
+/** "ทีมชนกับโครงการอื่น 2 จุด"; '' when there is none. */
+export const conflictSummaryText = (n: number) => (n > 0 ? `ทีมชนกับโครงการอื่น ${String(n)} จุด` : '');
+
+// ─── Waits after tasks (ช่วงรอหลังงาน): the cell and the editor ───
+
+/** "7 วัน · บ่มคอนกรีตฐานราก"; '' for no wait; "ไม่รอ" when the project removed a default wait. */
+export function waitCellText(lag: EffectiveTaskLag): string {
+    if (lag.days === 0) return lag.overridden ? 'ไม่รอ' : '';
+    const days = `${String(lag.days)} วัน`;
+    return lag.reason === '' ? days : `${days} · ${lag.reason}`;
+}
+
+/** "ค่าตั้งต้น 7 วัน · บ่มคอนกรีตฐานราก" / "ค่าตั้งต้น ไม่รอ". */
+export function defaultWaitText(taskId: string): string {
+    const def = DEFAULT_TASK_LAGS[taskId];
+    return def === undefined ? 'ค่าตั้งต้น ไม่รอ' : `ค่าตั้งต้น ${String(def.days)} วัน · ${def.reason}`;
+}
+
+/** What stops a wait from saving (undefined = can save): whole days from 0 to 90. */
+export function waitDaysProblem(days: number | null): string | undefined {
+    if (days === null || !Number.isInteger(days) || days < 0 || days > MAX_TASK_LAG_DAYS) {
+        return `ใส่จำนวนวัน 0–${String(MAX_TASK_LAG_DAYS)}`;
+    }
+    return undefined;
+}
+
+/**
+ * The full override list to PUT after editing one task's wait (`edit` null = back to the default). Keeps the other
+ * overrides; a note equal to the default reason counts as no note, so typing the default back drops the override.
+ */
+export function nextLagOverrides(
+    current: readonly TaskLag[], taskId: string, edit: { days: number; note: string } | null,
+): TaskLag[] {
+    const typed: Record<string, { days: number; note?: string | null }> = Object.fromEntries(
+        current.filter(l => l.taskId !== taskId).map(l => [l.taskId, { days: l.days, note: l.note }]),
+    );
+    if (edit !== null) {
+        const note = edit.note.trim();
+        typed[taskId] = { days: edit.days, note: note === DEFAULT_TASK_LAGS[taskId]?.reason ? null : note };
+    }
+    return lagOverrides(typed);
+}
+
+/** Same overrides once normalised (order, trimmed notes, defaults dropped), so an unchanged editor does not write. */
+export function sameLagOverrides(a: readonly TaskLag[], b: readonly TaskLag[]): boolean {
+    const key = (ls: readonly TaskLag[]) => JSON.stringify(lagOverrides(Object.fromEntries(ls.map(l => [l.taskId, l]))));
+    return key(a) === key(b);
 }
