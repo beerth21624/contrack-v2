@@ -15,7 +15,7 @@ import { forgetDeletedProject } from '../projects/controller';
 import { qk } from '../query/keys';
 import { setAssignmentInCache } from '../query/hooks';
 import { useCloud } from '../state';
-import { RealtimeConnection, realtimeUrl } from './connection';
+import { RealtimeConnection, loadRealtimeUrl } from './connection';
 
 /** The journey level of a path (`/journey/<level>`), else null. */
 export function levelIdFromPath(pathname: string | null): string | null {
@@ -34,11 +34,19 @@ export function useRealtime(): void {
     const conn = useRef<RealtimeConnection | null>(null);
     const active = userId !== null && projectId !== null;
 
+    // The latest room and level, for a connection that opens after they changed (its address is read first).
+    const latest = useRef<{ projectId: string | null; levelId: string | null }>({ projectId: null, levelId: null });
+    useEffect(() => {
+        latest.current = { projectId: active ? projectId : null, levelId: levelIdFromPath(pathname) };
+    }, [active, projectId, pathname]);
+
     // One connection per signed-in user while a cloud project is open.
     useEffect(() => {
         if (!active) return undefined;
-        const c = new RealtimeConnection({
-            url: realtimeUrl(),
+        let c: RealtimeConnection | null = null;
+        let cancelled = false;
+        const connect = (url: string) => new RealtimeConnection({
+            url,
             getToken: () => apiClient.accessToken,
             refreshToken: async () => (await apiClient.refresh())?.accessToken ?? null,
             handlers: {
@@ -66,9 +74,17 @@ export function useRealtime(): void {
                 },
             },
         });
-        conn.current = c;
+        void loadRealtimeUrl().then(url => {
+            if (cancelled) return;
+            const opened = connect(url);
+            c = opened;
+            conn.current = opened;
+            opened.join(latest.current.projectId);
+            opened.setLevel(latest.current.levelId);
+        });
         return () => {
-            c.close();
+            cancelled = true;
+            c?.close();
             conn.current = null;
             useCloud.setState({ presence: [] });
         };

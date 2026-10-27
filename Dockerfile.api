@@ -1,0 +1,41 @@
+# ─── contrack-api: the NestJS backend (build context = the repository root) ───
+#   docker build -f Dockerfile.api -t contrack-api .
+# On start: migrations, the demo data once into an empty database (SEED_DEMO, default true), then the API on :4000.
+# Required env: DATABASE_URL, JWT_ACCESS_SECRET (≥ 32 chars), CORS_ORIGINS. See docs/deploy/01-dev-docker.md.
+
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY backend/package.json backend/package-lock.json ./backend/
+RUN cd backend && npm ci
+# The backend compiles the shared contract and the calculators of the web app (../src); their imports (zod) resolve
+# from the backend's packages.
+RUN ln -s /app/backend/node_modules /app/node_modules
+COPY src/shared ./src/shared
+COPY src/domain ./src/domain
+COPY backend ./backend
+RUN cd backend && npm run build && npm prune --omit=dev
+
+FROM node:22-alpine
+WORKDIR /app/backend
+ENV NODE_ENV=production \
+    PORT=4000 \
+    PERSISTENCE=postgres \
+    REALTIME_BUS=memory \
+    COOKIE_SECURE=true \
+    TRUST_PROXY=uniquelocal \
+    FILE_STORAGE=local \
+    FILE_STORAGE_DIR=/data/files \
+    MODULES_ENABLED=subcontracting,workforce \
+    SEED_DEMO=true
+COPY --from=build /app/backend/package.json ./package.json
+COPY --from=build /app/backend/node_modules ./node_modules
+COPY --from=build /app/backend/dist ./dist
+COPY --from=build /app/backend/drizzle ./drizzle
+COPY backend/docker ./docker
+RUN mkdir -p /data/files && chown -R node:node /data
+USER node
+VOLUME ["/data/files"]
+EXPOSE 4000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
+    CMD wget -qO- "http://127.0.0.1:${PORT}/health" >/dev/null || exit 1
+ENTRYPOINT ["sh", "docker/entrypoint.sh"]
