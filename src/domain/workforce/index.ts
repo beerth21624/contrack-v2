@@ -2,3 +2,4 @@
 export * from './task-trades';
 export * from './assignments';
 export * from './task-crews';
+export * from './task-lags';

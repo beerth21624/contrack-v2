@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import {
     crewAssignmentDtoSchema, crewDtoSchema, personDtoSchema, platformModulesDtoSchema, projectSupervisorsDtoSchema,
+    projectTaskLagsDtoSchema, workspaceTaskLagsDtoSchema, type ProjectTaskLagsDto, type TaskLag,
     workforceConflictDetailsSchema,
     type CreateCrewAssignmentRequest, type CreateCrewRequest, type CreatePersonRequest, type CrewAssignmentDto,
     type CrewAssignmentQuery, type CrewDto, type ModuleId, type PersonDto, type ProjectSupervisorsDto, type Role,
@@ -240,5 +241,44 @@ export function usePutProjectSupervisors(projectId: string) {
     return useMutation({
         mutationFn: (personIds: string[]) => workforceApi.putSupervisors(projectId, personIds),
         onSuccess: (dto) => { qc.setQueryData(supervisorsKey(projectId), dto); },
+    });
+}
+
+// ─── Waiting windows after tasks (W2) ───
+
+export const projectTaskLagsKey = (projectId: string) => ['projects', projectId, 'taskLags'] as const;
+export const workspaceTaskLagsKey = (workspaceId: string) => ['workspaces', workspaceId, 'taskLags'] as const;
+
+export const taskLagsApi = {
+    project: (projectId: string): Promise<ProjectTaskLagsDto> =>
+        apiClient.request('GET', `/projects/${seg(projectId)}/task-lags`, { schema: projectTaskLagsDtoSchema }),
+    putProject: (projectId: string, lags: TaskLag[]): Promise<ProjectTaskLagsDto> =>
+        apiClient.request('PUT', `/projects/${seg(projectId)}/task-lags`, { body: { lags }, schema: projectTaskLagsDtoSchema }),
+    workspace: (workspaceId: string): Promise<ProjectTaskLagsDto[]> =>
+        apiClient.request('GET', `${ws(workspaceId)}/task-lags`, { schema: workspaceTaskLagsDtoSchema }),
+};
+
+export function useProjectTaskLags(projectId: string | undefined) {
+    const signedIn = useSignedIn();
+    const on = useWorkforceEnabled();
+    return useQuery(listHook(projectTaskLagsKey(projectId ?? '-'), () => taskLagsApi.project(projectId ?? ''),
+        signedIn && on && projectId !== undefined));
+}
+
+export function useWorkspaceTaskLags(workspaceId: string | undefined) {
+    const signedIn = useSignedIn();
+    const on = useWorkforceEnabled();
+    return useQuery(listHook(workspaceTaskLagsKey(workspaceId ?? '-'), () => taskLagsApi.workspace(workspaceId ?? ''),
+        signedIn && on && workspaceId !== undefined));
+}
+
+export function usePutProjectTaskLags(projectId: string, workspaceId: string | undefined) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (lags: TaskLag[]) => taskLagsApi.putProject(projectId, lags),
+        onSuccess: (dto) => {
+            qc.setQueryData(projectTaskLagsKey(projectId), dto);
+            if (workspaceId !== undefined) void qc.invalidateQueries({ queryKey: workspaceTaskLagsKey(workspaceId) });
+        },
     });
 }

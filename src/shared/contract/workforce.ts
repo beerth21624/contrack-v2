@@ -233,3 +233,29 @@ export const workforceConflictDetailsSchema = z.discriminatedUnion('reason', [
     z.object({ reason: z.literal('in_use'), assignments: z.number().int().positive() }),
 ]);
 export type WorkforceConflictDetails = z.infer<typeof workforceConflictDetailsSchema>;
+
+// ─── Waiting windows after planned tasks (W2): concrete curing, plaster drying before paint, … ───
+// A project stores only the tasks whose wait differs from the default (src/domain/workforce/task-lags.ts); the
+// effective wait of a task is its override, else the default. Waits only shape the crew board and later suggestions:
+// the S-Curve dates the user typed stay as they are.
+
+export const MAX_TASK_LAG_DAYS = 90;
+
+export const taskLagSchema = z.object({
+    taskId: planTaskIdSchema,
+    /** Days the work must wait after this task before the next step (0 = no wait). */
+    days: z.number().int().min(0).max(MAX_TASK_LAG_DAYS),
+    note: z.string().trim().max(200).nullish(),
+});
+export type TaskLag = z.infer<typeof taskLagSchema>;
+
+/** GET/PUT /projects/:projectId/task-lags: the project's overrides (one per task at most). */
+export const projectTaskLagsDtoSchema = z.object({ projectId: uuidSchema, lags: z.array(taskLagSchema) });
+export type ProjectTaskLagsDto = z.infer<typeof projectTaskLagsDtoSchema>;
+export const putProjectTaskLagsRequestSchema = z.object({ lags: z.array(taskLagSchema).max(64) })
+    .refine(v => new Set(v.lags.map(l => l.taskId)).size === v.lags.length, { message: 'duplicate taskId', path: ['lags'] });
+export type PutProjectTaskLagsRequest = z.infer<typeof putProjectTaskLagsRequestSchema>;
+
+/** GET /workspaces/:workspaceId/task-lags: every project's overrides in the workspace (for the crew board). */
+export const workspaceTaskLagsDtoSchema = z.array(projectTaskLagsDtoSchema);
+export type WorkspaceTaskLagsDto = z.infer<typeof workspaceTaskLagsDtoSchema>;
