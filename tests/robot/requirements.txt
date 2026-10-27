@@ -1,0 +1,7 @@
+# Robot Framework E2E / API / DB suite for ConTrack (pins checked 2026-10-27, Python 3.12, Node 24).
+robotframework==7.5
+robotframework-browser==20.6.0
+robotframework-requests==0.9.7
+robotframework-pabot==5.2.2
+robotframework-robocop==9.1.2
+psycopg[binary]>=3.2,<4

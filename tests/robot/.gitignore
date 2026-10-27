@@ -1,0 +1,7 @@
+.venv/
+results/
+logs/
+__pycache__/
+*.pyc
+browser/
+playwright-log.txt
