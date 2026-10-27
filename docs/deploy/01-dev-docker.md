@@ -7,7 +7,7 @@
 | `beerth21624/contrack-web:dev` | หน้าเว็บ (Next.js) — ส่ง `/api/*` ต่อไปหลังบ้าน | 3000 |
 | `beerth21624/contrack-api:dev` | หลังบ้าน (NestJS) + Socket.IO | 4000 |
 
-แต่ละรอบ build มี tag เป็นรหัส commit ด้วย (เช่น `:97fdbe3`) ใช้ล็อกเวอร์ชันได้ · ฐานข้อมูล PostgreSQL 16 ไม่อยู่ใน image (ใช้ของเซิร์ฟเวอร์ หรือ container `postgres:16-alpine` ตาม `docker-compose.dev.yml`)
+แต่ละรอบ build มี tag เป็นรหัส commit ด้วย (รอบนี้ `:543d4a0`) ใช้ล็อกเวอร์ชันได้ · ฐานข้อมูล PostgreSQL 16 ไม่อยู่ใน image (ใช้ของเซิร์ฟเวอร์ หรือ container `postgres:16-alpine` ตาม `docker-compose.dev.yml`)
 
 ## ใส่ env แล้วรันได้เลย — ไม่ต้องรันสคริปต์เอง
 
