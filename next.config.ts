@@ -1,18 +1,14 @@
 import type { NextConfig } from "next";
 
-/** Backend (NestJS) origin. `/api/*` is proxied there so the httpOnly refresh cookie stays same-origin. */
-const API_URL = (process.env.API_URL ?? "http://localhost:4000").replace(/\/+$/, "");
-
+// /api/* is proxied to the backend by src/app/api/[...path]/route.ts, which reads API_URL at request time (a rewrite
+// here would bake the address into the build). `standalone` keeps the Docker image small (Dockerfile.web).
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: "standalone",
   turbopack: {
     root: process.cwd(),
   },
   experimental: {
     optimizePackageImports: ["antd", "@ant-design/icons", "lucide-react"],
-  },
-  rewrites() {
-    return Promise.resolve([{ source: "/api/:path*", destination: `${API_URL}/:path*` }]);
   },
 };
 

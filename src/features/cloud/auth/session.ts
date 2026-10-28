@@ -27,9 +27,12 @@ apiClient.onAuthChange(auth => {
 
 let bootstrapped: Promise<void> | null = null;
 
-/** On app start: a valid refresh cookie signs the user in; anything else (no cookie, offline, no backend) = guest. */
+/**
+ * On app start: a valid refresh cookie signs the user in; anything else (no cookie, offline, no backend) = guest.
+ * A browser that surely has no cookie is a guest without asking: a guest is not an error (no 401 in the console).
+ */
 export function bootstrapSession(): Promise<void> {
-    bootstrapped ??= api.auth.refresh().then(auth => {
+    bootstrapped ??= (apiClient.mayHaveSession ? api.auth.refresh() : Promise.resolve(null)).then(auth => {
         if (!auth && useSession.getState().status === 'unknown') useSession.setState({ status: 'guest' });
     });
     return bootstrapped;

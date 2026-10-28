@@ -2,13 +2,21 @@
 
 // Man-Day_Basic (Excel v5 sheet 02), planning columns O..U: crew per work block → daily wage → calculated
 // days S (hint) → typed days T (→ S-Curve duration) and budget U (→ S-Curve budget).
-import { Button, Popconfirm, Tooltip } from 'antd';
+// Layout: summary tiles across the top, then two tabs: แผนคน-วัน (the plan table) and อัตราค่าแรง (the wage sets
+// as one table row each), so the page stays tidy with 2 wage sets or 20.
+import { Button, Popconfirm, Segmented, Tooltip } from 'antd';
 import { UndoOutlined } from '@ant-design/icons';
 import { EditableTable, type SheetColumn } from '@/components/sheet/EditableTable';
 import { NumberCell, formatNumber } from '@/components/sheet/NumberCell';
-import { InputNumberField, SheetCard } from '@/components/sheet/SheetFields';
-import type { ManDayBlockInput, ManDayBlockResult, ManDayInput, WageSetId } from '@/domain/planning';
+import { SheetCard } from '@/components/sheet/SheetFields';
+import {
+    wageSetLabel, type ManDayBlockInput, type ManDayBlockResult, type ManDayInput, type WageSet,
+} from '@/domain/planning';
+import { isReadOnly, useProjectStore } from '@/store/project-store';
 import { CalcText, NoBoqYet, PlanningHeader, StatTile, SummaryBanner, formatDate, money, usePlanning } from '../shared/planning-ui';
+import { useCompanyLibrary } from './CompanyWageSets';
+import { useManDayTab } from './manday-tab';
+import { WageSetTable } from './WageSetTable';
 
 interface Row {
     id: string;
@@ -30,6 +38,10 @@ export function ManDayPage() {
     const res = planning.manday;
     const sched = planning.schedule;
     const save = (next: ManDayInput) => setPlanning({ manday: next });
+    // Cloud projects: the company rate-card library (pick a card in, save a user set out). Viewers can't edit the project.
+    const library = useCompanyLibrary();
+    const readOnly = useProjectStore(s => isReadOnly(s.binding));
+    const [tab, setTab] = useManDayTab();
 
     const rows: Row[] = res.blocks.map(b => ({
         id: b.id,
@@ -44,9 +56,7 @@ export function ManDayPage() {
     const applyAllSuggested = () => saveRows(rows.map(r => (
         r.result.suggestedDays === null ? r : { ...r, input: { ...r.input, days: r.result.suggestedDays } }
     )));
-    const setWage = (set: WageSetId, field: 'skilled' | 'labourer', v: number) =>
-        save({ ...md, wageSets: { ...md.wageSets, [set]: { ...md.wageSets[set], [field]: v } } });
-    const wageLabel = (s: WageSetId) => `${s} · ${formatNumber(md.wageSets[s].skilled, 0)}/${formatNumber(md.wageSets[s].labourer, 0)}`;
+    const rates = (s: WageSet) => `${formatNumber(s.skilled, 0)}/${formatNumber(s.labourer, 0)}`;
 
     const columns: SheetColumn<Row>[] = [
         {
@@ -65,9 +75,19 @@ export function ManDayPage() {
         { kind: 'number', key: 'labourers', title: <>2.คนงาน<br /><span className="font-normal">(คน)</span></>, width: 64, digits: 0, get: r => r.input.labourers, set: (r, v) => ({ ...r, input: { ...r.input, labourers: v } }) },
         { kind: 'calc', key: 'crew', title: <>3.จำนวนคน<br /><span className="font-normal">(คน)</span></>, width: 72, digits: 0, get: r => r.result.crew },
         {
-            kind: 'select', key: 'set', title: <>ชุดค่าแรง<br /><span className="font-normal">(ช่าง/คนงาน)</span></>, width: 130,
-            options: (['A', 'B'] as const).map(s => ({ value: s, label: wageLabel(s) })),
-            get: r => r.input.wageSet, set: (r, v) => ({ ...r, input: { ...r.input, wageSet: v === 'B' ? 'B' : 'A' } }),
+            kind: 'select', key: 'set', title: <>ชุดค่าแรง<br /><span className="font-normal">(ช่าง/คนงาน)</span></>, width: 130, popupWidth: 280,
+            options: md.wageSets.map(s => ({
+                value: s.id,
+                selectedLabel: <span className="tabular-nums">{s.id} · {rates(s)}</span>,
+                label: (
+                    <span className="flex items-baseline justify-between gap-3">
+                        <span className="truncate">{wageSetLabel(s)}</span>
+                        <span className="shrink-0 tabular-nums text-gray-500">{rates(s)}</span>
+                    </span>
+                ),
+            })),
+            // The set R really used: an unknown id in a stored block shows (and computes) as the task's Excel set.
+            get: r => r.result.wageSet, set: (r, v) => ({ ...r, input: { ...r.input, wageSet: v } }),
         },
         { kind: 'calc', key: 'wage', title: <>4.ค่าแรงต่อวัน<br /><span className="font-normal">(รวม บาท)</span></>, width: 96, digits: 0, get: r => r.result.dailyWage },
         { kind: 'calc', key: 'labour', title: <>ค่าแรงของงาน<br /><span className="font-normal">(จาก BOQ บาท)</span></>, width: 110, digits: 2, get: r => (r.result.labourBasis === 'none' ? null : r.result.labourCost) },
@@ -126,8 +146,6 @@ export function ManDayPage() {
                 <span>กรอกจำนวนช่าง/คนงาน ระบบคำนวณวันจากค่าแรงใน BOQ ให้ แล้วใส่วันที่คิดว่าจะใช้จริงในช่อง &quot;วันที่ใช้จริง&quot;</span>
             </SummaryBanner>
 
-            {/* Summary numbers in one slim row, then the five wage inputs side by side: nothing tall sits beside
-                something short, so the blocks keep their natural heights and still line up. */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <StatTile label="รวมเวลา (ผลรวมวันทุกงาน)" value={formatNumber(res.totalDays, 0)} unit="วัน" />
                 <StatTile label="ระยะเวลาโครงการ (S-Curve)" value={sched.durationDays} unit="วัน"
@@ -135,28 +153,13 @@ export function ManDayPage() {
                 <StatTile label="รวมงบประมาณ" value={money(res.totalBudget)} unit="บาท" />
             </div>
 
-            <SheetCard title="ค่าแรงต่อวัน">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-3">
-                    <div>
-                        <div className="text-[12px] text-gray-500 mb-1">ชุด A (งานทั่วไป)</div>
-                        <InputNumberField label="ช่าง" unit="บาท/วัน" digits={0} value={md.wageSets.A.skilled} onChange={v => setWage('A', 'skilled', v)} />
-                        <InputNumberField label="คนงาน" unit="บาท/วัน" digits={0} value={md.wageSets.A.labourer} onChange={v => setWage('A', 'labourer', v)} />
-                    </div>
-                    <div>
-                        <div className="text-[12px] text-gray-500 mb-1">ชุด B (หลังคา ไฟฟ้า ฝ้า สี อลูมิเนียม เบ็ดเตล็ด)</div>
-                        <InputNumberField label="ช่าง" unit="บาท/วัน" digits={0} value={md.wageSets.B.skilled} onChange={v => setWage('B', 'skilled', v)} />
-                        <InputNumberField label="คนงาน" unit="บาท/วัน" digits={0} value={md.wageSets.B.labourer} onChange={v => setWage('B', 'labourer', v)} />
-                    </div>
-                    <div>
-                        <div className="text-[12px] text-gray-500 mb-1">งานเหมา</div>
-                        <InputNumberField label="ค่าแรง % ของยอดรวม" percent value={md.subcontractLabourShare}
-                            onChange={v => save({ ...md, subcontractLabourShare: v })} />
-                    </div>
-                </div>
-            </SheetCard>
-
-            <SheetCard title="วางแผน Man-Day และงบประมาณ"
-                extra={differs.length === 0
+            {/* The page tabs sit in the card header (as ตารางงาน | ปฏิทิน on /schedule). */}
+            <SheetCard
+                title={(
+                    <Segmented value={tab} onChange={v => setTab(v === 'rates' ? 'rates' : 'plan')}
+                        options={[{ label: 'แผนคน-วัน', value: 'plan' }, { label: `อัตราค่าแรง (${String(md.wageSets.length)} ชุด)`, value: 'rates' }]} />
+                )}
+                extra={tab !== 'plan' ? undefined : differs.length === 0
                     ? <span className="text-[12px] text-gray-500">วันประเมินทุกงานเท่ากับค่าที่คำนวณ (ปัดเศษ)</span>
                     : (
                         <span className="text-[12px] text-gray-500 flex items-center gap-2">
@@ -167,10 +170,16 @@ export function ManDayPage() {
                             </Popconfirm>
                         </span>
                     )}>
-                <EditableTable rows={rows} columns={columns} onChange={saveRows} canDelete={false} footer={footer} />
-                <div className="text-[12px] text-gray-500 mt-2">
-                    ช่องเหลือง = กรอกเอง · ช่องเขียว = ระบบคำนวณ · ปุ่ม <UndoOutlined /> ข้างวันประเมิน = ใช้ค่าที่คำนวณ (ปัดเศษ)
-                </div>
+                {tab === 'plan' ? (
+                    <>
+                        <EditableTable rows={rows} columns={columns} onChange={saveRows} canDelete={false} footer={footer} />
+                        <div className="text-[12px] text-gray-500 mt-2">
+                            ช่องเหลือง = กรอกเอง · ช่องเขียว = ระบบคำนวณ · ปุ่ม <UndoOutlined /> ข้างวันประเมิน = ใช้ค่าที่คำนวณ (ปัดเศษ)
+                        </div>
+                    </>
+                ) : (
+                    <WageSetTable md={md} save={save} library={library} readOnly={readOnly} />
+                )}
             </SheetCard>
         </div>
     );

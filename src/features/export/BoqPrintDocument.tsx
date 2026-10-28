@@ -17,6 +17,7 @@
 // Type sizes: Google Sarabun draws Thai about 1.35× larger than TH Sarabun New at the same point size, so 12 pt here
 // reads like the official 16 pt TH Sarabun New body text, and the 10.5 pt tables like 14 pt.
 
+import type { ReactNode } from 'react';
 import {
     fmtMoney, fmtQty, PRINT_TEXT as T,
     type BoqPrintModel, type PrintDetailRow, type PrintDetailSection, type PrintPageHeader, type PrintPart,
@@ -72,6 +73,7 @@ const CSS = `
 .boqp-pr5 .boqp-table { font-size: 11pt; }
 .boqp-table thead { display: table-header-group; }
 .boqp-table tr { break-inside: avoid; page-break-inside: avoid; }
+.boqp-table tbody.boqp-keep { break-inside: avoid; page-break-inside: avoid; }
 .boqp-table th, .boqp-table td { border: ${RULE}; padding: 0.8mm 1.5mm; vertical-align: top; overflow-wrap: break-word; }
 .boqp-table th { background: #e6e6e6; font-weight: 700; text-align: center; vertical-align: middle; line-height: 1.2; }
 .boqp-num { text-align: right; white-space: nowrap; }
@@ -79,6 +81,7 @@ const CSS = `
 .boqp-b { font-weight: 700; }
 .boqp-sec td { font-weight: 700; break-after: avoid; page-break-after: avoid; }
 .boqp-hd td { font-weight: 600; break-after: avoid; page-break-after: avoid; }
+.boqp-hd.boqp-grp td { font-weight: 700; }
 .boqp-sub td { font-weight: 700; background: #f2f2f2; }
 .boqp-total td { font-weight: 700; background: #e6e6e6; border-top: 1pt solid #000; }
 .boqp-band td { font-weight: 700; background: #f2f2f2; }
@@ -203,7 +206,7 @@ const DETAIL_COLS = 10;
 function DetailRow({ r }: { r: PrintDetailRow }) {
     if (r.type === 'heading') {
         return (
-            <tr className="boqp-hd">
+            <tr className={r.group ? 'boqp-hd boqp-grp' : 'boqp-hd'}>
                 <td className="boqp-c">{r.itemNo}</td>
                 <td>{r.desc}</td>
                 <td /><td /><td /><td /><td /><td /><td /><td />
@@ -246,19 +249,73 @@ function AmountsRow({ className, label, mat, lab, total }: {
     );
 }
 
-function DetailSection({ s }: { s: PrintDetailSection }) {
+/**
+ * A section's rows cut into pieces that must stay on one page: each run of headings (a group heading, a numbered
+ * heading, or both) with the item after it, and every other item on its own.
+ */
+function keepChunks(rows: PrintDetailRow[]): PrintDetailRow[][] {
+    const chunks: PrintDetailRow[][] = [];
+    let open: PrintDetailRow[] = [];
+    for (const r of rows) {
+        open.push(r);
+        if (r.type === 'item') {
+            chunks.push(open);
+            open = [];
+        }
+    }
+    if (open.length > 0) chunks.push(open);   // headings with no item after them (the model never prints those)
+    return chunks;
+}
+
+/**
+ * One section as <tbody> blocks. Chrome ignores `break-after: avoid` between table rows, but keeps a whole <tbody>
+ * with `break-inside: avoid` on one page, so no heading or title is left alone at the foot of a page:
+ *   - the title (and `lead`, e.g. the pre-construction band) stays with the first item (and the headings above it);
+ *   - every other heading stays with the row after it, in a kept block of its own;
+ *   - the "รวมหมวดที่ n" sub-total stays with the last item (and the headings above it).
+ * Runs of plain items between them share one ordinary <tbody>, free to break between any two rows.
+ */
+function DetailSection({ s, lead }: { s: PrintDetailSection; lead?: ReactNode }) {
     const outside = s.inConstructionTotal ? '' : ` (${T.preConstructionNote})`;
+    const subtotal = (
+        <AmountsRow className="boqp-sub" label={`${s.subtotalLabel}${outside}`}
+            mat={s.matTotal} lab={s.labTotal} total={s.total} />
+    );
+    const chunks = keepChunks(s.rows);
+    const together = chunks.length <= 1;   // one item: title, rows and sub-total in one block
+    const first = chunks[0] ?? [];
+    const last = together ? [] : chunks[chunks.length - 1] ?? [];
+    // between the first and last piece: plain items gathered into shared blocks, heading pieces kept on their own
+    const blocks: { keep: boolean; rows: PrintDetailRow[] }[] = [];
+    for (const c of chunks.slice(1, -1)) {
+        const keep = c.length > 1;
+        const prev = blocks[blocks.length - 1];
+        if (!keep && prev !== undefined && !prev.keep) prev.rows.push(...c);
+        else blocks.push({ keep, rows: [...c] });
+    }
+    const rows = (rs: PrintDetailRow[]) => rs.map(r => <DetailRow key={r.key} r={r} />);
     return (
-        <tbody>
-            <tr className="boqp-sec">
-                <td className="boqp-c">{s.no}</td>
-                <td>{s.title}</td>
-                <td /><td /><td /><td /><td /><td /><td /><td />
-            </tr>
-            {s.rows.map(r => <DetailRow key={r.key} r={r} />)}
-            <AmountsRow className="boqp-sub" label={`${s.subtotalLabel}${outside}`}
-                mat={s.matTotal} lab={s.labTotal} total={s.total} />
-        </tbody>
+        <>
+            <tbody className="boqp-keep">
+                {lead}
+                <tr className="boqp-sec">
+                    <td className="boqp-c">{s.no}</td>
+                    <td>{s.title}</td>
+                    <td /><td /><td /><td /><td /><td /><td /><td />
+                </tr>
+                {rows(first)}
+                {together && subtotal}
+            </tbody>
+            {blocks.map(b => (
+                <tbody key={b.rows[0]?.key} className={b.keep ? 'boqp-keep' : undefined}>{rows(b.rows)}</tbody>
+            ))}
+            {!together && (
+                <tbody className="boqp-keep">
+                    {rows(last)}
+                    {subtotal}
+                </tbody>
+            )}
+        </>
     );
 }
 
@@ -306,12 +363,12 @@ function DetailForm({ model }: { model: BoqPrintModel }) {
                     <AmountsRow className="boqp-total" label={T.constructionTotal}
                         mat={model.constructionMat} lab={model.constructionLab} total={model.constructionTotal} />
                 </tbody>
-                {model.preConstructionDetails.length > 0 && (
-                    <tbody>
-                        <tr className="boqp-band"><td colSpan={DETAIL_COLS}>{T.preConstruction}</td></tr>
-                    </tbody>
-                )}
-                {model.preConstructionDetails.map(s => <DetailSection key={s.no} s={s} />)}
+                {/* The band heads the first pre-construction section's block, so it never ends a page on its own. */}
+                {model.preConstructionDetails.map((s, i) => (
+                    <DetailSection key={s.no} s={s} lead={i === 0
+                        ? <tr className="boqp-band"><td colSpan={DETAIL_COLS}>{T.preConstruction}</td></tr>
+                        : undefined} />
+                ))}
             </table>
         </section>
     );

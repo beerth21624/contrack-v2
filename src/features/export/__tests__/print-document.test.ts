@@ -92,3 +92,61 @@ describe('BoqPrintDocument', () => {
         expect(out).toContain('แบบสรุปผลการประมาณราคาค่าก่อสร้าง');
     });
 });
+
+describe('ปร.4 page breaks', () => {
+    const detail = render('detail');
+
+    it('every sub-total row sits in a kept-together block with the row above it', () => {
+        const blocks = detail.split('<tbody').slice(1).map(b => b.split('</tbody>')[0] ?? '');
+        const withSubtotal = blocks.filter(b => b.includes('boqp-sub'));
+        expect(withSubtotal.length).toBe(model.details.length + model.preConstructionDetails.length);
+        for (const b of withSubtotal) {
+            expect(b.startsWith(' class="boqp-keep"')).toBe(true);
+            expect(b.split('<tr').length - 1).toBeGreaterThanOrEqual(2);
+        }
+    });
+
+    it('every heading sits in a kept-together block, followed by the row after it', () => {
+        const blocks = detail.split('<tbody').slice(1).map(b => b.split('</tbody>')[0] ?? '');
+        let headings = 0;
+        for (const b of blocks) {
+            const rows = b.split('<tr').slice(1);
+            rows.forEach((row, i) => {
+                if (!row.includes('boqp-hd')) return;
+                headings++;
+                expect(b.startsWith(' class="boqp-keep"')).toBe(true);
+                expect(i).toBeLessThan(rows.length - 1);   // never the last row of its block
+                expect(rows[i + 1]).not.toContain('boqp-sub');   // the row after it is one of its own
+            });
+        }
+        const printed = [...model.details, ...model.preConstructionDetails]
+            .flatMap(s => s.rows).filter(r => r.type === 'heading').length;
+        expect(headings).toBe(printed);
+        expect(headings).toBeGreaterThan(10);
+    });
+
+    it('a heading inside a section gets a kept block of its own; plain item runs stay breakable', () => {
+        const blocks = detail.split('<tbody').slice(1).map(b => b.split('</tbody>')[0] ?? '');
+        const inner = blocks.filter(b => b.includes('boqp-hd') && !b.includes('boqp-sec') && !b.includes('boqp-sub'));
+        expect(inner.length).toBeGreaterThan(0);
+        for (const b of inner) expect(b.trimStart().startsWith('class="boqp-keep"')).toBe(true);
+        expect(blocks.some(b => b.startsWith('>') && !b.includes('boqp-hd'))).toBe(true);
+    });
+
+    it('group headings (sections 12, 26) are printed and set apart from numbered headings', () => {
+        for (const name of ['งานคานดาดฟ้า', 'งานพื้นดาดฟ้า', 'งานตู้ควบคุมระบบไฟฟ้า', 'อุปกรณ์ไฟฟ้า']) {
+            expect(detail).toContain(`<tr class="boqp-hd boqp-grp"><td class="boqp-c"></td><td>${name}</td>`);
+        }
+        expect(detail).toContain('.boqp-hd.boqp-grp td { font-weight: 700; }');
+    });
+
+    it('the pre-construction band opens the block of its first section', () => {
+        const band = detail.split('<tbody').slice(1).find(b => b.includes('boqp-band')) ?? '';
+        expect(band.startsWith(' class="boqp-keep"')).toBe(true);
+        expect(band).toContain('boqp-sec');
+    });
+
+    it('print CSS keeps those blocks whole', () => {
+        expect(detail).toContain('tbody.boqp-keep { break-inside: avoid;');
+    });
+});

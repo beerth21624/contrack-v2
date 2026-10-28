@@ -1,6 +1,8 @@
 // ─── Typed fetch wrapper for the backend (via the Next rewrite /api → backend) ───
 // The access token lives in memory only. The refresh token is an httpOnly cookie the browser sends to /api/auth/*.
 // On a 401 the client refreshes once (single flight: concurrent 401s share one refresh) and retries the request.
+// The cookie cannot be read from script, so the client remembers whether it has one (SessionHint): a guest browser
+// then skips the start-up refresh instead of getting a 401 that the browser logs as a console error on every page.
 import type { ZodType, ZodTypeDef } from 'zod';
 import { authResponseSchema, type AuthResponse } from '@/shared/contract';
 import { ApiError, errorFromBody } from './errors';
@@ -9,10 +11,40 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 export type Schema<T> = ZodType<T, ZodTypeDef, unknown>;
 type FetchFn = (input: string, init: RequestInit) => Promise<Response>;
 
+/** Whether this browser may hold a refresh cookie: set by every sign-in or refresh, cleared by sign-out or a refused refresh. */
+export interface SessionHint {
+    read(): boolean;
+    write(present: boolean): void;
+}
+
+const SESSION_HINT_KEY = 'contrack-session';
+
+/** The hint in localStorage (shared by the tabs, like the cookie). Unreadable storage = "may have one", so nothing is lost. */
+export const browserSessionHint: SessionHint = {
+    read: () => {
+        try {
+            return typeof localStorage === 'undefined' || localStorage.getItem(SESSION_HINT_KEY) === '1';
+        } catch {
+            return true;
+        }
+    },
+    write: (present) => {
+        try {
+            if (typeof localStorage === 'undefined') return;
+            if (present) localStorage.setItem(SESSION_HINT_KEY, '1');
+            else localStorage.removeItem(SESSION_HINT_KEY);
+        } catch {
+            // private mode: every start asks the server
+        }
+    },
+};
+
 export interface ApiClientOptions {
     /** Prefix of every path (default `/api`, rewritten by Next to the backend). */
     baseUrl?: string;
     fetch?: FetchFn;
+    /** Remembers whether a refresh cookie may exist (default: nothing remembered, one always may). */
+    sessionHint?: SessionHint;
 }
 
 export interface RequestOptions<T> {
@@ -34,14 +66,21 @@ export class ApiClient {
     private readonly listeners = new Set<AuthListener>();
     private readonly baseUrl: string;
     private readonly fetchFn: FetchFn;
+    private readonly hint: SessionHint | undefined;
 
     constructor(options: ApiClientOptions = {}) {
         this.baseUrl = (options.baseUrl ?? '/api').replace(/\/+$/, '');
         this.fetchFn = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
+        this.hint = options.sessionHint;
     }
 
     get accessToken(): string | null {
         return this.token;
+    }
+
+    /** False when this browser surely has no refresh cookie (never signed in here, signed out, or the server refused it). */
+    get mayHaveSession(): boolean {
+        return this.token !== null || (this.hint?.read() ?? true);
     }
 
     onAuthChange(listener: AuthListener): () => void {
@@ -52,6 +91,7 @@ export class ApiClient {
     /** Store (or drop) the session from an AuthResponse and tell listeners. */
     setAuth(auth: AuthResponse | null): void {
         this.token = auth?.accessToken ?? null;
+        this.hint?.write(auth !== null);
         for (const l of this.listeners) l(auth);
     }
 
@@ -71,7 +111,11 @@ export class ApiClient {
             this.setAuth(auth);
             return auth;
         } catch (e) {
-            if (e instanceof ApiError && !e.isNetwork && this.token !== null) this.setAuth(null);
+            if (e instanceof ApiError && !e.isNetwork) {
+                // No valid cookie: remembered even when already signed out, so the next start does not ask again.
+                this.hint?.write(false);
+                if (this.token !== null) this.setAuth(null);
+            }
             return null;
         }
     }
@@ -131,4 +175,4 @@ export class ApiClient {
 }
 
 /** The app's one client (token in memory for the page's lifetime). */
-export const apiClient = new ApiClient();
+export const apiClient = new ApiClient({ sessionHint: browserSessionHint });

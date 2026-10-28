@@ -6,7 +6,7 @@ import type {
 } from '@contrack/contract';
 import type { FileDto, FilePurpose, ModuleId } from '@contrack/contract';
 import type { DomainError } from '../domain/domain-error';
-import type { ProjectId, UserId, WorkspaceId } from '../domain/ids';
+import type { ProjectId, RateCardId, UserId, WorkspaceId } from '../domain/ids';
 import type { Result } from '../domain/result';
 import type { Project as BoqProject } from '@contrack/domain/project';
 
@@ -65,6 +65,51 @@ export abstract class UserDirectory {
 /** Provided by projects: which workspace a project belongs to (undefined when it does not exist / is deleted). */
 export abstract class ProjectDirectory {
     abstract workspaceOf(projectId: ProjectId): Promise<WorkspaceId | undefined>;
+}
+
+/** What another module needs to know about a project before it attaches rows to it. */
+export interface ProjectStatus {
+    workspaceId: WorkspaceId;
+    archived: boolean;
+}
+
+/** Provided by projects: the workspace and archive state of a project (undefined when it does not exist / is deleted). */
+export abstract class ProjectStatusLookup {
+    abstract find(projectId: ProjectId): Promise<ProjectStatus | undefined>;
+}
+
+/** Removes another module's rows of a project; runs inside the project's delete transaction. */
+export type ProjectDependentCleanup = (workspaceId: WorkspaceId, projectId: ProjectId) => Promise<void>;
+
+/**
+ * Provided by core: the rows other modules keep per project (crew assignments, site supervisors, …). Deleting a
+ * project runs every registered cleanup in the same transaction. PostgreSQL also cascades through the
+ * (project_id, workspace_id) foreign keys; the explicit cleanups keep the in-memory adapters identical.
+ * A module registers its cleanup once, at start-up (`onModuleInit`).
+ */
+export class ProjectDependents {
+    private readonly cleanups: ProjectDependentCleanup[] = [];
+
+    register(cleanup: ProjectDependentCleanup): void {
+        this.cleanups.push(cleanup);
+    }
+
+    async deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void> {
+        for (const cleanup of this.cleanups) await cleanup(workspaceId, projectId);
+    }
+}
+
+/** The daily rates of a company rate card, as another module reads them. */
+export interface RateCardRates {
+    id: RateCardId;
+    skilledRate: number;
+    labourerRate: number;
+    archived: boolean;
+}
+
+/** Provided by rate-cards: cards of one workspace by id (active or archived; others' and unknown ids are left out). */
+export abstract class RateCardLookup {
+    abstract findMany(workspaceId: WorkspaceId, ids: readonly RateCardId[]): Promise<Map<RateCardId, RateCardRates>>;
 }
 
 /**

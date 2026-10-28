@@ -4,6 +4,7 @@ import { CoreModule, type CoreOptions } from './shared/infrastructure/core.modul
 import { AuthGuard } from './shared/presentation/auth';
 import { ErrorFilter } from './shared/presentation/http';
 import { HealthController } from './shared/presentation/health.controller';
+import { ModuleGuard } from './shared/presentation/modules';
 import { IdentityModule } from './modules/identity/identity.module';
 import { WorkspacesModule } from './modules/workspaces/workspaces.module';
 import { ProjectsModule } from './modules/projects/projects.module';
@@ -11,6 +12,8 @@ import { RealtimeModule } from './modules/realtime/realtime.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { SubcontractingModule } from './modules/subcontracting/subcontracting.module';
 import { AiAssistModule } from './modules/ai-assist/ai-assist.module';
+import { RateCardsModule } from './modules/rate-cards/rate-cards.module';
+import { WorkforceModule } from './modules/workforce/workforce.module';
 
 @Module({})
 export class AppModule {
@@ -18,12 +21,15 @@ export class AppModule {
         return {
             module: AppModule,
             // Business modules are always registered; each is switched on/off by flags (docs/marketplace/README.md §1).
+            // A project's deletion still removes their rows while they are off.
             imports: [
                 CoreModule.forRoot(options), IdentityModule, WorkspacesModule, ProjectsModule, RealtimeModule,
-                PlatformModule, SubcontractingModule, AiAssistModule,
+                PlatformModule, SubcontractingModule, AiAssistModule, RateCardsModule, WorkforceModule,
             ],
             controllers: [HealthController],
             providers: [
+                // Global guards run in this order: a switched-off module answers before authentication.
+                { provide: APP_GUARD, useClass: ModuleGuard },
                 { provide: APP_GUARD, useClass: AuthGuard },
                 { provide: APP_FILTER, useClass: ErrorFilter },
             ],

@@ -34,7 +34,7 @@ export const ERROR_CODES = [
     'unprocessable',
     'rate_limited',
     'internal',
-    /** The business module (subcontracting, …) is switched off for the platform or the workspace. */
+    /** The business module (subcontracting, workforce, …) is switched off for the platform or the workspace. */
     'module_disabled',
     /** Wrong, expired or used-up one-time code (phone sign-in). */
     'otp_invalid',

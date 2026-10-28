@@ -3,8 +3,11 @@
 // ─── Header: "เข้าสู่ระบบ" for guests; for signed-in users a menu (workspace, projects, members, sign out) ───
 import { useRouter } from 'next/navigation';
 import { Avatar, Button, Dropdown, type MenuProps } from 'antd';
-import { AppstoreOutlined, CheckOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, TeamOutlined } from '@ant-design/icons';
+import {
+    AppstoreOutlined, CheckOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, ScheduleOutlined, TeamOutlined, ToolOutlined,
+} from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
+import { useWorkforceEnabled } from '../api/workforce';
 import { initials, useSession } from '../auth/session';
 import { signOut } from '../auth/actions';
 import { useCurrentWorkspace } from '../query/hooks';
@@ -19,6 +22,7 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
     const { workspace, workspaces, select } = useCurrentWorkspace();
     // Business modules: the switch page only when this server offers any and the user may switch them.
     const offersModules = (usePlatformModules().data?.length ?? 0) > 0 && can(workspace?.role, 'modules.manage');
+    const workforceOn = useWorkforceEnabled();
 
     if (status === 'unknown') return null;
 
@@ -60,6 +64,11 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
         { key: 'projects', icon: <FolderOpenOutlined />, label: 'โครงการทั้งหมด' },
         { key: 'members', icon: <TeamOutlined />, label: 'สมาชิก' },
         ...(offersModules ? [{ key: 'modules', icon: <AppstoreOutlined />, label: 'โมดูลเสริม' }] : []),
+        // Business module: the entry exists only while the platform offers it.
+        ...(workforceOn ? [
+            { key: 'crews', icon: <ToolOutlined />, label: 'ทีมช่างและบุคลากร' },
+            { key: 'board', icon: <ScheduleOutlined />, label: 'กระดานจัดคน' },
+        ] : []),
         { type: 'divider' },
         { key: 'logout', icon: <LogoutOutlined />, label: 'ออกจากระบบ', danger: true },
     ];
@@ -74,6 +83,10 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
             router.push('/workspace/members');
         } else if (key === 'modules') {
             router.push('/workspace/modules');
+        } else if (key === 'crews') {
+            router.push('/workspace/crews');
+        } else if (key === 'board') {
+            router.push('/workspace/board');
         } else if (key === 'logout') {
             void signOut(qc).then(() => { router.push('/journey'); });
         }

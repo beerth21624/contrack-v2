@@ -30,8 +30,26 @@ export interface RealtimeOptions {
     heartbeatMs?: number;
 }
 
+/** The build-time default (NEXT_PUBLIC_REALTIME_URL, else localhost), used when /app-config cannot be read. */
 export function realtimeUrl(): string {
     return (process.env.NEXT_PUBLIC_REALTIME_URL ?? 'http://localhost:4000').replace(/\/+$/, '');
+}
+
+let configured: Promise<string> | undefined;
+
+/**
+ * The Socket.IO origin from the server's env at run time (GET /app-config → REALTIME_URL), asked once per page load,
+ * so one built image works in any environment; the build-time default when that answer is missing.
+ */
+export function loadRealtimeUrl(): Promise<string> {
+    configured ??= fetch('/app-config', { cache: 'no-store' })
+        .then(r => (r.ok ? r.json() as Promise<unknown> : null))
+        .then(body => {
+            const url = typeof body === 'object' && body !== null && 'realtimeUrl' in body ? body.realtimeUrl : undefined;
+            return typeof url === 'string' && url !== '' ? url.replace(/\/+$/, '') : realtimeUrl();
+        })
+        .catch(() => realtimeUrl());
+    return configured;
 }
 
 export class RealtimeConnection {

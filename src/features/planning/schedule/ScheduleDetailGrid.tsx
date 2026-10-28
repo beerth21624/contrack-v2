@@ -45,7 +45,7 @@ export function ScheduleDetailGrid({ schedule }: { schedule: ScheduleResult }) {
                         {buckets.map(b => <th key={b.index} className={`${cls.th} font-normal`} style={edge(b.index)}>{formatDayMonth(b.end)}</th>)}
                     </tr>
                     <tr>
-                        <th className={cls.th} rowSpan={2}>No.</th>
+                        <th className={cls.th} rowSpan={2} style={{ minWidth: 52 }}>ลำดับ</th>
                         <th className={cls.th} rowSpan={2} style={{ minWidth: 180 }}>รายละเอียดงาน</th>
                         <th className={cls.th}>ระยะเวลา</th>
                         <th className={cls.th}>วันเริ่ม</th>

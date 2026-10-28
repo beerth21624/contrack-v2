@@ -17,7 +17,7 @@ describe('format', () => {
     it('money and dates in Thai', () => {
         expect(formatBaht(125000)).toBe('125,000 บาท');
         expect(formatBaht(1234.567)).toBe('1,234.57 บาท');
-        expect(formatDay('2026-10-30')).toBe('30 ต.ค. 69');
+        expect(formatDay('2026-10-30')).toBe('30 ต.ค. 26');
         expect(formatDay(null)).toBe('');
         expect(formatDay('nope')).toBe('');
     });
@@ -43,7 +43,7 @@ describe('format', () => {
     });
 
     it('plain words for schedule, place and penalty', () => {
-        expect(scheduleText({ start: '2026-11-01', finish: null, days: 30 })).toBe('เริ่ม 1 พ.ย. 69 · 30 วัน');
+        expect(scheduleText({ start: '2026-11-01', finish: null, days: 30 })).toBe('เริ่ม 1 พ.ย. 26 · 30 วัน');
         expect(scheduleText({ start: null, finish: null, days: null })).toBe('');
         expect(locationText({ district: 'เมือง', province: 'ขอนแก่น' })).toBe('อ.เมือง จ.ขอนแก่น');
         expect(locationText({ district: '', province: 'ขอนแก่น' })).toBe('จ.ขอนแก่น');

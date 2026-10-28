@@ -51,7 +51,7 @@ describe('Man-Day', () => {
     });
 
     it('wage sets are configurable (D16)', () => {
-        const r = run(i => { i.manday.wageSets.A = { skilled: 900, labourer: 550 }; });
+        const r = run(i => { i.manday.wageSets = i.manday.wageSets.map(s => (s.id === 'A' ? { ...s, skilled: 900, labourer: 550 } : s)); });
         expect(r.manday.blocks.find(x => x.id === '1.1')?.dailyWage).toBe(1450);
         expect(r.manday.blocks.find(x => x.id === '3.2')?.dailyWage).toBe(5200);   // set B unchanged
     });
@@ -157,7 +157,7 @@ describe('input resolution and project wire-up', () => {
         const r = resolvePlanningInput(partial);
         expect(r.manday.blocks['1.1']).toEqual({ skilled: 1, labourers: 1, wageSet: 'A', days: 3 });
         expect(r.manday.blocks['1.2']?.days).toBe(2);
-        expect(r.manday.wageSets.B).toEqual({ skilled: 1000, labourer: 600 });
+        expect(r.manday.wageSets.find(s => s.id === 'B')).toMatchObject({ skilled: 1000, labourer: 600 });
         expect(r.schedule.tasks['4.2']?.duration).toBe(4);
         expect(r.cashflow.installments).toHaveLength(9);
         expect(resolvePlanningInput()).toEqual(defaultPlanningInput());

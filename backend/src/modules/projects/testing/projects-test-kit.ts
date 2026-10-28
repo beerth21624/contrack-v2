@@ -3,7 +3,7 @@
 import type {
     AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDeletedEvent, ProjectUpdatedEvent, Role,
 } from '@contrack/contract';
-import { RealtimePublisher, WorkspaceAccess } from '../../../shared/application/ports';
+import { ProjectDependents, RealtimePublisher, WorkspaceAccess } from '../../../shared/application/ports';
 import { asUserId, asWorkspaceId, type UserId, type WorkspaceId } from '../../../shared/domain';
 import { InMemoryUnitOfWork } from '../../../shared/infrastructure/database/database';
 import { FixedClock, SequentialIdGenerator } from '../../../shared/infrastructure/system';
@@ -108,6 +108,7 @@ export function projectsKit() {
     const assembler = new ProjectAssembler();
     const access = new ProjectAccess(workspaces, projects);
     const events = new ProjectEvents(publisher);
+    const dependents = new ProjectDependents();
 
     workspaces.set(OWNER, WS_A, 'owner');
     workspaces.set(ADMIN, WS_A, 'admin');
@@ -120,7 +121,7 @@ export function projectsKit() {
         createProject: new CreateProjectUseCase(access, projects, docs, activity, assembler, uow, clock, ids),
         getProject: new GetProjectUseCase(access, docs),
         renameOrArchive: new RenameOrArchiveProjectUseCase(access, projects, activity, events, uow, clock),
-        deleteProject: new DeleteProjectUseCase(access, projects, docs, revisions, assignments, activity, events, uow),
+        deleteProject: new DeleteProjectUseCase(access, projects, docs, revisions, assignments, activity, events, uow, dependents),
         putDoc: new PutDocUseCase(access, projects, docs, activity, assembler, events, uow, clock),
         createRevision: new CreateRevisionUseCase(access, projects, docs, revisions, activity, assembler, uow, clock, ids),
         listRevisions: new ListRevisionsUseCase(access, revisions),
@@ -148,7 +149,7 @@ export function projectsKit() {
 
     return {
         clock, ids, workspaces, publisher, uow, projects, docs, revisions, assignments, activity, assembler, access, events,
-        ...useCases, seedProject,
+        dependents, ...useCases, seedProject,
     };
 }
 

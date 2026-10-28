@@ -38,9 +38,9 @@ import { BOQ_TEMPLATE_V5 } from '../../boq/template.v5';
 import type { BoqResult } from '../../boq/types';
 import {
     blankPlanningInput, bucketIndexOf, buildWeekBuckets, computeCashFlow, computePlanning, defaultPlanningInput, isoToSerial,
-    overlapDays, PLAN_TASKS, resolvePlanningInput, serialToIso,
+    overlapDays, PLAN_TASKS, resolvePlanningInput, resolveWageSet, serialToIso,
     type CashFlowResult, type PlanningInput, type PlanningResult, type PlanTaskDef, type ScheduleActualInput, type ScheduleResult,
-    type ScheduleTaskInput, type ScheduleTaskResult, type WageRate, type WageSetId, type WeekBucket,
+    type ScheduleTaskInput, type ScheduleTaskResult, type BuiltInWageSetId, type WageRate, type WeekBucket,
 } from '..';
 
 const MD = 'Man-Day_Basic';
@@ -58,7 +58,7 @@ const scCol = (k: number) => indexToCol(colToIndex('J') + k);
 const cfCol = (k: number) => indexToCol(colToIndex('D') + k);
 
 /** Constants hard-coded in the Excel formulas. */
-const EXCEL_WAGES: Record<WageSetId, WageRate> = { A: { skilled: 800, labourer: 500 }, B: { skilled: 1000, labourer: 600 } };
+const EXCEL_WAGES: Record<BuiltInWageSetId, WageRate> = { A: { skilled: 800, labourer: 500 }, B: { skilled: 1000, labourer: 600 } };
 const EXCEL_SHARE = 0.2;
 const EXCEL_QUOTATION = 1.3;
 const EXCEL_OPEX = 0.15;
@@ -119,10 +119,10 @@ function randomCase(seed: number): PlanCase {
 
     // Man-Day: crews, wage sets, typed days, 20 % share.
     if (rng.chance(0.5)) {
-        manday.wageSets = {
-            A: { skilled: rng.step(600, 1200, 50), labourer: rng.step(350, 700, 25) },
-            B: { skilled: rng.step(800, 1500, 50), labourer: rng.step(450, 800, 25) },
-        };
+        manday.wageSets = [
+            { id: 'A', name: 'งานทั่วไป', skilled: rng.step(600, 1200, 50), labourer: rng.step(350, 700, 25) },
+            { id: 'B', name: 'หลังคา', skilled: rng.step(800, 1500, 50), labourer: rng.step(450, 800, 25) },
+        ];
     }
     manday.subcontractLabourShare = rng.chance(0.5) ? EXCEL_SHARE : rng.step(0.1, 0.4, 0.05);
     for (const t of PLAN_TASKS) {
@@ -236,7 +236,7 @@ const CASES: [string, PlanCase][] = [
     ['no crew on 1.1 (R = 0, S #DIV/0!), piles with a crew, typed wages and a 30 % share', sampleWith(p => {
         p.manday.blocks['1.1'] = { skilled: 0, labourers: 0, wageSet: 'A', days: 1 };
         p.manday.blocks['1.4'] = { skilled: 2, labourers: 2, wageSet: 'B', days: 2 };
-        p.manday.wageSets = { A: { skilled: 900, labourer: 550 }, B: { skilled: 1100, labourer: 650 } };
+        p.manday.wageSets = [{ id: 'A', name: '', skilled: 900, labourer: 550 }, { id: 'B', name: '', skilled: 1100, labourer: 650 }];
         p.manday.subcontractLabourShare = 0.3;
     })],
     ['D1 S82/S209 with changed pipe labour (BOQ + Man-Day)', sampleWith(() => undefined, { 84: 150, 85: 80, 213: 60, 214: 55, 16: 1800 })],
@@ -262,7 +262,7 @@ function excelInputs(c: PlanCase, fixes?: OffsetFixes): Record<string, OracleCel
         out[`${MD}!O${md}`] = blk.skilled;
         out[`${MD}!P${md}`] = blk.labourers;
         out[`${MD}!T${md}`] = blk.days;
-        const w = manday.wageSets[blk.wageSet];
+        const w = resolveWageSet(manday.wageSets, blk.wageSet, t.sample.wageSet);
         const x = EXCEL_WAGES[t.sample.wageSet];
         if (w.skilled !== x.skilled || w.labourer !== x.labourer) {
             out[`${MD}!R${md}`] = { formula: `=(${w.skilled}*O${md})+(${w.labourer}*P${md})` };
@@ -784,7 +784,7 @@ function branchesOf(c: PlanCase, res: AppResult): string[] {
     const s = res.planning.schedule;
     const md = res.planning.manday;
     out.push(PLAN_TASKS.some(t => {
-        const w = manday.wageSets[must(manday.blocks[t.id], t.id).wageSet];
+        const w = resolveWageSet(manday.wageSets, must(manday.blocks[t.id], t.id).wageSet, t.sample.wageSet);
         const x = EXCEL_WAGES[t.sample.wageSet];
         return w.skilled !== x.skilled || w.labourer !== x.labourer;
     }) ? 'MD wages typed into R' : 'MD Excel wage constants');

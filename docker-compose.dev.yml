@@ -1,0 +1,54 @@
+# ─── ConTrack dev environment: PostgreSQL + API + web, from the Docker Hub images ───
+#   docker compose -f docker-compose.dev.yml up -d        → http://localhost:3000 (demo accounts: backend/SEED.md)
+# First start: the API applies the migrations and seeds the demo data into the empty database (takes ~1 minute).
+# Change JWT_ACCESS_SECRET and POSTGRES_PASSWORD before putting this anywhere others can reach.
+# On a server: put HTTPS in front, then set CORS_ORIGINS / PUBLIC_APP_URL to the web address and REALTIME_URL to the
+# public API address (the browser opens Socket.IO there). Without HTTPS: NODE_ENV=development and COOKIE_SECURE=false.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: contrack
+      POSTGRES_PASSWORD: contrack
+      POSTGRES_DB: contrack
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U contrack -d contrack"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    image: beerth21624/contrack-api:dev
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://contrack:contrack@db:5432/contrack
+      JWT_ACCESS_SECRET: change-me-to-a-long-random-secret-of-at-least-32-chars
+      CORS_ORIGINS: http://localhost:3000
+      PUBLIC_APP_URL: http://localhost:3000
+      # Plain http on localhost: secure cookies off (use NODE_ENV=production + COOKIE_SECURE=true behind HTTPS).
+      NODE_ENV: development
+      COOKIE_SECURE: "false"
+      MODULES_ENABLED: subcontracting,workforce
+      SEED_DEMO: "true"
+    volumes:
+      - api-files:/data/files
+    ports:
+      - "4000:4000"
+
+  web:
+    image: beerth21624/contrack-web:dev
+    depends_on:
+      - api
+    environment:
+      API_URL: http://api:4000
+      REALTIME_URL: http://localhost:4000
+    ports:
+      - "3000:3000"
+
+volumes:
+  db-data:
+  api-files:

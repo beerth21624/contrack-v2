@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { UnitOfWork } from '../../../../shared/application/ports';
+import { ProjectDependents, UnitOfWork } from '../../../../shared/application/ports';
 import { type DomainError, type ProjectId, type Result, type UserId, okVoid } from '../../../../shared/domain';
 import { ProjectAccess } from '../project-access';
 import { ProjectEvents } from '../project-events';
@@ -25,6 +25,7 @@ export class DeleteProjectUseCase {
         private readonly activity: ActivityRepository,
         private readonly events: ProjectEvents,
         private readonly uow: UnitOfWork,
+        private readonly dependents: ProjectDependents,
     ) {}
 
     async execute(input: DeleteProjectInput): Promise<Result<undefined, DomainError>> {
@@ -39,6 +40,8 @@ export class DeleteProjectUseCase {
             await this.revisions.deleteByProject(workspaceId, id);
             await this.assignments.deleteByProject(workspaceId, id);
             await this.activity.deleteByProject(workspaceId, id);
+            // Other modules' rows of the project (crew assignments, site supervisors).
+            await this.dependents.deleteByProject(workspaceId, id);
             await this.projects.delete(workspaceId, id);
         });
         // After COMMIT: viewers leave the project and drop queued edits.

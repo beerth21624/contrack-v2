@@ -2,8 +2,8 @@
 
 // S-Curve_Plan_Basic (Excel v5 sheet 03): 32 tasks in 8 งวด, typed start dates, durations from Man-Day,
 // weekly plan/actual shares, the S-curve and the status block Q4–Q7.
-import { useMemo } from 'react';
-import { Tag, Tooltip } from 'antd';
+import { useMemo, useState } from 'react';
+import { Segmented, Tag, Tooltip } from 'antd';
 import { CheckCircleOutlined, ClockCircleOutlined, RiseOutlined } from '@ant-design/icons';
 import { InputTextField, SheetCard } from '@/components/sheet/SheetFields';
 import { bucketIndexOf, isoToSerial, paceFromSchedule, serialToIso, type ScheduleInput, type ScheduleTaskInput } from '@/domain/planning';
@@ -12,12 +12,15 @@ import {
     DateCell, DetailSection, NoBoqYet, PlanningHeader, StatTile, SummaryBanner, formatDate, money, usePlanning, usedBucketCount,
 } from '../shared/planning-ui';
 import { ActualTable } from './ActualTable';
+import { CrewCalendar } from './CrewCalendar';
 import { GanttTable } from './GanttTable';
 import { PaceGaugePanel, PaceStatusChip } from './PaceGauge';
 import { ScheduleDetailGrid } from './ScheduleDetailGrid';
+import { SchedulePrintButton } from './SchedulePrintButton';
 
 export function SchedulePage() {
-    const { planning, input, stored, setPlanning, result } = usePlanning();
+    const { project, planning, input, stored, setPlanning, result } = usePlanning();
+    const [view, setView] = useState<'table' | 'calendar'>('table');
     const sc = input.schedule;
     const s = planning.schedule;
     const save = (next: ScheduleInput) => setPlanning({ schedule: next });
@@ -99,13 +102,32 @@ export function SchedulePage() {
                 </div>
             </SheetCard>
 
-            <SheetCard title="ตารางงาน" extra={<span className="text-[12px] text-gray-500 flex items-center gap-2">
-                <Tag color="blue" variant="filled">แผน</Tag><Tag color="orange" variant="filled">ผลงานจริง</Tag>
-            </span>}>
-                <GanttTable schedule={s} tasks={sc.tasks} count={count} onTask={setTask} />
-                <div className="text-[12px] text-gray-500 mt-2">
-                    วันเสร็จ = วันเริ่ม + ระยะเวลา − 1 (นับวันปฏิทิน ไม่เว้นวันหยุด) · 1 เดือนแบ่ง 4 ช่วง: 1–7, 8–15, 16–22, 23–สิ้นเดือน
-                </div>
+            <SheetCard title="กำหนดการ" extra={(
+                <span className="flex flex-wrap items-center justify-end gap-2 text-[12px] text-gray-500">
+                    {view === 'table' && (
+                        <span className="hidden sm:flex items-center">
+                            <Tag color="blue" variant="filled">แผน</Tag><Tag color="orange" variant="filled">ผลงานจริง</Tag>
+                        </span>
+                    )}
+                    <Segmented size="small" value={view} onChange={v => setView(v === 'calendar' ? 'calendar' : 'table')}
+                        options={[{ label: 'ตารางงาน', value: 'table' }, { label: 'ปฏิทิน', value: 'calendar' }]} />
+                    <SchedulePrintButton schedule={s} manday={planning.manday} fallbackName={project.meta.projectName} />
+                </span>
+            )}>
+                {view === 'table'
+                    ? <>
+                        <GanttTable schedule={s} tasks={sc.tasks} count={count} onTask={setTask} />
+                        <div className="text-[12px] text-gray-500 mt-2">
+                            วันเสร็จ = วันเริ่ม + ระยะเวลา − 1 (นับวันปฏิทิน ไม่เว้นวันหยุด) · 1 เดือนแบ่ง 4 ช่วง: 1–7, 8–15, 16–22, 23–สิ้นเดือน
+                        </div>
+                    </>
+                    : <>
+                        <CrewCalendar schedule={s} manday={planning.manday} />
+                        <div className="text-[12px] text-gray-500 mt-3">
+                            แสดงงานตามวันเริ่ม–วันเสร็จตามแผน นับทุกวันปฏิทิน (ไม่เว้นวันหยุด) · จำนวนช่างและคนงานมาจากหน้า Man-Day ·
+                            แก้วันได้ในมุมมองตารางงาน
+                        </div>
+                    </>}
             </SheetCard>
 
             <DetailSection label={`บันทึกผลงานจริงและ % คืบหน้า${actualCount ? ` — บันทึกแล้ว ${actualCount} งาน` : ''}`}>

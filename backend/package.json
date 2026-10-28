@@ -17,7 +17,8 @@
     "db:migrate": "tsx src/shared/infrastructure/database/migrate.ts",
     "db:studio": "drizzle-kit studio",
     "db:local": "node scripts/local-postgres.mjs",
-    "db:seed": "npm run build && node dist/backend/src/cli/seed-demo.js"
+    "db:seed": "npm run build && node dist/backend/src/cli/seed-demo.js",
+    "db:seed:showcase": "npm run build && node dist/backend/src/cli/seed-showcase.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.8",

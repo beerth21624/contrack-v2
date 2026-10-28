@@ -10,6 +10,10 @@ import { useProjectStore } from '@/store/project-store';
 import { computeProject, projectPlanningInput } from '@/domain/project';
 import { type WeekBucket } from '@/domain/planning';
 import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { useProjectWorkforceState } from '@/features/workforce/project-team/project-workforce';
+import { formatDate, formatDayMonth } from './planning-format';
+
+export { formatDate, formatDayMonth, installmentColors, usedBucketCount } from './planning-format';
 
 const { Title, Text } = Typography;
 
@@ -20,18 +24,6 @@ export function usePlanning() {
     const result = useMemo(() => computeProject(project), [project]);
     const input = useMemo(() => projectPlanningInput(project), [project]);
     return { project, result, planning: result.planning, input, stored: project.planning ?? {}, setPlanning };
-}
-
-/** 'YYYY-MM-DD' → 'dd/mm/yyyy' (empty for null). */
-export function formatDate(iso: string | null | undefined): string {
-    if (!iso) return '';
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-    return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
-}
-
-/** 'YYYY-MM-DD' → 'dd/mm'. */
-export function formatDayMonth(iso: string | null | undefined): string {
-    return formatDate(iso).slice(0, 5);
 }
 
 /** "W3 มี.ค.-26". */
@@ -57,6 +49,29 @@ const STEPS = [
     { href: '/cashflow', label: '3. กระแสเงินสด (Cash Flow)' },
 ] as const;
 
+/** The workforce module's step: shown only for a cloud project while the module is on. */
+const TEAM_STEP = { href: '/team', label: '4. ทีมงาน' } as const;
+
+export type PlanningStepHref = (typeof STEPS)[number]['href'] | typeof TEAM_STEP.href;
+
+/** The planning steps: Man-Day → S-Curve → Cash Flow, then ทีมงาน when the workforce module applies to the project. */
+export function PlanningSteps({ current }: { current: PlanningStepHref }) {
+    const team = useProjectWorkforceState() === 'on';
+    const steps: readonly { href: PlanningStepHref; label: string }[] = team ? [...STEPS, TEAM_STEP] : STEPS;
+    return (
+        <nav aria-label="ขั้นตอนวางแผน" className="flex flex-wrap items-center gap-1 text-[12px]">
+            {steps.map((s, i) => (
+                <span key={s.href} className="flex items-center gap-1">
+                    {i > 0 && <RightOutlined className="text-gray-300 text-[10px]" />}
+                    {s.href === current
+                        ? <span className="px-2 py-0.5 rounded-full bg-orange-500 text-white font-semibold">{s.label}</span>
+                        : <Link href={s.href} className="px-2 py-0.5 rounded-full text-gray-600 hover:bg-orange-50">{s.label}</Link>}
+                </span>
+            ))}
+        </nav>
+    );
+}
+
 /** Page header: the planning steps, the title, the Excel sheet name and "back to the Excel sample". */
 export function PlanningHeader({ current, title, sheetName, isDefault, onReset }: {
     current: (typeof STEPS)[number]['href'];
@@ -67,16 +82,7 @@ export function PlanningHeader({ current, title, sheetName, isDefault, onReset }
 }) {
     return (
         <div className="bg-white border border-gray-200 rounded-card p-4 shadow-card flex flex-col gap-3">
-            <nav aria-label="ขั้นตอนวางแผน" className="flex flex-wrap items-center gap-1 text-[12px]">
-                {STEPS.map((s, i) => (
-                    <span key={s.href} className="flex items-center gap-1">
-                        {i > 0 && <RightOutlined className="text-gray-300 text-[10px]" />}
-                        {s.href === current
-                            ? <span className="px-2 py-0.5 rounded-full bg-orange-500 text-white font-semibold">{s.label}</span>
-                            : <Link href={s.href} className="px-2 py-0.5 rounded-full text-gray-600 hover:bg-orange-50">{s.label}</Link>}
-                    </span>
-                ))}
-            </nav>
+            <PlanningSteps current={current} />
             <div className="flex flex-wrap items-center gap-3">
                 <div className="min-w-0">
                     <Title level={4} style={{ margin: 0 }}>{title}</Title>
@@ -219,26 +225,6 @@ export function CalcText({ children, strong }: { children: ReactNode; strong?: b
         <span className="block text-right tabular-nums px-1 py-0.5 rounded-sm whitespace-nowrap"
             style={{ background: SHEET_COLORS.calc, fontWeight: strong ? 600 : 400 }}>{children}</span>
     );
-}
-
-/**
- * Buckets worth drawing in a summary view: whole months up to the last bucket where any series is non-zero
- * (the Excel axis is 12 months long even when the plan ends in May).
- */
-export function usedBucketCount(buckets: WeekBucket[], ...series: number[][]): number {
-    let last = -1;
-    for (const s of series) s.forEach((v, i) => { if (Math.abs(v) > 1e-12 && i > last) last = i; });
-    if (last < 0) return Math.min(buckets.length, 20);
-    const month = buckets[last]?.monthIndex ?? 0;
-    return Math.min(buckets.length, (month + 1) * 4);
-}
-
-/** S-Curve installment header colours (Excel rows 13, 28, 39, 46, 51, 56, 67, 72) and a readable text colour. */
-const INSTALLMENT_FILLS = ['#118AB2', '#06D6A0', '#FF9B54', '#EF476F', '#0B5394', '#76A5AF', '#0B5394', '#6D9EEB'];
-const DARK_TEXT = new Set(['#06D6A0', '#FF9B54', '#76A5AF', '#6D9EEB']);
-export function installmentColors(no: number): { background: string; color: string } {
-    const bg = INSTALLMENT_FILLS[(no - 1 + INSTALLMENT_FILLS.length) % INSTALLMENT_FILLS.length] ?? '#118AB2';
-    return { background: bg, color: DARK_TEXT.has(bg) ? '#1f2937' : '#ffffff' };
 }
 
 /** Table cell class names shared by the planning grids. */

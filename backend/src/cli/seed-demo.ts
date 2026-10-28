@@ -11,7 +11,7 @@ import { createDatabase, createPool } from '../shared/infrastructure/database/da
 /** Demo-only password (local test data). Also written in SEED.md. */
 export const DEMO_PASSWORD = 'ContrackDemo#2026';
 
-const ACCOUNTS = {
+export const ACCOUNTS = {
     owner: { email: 'owner@contrack.test', displayName: 'สมชาย ใจดี (เจ้าของบริษัท)' },
     admin: { email: 'admin@contrack.test', displayName: 'วิภา ผู้จัดการ' },
     estimator: { email: 'estimator@contrack.test', displayName: 'ช่างประเสริฐ (ถอดแบบ)' },
@@ -157,7 +157,10 @@ async function main(): Promise<void> {
     }
 }
 
-main().catch((e: unknown) => {
-    console.error(e);
-    process.exit(1);
-});
+// Runs only as a script: seed-showcase.ts imports the accounts from here.
+if (require.main === module) {
+    main().catch((e: unknown) => {
+        console.error(e);
+        process.exit(1);
+    });
+}

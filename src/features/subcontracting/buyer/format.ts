@@ -36,10 +36,10 @@ export function pct(fraction: number | null, signed = false): string {
     return v > 0 ? `+${s}` : `-${s}`;
 }
 
-// ── dates ──
+// ── dates ── (Thai months with the Christian-era year, like the rest of the app)
 
-const DATE = new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
-const DATE_TIME = new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+const DATE = new Intl.DateTimeFormat('th-TH-u-ca-gregory', { day: 'numeric', month: 'short', year: '2-digit' });
+const DATE_TIME = new Intl.DateTimeFormat('th-TH-u-ca-gregory', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' });
 
 /** 'YYYY-MM-DD' (local calendar day) → Date at local midnight, or null. */
 export function parseDay(day: string | null | undefined): Date | null {

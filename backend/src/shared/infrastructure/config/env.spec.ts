@@ -1,6 +1,6 @@
 import express from 'express';
 import request from 'supertest';
-import { type TrustProxy, loadEnv, testEnv } from './env';
+import { AppConfig, type TrustProxy, loadEnv, testEnv } from './env';
 
 const BASE = { NODE_ENV: 'test', PERSISTENCE: 'memory', JWT_ACCESS_SECRET: 'test-secret-test-secret-test-secret-123' };
 
@@ -38,5 +38,28 @@ describe('env TRUST_PROXY', () => {
         const elsewhere = loadEnv({ ...BASE, TRUST_PROXY: '10.0.0.0/8' }).TRUST_PROXY;
         expect(await ipSeen(elsewhere, '203.0.113.7')).not.toBe('203.0.113.7');
         expect(await ipSeen(false, '203.0.113.7')).not.toBe('203.0.113.7');
+    });
+});
+
+describe('MODULES_ENABLED', () => {
+    it('defaults to none (plain BOQ estimation)', () => {
+        expect(loadEnv(BASE).MODULES_ENABLED).toEqual([]);
+        expect(loadEnv({ ...BASE, MODULES_ENABLED: ' ' }).MODULES_ENABLED).toEqual([]);
+    });
+
+    it('a comma-separated list of known modules (spaces ignored)', () => {
+        expect(loadEnv({ ...BASE, MODULES_ENABLED: ' workforce , subcontracting,' }).MODULES_ENABLED).toEqual(['workforce', 'subcontracting']);
+        const config = new AppConfig(loadEnv({ ...BASE, MODULES_ENABLED: 'workforce' }));
+        expect(config.isModuleEnabled('workforce')).toBe(true);
+        expect(new AppConfig(loadEnv(BASE)).isModuleEnabled('workforce')).toBe(false);
+    });
+
+    it('an unknown module refuses the start', () => {
+        expect(() => loadEnv({ ...BASE, MODULES_ENABLED: 'workforce,payroll' })).toThrow(/MODULES_ENABLED/);
+    });
+
+    it('testEnv offers workforce; an override can switch every module off', () => {
+        expect(testEnv().MODULES_ENABLED).toContain('workforce');
+        expect(testEnv({ MODULES_ENABLED: '' }).MODULES_ENABLED).toEqual([]);
     });
 });
