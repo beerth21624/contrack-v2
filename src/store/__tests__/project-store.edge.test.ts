@@ -122,6 +122,46 @@ describe('guest persistence format', () => {
     });
 });
 
+describe('restoring damaged storage (hand-edited or cut off)', () => {
+    const restore = async (raw: string) => {
+        store().setState({ hasHydrated: false });   // (a state change saves the project: write the raw text after it)
+        storage.setItem(KEY, raw);
+        await store().persist.rehydrate();
+        await Promise.resolve();   // a failed restore ends the spinner in a microtask
+    };
+
+    it.each([['{not json'], ['][ definitely not json'], [''], ['null']])('%j opens the fresh project and ends the spinner', async raw => {
+        await restore(raw);
+        expect(state().hasHydrated).toBe(true);
+        expect(state().project).toEqual(createProject('sample'));
+    });
+
+    it('a version newer than the app knows starts fresh instead of loading a shape it cannot read', async () => {
+        await restore(JSON.stringify({ state: { project: { schemaVersion: 99 } }, version: 99 }));
+        expect(state().hasHydrated).toBe(true);
+        expect(state().project).toEqual(createProject('sample'));
+    });
+
+    it('a project lacking most parts gets them from a new project and keeps what it has', async () => {
+        await restore(JSON.stringify({ state: { project: { schemaVersion: 1, meta: { projectName: 'x' } } }, version: 1 }));
+        const p = state().project;
+        expect(p.meta).toEqual({ ...createProject('sample').meta, projectName: 'x' });
+        expect(p.calculators).toEqual({});
+        expect(p.boqOverrides).toEqual({});
+        expect(p.start).toBe('sample');
+    });
+
+    it('parts of the wrong type are replaced, a project that is not an object is ignored', async () => {
+        await restore(JSON.stringify({ state: { project: { ...createProject('blank'), calculators: [1], boqOverrides: 'x', meta: 5 } }, version: 1 }));
+        expect(state().project.calculators).toEqual({});
+        expect(state().project.boqOverrides).toEqual({});
+        expect(state().project.start).toBe('blank');
+        const before = state().project;
+        await restore(JSON.stringify({ state: { project: [1, 2] }, version: 1 }));
+        expect(state().project).toBe(before);
+    });
+});
+
 describe('BOQ overrides', () => {
     it('sets a field, keeps others, and a second line is separate', () => {
         state().setBoqOverride('R9', 'qty', 3);

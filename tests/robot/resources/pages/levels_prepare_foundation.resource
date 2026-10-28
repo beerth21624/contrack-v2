@@ -160,8 +160,9 @@ Confirm Level And Land On
     [Documentation]    Press confirm and wait for ``${next_level}`` (the first load of a route can take a while in
     ...    dev mode); then the level is stored as done.
     [Arguments]    ${level_id}    ${next_level}
+    ${path}=    Landing Path After Confirm    ${level_id}    ${next_level}
     Click    ${CONFIRM_BUTTON}
-    Wait For Condition    Url    should end with    /journey/${next_level}    timeout=90s
+    Wait For Condition    Url    should end with    ${path}    timeout=90s
     Level Mark Should Become    ${level_id}    done
 
 Confirm Should Be Blocked With
@@ -187,11 +188,11 @@ Level Should Show No Own Total
     Get Element Count    ${LEVEL_TOTAL_LABEL}    ==    0
 
 Locked Level Should Wait For Previous
-    [Documentation]    ``${locked_id}`` opened by URL shows "รอขั้นตอนก่อนหน้า" and a way back, never a crash.
+    [Documentation]    ``${locked_id}`` opened by URL shows 'ขั้นตอน "…" ยังไม่พร้อมทำ', what it waits for (as the
+    ...    engine lists it) and a way to the step to do first, never a crash.
     [Arguments]    ${locked_id}    ${locked_title}
     Go To Path    /journey/${locked_id}
-    Wait For Elements State    text=รอขั้นตอนก่อนหน้า    visible    timeout=60s
-    Get Text    body    contains    ขั้นตอน "${locked_title}" รอขั้นตอนก่อนหน้า
+    Locked Screen Should Match Engine    ${locked_id}    ${locked_title}
     Get Element Count    css=button:has-text("ทำต่อ:")    ==    1
     Page Should Have No Error Overlay
 
@@ -418,8 +419,9 @@ Edge Card Case
 Skip Level Through Popconfirm Should Land On
     [Documentation]    "ไม่มีในโครงการนี้" → Popconfirm → ยืนยัน: lands on ``${next_level}`` and ``${level_id}`` is stored skipped.
     [Arguments]    ${level_id}    ${next_level}
+    ${path}=    Landing Path After Confirm    ${level_id}    ${next_level}
     Skip Level
-    Wait For Condition    Url    should end with    /journey/${next_level}    timeout=90s
+    Wait For Condition    Url    should end with    ${path}    timeout=90s
     Level Mark Should Become    ${level_id}    skipped
 
 Footing Choice Should Be

@@ -358,13 +358,12 @@ Preset Chip Should Be Stored
     Level Totals Should Match Engine    ${level_id}
 
 Level Should Be Locked
-    [Documentation]    A level whose predecessor is not done: URL shows "รอขั้นตอนก่อนหน้า", a way to the current level,
+    [Documentation]    A level whose predecessor is not done: URL shows "ยังไม่พร้อมทำ", a way to the current level,
     ...    and no inputs.
     [Arguments]    ${level_id}    ${unlock_until}    ${current_title}
     Open Fresh Context    /file.svg
     Seed Blank Project Until    ${unlock_until}    /journey/${level_id}
-    Wait For Elements State    text=รอขั้นตอนก่อนหน้า    visible    timeout=60s
-    Get Text    css=body    contains    ทำต่อ: ${current_title}
+    Locked Screen Should Match Engine    ${level_id}
     Get Element Count    ${CONFIRM_BUTTON}    ==    0
     Get Element Count    css=[data-req-card]    ==    0
 

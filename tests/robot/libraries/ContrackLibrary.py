@@ -135,14 +135,35 @@ class ContrackLibrary:
         data = json.loads(value) if isinstance(value, str) else value
         return data["state"]["project"] if "state" in data else data
 
+    def _blank_levels(self) -> list[dict]:
+        if getattr(self, "_levels_cache", None) is None:
+            self._levels_cache = self.compute_expected_for_new_project("blank")["levels"]
+        return self._levels_cache
+
     @keyword
     def level_ids(self) -> list[str]:
         """The 37 journey level ids in order (from the engine, so it follows ``levels.ts``)."""
-        return [lvl["id"] for lvl in self.compute_expected_for_new_project("blank")["levels"]]
+        return [lvl["id"] for lvl in self._blank_levels()]
+
+    @keyword
+    def level_prerequisites(self, level_id: str) -> list[str]:
+        """Every level ``level_id`` waits for, directly or through others (the ``after`` graph of ``levels.ts``)."""
+        after = {lvl["id"]: lvl["after"] for lvl in self._blank_levels()}
+        if level_id not in after:
+            raise AssertionError(f"No journey level {level_id!r}")
+        seen: list[str] = []
+        todo = list(after[level_id])
+        while todo:
+            lid = todo.pop()
+            if lid not in seen:
+                seen.append(lid)
+                todo.extend(after[lid])
+        return [lid for lid in after if lid in seen]
 
     @keyword
     def project_with_levels_done(self, project: Any, until_level: str, mark: str = "done") -> dict:
-        """Copy of ``project`` with every level *before* ``until_level`` marked ``done`` (it unlocks that level).
+        """Copy of ``project`` with every level *before* ``until_level`` marked ``done``, and every level it waits for
+        (levels open by prerequisites, which list order alone no longer covers), so that level is open.
 
         Levels already marked (done/skipped) keep their mark. Use ``until_level=ALL`` to mark all 37 levels.
         """
@@ -157,6 +178,9 @@ class ContrackLibrary:
             if lid == until_level:
                 break
             journey.setdefault(lid, mark)
+        if until_level != "ALL":
+            for lid in self.level_prerequisites(until_level):
+                journey.setdefault(lid, mark)
         proj["journey"] = journey
         return proj
 

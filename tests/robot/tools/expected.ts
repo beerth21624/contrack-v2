@@ -7,13 +7,21 @@
 // Output (stdout, JSON): see `Expected` below.
 import { readFileSync } from 'node:fs';
 import { computeProject, createProject, type Project, type ProjectStart } from '@/domain/project';
-import { JOURNEY_LEVELS, levelTotal, missingRequirements, levelStates } from '@/domain/journey';
+import {
+    JOURNEY_LEVELS, blockingLevels, firstStepToward, levelTotal, levelStates, missingRequirements, nextLevel, nextOpenLevel, previousLevel,
+} from '@/domain/journey';
 
 interface Expected {
     constructionTotal: number;
     preConstructionTotal: number;
     sections: { no: number; title: string; mat: number; lab: number; total: number }[];
-    levels: { id: string; title: string; total: number; state: string; missing: string[] }[];
+    levels: {
+        id: string; title: string; total: number; state: string; missing: string[];
+        /** Prerequisites (ids); what a locked level still waits for (titles); the open level on the way to it. */
+        after: string[]; blocking: string[]; firstStep: string | null;
+        /** Where confirm leads (the level unmarked), where → / ← step (as the level page shows them). */
+        next: string | null; nextOpen: string | null; previous: string | null;
+    }[];
     planning: {
         manday: unknown;
         schedule: unknown;
@@ -37,7 +45,8 @@ function readProject(arg: string | undefined): Project {
 
 const project = readProject(process.argv[2]);
 const res = computeProject(project);
-const states = levelStates(project.journey ?? {});
+const progress = project.journey ?? {};
+const states = levelStates(progress);
 const out: Expected = {
     constructionTotal: res.boq.constructionTotal,
     preConstructionTotal: res.boq.preConstructionTotal,
@@ -48,6 +57,12 @@ const out: Expected = {
         total: levelTotal(l, res),
         state: states[l.id] ?? 'locked',
         missing: missingRequirements(l.id, project).map(m => JSON.stringify(m)),
+        after: [...l.after],
+        blocking: blockingLevels(l.id, progress).map(b => b.title),
+        firstStep: firstStepToward(l.id, progress)?.id ?? null,
+        next: nextLevel(l.id, progress)?.id ?? null,
+        nextOpen: nextOpenLevel(l.id, progress)?.id ?? null,
+        previous: previousLevel(l.id, progress)?.id ?? null,
     })),
     planning: { manday: res.planning.manday, schedule: res.planning.schedule, cashflow: res.planning.cashflow },
     calcOutputs: res.calcOutputs,

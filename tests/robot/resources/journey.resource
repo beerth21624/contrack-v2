@@ -41,10 +41,13 @@ Level Totals Should Match Engine
 
 Confirm Level
     [Documentation]    Press "ยืนยัน แล้วไปขั้นตอน…" and expect to land on ``${next_level}`` (or the map when empty).
+    ...    The landing step comes from the engine's journey rules (``Landing Path After Confirm``).
     [Arguments]    ${next_level}=${EMPTY}
+    ${level_id}=    Current Level Id
+    ${path}=    Landing Path After Confirm    ${level_id}    ${next_level}
     Click    ${CONFIRM_BUTTON}
     IF    '${next_level}' != '${EMPTY}'
-        Wait For Condition    Url    should end with    /journey/${next_level}    timeout=30s
+        Wait For Condition    Url    should end with    ${path}    timeout=30s
     END
 
 Confirm Level Should Be Blocked
@@ -56,6 +59,21 @@ Confirm Level Should Be Blocked
     IF    '${count}' != '${EMPTY}'
         Get Text    ${MISSING_SUMMARY}    contains    ยังต้องกรอก ${count} รายการ
     END
+
+Locked Screen Should Match Engine
+    [Documentation]    The locked screen of ``${level_id}``: 'ขั้นตอน "<title>" ยังไม่พร้อมทำ', "ต้องทำให้เสร็จก่อน: …" with
+    ...    the prerequisites not passed yet and one "ทำต่อ: …" button to the step to do first (engine's rules).
+    [Arguments]    ${level_id}    ${title}=${EMPTY}
+    Wait For Elements State    css=.ant-result >> text=ยังไม่พร้อมทำ    visible    timeout=60s
+    ${expected}=    Expected For Current Guest Project
+    ${lvl}=    Expected Level    ${expected}    ${level_id}
+    Should Be Equal    ${lvl}[state]    locked
+    ${title}=    Set Variable If    '${title}' == '${EMPTY}'    ${lvl}[title]    ${title}
+    ${waiting}=    Evaluate    ', '.join($lvl['blocking'])
+    Get Text    css=.ant-result    contains    ขั้นตอน "${title}" ยังไม่พร้อมทำ
+    Get Text    css=.ant-result    contains    ต้องทำให้เสร็จก่อน: ${waiting}
+    ${first}=    Expected Level    ${expected}    ${lvl}[firstStep]
+    Get Element Count    css=.ant-result button:has-text("ทำต่อ: ${first}[title]")    ==    1
 
 Skip Level
     [Documentation]    Mark an optional level "ไม่มีในโครงการนี้" (Popconfirm → ยืนยัน).

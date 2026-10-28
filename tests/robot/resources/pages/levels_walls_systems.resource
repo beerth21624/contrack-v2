@@ -211,8 +211,10 @@ WS Go To Level
 WS Confirm Level
     [Documentation]    Press the confirm button and wait (up to 3 min) for ``${next_level}``.
     [Arguments]    ${next_level}
+    ${level_id}=    Current Level Id
+    ${path}=    Landing Path After Confirm    ${level_id}    ${next_level}
     Click    ${CONFIRM_BUTTON}
-    Wait For Condition    Url    should end with    /journey/${next_level}    timeout=180s
+    Wait For Condition    Url    should end with    ${path}    timeout=180s
 
 WS New Project
     [Documentation]    A deep copy of ``createProject(start)`` (engine tool, computed once per suite).
@@ -266,10 +268,10 @@ WS Confirm Should Pass
     Level Mark Should Be    ${level_id}    done
 
 WS Go To Locked Level
-    [Documentation]    A level whose predecessor is not done shows the "รอขั้นตอนก่อนหน้า" screen and no inputs.
+    [Documentation]    A level whose prerequisites are not passed shows the "ยังไม่พร้อมทำ" screen and no inputs.
     [Arguments]    ${level_id}    ${title}
     Go To Path    /journey/${level_id}
-    Get Text    css=body    contains    ขั้นตอน "${title}" รอขั้นตอนก่อนหน้า
+    Locked Screen Should Match Engine    ${level_id}    ${title}
     WS Page Should Have No Bad Numbers
     Get Element Count    ${CONFIRM_BUTTON}    ==    0
     Level Mark Should Be    ${level_id}    ${None}

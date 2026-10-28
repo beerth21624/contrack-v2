@@ -41,8 +41,8 @@ Seed Guest Project
 Start Guest Project
     [Documentation]    A new guest project exactly as the app creates it (``blank`` = from my plan, ``sample`` = the
     ...    Excel v5 house), stored and loaded. Returns the engine's expected values for it.
-    ...    ``${unlock_until}`` marks every level before that level id as done, so it opens unlocked
-    ...    (levels unlock in order; a locked level shows "รอขั้นตอนก่อนหน้า").
+    ...    ``${unlock_until}`` marks every level before that level id, and every level it waits for, as done, so
+    ...    it opens unlocked (levels open by prerequisites; a locked level shows "ยังไม่พร้อมทำ").
     [Arguments]    ${start}=blank    ${path}=/journey    ${unlock_until}=${EMPTY}
     ${expected}=    Compute Expected For New Project    ${start}
     ${project}=    Set Variable    ${expected}[project]
@@ -61,6 +61,30 @@ Read Guest Project
     ${raw}=    LocalStorage Get Item    ${key}
     ${project}=    Project From Storage Value    ${raw}
     RETURN    ${project}
+
+Landing Path After Confirm
+    [Documentation]    Where confirm on ``${level_id}`` leads, from the engine's journey rules for the stored guest
+    ...    project (levels open by prerequisites, so the next step is not simply the next one in the list):
+    ...    ``/journey/<id>``, or ``/journey`` when no step is left. Falls back to ``${fallback}`` (a level id) when
+    ...    there is no guest project (cloud projects).
+    [Arguments]    ${level_id}    ${fallback}=${EMPTY}
+    ${status}    ${expected}=    Run Keyword And Ignore Error    Expected For Current Guest Project
+    IF    '${status}' != 'PASS'
+        IF    '${fallback}' == '${EMPTY}'    RETURN    /journey
+        RETURN    /journey/${fallback}
+    END
+    ${lvl}=    Expected Level    ${expected}    ${level_id}
+    ${next}=    Set Variable If    '${lvl}[state]' in ('done', 'skipped')    ${lvl}[nextOpen]    ${lvl}[next]
+    IF    $next is None    RETURN    /journey
+    IF    '${fallback}' != '${EMPTY}' and '${fallback}' != '${next}'
+        Log    Confirm on ${level_id} leads to ${next} (the engine's next open step), not ${fallback}    console=False
+    END
+    RETURN    /journey/${next}
+
+Current Level Id
+    ${url}=    Get Url
+    ${id}=    Evaluate    $url.rstrip('/').rsplit('/', 1)[-1].split('?')[0]
+    RETURN    ${id}
 
 Expected For Current Guest Project
     [Documentation]    Engine result for what the app holds right now (read back from localStorage).

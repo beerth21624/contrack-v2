@@ -44,6 +44,9 @@ export interface CrewCalendarResult {
     peakDays: string[];
 }
 
+/** Longest stretch the calendar lists day by day (about 20 years). */
+export const MAX_CALENDAR_DAYS = 7_320;
+
 const finite = (x: number | undefined): number => (x !== undefined && Number.isFinite(x) ? x : 0);
 
 /**
@@ -74,7 +77,8 @@ export function computeCrewCalendar(schedule: ScheduleResult, manday: ManDayResu
     if (spans.length === 0) return { start: null, finish: null, days: [], peakTotal: 0, peakDays: [] };
 
     const first = Math.min(...spans.map(s => s.start));
-    const last = Math.max(...spans.map(s => s.finish));
+    // One entry per day: a plan stretched over centuries by a mistyped duration shows its first MAX_CALENDAR_DAYS.
+    const last = Math.min(Math.max(...spans.map(s => s.finish)), first + MAX_CALENDAR_DAYS - 1);
     const days: CrewCalendarDay[] = [];
     for (let serial = first; serial <= last; serial++) {
         const tasks = spans.filter(s => s.start <= serial && serial <= s.finish).map(s => s.task);

@@ -53,6 +53,14 @@ describe('isoToSerial / serialToIso', () => {
         expect(serialToIso(46023.6)).toBe('2026-01-02');
     });
 
+    it('serials beyond the dates a YYYY-MM-DD holds show as the edge instead of throwing "Invalid time value"', () => {
+        expect(serialToIso(46023 + 999_999_999)).toBe('9999-12-31');
+        expect(serialToIso(-999_999_999)).toBe('0001-01-01');
+        expect(serialToIso(Infinity)).toBe('1899-12-30');
+        expect(serialToIso(Number.NaN)).toBe('1899-12-30');
+        expect(isoToSerial(serialToIso(1e12))).not.toBeNull();
+    });
+
     // The doc says "Returns null for an empty / invalid date", but a well-formed yet impossible date rolls over
     // silently (Date.UTC normalises it), so a mistyped day shifts the whole schedule instead of being rejected.
     it('inputs: "2026-02-30", expected null (invalid date), got serial of 2026-03-02 (calendar.ts isoToSerial)', () => {

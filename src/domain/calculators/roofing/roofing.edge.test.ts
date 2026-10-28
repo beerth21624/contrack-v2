@@ -97,6 +97,11 @@ describe('roofing edge: plan area and slope (K7 = K5 / cos K6)', () => {
             for (const [k, v] of Object.entries(out)) expect(Number.isFinite(v), `${deg} deg ${k}`).toBe(true);
         }
     });
+    it('a pitch of 90 deg or more is not a roof: no slope area instead of ~1e16 times the plan (or a negative one)', () => {
+        for (const deg of [90, 120, 180, 270, -90]) expect(slopeArea({ planArea: 100, slopeDeg: deg }), `${deg} deg`).toBe(0);
+        expect(slopeArea({ planArea: 100, slopeDeg: 89.9 })).toBeCloseTo(100 / Math.cos((89.9 * Math.PI) / 180), 6);
+        expect(slopeArea({ planArea: 100, slopeDeg: 360 })).toBeCloseTo(100, 9);
+    });
     it('non-finite typed numbers count as 0 (NaN, Infinity)', () => {
         for (const bad of [Number.NaN, Infinity, -Infinity]) {
             const out = roofing.compute({ ...blank(), planArea: bad, slopeDeg: bad }, ctx);

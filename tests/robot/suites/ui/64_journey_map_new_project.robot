@@ -319,7 +319,7 @@ New Blank Project Locks Every Level After The First
     Click    ${BLANK_CHOICE}
     Wait For Condition    Url    should end with    /journey/project-info    timeout=30s
     Go To Path    /journey/footing
-    Get Text    css=body    contains    รอขั้นตอนก่อนหน้า
+    Locked Screen Should Match Engine    footing
     Page Should Have No Error Overlay
 
 New Project Lands On A Level Page That Renders

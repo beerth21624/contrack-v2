@@ -11,7 +11,7 @@ Test Tags           projects    cloud
 
 *** Variables ***
 ${LONG_THAI_NAME}       โครงการก่อสร้างบ้านพักอาศัยสองชั้นพร้อมโรงจอดรถและสระว่ายน้ำส่วนตัวของคุณสมศรีรัตนวงศ์ใจดีมากที่ซอยลำลูกกาคลองสิบสามจังหวัดปทุมธานี ระยะที่หนึ่ง
-${UNBROKEN_NAME}        โครงการ_ที่_ไม่_มี_ช่อง_ว่าง_เลย_ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz_0123456789_ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz_0123456789
+${UNBROKEN_NAME}        โครงการ_ที่_ไม่_มี_ช่อง_ว่าง_เลย_ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz_0123456789_ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz
 ${EMPTY_ACTIVE_TEXT}    ยังไม่มีโครงการในพื้นที่นี้
 ${EMPTY_ARCHIVE_TEXT}   ไม่มีโครงการที่เก็บถาวร
 
@@ -116,7 +116,7 @@ Card Total Follows A Document Changed By Another Client
     Numbers Should Be Close    ${row}[summary][constructionTotal]    ${expected}[constructionTotal]    1
 
 Updated Time On The Card Matches The Database In Bangkok Time
-    [Documentation]    "แก้ล่าสุด 28 ต.ค. 69 00:35": day, Thai month, Buddhist year (2 digits), hour and minute of
+    [Documentation]    "แก้ล่าสุด 28 ต.ค. 26 00:35": day, Thai month, Christian-era year (2 digits), hour and minute of
     ...    ``projects.updated_at`` in Asia/Bangkok.
     [Tags]    edge
     ${user}=    Register User Via API    time
@@ -758,9 +758,9 @@ Row Count Should Be
     Length Should Be    ${rows}    ${expected}
 
 Thai Date Text
-    [Documentation]    ``formatDateTime`` of the app for a UTC timestamp, in Bangkok time: "28 ต.ค. 69 00:35".
+    [Documentation]    ``formatDateTime`` of the app for a UTC timestamp, in Bangkok time: "28 ต.ค. 26 00:35" (Christian-era year).
     [Arguments]    ${timestamp}
     ${t}=    Evaluate    $timestamp.astimezone(datetime.timezone(datetime.timedelta(hours=7)))
     ${months}=    Create List    ม.ค.    ก.พ.    มี.ค.    เม.ย.    พ.ค.    มิ.ย.    ก.ค.    ส.ค.    ก.ย.    ต.ค.    พ.ย.    ธ.ค.
-    ${text}=    Evaluate    "{} {} {} {:02d}:{:02d}".format($t.day, $months[$t.month - 1], str($t.year + 543)[-2:], $t.hour, $t.minute)
+    ${text}=    Evaluate    "{} {} {} {:02d}:{:02d}".format($t.day, $months[$t.month - 1], str($t.year)[-2:], $t.hour, $t.minute)
     RETURN    ${text}

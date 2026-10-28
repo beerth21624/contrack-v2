@@ -4,7 +4,7 @@
 // Cumulative cash position and a small EVM dashboard. No VAT, retention or contingency (as Excel).
 // docs/excel-spec/06-manday-scurve-cashflow.md §3.
 import { buildWeekBuckets, monthSpan, monthsOf, isoToSerial, type MonthBucket, type WeekBucket } from './calendar';
-import type { ScheduleResult } from './schedule';
+import { MAX_AXIS_MONTHS, type ScheduleResult } from './schedule';
 import { INSTALLMENTS } from './tasks';
 
 export interface CashInstallmentInput {
@@ -127,11 +127,12 @@ export function computeCashFlow(input: CashFlowInput, schedule: ScheduleResult, 
     const first = schedule.buckets[0];
     const placed = input.installments.flatMap(i => (i.bucket === null || !Number.isFinite(i.bucket) ? [] : [i.bucket]));
     const planMonths = first && schedule.finish ? monthSpan(first.startSerial, isoToSerial(schedule.finish) ?? first.startSerial) : 0;
-    const months = Math.max(
+    // Capped like the S-Curve axis: a plan stretched to the year 9999 by a mistyped duration is ~95,000 months.
+    const months = Math.min(MAX_AXIS_MONTHS, Math.max(
         Math.max(1, Math.round(finite(input.minMonths))),
         planMonths,
         placed.length ? Math.floor(Math.max(...placed) / 4) + 1 : 0,
-    );
+    ));
     const buckets = first ? buildWeekBuckets(first.startSerial, months) : [];
     const n = buckets.length;
     const zeros = () => Array.from({ length: n }, () => 0);

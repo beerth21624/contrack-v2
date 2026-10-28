@@ -1450,12 +1450,15 @@ Locked Level Case
     Open Fresh Context
     Start Guest Project    blank    /journey    unlock_until=${previous}
     Go To Path    /journey/${level}
-    Wait For Elements State    text=รอขั้นตอนก่อนหน้า    visible    timeout=60s
+    Locked Screen Should Match Engine    ${level}
     Get Element Count    ${CONFIRM_BUTTON}    ==    0
     Get Element Count    css=input[aria-label]    ==    0
     Page Should Have No Error Overlay
-    Click    css=a:has-text("ทำต่อ: ${previous_title}")
-    Wait For Condition    Url    should end with    /journey/${previous}    timeout=60s
+    ${expected}=    Expected For Current Guest Project
+    ${lvl}=    Expected Level    ${expected}    ${level}
+    ${first}=    Expected Level    ${expected}    ${lvl}[firstStep]
+    Click    css=a:has-text("ทำต่อ: ${first}[title]")
+    Wait For Condition    Url    should end with    /journey/${lvl}[firstStep]    timeout=60s
     Wait For Level Page
     [Teardown]    Close Context
 

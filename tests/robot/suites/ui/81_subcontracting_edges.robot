@@ -532,7 +532,7 @@ Module Switched Off Removes The Menu And The Pages
     ${ctx}=    Open Buyer Context    ${buyer}
     Get Element Count    css=.ant-layout-header [role="menuitem"]:has-text("จ้างช่วง")    >=    1
     Client Navigate    /workspace/modules
-    Click    css=[role="switch"][aria-label="จ้างช่วง"]
+    Click    css=[role="switch"][aria-label^="จ้างช่วง"]
     Click    css=.ant-modal-confirm >> role=button[name="ปิดโมดูล"]
     Toast Should Show    ปิด
     Get Element Count    css=.ant-layout-header [role="menuitem"]:has-text("จ้างช่วง")    ==    0
@@ -543,7 +543,7 @@ Module Switched Off Removes The Menu And The Pages
     ${on}=    Query Value    select enabled from workspace_modules where workspace_id = %s and module = 'subcontracting'    ${buyer}[ws]
     Should Not Be True    ${on}
     Client Navigate    /workspace/modules
-    Click    css=[role="switch"][aria-label="จ้างช่วง"]
+    Click    css=[role="switch"][aria-label^="จ้างช่วง"]
     Toast Should Show    เปิด
     Get Element Count    css=.ant-layout-header [role="menuitem"]:has-text("จ้างช่วง")    >=    1
 
@@ -570,7 +570,7 @@ Module Off With A Running Contract Needs Confirmation And Crew Keeps Read Only A
     Switch Module Via API    ${buyer}[user]    ${buyer}[ws]    ${False}    status=409
     ${buyer_ctx}=    Open Buyer Context    ${buyer}
     Client Navigate    /workspace/modules
-    Click    css=[role="switch"][aria-label="จ้างช่วง"]
+    Click    css=[role="switch"][aria-label^="จ้างช่วง"]
     Click    css=.ant-modal-confirm >> role=button[name="ปิดโมดูล"]
     Wait For Elements State    text=/ยังมีสัญญาที่ดำเนินอยู่ 1 สัญญา/    visible    timeout=30s
     Click    css=.ant-modal-confirm >> role=button[name="ปิดต่อ"]

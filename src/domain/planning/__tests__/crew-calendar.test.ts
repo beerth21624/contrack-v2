@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { computeBoq } from '../../boq/engine';
 import { BOQ_TEMPLATE_V5 } from '../../boq/template.v5';
-import { computeCrewCalendar, computePlanning, defaultPlanningInput, PLAN_TASKS, type PlanningInput } from '..';
+import { computeCrewCalendar, computePlanning, defaultPlanningInput, MAX_AXIS_MONTHS, MAX_CALENDAR_DAYS, PLAN_TASKS, type PlanningInput } from '..';
 
 const boq = computeBoq({ sections: BOQ_TEMPLATE_V5 });
 const plan = (edit?: (i: PlanningInput) => void) => {
@@ -30,6 +30,22 @@ const day = (cal: ReturnType<typeof computeCrewCalendar>, iso: string) => {
 };
 
 describe('crew calendar', () => {
+    it('a mistyped duration of a billion days neither throws nor lists every day: the first MAX_CALENDAR_DAYS', () => {
+        const r = only({ '1.5': ['2026-02-10', 999_999_999, 2, 4] });
+        expect(r.schedule.tasks.find(t => t.id === '1.5')?.finish).toBe('9999-12-31');
+        const cal = computeCrewCalendar(r.schedule, r.manday);
+        expect(cal.days).toHaveLength(MAX_CALENDAR_DAYS);
+        expect(cal.start).toBe('2026-02-10');
+        expect(cal.days.every(d => d.total === 6)).toBe(true);
+    });
+
+    it('the same billion days keep the cash flow axis at MAX_AXIS_MONTHS and compute quickly', () => {
+        const t = Date.now();
+        const r = only({ '1.5': ['2026-02-10', 999_999_999, 2, 4] });
+        expect(r.cashflow.buckets.length).toBeLessThanOrEqual(MAX_AXIS_MONTHS * 4);
+        expect(Date.now() - t).toBeLessThan(2000);
+    });
+
     it('a task is active from its start to start + duration − 1, inclusive', () => {
         const r = only({ '1.5': ['2026-02-10', 3, 2, 4] });
         const cal = computeCrewCalendar(r.schedule, r.manday);
