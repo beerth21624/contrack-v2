@@ -61,7 +61,7 @@ Card Input
 Fill Card Number
     [Arguments]    ${list}    ${index}    ${label}    ${value}
     ${sel}=    Card Input    ${list}    ${index}    ${label}
-    Click    ${sel}
+    Click Cell    ${sel}
     Fill Text    ${sel}    ${value}
     Keyboard Key    press    Enter
 
@@ -99,11 +99,13 @@ Choose Pile Type
 
 Choose Pile Section
     [Documentation]    Pick ``${option}`` in the "หน้าตัด / รูปทรง" dropdown. The list is virtual (only the first rows
-    ...    are in the DOM), so it is scrolled until the option appears.
+    ...    are in the DOM), so it is scrolled from the top until the option appears.
     [Arguments]    ${option}
     # Click the Select box, not its input: once a value is chosen the value text covers the input.
     Click    css=.ant-select:has([aria-label="หน้าตัด / รูปทรง"])
     ${dropdown}=    Set Variable    css=.ant-select-dropdown:not(.ant-select-dropdown-hidden)
+    # The list opens scrolled to the chosen value (a later group once one is picked): start from the top.
+    Scroll By    ${dropdown} .rc-virtual-list-holder    vertical=-5000
     FOR    ${i}    IN RANGE    10
         ${found}=    Get Element Count    ${dropdown} .ant-select-item-option >> text="${option}"
         IF    ${found} > 0    BREAK
@@ -204,9 +206,13 @@ Level Should Show No Own Total
 Locked Level Should Wait For Previous
     [Documentation]    ``${locked_id}`` opened by URL shows 'ขั้นตอน "…" ยังไม่พร้อมทำ', what it waits for (as the
     ...    engine lists it) and a way to the step to do first, never a crash.
-    [Arguments]    ${locked_id}    ${locked_title}
+    ...    Levels open by prerequisites, so the step after the current one is often open too: when ``${locked_id}`` is
+    ...    not locked for the stored project, the first level after it (journey order) that is locked is opened instead.
+    [Arguments]    ${locked_id}    ${locked_title}=${EMPTY}
+    ${expected}=    Expected For Current Guest Project
+    ${locked_id}=    Locked Level From    ${expected}    ${locked_id}
     Go To Path    /journey/${locked_id}
-    Locked Screen Should Match Engine    ${locked_id}    ${locked_title}
+    Locked Screen Should Match Engine    ${locked_id}
     Get Element Count    css=button:has-text("ทำต่อ:")    ==    1
     Page Should Have No Error Overlay
 

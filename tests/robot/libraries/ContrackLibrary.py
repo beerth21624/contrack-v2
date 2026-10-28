@@ -125,6 +125,19 @@ class ContrackLibrary:
         raise AssertionError(f"No journey level {level_id!r}")
 
     @keyword
+    def locked_level_from(self, expected: dict, level_id: str) -> str:
+        """``level_id`` when the engine says it is locked, else the first level after it (journey order) that is,
+        else the first locked level anywhere. Fails when nothing is locked."""
+        levels = expected["levels"]
+        ids = [lvl["id"] for lvl in levels]
+        locked = {lvl["id"] for lvl in levels if lvl["state"] == "locked"}
+        start = ids.index(level_id) if level_id in ids else 0
+        for lid in ids[start:] + ids[:start]:
+            if lid in locked:
+                return lid
+        raise AssertionError("No locked level in this project")
+
+    @keyword
     def expected_section(self, expected: dict, section_no: Any) -> dict:
         for s in expected["sections"]:
             if int(s["no"]) == int(section_no):
@@ -194,6 +207,50 @@ class ContrackLibrary:
         if until_level != "ALL":
             for lid in self.level_prerequisites(until_level):
                 journey.setdefault(lid, mark)
+        proj["journey"] = journey
+        return proj
+
+    @keyword
+    def project_with_level_locked(self, project: Any, level_id: str, waiting_for: str = "", mark: str = "done") -> dict:
+        """Copy of ``project`` in which ``level_id`` is locked by the engine's rules (levels open by prerequisites).
+
+        Every level ``level_id`` waits for, directly or through others, is marked ``done`` except one direct
+        prerequisite (``waiting_for``, default: the last one in list order) and the prerequisites that wait for it.
+        So the level shows "ยังไม่พร้อมทำ", ``waiting_for`` is the open step on the way to it, and nothing else is
+        marked. A level without prerequisites (project-info) cannot be locked.
+        """
+        proj = json.loads(json.dumps(project if not isinstance(project, str) else json.loads(project)))
+        if "state" in proj:
+            proj = proj["state"]["project"]
+        levels = self._blank_levels()
+        after = {lvl["id"]: lvl["after"] for lvl in levels}
+        if level_id not in after:
+            raise AssertionError(f"No journey level {level_id!r}")
+        if not after[level_id]:
+            raise AssertionError(f"Level {level_id!r} has no prerequisites, so it is never locked")
+        order = [lvl["id"] for lvl in levels]
+        direct = sorted(after[level_id], key=order.index)
+        wait = waiting_for or direct[-1]
+        if wait not in direct:
+            raise AssertionError(f"{wait!r} is not a direct prerequisite of {level_id!r} ({direct})")
+
+        def waits_for(lid: str, target: str) -> bool:
+            todo, seen = list(after[lid]), set()
+            while todo:
+                cur = todo.pop()
+                if cur == target:
+                    return True
+                if cur not in seen:
+                    seen.add(cur)
+                    todo.extend(after[cur])
+            return False
+
+        journey = dict(proj.get("journey") or {})
+        for lid in self.level_prerequisites(level_id):
+            if lid != wait and not waits_for(lid, wait):
+                journey.setdefault(lid, mark)
+        for lid in [wait] + [x for x in order if x != wait and waits_for(x, wait)]:
+            journey.pop(lid, None)
         proj["journey"] = journey
         return proj
 

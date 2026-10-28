@@ -572,7 +572,7 @@ Module Off With A Running Contract Needs Confirmation And Crew Keeps Read Only A
     Client Navigate    /workspace/modules
     Click    css=[role="switch"][aria-label^="จ้างช่วง"]
     Click    css=.ant-modal-confirm >> role=button[name="ปิดโมดูล"]
-    Wait For Elements State    text=/ยังมีสัญญาที่ดำเนินอยู่ 1 สัญญา/    visible    timeout=30s
+    Wait For Elements State    css=.ant-modal-confirm-title >> text=/ยังมีสัญญาที่ดำเนินอยู่ 1 สัญญา/    visible    timeout=30s
     Click    css=.ant-modal-confirm >> role=button[name="ปิดต่อ"]
     Wait For Elements State    css=.ant-modal-confirm    detached    timeout=30s
     Get Element Count    css=.ant-layout-header [role="menuitem"]:has-text("จ้างช่วง")    ==    0

@@ -141,7 +141,7 @@ Viewer Cannot Create Or Change Projects From The List
     Get Element Count    css=button:has-text("สร้างโครงการใหม่")    ==    0
     ${card}=    Project Card    ${project}[name]
     Get Element Count    ${card} >> css=button[aria-label="ตัวเลือก"]    ==    0
-    Get Text    css=.ant-select-selection-item >> nth=0    contains    ${ROLE_VIEWER}
+    Get Text    css=.ant-select:has([aria-label="พื้นที่ทำงาน"])    contains    ${ROLE_VIEWER}
 
 Viewer Sees The Empty State Without A Create Button
     [Tags]    edge
@@ -289,7 +289,9 @@ Inviting Someone Who Is Already A Member Shows A Message
     Fill Text    ${INVITE_EMAIL_INPUT}    ${team}[estimator][email]
     Click    ${CREATE_LINK_BUTTON}
     Toast Should Show    ทำรายการนี้ไม่ได้
-    Row Count Should Be    0    select 1 from invitations where workspace_id = %s    ${team}[ws]
+    # The members joined through (accepted) invitations; no new pending one was made for the existing member.
+    Row Count Should Be    0    select 1 from invitations where workspace_id = %s and accepted_at is null and revoked_at is null
+    ...    ${team}[ws]
 
 Invitation Role Choices Never Include Owner
     [Tags]    security
@@ -351,8 +353,9 @@ An Invitation Link Works Only Once
     Row Count Should Be    1    select 1 from memberships where workspace_id = %s and user_id = %s    ${team}[ws]    ${invitee}[id]
 
 Another User Cannot Use Someone Else's Invitation
-    [Documentation]    Security: the link is for one e-mail; a different signed-in user gets "ลิงก์นี้เชิญอีเมลอื่น"
-    ...    and is not added.
+    [Documentation]    Security: the link is for one e-mail; a different signed-in user is not added. The API answers
+    ...    ``invitation_invalid`` for every failure (it never reveals the workspace or the invited e-mail), so the page says
+    ...    "เข้าร่วมไม่สำเร็จ" with the generic "ใช้ไม่ได้แล้ว" text.
     [Tags]    security    negative    db
     ${team}=    Create Company Team
     ${invited}=    Register User Via API    invited
@@ -360,7 +363,9 @@ Another User Cannot Use Someone Else's Invitation
     ${token}=    Invite Via API    ${team}[owner]    ${team}[ws]    ${invited}[email]    admin
     Open Context As    ${thief}[email]    ${thief}[password]    /invite/${token}
     Click    css=button:has-text("เข้าร่วมทีม")
-    Wait For Elements State    css=.ant-result >> text=ลิงก์นี้เชิญอีเมลอื่น    visible    timeout=30s
+    Wait For Elements State    css=.ant-result >> text=เข้าร่วมไม่สำเร็จ    visible    timeout=30s
+    Get Text    css=.ant-result    contains    ลิงก์เชิญนี้ใช้ไม่ได้แล้ว
+    Get Text    css=.ant-result    not contains    ${invited}[email]
     Row Count Should Be    0    select 1 from memberships where workspace_id = %s and user_id = %s    ${team}[ws]    ${thief}[id]
 
 Revoked Invitation Cannot Be Accepted
@@ -606,7 +611,7 @@ Personal Workspace Has No Team Management
     [Tags]    edge
     ${user}=    Register User Via API    personalmembers
     Open Context As    ${user}[email]    ${user}[password]    /workspace/members
-    Wait For Elements State    css=.ant-table-tbody tr.ant-table-row    visible    timeout=60s
+    Wait For Elements State    css=.ant-table-tbody tr.ant-table-row >> nth=0    visible    timeout=60s
     Alert Should Show    พื้นที่ส่วนตัวมีคุณคนเดียว
     Get Text    css=body    not contains    ${INVITE_SECTION_TITLE}
     Get Element Count    css=.ant-table-row .ant-select    ==    0
@@ -733,7 +738,7 @@ Company Project With Unlocked Level
 Demo Account Members Page Should Show
     [Arguments]    ${email}    ${invite_section}    ${delete_button}
     Open Context As    ${email}    path=/workspace/members
-    Wait For Elements State    css=.ant-table-tbody tr.ant-table-row    visible    timeout=60s
+    Wait For Elements State    css=.ant-table-tbody tr.ant-table-row >> nth=0    visible    timeout=60s
     ${want_invite}=    Set Variable If    ${invite_section}    ${1}    ${0}
     ${want_delete}=    Set Variable If    ${delete_button}    ${1}    ${0}
     ${invite_count}=    Get Element Count    css=body:has-text("${INVITE_SECTION_TITLE}")

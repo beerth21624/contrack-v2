@@ -527,12 +527,17 @@ Page Should Not Scroll Sideways
     Should Be True    ${over} <= 1    msg=The page is ${over}px wider than the screen
 
 Element Should Be Inside Viewport
-    [Documentation]    The element is visible and fully on screen (not cut off by the bottom of the phone).
+    [Documentation]    The element is visible and fully on screen (not cut off by the bottom of the phone). Retries for a few
+    ...    seconds: a bottom sheet slides in from below the screen.
     [Arguments]    ${selector}
     Wait For Elements State    ${selector}    visible
-    ${inside}=    Evaluate JavaScript    ${selector}
-    ...    (el) => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= window.innerHeight && r.left >= 0 && r.right <= window.innerWidth; }
-    Should Be True    ${inside}    msg=${selector} is not fully inside the screen
+    Wait Until Keyword Succeeds    5s    200ms    Element Is Inside Viewport Now    ${selector}
+
+Element Is Inside Viewport Now
+    [Arguments]    ${selector}
+    ${box}=    Evaluate JavaScript    ${selector}
+    ...    (el) => { const r = el.getBoundingClientRect(); return { inside: r.top >= 0 && r.bottom <= window.innerHeight && r.left >= 0 && r.right <= window.innerWidth, rect: [r.left, r.top, r.right, r.bottom].map(Math.round).join(','), screen: window.innerWidth + 'x' + window.innerHeight }; }
+    Should Be True    ${box}[inside]    msg=${selector} is not fully inside the screen: left,top,right,bottom = ${box}[rect], screen ${box}[screen]
 
 # ── composed set-ups ──────────────────────────────────────────────────────────────────────────
 Crews Have Bid Via API

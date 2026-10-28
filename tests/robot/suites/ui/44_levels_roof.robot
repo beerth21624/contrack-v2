@@ -281,7 +281,7 @@ Roofing Values And Mark Survive A Reload
     Reload Level
     Level Totals Should Match Engine    roofing
     Level Mark Should Be    roofing    done
-    Get Property    css=[aria-label="${AREA}"]    value    ==    110
+    Get Property    css=[aria-label="${AREA}"]    value    ==    110.00
     Get Property    css=[aria-label="ไม้เชิงชาย (ม.)"]    value    ==    11+11+10+10
 
 Roofing Previous Arrow Returns To The Column Plates

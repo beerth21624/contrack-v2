@@ -186,10 +186,14 @@ WS Start Guest Project
     ...    before ``${unlock_until}`` done, opened on ``${path}``) but the new-project template is taken from the engine once
     ...    per suite and copied for every test. Each test still gets its own deep copy in its own browser context.
     ...    Saves two engine runs per test.
-    [Arguments]    ${start}=blank    ${path}=/journey    ${unlock_until}=${EMPTY}
+    ...    ``${lock_level}`` builds a project in which that level is locked instead (see ``Project With Level Locked``).
+    [Arguments]    ${start}=blank    ${path}=/journey    ${unlock_until}=${EMPTY}    ${lock_level}=${EMPTY}
     ${project}=    WS New Project    ${start}
     IF    '${unlock_until}' != '${EMPTY}'
         ${project}=    Project With Levels Done    ${project}    ${unlock_until}
+    END
+    IF    '${lock_level}' != '${EMPTY}'
+        ${project}=    Project With Level Locked    ${project}    ${lock_level}
     END
     ${value}=    Guest Storage Value    ${project}
     ${key}=    Guest Project Key
@@ -296,9 +300,12 @@ WS Reload And Wait
 WS Delete Card Confirm
     [Documentation]    Press the ``${index}``-th "ลบ" icon of a card and accept the "ลบ" popconfirm when one is asked.
     [Arguments]    ${index}=0    ${asks}=${TRUE}
+    # A popconfirm that was just accepted fades out for a moment: wait for it, or "ลบ" matches two buttons.
+    Wait For Elements State    css=.ant-popover:not(.ant-popover-hidden)    hidden    timeout=10s
     Click    css=button[aria-label="ลบ"] >> nth=${index}
     IF    ${asks}
         Click    css=.ant-popover:not(.ant-popover-hidden) .ant-popconfirm-buttons button >> text="ลบ"
+        Wait For Elements State    css=.ant-popover:not(.ant-popover-hidden)    hidden    timeout=10s
     END
 
 WS Seed Calculator Input
@@ -480,7 +487,7 @@ WS Set Pick Quantity
     [Documentation]    Type a quantity (a number or an expression such as =2*3) into the line of ``${item}``.
     [Arguments]    ${item}    ${value}    ${exact}=${FALSE}
     ${sel}=    WS Pick Box    ${item}    ${exact}
-    Click    ${sel}
+    Click Cell    ${sel}
     Fill Text    ${sel}    ${value}
     Keyboard Key    press    Enter
 

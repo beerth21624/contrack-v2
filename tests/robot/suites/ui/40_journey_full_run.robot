@@ -4,6 +4,9 @@ Documentation       Play the whole guided journey, all 37 levels, end to end in 
 ...                 confirmed in order; at every level the level total and the construction total equal the engine,
 ...                 and the finished project totals 1,855,162 baht (app sample; Excel M310 1,850,317.34 differs by the
 ...                 documented KNOWN_DELTAS of src/domain/__tests__/project-golden.test.ts).
+...                 Levels open by prerequisites, so "in order" means the order the app leads the user through: confirm
+...                 goes to the next open step (``Landing Path After Confirm``, from the engine's journey rules), which
+...                 is not always the next one in the list (the fittings of group D wait for the paint).
 ...                 2) A project started from a blank plan, filled level by level through the UI with the
 ...                 ``Fill … From Plan`` page objects (optional levels skipped in one variant, filled in another),
 ...                 then the BOQ and the planning pages.
@@ -64,29 +67,34 @@ ${SAMPLE_TOTAL}     1855162
 
 *** Test Cases ***
 Sample House Can Be Confirmed Through All 37 Levels
-    [Documentation]    Start "ทดลองกับบ้านตัวอย่าง", confirm level by level from ข้อมูลโครงการ to งานเบ็ดเตล็ด.
-    ...    Each step: the page opens unlocked, totals equal the engine, confirm moves to the next level and
-    ...    stores "done". At the end every level is done and the construction total is the sample total.
+    [Documentation]    Start "ทดลองกับบ้านตัวอย่าง", confirm step by step from ข้อมูลโครงการ, each time moving to the step
+    ...    the app offers next (the engine's next open step). Each step: the page opens unlocked, totals equal the
+    ...    engine, confirm moves on and stores "done". All 37 levels are visited once; at the end every level is done
+    ...    and the construction total is the sample total.
     [Tags]    smoke
     Open Fresh Context
     ${expected}=    Start Guest Project    sample    /journey/project-info
     ${ids}=    Level Ids
     Length Should Be    ${ids}    37
-    ${count}=    Get Length    ${ids}
-    FOR    ${i}    IN RANGE    ${count}
-        ${id}=    Set Variable    ${ids}[${i}]
-        Get Url    should end with    /journey/${id}
+    ${visited}=    Create List
+    FOR    ${i}    IN RANGE    37
         Wait For Elements State    ${CONFIRM_BUTTON}    visible    timeout=60s
+        ${id}=    Current Level Id
+        Append To List    ${visited}    ${id}
         Page Should Have No Error Overlay
         IF    '${id}' != 'project-info'
             ${lvl}=    Expected Level    ${expected}    ${id}
             Level Total Should Be    ${lvl}[total]
         END
         Construction Total Should Be    ${expected}[constructionTotal]
-        ${next}=    Evaluate    $ids[$i + 1] if $i + 1 < len($ids) else ''
-        Confirm Level    ${next}
+        ${path}=    Landing Path After Confirm    ${id}
+        Click    ${CONFIRM_BUTTON}
+        Wait For Condition    Url    should end with    ${path}    timeout=30s
         Level Mark Should Be    ${id}    done
     END
+    Get Url    should end with    /journey
+    Length Should Be    ${visited}    37
+    Lists Should Be Equal    ${{ sorted($visited) }}    ${{ sorted($ids) }}    msg=Not every level was visited exactly once
     ${project}=    Read Guest Project
     ${final}=    Compute Expected    ${project}
     Numbers Should Be Close    ${final}[constructionTotal]    ${SAMPLE_TOTAL}    1
@@ -95,24 +103,30 @@ Sample House Can Be Confirmed Through All 37 Levels
     END
 
 Sample House Journey Survives A Reload In The Middle
-    [Documentation]    Confirm the first 10 levels, reload, and continue: progress and totals are unchanged.
+    [Documentation]    Confirm the first 10 steps the app offers, reload, and continue: progress and totals are unchanged.
     Open Fresh Context
     ${expected}=    Start Guest Project    sample    /journey/project-info
-    ${ids}=    Level Ids
+    ${done}=    Create List
     FOR    ${i}    IN RANGE    10
-        Confirm Level    ${{ $ids[$i + 1] }}
+        Wait For Elements State    ${CONFIRM_BUTTON}    visible    timeout=60s
+        ${id}=    Current Level Id
+        Append To List    ${done}    ${id}
+        ${path}=    Landing Path After Confirm    ${id}
+        Click    ${CONFIRM_BUTTON}
+        Wait For Condition    Url    should end with    ${path}    timeout=30s
     END
+    ${where}=    Current Level Id
     Reload
     Wait For Elements State    ${CONFIRM_BUTTON}    visible    timeout=60s
-    Get Url    should end with    /journey/${ids}[10]
-    FOR    ${i}    IN RANGE    10
-        Level Mark Should Be    ${ids}[${i}]    done
+    Get Url    should end with    /journey/${where}
+    FOR    ${id}    IN    @{done}
+        Level Mark Should Be    ${id}    done
     END
     Construction Total Should Be    ${expected}[constructionTotal]
 
 Blank Plan Filled Through All 37 Levels Then BOQ And Planning
     [Documentation]    Business flow: "เริ่มจากแบบแปลนของฉัน", every level typed from the test house's plan through the
-    ...    UI and confirmed in journey order. At each level the level total and the construction total equal the engine
+    ...    UI and confirmed, each time on the step the app offers next (engine order, not list order). At each level the level total and the construction total equal the engine
     ...    for the stored project, and the level is stored "done". At the end every level is done and the BOQ,
     ...    Man-Day, Schedule and Cash Flow pages equal the engine.
     Open Fresh Context
@@ -136,26 +150,34 @@ Blank Plan With Every Optional Level Skipped Then BOQ And Planning
 
 *** Keywords ***
 Play Blank Journey
-    [Documentation]    Visit the 37 levels in journey order; type each one's plan (or skip it when optional and
-    ...    ``${skip_optional}``), check the totals against the engine and confirm.
+    [Documentation]    Visit the 37 levels in the order the app leads through them (confirm goes to the engine's next
+    ...    open step); type each one's plan (or skip it when optional and ``${skip_optional}``), check the totals
+    ...    against the engine and confirm. Every level is visited once.
     [Arguments]    ${skip_optional}
     ${ids}=    Level Ids
     Length Should Be    ${ids}    37
-    FOR    ${id}    IN    @{ids}
-        Go To Level    ${id}
+    ${visited}=    Create List
+    Go To Level    project-info
+    FOR    ${i}    IN RANGE    37
         Wait For Elements State    ${CONFIRM_BUTTON}    visible    timeout=60s
+        ${id}=    Current Level Id
+        Append To List    ${visited}    ${id}
+        ${path}=    Landing Path After Confirm    ${id}
         IF    ${skip_optional} and $id in $OPTIONAL_LEVELS
             Skip Level
             Wait Until Keyword Succeeds    10s    500ms    Level Mark Should Be    ${id}    skipped
-            CONTINUE
+        ELSE
+            Run Keyword    ${FILL_FROM_PLAN}[${id}]
+            IF    '${id}' != 'project-info'
+                Wait Until Keyword Succeeds    15s    500ms    Level Totals Should Match Engine    ${id}
+            END
+            Click    ${CONFIRM_BUTTON}
+            Wait Until Keyword Succeeds    15s    500ms    Level Mark Should Be    ${id}    done
         END
-        Run Keyword    ${FILL_FROM_PLAN}[${id}]
-        IF    '${id}' != 'project-info'
-            Wait Until Keyword Succeeds    15s    500ms    Level Totals Should Match Engine    ${id}
-        END
-        Click    ${CONFIRM_BUTTON}
-        Wait Until Keyword Succeeds    15s    500ms    Level Mark Should Be    ${id}    done
+        Wait For Condition    Url    should end with    ${path}    timeout=30s
     END
+    Get Url    should end with    /journey
+    Lists Should Be Equal    ${{ sorted($visited) }}    ${{ sorted($ids) }}    msg=Not every level was visited exactly once
 
 Finished Project Should Match Every Page
     [Documentation]    Every level passed (``${expect_state}`` = done for all, or empty to accept done or skipped), then the

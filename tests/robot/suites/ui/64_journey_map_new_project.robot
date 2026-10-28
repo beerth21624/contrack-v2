@@ -33,21 +33,27 @@ Map Lists 37 Levels In 7 Phases
         Get Element Count    css=section >> nth=${i} >> css=ol > li    ==    ${size}
     END
 
-Fresh Blank Project Has One Current Level And 36 Locked
-    [Documentation]    Nothing is passed yet: the first level is "current", all others are locked.
+Fresh Blank Project Opens Only The Levels Without Prerequisites
+    [Documentation]    Nothing is passed yet: the levels the engine calls "current" (no prerequisite left) are open, every other
+    ...    level is locked, and each state on the map equals the engine's.
     ${expected}=    Open Project Page    /journey    start=blank
     ${states}=    Level States On Map
     Should Be Equal    ${states}[0]    current
+    ${want}=    Evaluate    [l['state'] for l in $expected['levels']]
+    Should Be Equal    ${states}    ${want}
     ${locked}=    Evaluate    [s for s in $states if s == 'locked']
-    Length Should Be    ${locked}    36
+    Should Be True    len($locked) > 20
     Map Should Match Engine    ${expected}
 
 Locked Levels Are Not Links
-    [Documentation]    A locked row has the hint title and no link: only the current level has an a[aria-current=step].
-    Open Project Page    /journey    start=blank
+    [Documentation]    A locked row is a plain block carrying the "รอ: …" tooltip and no link; every open level is a link and only
+    ...    the main one (the first open level) has a[aria-current=step].
+    ${expected}=    Open Project Page    /journey    start=blank
+    ${locked}=    Evaluate    sum(1 for l in $expected['levels'] if l['state'] == 'locked')
+    ${open}=    Evaluate    37 - $locked
     Get Element Count    css=a[aria-current="step"]    ==    1
-    Get Element Count    css=[title="ทำขั้นตอนก่อนหน้าให้เสร็จก่อน"]    ==    36
-    Get Element Count    css=li a[href^="/journey/"]    ==    1
+    Get Element Count    css=li > div[title]    ==    ${locked}
+    Get Element Count    css=li a[href^="/journey/"]    ==    ${open}
 
 First Level Primary Button Starts The Journey
     [Documentation]    Expected behaviour: First Level Primary Button Starts The Journey.
@@ -143,9 +149,9 @@ Finished Journey Shows The Completed State
 
 Finished Phases Start Folded And Say They Are Done
     [Documentation]    Expected behaviour: Finished Phases Start Folded And Say They Are Done.
-    ${expected}=    Cached Start Project    sample
-    ${project}=    Project With Levels Done    ${expected}[project]    ALL
-    Open Project Object Page    /journey    ${project}
+    ${start}=    Cached Start Project    sample
+    ${project}=    Project With Levels Done    ${start}[project]    ALL
+    ${expected}=    Open Project Object Page    /journey    ${project}
     Get Element Count    css=section button[aria-expanded="true"]    ==    0
     Get Element Count    css=section button[aria-expanded] >> text=เสร็จแล้ว    ==    7
     Map Should Match Engine    ${expected}
@@ -215,10 +221,11 @@ Back And Forward Move Between The Map And A Level
 Back Between Two Levels Keeps Their Numbers
     [Documentation]    Expected behaviour: Back Between Two Levels Keeps Their Numbers.
     [Tags]    edge
-    Open Project Page    /journey/footing    unlock_until=pedestal
+    ${expected}=    Open Project Page    /journey/footing    unlock_until=pedestal
     Wait For Elements State    css=button[aria-label="ภาพรวมขั้นตอน"]    visible
-    Click    css=a[href="/journey/pedestal"]
-    Wait For Condition    Url    should end with    /journey/pedestal    timeout=30s
+    ${footing}=    Expected Level    ${expected}    footing
+    Click    css=a[href="/journey/${footing}[previous]"]
+    Wait For Condition    Url    should end with    /journey/${footing}[previous]    timeout=30s
     Go Back
     Wait For Condition    Url    should end with    /journey/footing    timeout=30s
     ${expected}=    Expected For Current Guest Project

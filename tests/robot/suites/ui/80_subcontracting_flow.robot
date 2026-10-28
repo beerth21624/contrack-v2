@@ -342,7 +342,9 @@ Leveling Page Shows Two Bids With Totals Equal To What Was Typed
     ${c2}=    Set Variable    ${pkg}[crews][1]
     Numbers Should Be Close    ${totals}[${c1}[name]]    ${totals_expected}[0]    0.5
     Numbers Should Be Close    ${totals}[${c2}[name]]    ${totals_expected}[1]    0.5
-    Get Text    css=table thead tr:first-child th >> nth=3    contains    ${c2}[name]
+    # Columns: item, estimate, then the bidders cheapest first (the default "ถูกสุดก่อน").
+    Get Text    css=table thead tr:first-child th >> nth=2    contains    ${c2}[name]
+    Get Text    css=table thead tr:first-child th >> nth=3    contains    ${c1}[name]
 
 Awarding The Cheaper Bid Creates One Contract With The Bid Total
     [Documentation]    Award in the UI: sc_awards 1 row, sc_subcontracts 1 row pending_acceptance with total = the
@@ -419,7 +421,8 @@ Buyer Overview Lists The Package And Its Status
     ${pkg}=    Open Package With Crews Via API    ${buyer}    2
     ${ctx}=    Open Buyer Context    ${buyer}
     Open Subcontracting Home
-    Wait For Elements State    role=link[name="${MASONRY_TITLE}"]    visible    timeout=60s
+    Wait For Elements State    css=a.font-medium[href="/subcontracting/packages/${pkg}[id]"]    visible    timeout=60s
+    Get Text    css=a.font-medium[href="/subcontracting/packages/${pkg}[id]"]    ==    ${MASONRY_TITLE}
     Wait For Elements State    role=link[name="สร้างแพ็กเกจ"]    visible
     Package Status Should Be    ${pkg}[id]    open
 

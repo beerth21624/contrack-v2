@@ -174,7 +174,7 @@ Subcontracting Sub Pages Are Not Available When The Module Is Off
     ...    the same "ปิดใช้งานอยู่" and never show a package list or an error screen.
     [Tags]    edge    negative
     [Template]    Module Page Should Be Off
-    /subcontracting/packages
+    /subcontracting/packages/new
     /subcontracting/vendors
     /subcontracting/contracts
     /subcontracting/report

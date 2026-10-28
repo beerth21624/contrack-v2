@@ -91,10 +91,10 @@ Unknown Calculator Id Shows A Not Found Message
     Page Should Have No Error Overlay
 
 Back Button Returns To The BOQ Summary
-    [Documentation]    "กลับไปหน้าสรุป BOQ" goes to /boq.
+    [Documentation]    "กลับไปหน้าสรุป BOQ" goes to the BOQ page, at the section of this calculator (/boq#boq-section-6 for the footing).
     Open Project Page    /calc/footing
     Click    ${BACK_TO_BOQ}
-    Wait For Condition    Url    should end with    /boq    timeout=30s
+    Wait For Condition    Url    should end with    /boq#boq-section-6    timeout=30s
     Wait For Elements State    ${GRAND_TOTAL}    visible
 
 Editing Footing Count Changes The Outputs And The BOQ Like The Engine
@@ -124,7 +124,7 @@ Editing In Journey Mode Shows In The Full View
     [Documentation]    Reverse direction: edit on the journey level, open /calc/footing, the count and outputs are the same.
     Open Project Page    /journey/footing    unlock_until=footing
     Wait For Elements State    css=button[aria-label="ภาพรวมขั้นตอน"]    visible
-    Fill Number By Label    count 1    12
+    Fill Number By Label    จำนวนฐานแบบนี้ (ฐาน)    12
     ${expected}=    Wait Until Keyword Succeeds    15s    500ms    Footing Stored Count Is    12
     Go To Path    /calc/footing
     Value Of Input Should Be Number    ${FOOTING_COUNT}    12
@@ -136,8 +136,9 @@ Editing Brick Wall Length Follows The Engine
     Fill Number By Label    ความยาว (ม.)    50
     ${expected}=    Wait Until Keyword Succeeds    15s    500ms    Stored Calculator Input Should Exist    brick
     VAR    ${out}    ${expected}[calcOutputs][brick]
-    Wait Until Keyword Succeeds    10s    250ms    Page Should Show Number    ${out}[gross]
-    Wait Until Keyword Succeeds    10s    250ms    Page Should Show Number    ${out}[net]
+    Should Be Equal As Numbers    ${out}[gross]    306.15
+    Wait Until Keyword Succeeds    10s    250ms    Page Should Show Number    175
+    Wait Until Keyword Succeeds    10s    250ms    Page Should Show Number    ${out}[net|ผนังรอบบ้าน]
     Go To Path    /boq
     Wait Until Keyword Succeeds    15s    500ms    Boq Totals Should Match Engine    ${expected}
 

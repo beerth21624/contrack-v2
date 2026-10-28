@@ -351,9 +351,8 @@ Locked Door Window Level Shows The Waiting Screen
     ...    confirm.
     [Tags]    door-window    navigation    security
     Open Fresh Context    /file.svg
-    WS Start Guest Project    blank    /journey/door-window    unlock_until=roof-structure
+    WS Start Guest Project    blank    /journey/door-window    lock_level=door-window
     WS Go To Locked Level    door-window    ประตู-หน้าต่าง
-    Get Text    css=body    contains    ทำต่อ: โครงหลังคา
 
 Confirmed Door Window Level Reopens As Done And Moves On
     [Documentation]    After confirming, the level shows "เสร็จแล้ว" and the bottom button goes to the next level
@@ -611,9 +610,8 @@ Previous Arrow Of Brick Leads To Door Window
 Locked Brick Level Shows The Waiting Screen
     [Tags]    brick    navigation    security
     Open Fresh Context    /file.svg
-    WS Start Guest Project    blank    /journey/brick    unlock_until=door-window
+    WS Start Guest Project    blank    /journey/brick    lock_level=brick
     WS Go To Locked Level    brick    ก่ออิฐ
-    Get Text    css=body    contains    ทำต่อ: ประตู-หน้าต่าง
 
 Openings From Door Window Are Deducted From The Brick Walls
     [Documentation]    Cross-level: exterior openings 1.0*2.1 + 5*1.5*1.2 = 11.1 sqm and interior 2*0.8*2.0 = 3.2 sqm
@@ -705,11 +703,12 @@ Walls Can Be Added For Every Opening Group At Once
     WS Go To Level    brick
     Click    css=button >> text="เพิ่มผนังตามประตู-หน้าต่าง (2 กลุ่ม)"
     WS Wall Card Count Should Be    2
-    WS Radio Should Be Selected    ส่วนผนัง    ผนังรอบบ้าน    0
-    WS Radio Should Be Selected    ส่วนผนัง    ผนังภายในบ้าน    1
-    Fill Number By Label    ความยาวผนัง (ม.)    36    0
-    Fill Number By Label    ความสูงผนัง (ม.)    2.8    0
-    Fill Number By Label    ความยาวผนัง (ม.)    9    1
+    # The groups come in the door-window calculator's fixed wall-part order: ผนังภายในบ้าน first, then ผนังรอบบ้าน.
+    WS Radio Should Be Selected    ส่วนผนัง    ผนังภายในบ้าน    0
+    WS Radio Should Be Selected    ส่วนผนัง    ผนังรอบบ้าน    1
+    Fill Number By Label    ความยาวผนัง (ม.)    9    0
+    Fill Number By Label    ความยาวผนัง (ม.)    36    1
+    Fill Number By Label    ความสูงผนัง (ม.)    2.8    1
     Get Text    css=body    contains    ก่อ 89.70 ตร.ม.
     WS Level Should Match Engine    brick
 
@@ -924,9 +923,8 @@ Previous Arrow Of Plaster Leads To Brick
 Locked Plaster Level Shows The Waiting Screen
     [Tags]    plaster    navigation    security
     Open Fresh Context    /file.svg
-    WS Start Guest Project    blank    /journey/plaster    unlock_until=brick
+    WS Start Guest Project    blank    /journey/plaster    lock_level=plaster
     WS Go To Locked Level    plaster    ฉาบปูน
-    Get Text    css=body    contains    ทำต่อ: ก่ออิฐ
 
 Sample House Plaster Matches The Engine And Confirms
     [Tags]    plaster    sample

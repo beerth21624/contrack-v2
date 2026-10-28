@@ -43,11 +43,17 @@ Start Guest Project
     ...    Excel v5 house), stored and loaded. Returns the engine's expected values for it.
     ...    ``${unlock_until}`` marks every level before that level id, and every level it waits for, as done, so
     ...    it opens unlocked (levels open by prerequisites; a locked level shows "ยังไม่พร้อมทำ").
-    [Arguments]    ${start}=blank    ${path}=/journey    ${unlock_until}=${EMPTY}
+    ...    ``${lock_level}`` instead builds a project in which that level is locked by the engine's rules (its
+    ...    prerequisites done except one, see ``Project With Level Locked``), for the "waiting" screen.
+    [Arguments]    ${start}=blank    ${path}=/journey    ${unlock_until}=${EMPTY}    ${lock_level}=${EMPTY}
     ${expected}=    Compute Expected For New Project    ${start}
     ${project}=    Set Variable    ${expected}[project]
     IF    '${unlock_until}' != '${EMPTY}'
         ${project}=    Project With Levels Done    ${project}    ${unlock_until}
+        ${expected}=    Compute Expected    ${project}
+    END
+    IF    '${lock_level}' != '${EMPTY}'
+        ${project}=    Project With Level Locked    ${project}    ${lock_level}
         ${expected}=    Compute Expected    ${project}
     END
     Seed Guest Project    ${project}    ${path}
@@ -98,18 +104,26 @@ Input By Label
     [Arguments]    ${label}    ${index}=0
     RETURN    css=[aria-label="${label}"] >> nth=${index}
 
+Click Cell
+    [Documentation]    Click a spreadsheet-style cell and let its focus handler finish. A number cell selects its text one
+    ...    animation frame after it gets focus, and ``select()`` focuses the element: typing and pressing Enter faster than
+    ...    that frame made the cell take the focus back and show its draft text instead of the formatted value.
+    [Arguments]    ${selector}
+    Click    ${selector}
+    Evaluate JavaScript    ${selector}    () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+
 Fill Number By Label
     [Documentation]    Type into a spreadsheet-style number cell and commit with Enter (the cell commits on blur).
     [Arguments]    ${label}    ${value}    ${index}=0
     ${sel}=    Input By Label    ${label}    ${index}
-    Click    ${sel}
+    Click Cell    ${sel}
     Fill Text    ${sel}    ${value}
     Keyboard Key    press    Enter
 
 Fill Text By Label
     [Arguments]    ${label}    ${value}    ${index}=0
     ${sel}=    Input By Label    ${label}    ${index}
-    Click    ${sel}
+    Click Cell    ${sel}
     Fill Text    ${sel}    ${value}
     Keyboard Key    press    Enter
 
@@ -123,8 +137,8 @@ Number Of Element Should Be
 Choose Ant Select Option
     [Documentation]    Open an Ant Design Select (by its aria-label) and pick the option whose text is ``${option}``.
     [Arguments]    ${label}    ${option}    ${index}=0
-    ${sel}=    Input By Label    ${label}    ${index}
-    Click    ${sel}
+    # Click the Select box, not its input: once a value is chosen the value text covers the input.
+    Click    css=.ant-select:has([aria-label="${label}"]) >> nth=${index}
     Click    css=.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option >> text="${option}"
 
 Message Should Appear

@@ -78,7 +78,9 @@ Editing The Wage Of Set A Changes Every Row Using It
     [Documentation]    Skilled wage 800 -> 900 (set A): daily wage of "งานน้ำ-ไฟชั่วคราว" (1 skilled + 1 labourer) = 900 + 500 = 1,400.
     [Tags]    man-day
     Open Project Page    /man-day
-    Fill Number By Label    ช่าง    900    0
+    Open Wage Rates Tab
+    Fill Number By Label    ค่าแรงช่าง ชุด A    900
+    Open Man Day Plan Tab
     ${wage}=    Man Day Cell    งานน้ำ-ไฟชั่วคราว    7
     Wait Until Keyword Succeeds    10s    250ms    Number Of Element Should Be    ${wage}    1400    0.5
     Man Day Page Should Match Engine
@@ -87,7 +89,9 @@ Editing The Subcontract Labour Share Follows The Engine
     [Documentation]    "ค่าแรง % ของยอดรวม" 20% -> 30%: the lump-sum rows recompute.
     [Tags]    man-day
     Open Project Page    /man-day
-    Fill Number By Label    ค่าแรง % ของยอดรวม    30
+    Open Wage Rates Tab
+    Fill Number By Label    งานเหมา: ค่าแรง % ของยอดรวม    30
+    Open Man Day Plan Tab
     Man Day Page Should Match Engine
 
 Use Calculated Days Button Sets The Rounded Value
@@ -161,7 +165,9 @@ Negative Wage Never Produces NaN
     [Documentation]    Expected behaviour: Negative Wage Never Produces NaN.
     [Tags]    man-day    edge    negative
     Open Project Page    /man-day
-    Fill Number By Label    ช่าง    -100    0
+    Open Wage Rates Tab
+    Fill Number By Label    ค่าแรงช่าง ชุด A    -100
+    Open Man Day Plan Tab
     Man Day Page Should Match Engine
     Page Should Not Show Broken Numbers
 
@@ -169,8 +175,10 @@ Zero Wages Leave No Calculated Days Instead Of Infinity
     [Documentation]    Wage set A = 0/0: rows on set A have no daily wage, so "วันตามค่าแรง" is empty (–), never Infinity.
     [Tags]    man-day    edge
     Open Project Page    /man-day
-    Fill Number By Label    ช่าง    0    0
-    Fill Number By Label    คนงาน    0    0
+    Open Wage Rates Tab
+    Fill Number By Label    ค่าแรงช่าง ชุด A    0
+    Fill Number By Label    ค่าแรงคนงาน ชุด A    0
+    Open Man Day Plan Tab
     Man Day Page Should Match Engine
     Page Should Not Show Broken Numbers
 
@@ -338,7 +346,8 @@ Typed Duration Can Return To The Man-Day Value
     [Tags]    schedule
     Open Project Page    /schedule
     Set Task Duration    ${FOUNDATION}    20
-    Click    css=button[aria-label="ใช้วันจาก Man-Day"]
+    ${row}=    Task Row    ${FOUNDATION}
+    Click    ${row} >> css=button[aria-label="ใช้วันจาก Man-Day"]
     Value Of Input Should Be Number    ${{ "css=input[aria-label='${FOUNDATION} ระยะเวลา']" }}    10
     Schedule Page Should Match Engine
 

@@ -255,7 +255,7 @@ Open Context As
 Open Members Page
     Go To Cloud Path    /workspace/members
     Wait For Elements State    css=h3:has-text("สมาชิก")    visible    timeout=60s
-    Wait For Elements State    css=.ant-table-tbody tr.ant-table-row    visible    timeout=30s
+    Wait For Elements State    css=.ant-table-tbody tr.ant-table-row >> nth=0    visible    timeout=30s
 
 Open Modules Page
     Go To Cloud Path    /workspace/modules

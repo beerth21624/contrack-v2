@@ -13,6 +13,19 @@ Test Teardown       Close Test Context
 Test Tags           journey    systems    w3a
 
 
+*** Variables ***
+# Journey level id -> the page-object keyword that types the test house's plan into it (levels 24-31).
+&{SYSTEM_FILL}
+...                 electrical-pipe=Fill Electrical Pipe From Plan
+...                 electrical-cable=Fill Electrical Cable From Plan
+...                 load-center=Fill Load Center From Plan
+...                 electrical-equipment=Fill Electrical Equipment From Plan
+...                 waste-pipe=Fill Waste Pipe From Plan
+...                 water-pipe=Fill Water Pipe From Plan
+...                 sanitary-system=Fill Sanitary System From Plan
+...                 sanitary-ware=Fill Sanitary Ware From Plan
+
+
 *** Test Cases ***
 # ═════════════════════════════ 24 electrical-pipe ═════════════════════════════
 
@@ -296,9 +309,8 @@ Previous Arrow Of Electrical Pipe Leads To Plaster
 Locked Electrical Pipe Level Shows The Waiting Screen
     [Tags]    electrical-pipe    navigation    security
     Open Fresh Context    /file.svg
-    WS Start Guest Project    blank    /journey/electrical-pipe    unlock_until=plaster
+    WS Start Guest Project    blank    /journey/electrical-pipe    lock_level=electrical-pipe
     WS Go To Locked Level    electrical-pipe    ท่อร้อยสายไฟ
-    Get Text    css=body    contains    ทำต่อ: ฉาบปูน
 
 # ═════════════════════════════ 25 electrical-cable ═════════════════════════════
 
@@ -571,9 +583,8 @@ Previous Arrow Of Electrical Cable Leads To Electrical Pipe
 Locked Electrical Cable Level Shows The Waiting Screen
     [Tags]    electrical-cable    navigation    security
     Open Fresh Context    /file.svg
-    WS Start Guest Project    blank    /journey/electrical-cable    unlock_until=electrical-pipe
+    WS Start Guest Project    blank    /journey/electrical-cable    lock_level=electrical-cable
     WS Go To Locked Level    electrical-cable    สายไฟ
-    Get Text    css=body    contains    ทำต่อ: ท่อร้อยสายไฟ
 
 # ═════════════════════════════ 26 load-center ═════════════════════════════
 
@@ -760,9 +771,8 @@ Previous Arrow Of Load Center Leads To Electrical Cable
 Locked Load Center Level Shows The Waiting Screen
     [Tags]    load-center    navigation    security
     Open Fresh Context    /file.svg
-    WS Start Guest Project    blank    /journey/load-center    unlock_until=electrical-cable
+    WS Start Guest Project    blank    /journey/load-center    lock_level=load-center
     WS Go To Locked Level    load-center    ตู้ควบคุมไฟฟ้า
-    Get Text    css=body    contains    ทำต่อ: สายไฟ
 
 # ═════════════════════════════ 27 electrical-equipment ═════════════════════════════
 
@@ -900,9 +910,8 @@ Previous Arrow Of Electrical Equipment Leads To Load Center
 Locked Electrical Equipment Level Shows The Waiting Screen
     [Tags]    electrical-equipment    navigation    security
     Open Fresh Context    /file.svg
-    WS Start Guest Project    blank    /journey/electrical-equipment    unlock_until=load-center
+    WS Start Guest Project    blank    /journey/electrical-equipment    lock_level=electrical-equipment
     WS Go To Locked Level    electrical-equipment    อุปกรณ์ไฟฟ้า
-    Get Text    css=body    contains    ทำต่อ: ตู้ควบคุมไฟฟ้า
 
 # ═════════════════════════════ 28 waste-pipe ═════════════════════════════
 
@@ -1108,9 +1117,8 @@ Previous Arrow Of Waste Pipe Leads To Electrical Equipment
 Locked Waste Pipe Level Shows The Waiting Screen
     [Tags]    waste-pipe    navigation    security
     Open Fresh Context    /file.svg
-    WS Start Guest Project    blank    /journey/waste-pipe    unlock_until=electrical-equipment
+    WS Start Guest Project    blank    /journey/waste-pipe    lock_level=waste-pipe
     WS Go To Locked Level    waste-pipe    ท่อน้ำทิ้ง
-    Get Text    css=body    contains    ทำต่อ: อุปกรณ์ไฟฟ้า
 
 # ═════════════════════════════ 29 water-pipe ═════════════════════════════
 
@@ -1292,9 +1300,8 @@ Previous Arrow Of Water Pipe Leads To Waste Pipe
 Locked Water Pipe Level Shows The Waiting Screen
     [Tags]    water-pipe    navigation    security
     Open Fresh Context    /file.svg
-    WS Start Guest Project    blank    /journey/water-pipe    unlock_until=waste-pipe
+    WS Start Guest Project    blank    /journey/water-pipe    lock_level=water-pipe
     WS Go To Locked Level    water-pipe    ท่อน้ำดี
-    Get Text    css=body    contains    ทำต่อ: ท่อน้ำทิ้ง
 
 # ═════════════════════════════ 30 sanitary-system ═════════════════════════════
 
@@ -1432,9 +1439,8 @@ Previous Arrow Of Sanitary System Leads To Water Pipe
 Locked Sanitary System Level Shows The Waiting Screen
     [Tags]    sanitary-system    navigation    security
     Open Fresh Context    /file.svg
-    WS Start Guest Project    blank    /journey/sanitary-system    unlock_until=water-pipe
+    WS Start Guest Project    blank    /journey/sanitary-system    lock_level=sanitary-system
     WS Go To Locked Level    sanitary-system    อุปกรณ์ระบบสุขาภิบาล
-    Get Text    css=body    contains    ทำต่อ: ท่อน้ำดี
 
 # ═════════════════════════════ 31 sanitary-ware ═════════════════════════════
 
@@ -1594,51 +1600,40 @@ Previous Arrow Of Sanitary Ware Leads To Sanitary System
 Locked Sanitary Ware Level Shows The Waiting Screen
     [Tags]    sanitary-ware    navigation    security
     Open Fresh Context    /file.svg
-    WS Start Guest Project    blank    /journey/sanitary-ware    unlock_until=sanitary-system
+    WS Start Guest Project    blank    /journey/sanitary-ware    lock_level=sanitary-ware
     WS Go To Locked Level    sanitary-ware    สุขภัณฑ์
-    Get Text    css=body    contains    ทำต่อ: อุปกรณ์ระบบสุขาภิบาล
 
 # ═════════════════════════════ whole stretch ═════════════════════════════
 
 Levels 24 To 31 Can Be Filled And Confirmed In Order From A Blank Project
-    [Documentation]    The plan's electrical, water and sanitary levels one after the other: each fill keyword, each
-    ...    confirm opens the next level, and every level total equals the engine on the way. Ends on the
-    ...    ceiling level.
+    [Documentation]    The plan's electrical, water and sanitary levels one after the other, in the order the app offers
+    ...    them (the fittings of group D wait for the paint, so the project starts with everything else done): each
+    ...    fill keyword, each confirm opens the engine's next step, and every level total equals the engine on the way.
+    ...    All 8 levels are filled once and the journey ends on the map with 37 of 37 steps done.
     [Tags]    smoke    slow    cross-level
     Open Fresh Context    /file.svg
-    WS Start Guest Project    blank    /journey/electrical-pipe    unlock_until=electrical-pipe
-    WS Wait For Level Page
-    Fill Electrical Pipe From Plan
-    WS Level Should Match Engine    electrical-pipe
-    WS Confirm Should Pass    electrical-pipe    electrical-cable
-    WS Wait For Level Page
-    Fill Electrical Cable From Plan
-    WS Level Should Match Engine    electrical-cable
-    WS Confirm Should Pass    electrical-cable    load-center
-    WS Wait For Level Page
-    Fill Load Center From Plan
-    WS Level Should Match Engine    load-center
-    WS Confirm Should Pass    load-center    electrical-equipment
-    WS Wait For Level Page
-    Fill Electrical Equipment From Plan
-    WS Level Should Match Engine    electrical-equipment
-    WS Confirm Should Pass    electrical-equipment    waste-pipe
-    WS Wait For Level Page
-    Fill Waste Pipe From Plan
-    WS Level Should Match Engine    waste-pipe
-    WS Confirm Should Pass    waste-pipe    water-pipe
-    WS Wait For Level Page
-    Fill Water Pipe From Plan
-    WS Level Should Match Engine    water-pipe
-    WS Confirm Should Pass    water-pipe    sanitary-system
-    WS Wait For Level Page
-    Fill Sanitary System From Plan
-    WS Level Should Match Engine    sanitary-system
-    WS Confirm Should Pass    sanitary-system    sanitary-ware
-    WS Wait For Level Page
-    Fill Sanitary Ware From Plan
-    WS Level Should Match Engine    sanitary-ware
-    WS Confirm Should Pass    sanitary-ware    ${LEVEL_AFTER_SANITARY_WARE}
+    ${project}=    WS New Project    blank
+    ${project}=    Project With Levels Done    ${project}    ALL
+    ${journey}=    Evaluate    {k: v for k, v in $project['journey'].items() if k not in $SYSTEM_FILL}
+    Set To Dictionary    ${project}    journey=${journey}
+    ${value}=    Guest Storage Value    ${project}
+    ${key}=    Guest Project Key
+    LocalStorage Set Item    ${key}    ${value}
+    WS Go To Path    /journey/electrical-pipe
+    ${visited}=    Create List
+    FOR    ${i}    IN RANGE    8
+        WS Wait For Level Page
+        ${id}=    Current Level Id
+        Append To List    ${visited}    ${id}
+        Run Keyword    ${SYSTEM_FILL}[${id}]
+        WS Level Should Match Engine    ${id}
+        ${path}=    Landing Path After Confirm    ${id}
+        WS Confirm Should Pass    ${id}    ${EMPTY}
+        Wait For Condition    Url    should end with    ${path}    timeout=180s
+    END
+    Get Url    should end with    /journey
+    Lists Should Be Equal    ${{ sorted($visited) }}    ${{ sorted($SYSTEM_FILL) }}    msg=Not every level was visited exactly once
+    Get Text    css=body    contains    37 จาก 37 ขั้นตอน
 
 
 *** Keywords ***

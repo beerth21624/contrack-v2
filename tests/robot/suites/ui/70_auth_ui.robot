@@ -457,8 +457,7 @@ Registering Twice In A Row Creates One Account
     ${email}=    Unique Email    twice
     Open Cloud Context    /register
     Register Via UI    ผู้ทดสอบคลิกสองครั้ง    ${email}    ${TEST_PASSWORD}    submit=${False}
-    Click    ${SUBMIT_BUTTON}
-    Click    ${SUBMIT_BUTTON}
+    Click With Options    ${SUBMIT_BUTTON}    clickCount=2    delay=20ms
     Wait For Condition    Url    should end with    /projects    timeout=90s
     ${n}=    Query Value    select count(*) from users where email = %s    ${email}
     Should Be Equal As Integers    ${n}    1

@@ -1448,7 +1448,7 @@ Locked Level Case
     [Documentation]    Locked Level Case.
     [Arguments]    ${level}    ${previous}    ${previous_title}
     Open Fresh Context
-    Start Guest Project    blank    /journey    unlock_until=${previous}
+    Start Guest Project    blank    /journey    lock_level=${level}
     Go To Path    /journey/${level}
     Locked Screen Should Match Engine    ${level}
     Get Element Count    ${CONFIRM_BUTTON}    ==    0
@@ -1457,7 +1457,7 @@ Locked Level Case
     ${expected}=    Expected For Current Guest Project
     ${lvl}=    Expected Level    ${expected}    ${level}
     ${first}=    Expected Level    ${expected}    ${lvl}[firstStep]
-    Click    css=a:has-text("ทำต่อ: ${first}[title]")
+    Click    css=.ant-result button:has-text("ทำต่อ: ${first}[title]")
     Wait For Condition    Url    should end with    /journey/${lvl}[firstStep]    timeout=60s
     Wait For Level Page
     [Teardown]    Close Context

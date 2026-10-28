@@ -353,7 +353,7 @@ Phone New Project Modal Fits The Screen
     Click    ${NEW_PROJECT_BUTTON}
     Wait For Elements State    css=.ant-modal    visible
     Page Should Not Scroll Sideways
-    Element Should Fit The Screen    css=.ant-modal-content    390
+    Element Should Fit The Screen    css=.ant-modal    390
     Element Should Fit The Screen    css=.ant-modal button:has-text("เริ่มจากแบบแปลนของฉัน")    390
 
 Tablet Pages Have No Horizontal Scroll

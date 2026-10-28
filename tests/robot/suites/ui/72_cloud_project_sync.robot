@@ -103,8 +103,8 @@ Guest Data Is Not Mixed Into The Cloud Project
     Open Signed In Context    ${user}[email]    ${user}[password]    /journey
     ${expected}=    Compute Expected For New Project    blank
     ${local}=    Project With Levels Done    ${expected}[project]    layout
-    ${sample}=    Compute Expected For New Project    sample
-    Evaluate    $local['calculators'].update({'layout': dict($sample['project']['calculators']['layout'], points=77, stakes=66)})
+    # A calculator holds only the fields that were typed; the rest comes from its defaults.
+    Evaluate    $local['calculators'].update({'layout': {'points': 77, 'stakes': 66}})
     Seed Guest Project    ${local}    /projects
     Projects Page Should Be Loaded
     ${before}=    Read Guest Project
@@ -129,7 +129,8 @@ Cloud Project Values Do Not Leak Into The Local Project After Switching Back
     Wait For Elements State    ${PROJECT_BADGE}    detached    timeout=30s
     ${local}=    Read Guest Project
     ${points}=    Evaluate    $local['calculators'].get('layout', {}).get('points')
-    Should Not Be Equal As Numbers    ${points}    41
+    # A local project that never edited the layout holds no value of it at all.
+    Should Be True    $points is None or float($points) != 41
 
 Editing The Project Name Level Saves The Meta Document
     [Tags]    db
@@ -170,7 +171,8 @@ Letters Typed Into A Number Cell Are Not Saved
     Keyboard Key    press    a
     Keyboard Key    press    e
     Keyboard Key    press    Backspace
-    Get Property    css=[aria-label="จำนวนจุดวางผัง"]    value    matches    ^$|^0$
+    ${typed}=    Get Property    css=[aria-label="จำนวนจุดวางผัง"]    value
+    Should Match Regexp    ${typed}    ^$|^0$
     Page Should Have No Error Overlay
     Row Count Of Doc Should Be    ${ctx}[id]    ${LAYOUT_DOC}    0
 
@@ -214,8 +216,7 @@ Another Client Changed The Same Document While It Was Open
     [Tags]    edge    db
     ${ctx}=    Open Cloud Project Level    layout    layout
     ${other}=    Login Via API    ${ctx}[user][email]    ${ctx}[user][password]
-    ${base}=    Compute Expected For New Project    blank
-    ${doc}=    Evaluate    dict($base['project']['calculators']['layout'], points=5)
+    ${doc}=    Evaluate    {'points': 5}
     Put Doc Via API    ${other}    ${ctx}[id]    ${LAYOUT_DOC}    ${doc}    ${0}
     Fill Number By Label    จำนวนหมุด    9
     Wait Until Doc Satisfies    ${ctx}[id]    ${LAYOUT_DOC}    data['stakes'] == 9    timeout=60s

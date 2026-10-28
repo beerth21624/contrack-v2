@@ -55,7 +55,7 @@ Fill Card Number
     [Documentation]    Type into the number cell ``${label}`` (its aria-label) inside ``${card}`` and commit with Enter.
     [Arguments]    ${card}    ${label}    ${value}
     VAR    ${sel}    ${card} >> css=[aria-label="${label}"]
-    Click    ${sel}
+    Click Cell    ${sel}
     Fill Text    ${sel}    ${value}
     Keyboard Key    press    Enter
 
@@ -120,7 +120,7 @@ Seed Blank Project Until
     [Documentation]    Store the blank guest project with every level before ``${level_id}`` done and open ``${path}``
     ...    (same as ``Start Guest Project    blank ... unlock_until=``, without calling the engine again).
     [Arguments]    ${level_id}    ${path}
-    ${project}=    Evaluate    {**$BLANK_PROJECT, 'journey': {i: 'done' for i in $LEVEL_IDS[:$LEVEL_IDS.index($level_id)]}}
+    ${project}=    Project With Levels Done    ${BLANK_PROJECT}    ${level_id}
     Seed Guest Project    ${project}    ${path}
 
 Open Level
@@ -320,8 +320,9 @@ Duplicate Card
     Click    ${card} >> css=button[title="ทำซ้ำรายการนี้"]
 
 Level Total Should Be A Number
-    [Documentation]    The level total on the bottom bar shows digits and "บาท" (never blank, NaN or Infinity).
-    Get Text    ${LEVEL_TOTAL}    matches    ^[-−]?[0-9,]+ *บาท$
+    [Documentation]    The level total on the bottom bar shows digits and "บาท", or a dash when the value typed is so
+    ...    large that the sum is beyond the number range (never blank, NaN or Infinity).
+    Get Text    ${LEVEL_TOTAL}    matches    ^([-−]?[0-9,]+|—) *บาท$
 
 Edge Value Should Be Handled
     [Documentation]    Type ``${typed}`` into the number ``${label}`` of ``${card}`` (a card that already has plan values) and
@@ -358,11 +359,13 @@ Preset Chip Should Be Stored
     Level Totals Should Match Engine    ${level_id}
 
 Level Should Be Locked
-    [Documentation]    A level whose predecessor is not done: URL shows "ยังไม่พร้อมทำ", a way to the current level,
-    ...    and no inputs.
-    [Arguments]    ${level_id}    ${unlock_until}    ${current_title}
+    [Documentation]    A level whose prerequisites are not done (the engine's ``after`` list; ``${unlock_until}`` and
+    ...    ``${current_title}`` are kept for the old call sites): URL shows "ยังไม่พร้อมทำ", what it waits for, a way
+    ...    to the step to do first, and no inputs.
+    [Arguments]    ${level_id}    ${unlock_until}=${EMPTY}    ${current_title}=${EMPTY}
     Open Fresh Context    /file.svg
-    Seed Blank Project Until    ${unlock_until}    /journey/${level_id}
+    ${project}=    Project With Level Locked    ${BLANK_PROJECT}    ${level_id}
+    Seed Guest Project    ${project}    /journey/${level_id}
     Locked Screen Should Match Engine    ${level_id}
     Get Element Count    ${CONFIRM_BUTTON}    ==    0
     Get Element Count    css=[data-req-card]    ==    0

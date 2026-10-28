@@ -412,7 +412,7 @@ Column With Only A Count Is Blocked For Its Size And Height
     ${c1}=    Ensure Card    columns    0    เพิ่มเสา    เพิ่มเสา
     Fill Card Number    ${c1}    จำนวนต้น (ต้น)    4
     Confirm Level Should Be Blocked    column    3
-    Missing Summary Should Mention    เสา แบบที่ 1 — ความกว้าง
+    Missing Summary Should Mention    เสา C1 — ความกว้าง
     Get Text    ${c1}    contains    ยังขาด
 
 Column Count Typed As Zero Is Stored As Zero

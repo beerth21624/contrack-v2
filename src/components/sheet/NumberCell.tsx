@@ -62,6 +62,16 @@ export function numberCellEditText(value: number, { percent, blankZero }: CellFo
     return String(Number(shown.toFixed(6)));
 }
 
+/**
+ * Select the text of a cell that got focus, one frame later. `select()` also focuses its element, so a cell
+ * that was already left again (Enter / Tab right after the click) must not be selected: it would take the focus
+ * back and show its draft text instead of the formatted value.
+ */
+export function selectIfFocused(el: Pick<HTMLInputElement, 'select'> & { ownerDocument?: { activeElement: unknown } }): void {
+    if (el.ownerDocument !== undefined && el.ownerDocument.activeElement !== el) return;
+    el.select();
+}
+
 /** Tooltip of a cell holding a value below 0 (kept and computed; the user is asked to check it). */
 export const NEGATIVE_VALUE_WARNING = 'ค่าติดลบ — ตรวจสอบอีกครั้ง (ระบบคำนวณตามที่กรอก)';
 const NEGATIVE_BORDER = '#f59e0b';
@@ -109,7 +119,7 @@ export function NumberCell({
                 const start = numberCellEditText(value, { percent, blankZero });
                 setText(start);
                 setInitial(start);
-                requestAnimationFrame(() => e.target.select());
+                requestAnimationFrame(() => selectIfFocused(e.target));
             }}
             onChange={(e) => setText(e.target.value)}
             onBlur={commit}

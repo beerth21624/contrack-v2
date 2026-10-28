@@ -18,7 +18,7 @@ ${SCURVE_TOGGLE}            css=button[aria-expanded]:has-text("S-Curve แผ�
 ${PACE_GAUGE}               css=svg[aria-label^="มาตรวัดความเร็วโครงการ"]
 ${SCURVE_CHART}             css=svg[aria-label^="กราฟ S-Curve"]
 ${EVM_TOGGLE}               css=.ant-collapse-header:has-text("วิเคราะห์ผลงานเทียบงบ (EVM)")
-${LEVEL_STATES_JS}          () => [...document.querySelectorAll('ol > li')].map(li => li.querySelector('a[aria-current="step"]') ? 'current' : li.querySelector('[title="ทำขั้นตอนก่อนหน้าให้เสร็จก่อน"]') ? 'locked' : li.querySelector('.bg-green-600') ? 'done' : li.textContent.includes('ไม่มีในโครงการนี้') ? 'skipped' : 'unknown')
+${LEVEL_STATES_JS}          () => [...document.querySelectorAll('ol > li')].map(li => !li.querySelector('a') ? 'locked' : li.querySelector('.bg-green-600') ? 'done' : li.textContent.includes('ไม่มีในโครงการนี้') ? 'skipped' : 'current')
 ${LEVEL_TEXTS_JS}           () => [...document.querySelectorAll('ol > li')].map(li => li.innerText.split(/[ ]+/).join(' '))
 ${NO_HSCROLL_JS}            () => document.documentElement.scrollWidth <= window.innerWidth
 ${SCROLL_WIDTHS_JS}         () => document.documentElement.scrollWidth + '/' + window.innerWidth
@@ -260,6 +260,16 @@ Set Man Day Crew
     Click    ${cell} >> input
     Fill Text    ${cell} >> input    ${text}
     Keyboard Key    press    Enter
+
+Open Wage Rates Tab
+    [Documentation]    Man-Day tab "อัตราค่าแรง (N ชุด)": the wage sets as a table (and the subcontract labour share).
+    Click    css=.ant-segmented-item:has-text("อัตราค่าแรง")
+    Wait For Elements State    css=input[aria-label="ค่าแรงช่าง ชุด A"]    visible    timeout=30s
+
+Open Man Day Plan Tab
+    [Documentation]    Man-Day tab "แผนคน-วัน": the work blocks table.
+    Click    css=.ant-segmented-item:has-text("แผนคน-วัน")
+    Wait For Elements State    css=tbody tr >> nth=0    visible    timeout=30s
 
 Man Day Page Should Match Engine
     [Documentation]    Every row (crew, wage, calculated days, typed days, budget) and the totals equal the engine.

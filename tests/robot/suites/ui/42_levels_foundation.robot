@@ -152,18 +152,18 @@ Piles Count Does Not Change The Layout Lump Sum
     Input Should Show    จำนวนหมุด    ${EMPTY}
     Level Totals Should Match Engine Eventually    layout
 
-Piles Add Pile Head Cutting To The Footing Level
-    [Documentation]    Cross-level: "ค่าตัดหัวเสาเข็ม N ต้น คิดให้อัตโนมัติในขั้นตอนฐานราก": the footing level total grows
-    ...    once piles are filled (and equals the engine).
-    Open Level    footing
-    ${without}=    Level Total On Screen
-    Close Context
+Piles Add Pile Head Cutting To Their Own Level Total
+    [Documentation]    Pile-head cutting (BOQ R39, 170 baht per pile, follows the pile count) is money of the piles step
+    ...    (the engine's ``levelRows`` give it to the level that owns the pile count): 12 piles cost 12 x 2,500 lump sum
+    ...    + 12 x 170 cutting = 32,040, and the footing step is still 0 until a footing is typed.
     Open Level    piles
     Fill Piles From Plan
+    Level Totals Should Match Engine Eventually    piles
+    Level Total Should Be    32040
+    Get Text    body    contains    ค่าตัดหัวเสาเข็ม 12 ต้น
     Confirm Level And Land On    piles    footing
     Wait For Elements State    ${MAP_BUTTON}    visible    timeout=60s
-    ${with}=    Wait Until Keyword Succeeds    10s    300ms    Positive Level Total On Screen
-    Should Be True    ${with} > ${without}    Footing total ${with} did not grow over ${without} after 12 piles
+    Level Total Should Be    0
     Level Totals Should Match Engine Eventually    footing
 
 Piles Values And Mark Survive A Reload

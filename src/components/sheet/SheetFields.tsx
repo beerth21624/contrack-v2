@@ -66,7 +66,7 @@ export function SheetCard({ title, extra, children, className = '', collapsible 
     return (
         <div className={`bg-white border border-gray-200 rounded-card shadow-card ${className}`}>
             {(title !== undefined || extra !== undefined || collapsible) && (
-                <div className={`flex items-center gap-2 min-h-[44px] px-4 sm:px-5 py-2 ${shown ? 'border-b border-gray-100' : ''}`}>
+                <div className={`flex flex-wrap items-center gap-x-2 gap-y-1 min-h-[44px] px-4 sm:px-5 py-2 ${shown ? 'border-b border-gray-100' : ''}`}>
                     {collapsible
                         ? (
                             <button type="button" onClick={toggle} aria-expanded={open}

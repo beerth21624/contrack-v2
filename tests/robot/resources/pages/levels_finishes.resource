@@ -195,7 +195,7 @@ Fill Card Number
     [Documentation]    Type into a number box of a plan card and commit with Enter.
     [Arguments]    ${card}    ${label}    ${value}
     ${sel}=    Card Input    ${card}    ${label}
-    Click    ${sel}
+    Click Cell    ${sel}
     Fill Text    ${sel}    ${value}
     Keyboard Key    press    Enter
 

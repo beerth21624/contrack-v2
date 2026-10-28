@@ -15,7 +15,7 @@ import {
     nextOpenLevel, phaseOf, previousLevel, requiredFields, type JourneyLevel, type JourneyProgress, type MissingValue,
 } from '@/domain/journey';
 import { CALCULATOR_PAGES } from '@/features/calculators/pages';
-import { formatNumber } from '@/components/sheet/NumberCell';
+import { totalText } from './total-text';
 import { RequiredContext, type RequiredState } from '@/components/sheet/journey/RequiredContext';
 import { NO_TARGETS, highlightTargets, missingSummary, targetOf, targetSelectors } from '@/components/sheet/journey/required';
 import { JourneyModeContext } from './JourneyMode';
@@ -290,7 +290,7 @@ export function LevelPage({ levelId }: { levelId: string }) {
                     {level.kind.type !== 'meta' && (
                         <div className="min-w-[140px] flex-1 sm:flex-none sm:min-w-0">
                             <div className="text-[12px] text-gray-500 leading-tight">มูลค่าขั้นตอนนี้</div>
-                            <div className="text-[18px] font-bold tabular-nums leading-tight">{formatNumber(mark === 'skipped' ? 0 : total, 0)} บาท</div>
+                            <div className="text-[18px] font-bold tabular-nums leading-tight">{totalText(mark === 'skipped' ? 0 : total)} บาท</div>
                             {outsideConstruction && (
                                 <div className="text-[12px] text-gray-500 leading-tight">ค่าใช้จ่ายก่อนเริ่มงาน ไม่รวมในราคาค่าก่อสร้าง</div>
                             )}
@@ -300,7 +300,7 @@ export function LevelPage({ levelId }: { levelId: string }) {
                     <div className={`hidden sm:block min-w-0 ${level.kind.type !== 'meta' ? 'pl-3 border-l border-gray-200' : ''}`}>
                         <div className="text-[12px] text-gray-500 leading-tight">ราคาค่าก่อสร้างรวม</div>
                         <div className="text-[15px] font-semibold tabular-nums leading-tight text-gray-700">
-                            {formatNumber(result.boq.constructionTotal, 0)} บาท
+                            {totalText(result.boq.constructionTotal)} บาท
                         </div>
                     </div>
                     <div className="ml-auto flex flex-wrap justify-end items-center gap-2">
