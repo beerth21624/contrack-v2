@@ -77,7 +77,7 @@ const row = (group: CampGroupId, code: string, item: string, unit: string, baseQ
 export const siteCamp = defineCalculator<SiteCampInput>({
     id: 'site-camp',
     // The real sheet name is unknown (external file, D8).
-    sheetName: 'Google Sheet ภายนอก — แคมป์คนงาน (สร้างจากภาพสไลด์)',
+    sheetName: 'แคมป์คนงาน',
     title: 'โปรแกรมคำนวณวัสดุแคมป์คนงาน / ห้องน้ำ / ห้องอาบน้ำ / สโตร์เก็บของ',
     titleEn: 'Site Camp Materials',
     sections: [3],

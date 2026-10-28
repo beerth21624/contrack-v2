@@ -116,11 +116,25 @@ Input Should Show
     [Arguments]    ${label}    ${shown}    ${index}=0
     ${sel}=    Input By Label    ${label}    ${index}
     Get Property    ${sel}    value    ==    ${shown}
+    Negative Warning Should Follow    ${sel}    ${shown}
 
 Card Input Should Show
     [Arguments]    ${list}    ${index}    ${label}    ${shown}
     ${sel}=    Card Input    ${list}    ${index}    ${label}
     Get Property    ${sel}    value    ==    ${shown}
+    Negative Warning Should Follow    ${sel}    ${shown}
+
+Negative Warning Should Follow
+    [Documentation]    A value below 0 is kept and computed as typed (owner decision: warn, do not block): its cell has
+    ...    the amber "ค่าติดลบ" warning (``data-warning="negative"`` and the tooltip); any other value has none.
+    [Arguments]    ${sel}    ${shown}
+    ${attrs}=    Evaluate JavaScript    ${sel}    (e) => [e.getAttribute('data-warning'), e.getAttribute('title') || '']
+    IF    $shown.startswith('-') and $shown.strip('-0.,') != ''
+        Should Be Equal    ${attrs}[0]    negative
+        Should Contain    ${attrs}[1]    ค่าติดลบ
+    ELSE
+        Should Be Equal    ${attrs}[0]    ${None}
+    END
 
 Page Should Show No Invalid Numbers
     [Documentation]    No NaN / Infinity / undefined anywhere on the level page.
