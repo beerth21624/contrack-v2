@@ -72,6 +72,19 @@ class ContrackLibrary:
             raise AssertionError(msg or f"{a} != {e} (tolerance {t})")
 
     @keyword
+    def round_satang(self, value: Any) -> float:
+        """Money to satang as the app's ``round2`` (snapshot.ts): half away from zero on the decimal value people see
+        (512.565 → 512.57), with the same 1e-7 nudge for binary representation error."""
+        v = float(value)
+        return (-1 if v < 0 else 1) * int(abs(v) * 100 + 1e-7 + 0.5) / 100
+
+    @keyword
+    def bid_total_like_the_app(self, lines: list, prices: list, discount: Any = 0) -> float:
+        """Sum of ``round_satang(price × qtyPriced)`` per line, minus the discount, rounded the same way."""
+        total = sum(self.round_satang(float(p) * float(line["qtyPriced"])) for line, p in zip(lines, prices))
+        return self.round_satang(total - float(discount))
+
+    @keyword
     def format_baht(self, value: Any, digits: int = 0) -> str:
         """1855162.248 → '1,855,162' (digits=0) or '1,855,162.25' (digits=2)."""
         return f"{float(value):,.{int(digits)}f}"

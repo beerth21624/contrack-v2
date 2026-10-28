@@ -172,9 +172,9 @@ Package Lines Via API
 Expected Bid Total
     [Documentation]    Sum over every package line of ``round2(unit price * qtyPriced)`` (labour only) minus discount, with
     ...    the app's satang rounding (``round2`` of snapshot.ts: half away from zero on the decimal value, so 512.565 →
-    ...    512.57; Python's ``round`` would give 512.56). ``${prices}`` is the unit price typed per line, in line order.
+    ...    512.57). ``${prices}`` is the unit price typed per line, in line order.
     [Arguments]    ${lines}    ${prices}    ${discount}=0
-    ${total}=    Evaluate    (lambda r2: r2(sum(r2(float(p) * float(l['qtyPriced'])) for l, p in zip($lines, $prices)) - float($discount)))(lambda v: (-1 if v < 0 else 1) * math.floor(abs(v) * 100 + 1e-7 + 0.5) / 100)    modules=math
+    ${total}=    Bid Total Like The App    ${lines}    ${prices}    ${discount}
     RETURN    ${total}
 
 # ── crew through the API (state set-up) ──────────────────────────────────────────────────────
