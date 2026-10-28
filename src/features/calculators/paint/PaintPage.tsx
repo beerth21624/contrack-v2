@@ -290,7 +290,7 @@ export default function PaintPage() {
                     <SourceHint sheet="ตกแต่งผนัง (ระแนง)" value={suggest.slatWallArea} current={input.slatWallArea}
                         unit="ตร.ม." onUse={v => update({ slatWallArea: v })} />
                 </div>
-                <p className="mt-1 text-[12px] text-gray-500">ค่าตัวอย่าง Excel: =3.3+4.8 (พิมพ์ไว้ในสูตร)</p>
+                <p className="mt-1 text-[12px] text-gray-500">ค่าตัวอย่างในเทมเพลต: =3.3+4.8</p>
             </SheetCard>
 
             <SheetCard title="7. ทาสีผนัง - บัว">
@@ -328,7 +328,7 @@ export default function PaintPage() {
                 </div>
                 <p className="mt-1 text-[12px] text-gray-500">
                     ความกว้างรอบรูป = หน้าบัว + 2 × ความหนา (บัว 0.3×0.1 → 0.5 ม., บัว 0.1×0.1 → 0.3 ม.).
-                    ค่าตัวอย่าง Excel: =(0.5*13)+(0.3*11)
+                    ค่าตัวอย่างในเทมเพลต: =(0.5*13)+(0.3*11)
                 </p>
             </SheetCard>
 
@@ -343,12 +343,12 @@ export default function PaintPage() {
                     onChange={v => update({ fasciaHeight: v })} />
                 <CalcField label="พื้นที่ทาสีเชิงชาย" value={outputs.fascia} unit="ตร.ม." strong />
                 <p className="mt-1 text-[12px] text-gray-500">
-                    ค่าตัวอย่าง Excel: =63.2*0.23 (ชีตมุงหลังคาใช้ความยาวไม้เชิงชาย 62.3 ม. — รอยืนยัน)
+                    ค่าตัวอย่างในเทมเพลต: =63.2*0.23 (ชีตมุงหลังคาใช้ความยาวไม้เชิงชาย 62.3 ม. — รอยืนยัน)
                 </p>
             </SheetCard>
 
             <p className="text-[12px] text-gray-500 px-1">
-                ข้อ 6–8 Excel พิมพ์ตัวเลขไว้ในสูตร — ค่าเริ่มต้นตาม Excel; กด &quot;ใช้ค่าจาก …&quot; เพื่อดึงค่าจากชีตต้นทาง
+                ข้อ 6–8 ใช้ตัวเลขตั้งต้นจากเทมเพลต; กด &quot;ใช้ค่าจาก …&quot; เพื่อดึงค่าจากชีตต้นทาง
             </p>
         </CalculatorShell>
     );

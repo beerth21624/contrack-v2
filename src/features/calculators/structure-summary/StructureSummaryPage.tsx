@@ -64,7 +64,7 @@ export default function StructureSummaryPage() {
                 </p>
                 <p className="mt-1 text-[12px] text-gray-500">
                     ตารางนี้ดึงตัวเลขจากชีตแต่ละงาน (กดชื่องานเพื่อแก้ไข) — แก้ข้อมูลที่ชีตต้นทาง ไม่ใช่ที่นี่.
-                    ยอดดินถมกลับรวมนับดินถมกลับของฐานรากด้วย (Excel Q18 ไม่นับ).
+                    ยอดดินถมกลับรวมนับดินถมกลับของฐานรากด้วย.
                 </p>
             </SheetCard>
         </CalculatorShell>

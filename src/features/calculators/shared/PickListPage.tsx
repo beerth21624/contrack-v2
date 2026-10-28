@@ -215,7 +215,7 @@ function SheetPickList({ catalogue, options, units = [], allowFreeText, title, n
                 <CalcField label="รวมทั้งหมด" value={outputs.total} unit="บาท" strong />
             </div>
             <p className="mt-2 text-[12px] text-gray-500">
-                ราคาสีเขียว = ราคาตั้งต้นของรายการ (จาก BOQ ใน Excel) — พิมพ์ทับเพื่อใช้ราคาของโครงการนี้, ลบค่าเพื่อกลับไปใช้ราคาตั้งต้น.
+                ราคาสีเขียว = ราคาตั้งต้นของรายการ (จาก BOQ เทมเพลต) — พิมพ์ทับเพื่อใช้ราคาของโครงการนี้, ลบค่าเพื่อกลับไปใช้ราคาตั้งต้น.
                 ทุกรายการที่มีจำนวน &gt; 0 จะเป็น 1 แถวใน BOQ.
             </p>
             {notes}

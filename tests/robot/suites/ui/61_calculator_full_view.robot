@@ -24,7 +24,7 @@ Footing Page Opens With The Sample Values
     [Tags]    smoke
     Open Project Page    /calc/footing
     Get Text    css=body    contains    โปรแกรมถอดแบบ – งานฐานราก Footing
-    Get Text    css=body    contains    ชีต Excel: ฐานราก_Footing
+    Get Text    css=body    contains    แบบฟอร์ม: ฐานราก_Footing
     Value Of Input Should Be Number    ${FOOTING_COUNT}    21
     Page Should Have No Error Overlay
 

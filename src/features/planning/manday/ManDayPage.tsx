@@ -95,7 +95,7 @@ export function ManDayPage() {
             kind: 'label', key: 'calcDays', title: <>5.วันตามค่าแรง<br /><span className="font-normal">(วัน)</span></>, width: 84,
             get: r => (
                 <Tooltip title={r.result.calcDays === null
-                    ? (r.result.labourBasis === 'none' ? 'งานนี้ไม่มีสูตรใน Excel' : 'ยังไม่มีคนทำงาน (ค่าแรงต่อวัน = 0)')
+                    ? (r.result.labourBasis === 'none' ? 'งานนี้ไม่มีสูตรคำนวณคนงาน' : 'ยังไม่มีคนทำงาน (ค่าแรงต่อวัน = 0)')
                     : 'ค่าแรงของงาน ÷ ค่าแรงต่อวัน'}>
                     <div><CalcText>{r.result.calcDays === null ? '–' : formatNumber(r.result.calcDays, 2)}</CalcText></div>
                 </Tooltip>

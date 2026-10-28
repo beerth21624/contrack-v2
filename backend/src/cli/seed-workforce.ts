@@ -19,8 +19,8 @@ export type Call = <T = unknown>(method: string, path: string, body?: unknown, t
 export const SECOND_PROJECT_NAME = 'บ้านคุณสมศรี (เริ่มจากแบบ)';
 
 const CARDS = [
-    { key: 'A', name: 'ชุด A งานทั่วไป', skilledRate: 800, labourerRate: 500, note: 'ค่าตั้งต้นจาก Excel (งานทั่วไป)' },
-    { key: 'B', name: 'ชุด B หลังคา ไฟฟ้า ฝ้า สี', skilledRate: 1000, labourerRate: 600, note: 'ค่าตั้งต้นจาก Excel (งานฝีมือ)' },
+    { key: 'A', name: 'ชุด A งานทั่วไป', skilledRate: 800, labourerRate: 500, note: 'ค่าตั้งต้นของระบบ (งานทั่วไป)' },
+    { key: 'B', name: 'ชุด B หลังคา ไฟฟ้า ฝ้า สี', skilledRate: 1000, labourerRate: 600, note: 'ค่าตั้งต้นของระบบ (งานฝีมือ)' },
     { key: 'pong', name: 'ทีมไฟฟ้า ช่างพงษ์', skilledRate: 1200, labourerRate: 650, note: 'อัตราตกลงกับทีมช่างพงษ์ ปี 2569' },
 ] as const;
 type CardKey = (typeof CARDS)[number]['key'];

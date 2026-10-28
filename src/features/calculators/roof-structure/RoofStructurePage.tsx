@@ -209,7 +209,7 @@ function RoofStructureSheet() {
                     <CalcField label="ความยาวตะเข้ราง" value={outputs['valley.length']} unit="ม." strong />
                 </div>
                 <p className="mt-2 text-[12px] text-gray-500">
-                    Excel พิมพ์ไว้ตายตัว =(SQRT((3.6^2)+(3.6^2)))/COS(RADIANS(40)) ไม่ได้ลิงก์กับความลาดเอียงในชีตมุงหลังคา
+                    เทมเพลตตั้งสูตรไว้ตายตัว =(SQRT((3.6^2)+(3.6^2)))/COS(RADIANS(40)) ไม่ได้ลิงก์กับความลาดเอียงในชีตมุงหลังคา
                 </p>
             </SheetCard>
         </CalculatorShell>

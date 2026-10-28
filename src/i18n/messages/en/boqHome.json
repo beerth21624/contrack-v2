@@ -31,7 +31,7 @@
   "preConstruction": "Pre-construction costs (not in the construction total)",
   "baht": "THB",
   "calcPending": "Calculator not available yet — enter quantities in this table",
-  "fromCalc": "Linked from a calculator (not available yet; Excel sample used)",
+  "fromCalc": "Linked from a calculator (not available yet; template sample used)",
   "fromLine": "Calculated from another BOQ line",
   "resetSection": "Reset this section",
   "search": "Search items",

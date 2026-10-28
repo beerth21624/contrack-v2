@@ -60,7 +60,7 @@ export function WageSetTable({ md, save, library, readOnly }: {
                                     <td className={`${td} bg-white px-2`}>
                                         <span className="flex items-center gap-1.5 whitespace-nowrap">
                                             <span className="font-medium text-gray-800">{s.id}</span>
-                                            {builtIn && <Tag className="!m-0 !text-[11px] !leading-[18px]">ค่าตั้งต้น Excel</Tag>}
+                                            {builtIn && <Tag className="!m-0 !text-[11px] !leading-[18px]">ค่าตั้งต้นของระบบ</Tag>}
                                         </span>
                                     </td>
                                     <td className={td} style={{ background: SHEET_COLORS.input }}>

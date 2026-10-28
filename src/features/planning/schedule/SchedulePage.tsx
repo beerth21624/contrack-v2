@@ -77,7 +77,7 @@ export function SchedulePage() {
                 <div className="lg:col-span-2 grid grid-cols-2 gap-4 auto-rows-fr">
                     <StatTile label="บันทึกผลงานล่าสุด" value={status.lastUpdate ? formatDate(status.lastUpdate) : '–'}
                         hint={actualCount ? `บันทึกผลงานแล้ว ${actualCount} งาน` : 'กรอกในส่วนบันทึกผลงานจริง'} />
-                    <StatTile label={<Tooltip title="Excel เรียกว่างบประมาณตามแผน แต่คิดจาก % คืบหน้า × น้ำหนักงาน × งบ (มูลค่างานที่ทำได้)">
+                    <StatTile label={<Tooltip title="งบประมาณตามแผน คิดจาก % คืบหน้า × น้ำหนักงาน × งบ (มูลค่างานที่ทำได้)">
                         <span className="underline decoration-dotted">งบประมาณตามแผน</span></Tooltip>}
                     value={money(status.earnedValue)} unit="บาท" hint="จาก % คืบหน้า" />
                     <StatTile label="งบที่ใช้ไป" value={status.spent === null ? '–' : money(status.spent)} unit={status.spent === null ? undefined : 'บาท'} />
@@ -133,11 +133,11 @@ export function SchedulePage() {
             <DetailSection label={`บันทึกผลงานจริงและ % คืบหน้า${actualCount ? ` — บันทึกแล้ว ${actualCount} งาน` : ''}`}>
                 <ActualTable schedule={s} tasks={sc.tasks} onTask={setTask} />
                 <div className="text-[12px] text-gray-500 mt-2">
-                    ผลงานจริงถ่วงน้ำหนักด้วยค่าใช้จ่ายจริง ÷ งบโครงการ (ตาม Excel) · % คืบหน้าใช้คำนวณ &quot;งบประมาณตามแผน&quot;
+                    ผลงานจริงถ่วงน้ำหนักด้วยค่าใช้จ่ายจริง ÷ งบโครงการ · % คืบหน้าใช้คำนวณ &quot;งบประมาณตามแผน&quot;
                 </div>
             </DetailSection>
 
-            <DetailSection label="ดูตารางละเอียด (ตาราง S-Curve รายสัปดาห์แบบ Excel)">
+            <DetailSection label="ดูตารางละเอียด (ตาราง S-Curve รายสัปดาห์)">
                 <ScheduleDetailGrid schedule={s} />
             </DetailSection>
         </div>
