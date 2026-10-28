@@ -231,7 +231,7 @@ export function reviewBoqRules(
                 if (sample > 0) untouched++;
             }
             if (!touched && untouched >= SAMPLE_MIN_ITEMS) {
-                add(si, 0, 'warn', 'sample-values', first.key, `หมวด ${s.title} — ยังเป็นค่าตัวอย่างจาก Excel`);
+                add(si, 0, 'warn', 'sample-values', first.key, `หมวด ${s.title} — ยังเป็นค่าตัวอย่างจากเทมเพลต`);
             }
         }
     });

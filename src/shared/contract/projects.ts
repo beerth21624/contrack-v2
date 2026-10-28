@@ -153,6 +153,6 @@ export type ActivityDto = z.infer<typeof activityDtoSchema>;
 
 export const activityQuerySchema = z.object({
     // An activity id is a PostgreSQL bigint: a longer number used to reach the query and answer 500.
-    before: z.string().regex(/^\d{1,19}$/).refine(v => BigInt(v) <= BigInt('9223372036854775807'), 'out of range').optional(),
+    before: z.string().regex(/^\d{1,19}$/).refine(v => !/^\d{1,19}$/.test(v) || BigInt(v) <= BigInt('9223372036854775807'), 'out of range').optional(),
     limit: z.coerce.number().int().min(1).max(200).optional(),
 });

@@ -229,7 +229,7 @@ export default function PaintPage() {
         );
     }
 
-    const fromExcel = (sheet: string) => `ค่าจาก Excel (ยังไม่มีชีต ${sheet})`;
+    const fromExcel = (sheet: string) => `ค่าตั้งต้น (ยังไม่ได้กรอก ${sheet})`;
     const source: Record<PaintLineKey, string> = {
         wallExterior: linked.plaster ? 'ฉาบปูน_Plaster — รวม "ฉาบภายนอก"' : fromExcel('ฉาบปูน_Plaster'),
         wallInterior: linked.plaster ? 'ฉาบปูน_Plaster — รวม "ฉาบภายใน"' : fromExcel('ฉาบปูน_Plaster'),

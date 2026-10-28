@@ -357,13 +357,13 @@ Meta Text Of 500 Characters Is Accepted And 501 Is Rejected
 
 Meta With A NUL Character Is Refused Not A Server Error
     [Documentation]    Error guessing: a text with ``\\u0000`` cannot be stored in PostgreSQL jsonb. Expected a 4xx
-    ...    validation answer (422); a 500 is a bug.
+    ...    validation answer; a 500 is a bug. Every JSON body with U+0000 is refused when it is read: 400 validation_failed.
     [Tags]    negative    edge    security    bug
     ${team}=    Create Owner Workspace
     ${pid}=    New Sample Project Id    ${team}
     ${text}=    Evaluate    'a' + chr(0) + 'b'
-    ${resp}=    Put Doc    ${team}[owner]    ${pid}    meta    ${{ {'ownerName': $text} }}    1    422
-    Error Code Should Be    ${resp}    unprocessable
+    ${resp}=    Put Doc    ${team}[owner]    ${pid}    meta    ${{ {'ownerName': $text} }}    1    400
+    Error Code Should Be    ${resp}    validation_failed
 
 Journey Rejects Unknown Levels Bad States And Non Objects
     [Tags]    negative

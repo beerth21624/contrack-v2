@@ -20,7 +20,7 @@ $robotDir = Split-Path -Parent $PSScriptRoot
 $repo = Split-Path -Parent (Split-Path -Parent $robotDir)
 $py = Join-Path $robotDir '.venv\Scripts'
 $env:PYTHONUTF8 = '1'
-$env:Path = "C:\Program Files\nodejs;" + $env:Path
+$env:Path = "$py;C:\Program Files\nodejs;" + $env:Path
 Set-Location $robotDir
 
 foreach ($url in @('http://localhost:4200/health', 'http://localhost:3200/journey')) {
@@ -43,7 +43,7 @@ if ($Include -ne '') { $inc = @('--include', $Include) }
 & "$py\robot.exe" -d "$out\smoke" --console dotted -i smoke suites/00_smoke.robot
 if ($LASTEXITCODE -ne 0) { throw 'Smoke failed: fix the environment before running the rest.' }
 
-& "$py\pabot.exe" --processes $Processes --testlevelsplit:false -d $out --xunit xunit.xml @inc suites
+& "$py\pabot.exe" --processes $Processes -d $out --xunit xunit.xml @inc suites
 $code = $LASTEXITCODE
 Write-Host "Report: $(Resolve-Path $out)\report.html  (exit $code)"
 exit $code

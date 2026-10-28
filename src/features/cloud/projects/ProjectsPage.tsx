@@ -55,7 +55,7 @@ export function sortProjects(list: readonly ProjectDto[], sort: ProjectSort): Pr
 
 const START_CHOICES: { start: ProjectStart; icon: React.ReactNode; title: string; text: string }[] = [
     { start: 'blank', icon: <FileAddOutlined />, title: 'เริ่มจากแบบแปลนของฉัน', text: 'ทุกขั้นตอนเริ่มจากค่าว่าง กรอกขนาดและจำนวนตามแบบ' },
-    { start: 'sample', icon: <HomeOutlined />, title: 'ลองกับบ้านตัวอย่าง', text: 'บ้านชั้นเดียวจาก Excel v5 กรอกไว้ครบ' },
+    { start: 'sample', icon: <HomeOutlined />, title: 'ลองกับบ้านตัวอย่าง', text: 'เทมเพลตบ้านเดี่ยว 1 ชั้น กรอกข้อมูลไว้ครบ' },
 ];
 
 export function ProjectsPage() {

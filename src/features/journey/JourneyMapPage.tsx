@@ -183,7 +183,7 @@ export function JourneyMapPage() {
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-[12px] text-gray-500">
                         <span>ภาพรวมโครงการ</span>
-                        {project.start !== 'blank' && <Tag variant="filled" className="!text-[12px] !m-0">บ้านตัวอย่าง Excel v5</Tag>}
+                        {project.start !== 'blank' && <Tag variant="filled" className="!text-[12px] !m-0">เทมเพลตบ้านเดี่ยว 1 ชั้น</Tag>}
                     </div>
                     <h1 className="m-0 mt-1 text-[26px] leading-tight font-semibold text-gray-900" style={{ overflowWrap: 'anywhere' }}>{title}</h1>
                     {project.meta.siteAddress !== '' && <div className="mt-1 text-[13px] text-gray-500">{project.meta.siteAddress}</div>}
