@@ -30,7 +30,7 @@ Module List Has Every Module In Order
     ${buyer}=    Create Buyer Workspace    module_on=${False}
     ${resp}=    Api Get    ${buyer}[owner]    /workspaces/${buyer}[ws]/modules
     ${ids}=    Evaluate    [m['module'] for m in $resp.json()]
-    Should Be Equal    ${ids}    ${{ ['subcontracting', 'materials', 'owner-leads', 'ai-assist'] }}
+    Should Be Equal    ${ids}    ${MODULE_IDS}
     Should Not Be True    ${resp.json()}[1][available]
 
 Buyer Routes Answer Module Disabled While The Module Is Off

@@ -53,7 +53,7 @@ describe('crew x wage -> calculated days', () => {
 
     it('changing a wage rate changes the days inversely', () => {
         const i = input();
-        i.wageSets.A = { skilled: 1600, labourer: 1000 };
+        i.wageSets = i.wageSets.map(w => (w.id === 'A' ? { ...w, skilled: 1600, labourer: 1000 } : w));
         const r = result('1.5', i, fakeBoq(() => ({ lab: 33000, total: 90000 })));
         expect(r.dailyWage).toBe(6600);
         expect(r.calcDays).toBe(5);
@@ -80,7 +80,7 @@ describe('crew x wage -> calculated days', () => {
 
     it('zero wage rates also give null days', () => {
         const i = input();
-        i.wageSets.A = { skilled: 0, labourer: 0 };
+        i.wageSets = i.wageSets.map(w => (w.id === 'A' ? { ...w, skilled: 0, labourer: 0 } : w));
         expect(result('1.5', i, fakeBoq()).calcDays).toBeNull();
     });
 

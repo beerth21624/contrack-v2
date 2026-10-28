@@ -248,7 +248,7 @@ describe('journey money — levels follow the typed data', () => {
     });
 
     it('a calculator-level result with an unknown calculator id yields no rows', () => {
-        const fake: JourneyLevel = { id: 'x', title: 'x', planHint: '', kind: { type: 'calc', calc: 'does-not-exist' }, sections: [] };
+        const fake: JourneyLevel = { id: 'x', title: 'x', planHint: '', kind: { type: 'calc', calc: 'does-not-exist' }, after: [], sections: [] };
         expect(levelRows(fake, SAMPLE)).toEqual([]);
         expect(levelTotal(fake, SAMPLE)).toBe(0);
     });

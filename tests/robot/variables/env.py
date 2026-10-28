@@ -20,3 +20,8 @@ DEMO_COMPANY = "บริษัท ตัวอย่างก่อสร้า
 
 # Password used for users the suites register themselves.
 TEST_PASSWORD = "RobotTest#2026"
+
+# Module ids in contract order (src/shared/contract/modules.ts MODULE_IDS) and the ones the E2E server offers
+# (MODULES_ENABLED in env/backend.e2e.env).
+MODULE_IDS = ["subcontracting", "materials", "owner-leads", "ai-assist", "workforce"]
+OFFERED_MODULES = ["subcontracting", "workforce"]

@@ -13,23 +13,23 @@ ${SC_SETTINGS_PATH}     subcontracting/settings
 
 *** Test Cases ***
 # ── platform layer ─────────────────────────────────────────────────────────────────
-Platform Offers Only Subcontracting On This Server
-    [Documentation]    The E2E server runs with ``MODULES_ENABLED=subcontracting``.
+Platform Offers Exactly The Modules Of MODULES_ENABLED
+    [Documentation]    The E2E server runs with ``MODULES_ENABLED=subcontracting,workforce``.
     [Tags]    smoke
     Create Anonymous Session    anon
     ${resp}=    GET On Session    anon    /platform/modules    expected_status=200
-    Should Be Equal    ${resp.json()}    ${{ {'modules': ['subcontracting']} }}
+    Should Be Equal    ${resp.json()}    ${{ {'modules': $OFFERED_MODULES} }}
 
 Platform Modules Are Public Even With A Garbage Token
     [Tags]    security
     ${alias}=    Bad Token Session
     ${resp}=    GET On Session    ${alias}    /platform/modules    expected_status=200
-    Should Be Equal    ${resp.json()}[modules]    ${{ ['subcontracting'] }}
+    Should Be Equal    ${resp.json()}[modules]    ${OFFERED_MODULES}
 
 Platform Modules Only List Known Module Ids
     Create Anonymous Session    anon
     ${resp}=    GET On Session    anon    /platform/modules    expected_status=200
-    ${known}=    Create List    subcontracting    materials    owner-leads    ai-assist
+    VAR    @{known}    @{MODULE_IDS}
     FOR    ${module}    IN    @{resp.json()}[modules]
         Should Contain    ${known}    ${module}
     END
@@ -41,7 +41,7 @@ Platform Modules Cannot Be Changed Over HTTP
     PUT On Session    anon    /platform/modules    json=${body}    expected_status=404
     POST On Session    anon    /platform/modules    json=${body}    expected_status=404
     ${check}=    GET On Session    anon    /platform/modules    expected_status=200
-    Should Be Equal    ${check.json()}[modules]    ${{ ['subcontracting'] }}
+    Should Be Equal    ${check.json()}[modules]    ${OFFERED_MODULES}
 
 # ── workspace list ─────────────────────────────────────────────────────────────────
 Workspace Module List Has Every Module In Contract Order
@@ -49,15 +49,15 @@ Workspace Module List Has Every Module In Contract Order
     ${team}=    Create Owner Workspace
     ${resp}=    Get Workspace Modules    ${team}[owner]    ${team}[ws]
     ${ids}=    Evaluate    [m['module'] for m in $resp.json()]
-    Should Be Equal    ${ids}    ${{ ['subcontracting', 'materials', 'owner-leads', 'ai-assist'] }}
+    Should Be Equal    ${ids}    ${MODULE_IDS}
 
-New Workspace Has Every Module Switched Off And Only Subcontracting Available
+New Workspace Has Every Module Switched Off And Only The Offered Ones Available
     ${team}=    Create Owner Workspace
     ${resp}=    Get Workspace Modules    ${team}[owner]    ${team}[ws]
     FOR    ${entry}    IN    @{resp.json()}
         Should Be Equal    ${entry}[enabled]    ${False}
         Should Be Equal    ${entry}[enabledAt]    ${NONE}
-        ${available}=    Evaluate    $entry['module'] == 'subcontracting'
+        ${available}=    Evaluate    $entry['module'] in $OFFERED_MODULES
         Should Be Equal    ${entry}[available]    ${available}
     END
     ${n}=    Query Value    select count(*) from workspace_modules where workspace_id = %s    ${team}[ws]
@@ -68,7 +68,7 @@ Every Member Can Read The Module List
     ${team}=    Create Team
     FOR    ${role}    IN    owner    admin    estimator    viewer
         ${resp}=    Get Workspace Modules    ${team}[${role}]    ${team}[ws]
-        Length Should Be    ${resp.json()}    4
+        Length Should Be    ${resp.json()}    ${{ len($MODULE_IDS) }}
     END
 
 Module List Is Hidden From Outsiders And Anonymous Callers
