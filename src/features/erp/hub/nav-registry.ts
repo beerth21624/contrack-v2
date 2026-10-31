@@ -97,6 +97,7 @@ export const PROJECT_TABS: readonly ErpProjectTab[] = [
     { key: 'boq', labelKey: 'tabs.boq', href: () => '/boq', permission: 'projects.read', match: p => p.startsWith('/boq') },
     { key: 'versions', labelKey: 'tabs.versions', href: id => `/p/${encodeURIComponent(id)}/versions`, module: 'boq-control', match: p => /^\/p\/[^/]+\/versions/.test(p) },
     { key: 'quotations', labelKey: 'tabs.quotations', href: id => `/p/${encodeURIComponent(id)}/quotations`, module: 'quotations', permission: 'quotations.read', match: p => /^\/p\/[^/]+\/quotations/.test(p) },
+    { key: 'contract', labelKey: 'tabs.contract', href: id => `/p/${encodeURIComponent(id)}/contract`, module: 'contracts', permission: 'contracts.read', match: p => /^\/p\/[^/]+\/contract/.test(p) },
 ];
 
 /** The entry passes its module / permission gate. */

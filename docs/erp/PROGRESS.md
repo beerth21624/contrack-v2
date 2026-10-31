@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-26 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-27 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -38,7 +38,7 @@
 | WP-24 | Quotation web: รายการ ตัวแก้ไข เทียบฉบับ | sonnet | done | 8ecea92 | `src/features/erp/quotations/*`, routes `/p/[id]/quotations[/[quotationId]]`, แท็บ nav, ปุ่มสร้างบน ProjectOverviewPage + BoqHomePage; i18n `quotations`; D-196…D-200 |
 | WP-25 | Quotation เอกสารพิมพ์ TH/EN + หน้าลูกค้า | sonnet | done | df51c70 | `print-model.ts`, `QuotationPrintDocument`, `GovernmentForms`, `QuotationPrintPage`, `QuotationCustomerView` (renderer ลิงก์), route `/print/quotation/[versionId]`, ปุ่มพิมพ์ในตัวแก้ไข; i18n `documents.quotation/government`; D-201…D-203 |
 | WP-26 | สัญญาหลัก backend | opus | done | 4723693 | migration `0021_wp26_main_contracts`; โมดูล `main-contracts`, ports `MainContracts` + `QuotationLookup`, `html-sanitize.ts` + `main-contract-template.ts`; D-204…D-217 |
-| WP-27 | สัญญาหลัก web + พิมพ์สัญญา | sonnet | todo | | |
+| WP-27 | สัญญาหลัก web + พิมพ์สัญญา | sonnet | done | HASH27 | `src/features/erp/contracts/*` (ContractPage, ContractWizard, TermsForm, MilestonesEditor, GuaranteesCard, SignDialog, print-model, ContractPrintDocument/Page), routes `/p/[projectId]/contract` + `/print/contract/[contractId]`, แท็บ `contract`; i18n `contracts`, `enums.contractStatus|milestoneKind|milestoneStatus|guarantee*|retentionRelease|penaltyBase`, `documents.contract`; D-218…D-221 |
 | WP-28 | Billing domain คำนวณ | opus | todo | | |
 | WP-29 | งวดเบิก + ใบแจ้งหนี้ backend | opus | todo | | |
 | WP-30 | รับเงิน ใบกำกับภาษี ลูกหนี้ เตือน PromptPay backend | opus | todo | | |
@@ -314,6 +314,10 @@
 | D-215 | 2026-11-01 | (WP-26) HubRollups/BaselineUnlockGuards ของ contracts ตรวจ module active เอง (ไม่ active → ว่าง); `contractValue` = `current_value` ของสัญญา signed/completed/closed; `nextMilestone` = งวดแรก (ตาม `no`) ที่เก็บเป็น planned/claimable ป้ายตามภาษาสัญญา | ตามกติกา 01 §11 |
 | D-216 | 2026-11-01 | (WP-26) sweep `contracts.guarantee-expiring`: `markOnce(sweep, guaranteeId, expiryDate)` = แจ้งครั้งเดียวต่อหลักประกัน (แจ้งใหม่ถ้าเลื่อนวันหมดอายุ) ถึงสมาชิกที่มี `contracts.manage`; ไม่เปลี่ยนสถานะเป็น `expired` อัตโนมัติ | กันแจ้งซ้ำทุกวัน 30 วัน |
 | D-217 | 2026-11-01 | (WP-26) sanitizer ย้ายไป `src/domain/erp/html-sanitize.ts` (`sanitizeContractHtml`, ชื่อกลาง `sanitizeDocumentHtml`, `escapeHtmlText`); `contract-template.ts` import + re-export `sanitizeContractHtml` (`escapeContractText` คงไว้ที่เดิม) | ตามขอบเขต WP-26; โค้ดจ้างช่วงเดิมไม่เปลี่ยน |
+| D-218 | 2026-11-01 | (WP-27) ตัวช่วยสร้างสัญญา 5 ขั้น: เลือกใบเสนอราคา/สัญญาเปล่า (ยังไม่มีสัญญา) หรือข้อมูลสัญญา (ร่าง) → เงื่อนไข → งวดงาน → ตัวอย่าง → เซ็น; ร่างที่ผู้ใช้แก้ไม่ได้ (`canEdit` false) และสัญญาที่เซ็นแล้วแสดงหน้ารายละเอียด (อ่านอย่างเดียว) พร้อมหลักประกัน/สแกน/บอกเลิก/ปิด | ตาม acceptance ของ WP-27 |
+| D-219 | 2026-11-01 | (WP-27) ไม่มี endpoint preview การจัดสรร: SignDialog นับเองจาก `useCostCodes` (source `baseline`, active) ที่ `lineKey` ไม่อยู่ในบรรทัดของฉบับที่รับ (เฉพาะเมื่อ BOQ ล็อกอยู่แล้วและสัญญามาจากใบเสนอราคา) และแจ้งผลจริง `allocation.uncoveredCount` หลังเซ็น | WP-26 handoff ปล่อยให้ WP-27 ตัดสินใจ; ไม่แก้ backend |
+| D-220 | 2026-11-01 | (WP-27) ยอดเงินต่องวดในตัวแก้ไขคำนวณด้วย `allocate(originalValue, pct[])` ตรงกับ `planMilestones` ฝั่ง server; งวดสุดท้ายในรายการถูกส่งเป็น `final` เสมอ งวดอื่นเป็น `work`; งวดเงินล่วงหน้าแสดงแยกและแก้ผ่าน `terms.advancePct` | ผู้ใช้ไม่ต้องเลือกชนิดงวด |
+| D-221 | 2026-11-01 | (WP-27) เอกสารพิมพ์ = เนื้อสัญญา `renderMainContract(body, data)` (HTML ผ่าน sanitizer แล้ว ใส่ด้วย `dangerouslySetInnerHTML`) + ภาคผนวกงวดงาน (รวมงวด VO) ทั้งหมดตาม `contract.language`; ใช้ snapshot บริษัท/ลูกค้าเมื่อเซ็นแล้ว ก่อนเซ็นใช้โปรไฟล์/ลูกค้าปัจจุบัน; ยังไม่มีหน้าแก้เนื้อความ `bodyTh/bodyEn` (ใช้แม่แบบมาตรฐาน) | ตามกติกาเอกสารพิมพ์ D-202; ส่งของก่อน |
 
 ## Handoff notes
 
@@ -719,3 +723,10 @@
   - WP-53 (handover): `complete(ws, contractId, date, by)` signed → completed
   - port ทุกตัวไม่ตรวจโมดูล/สิทธิ์ และคืน `err` ก่อนเขียน
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend + contract/domain) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/domain/subcontracting src/domain/erp src/shared/contract` 692 ผ่าน; `cd backend && npx jest src/modules/platform src/shared src/modules/hub src/modules/boq-control` 235 ผ่าน; e2e `projects` + `approvals` 26 ผ่าน; smoke e2e ชั่วคราว (memory, ลบแล้ว): โมดูลปิด → 404 `module_disabled`; ใบเสนอราคายังไม่ accepted → 409 `quotation_not_accepted`; สร้างจากใบที่รับ → `originalValue = vatBase`, `quotedMarginPct = marginPct`, งวด 9 งวดตามแม่แบบบ้าน Σ = มูลค่า; สร้างซ้ำ → 409; viewer → 403; PUT งวด Σ 0.9 → 400; PATCH advance 15% → งวด 0 + body ตัด `onclick`/`<script>`; sign → `CT2026-0001`, baseline ล็อก, Σ `contract_amount` = `originalValue` พอดี, project `in_progress`, rollup `contractValue`/`nextMilestone`, unlock blockers `contract_signed`; PATCH หลังเซ็น → 409 `already_issued`, cancel → 409; หลักประกัน สร้าง/viewer อ่าน/คืน; port `next_claim` บน milestone → err, `spread` Σ งวด = `currentValue`, `separate_milestone` −500 เพิ่มงวด variation; complete → close ผ่าน; โครงการที่ล็อก baseline ก่อน → `baselineLocked: false` และ Σ = 1,234,567.89 พอดี; terminate → `{contract: null, ended: 1}`; `npm run db:generate -- --name wp26_main_contracts` ได้ `0021`; ยังไม่ได้ทดสอบบน PostgreSQL จริง
+
+### WP-27 — สัญญาหลัก web + พิมพ์สัญญา (HASH27)
+- สร้าง `src/features/erp/contracts/`: `api.ts`, `hooks.ts` (`contractKeys`, `useProjectContract`, `useContract`, mutations; `useSignContract` invalidate baseline/versions/cost codes + `setCloudLocked(true)`), `ContractPage.tsx`, `ContractWizard.tsx` (+ `contractPrintHref`), `TermsForm.tsx`, `MilestonesEditor.tsx` (+ `MilestonesReadOnly`), `GuaranteesCard.tsx`, `SignDialog.tsx`, `print-model.ts`, `useContractPrintModel.ts`, `ContractPrintDocument.tsx`, `ContractPrintPage.tsx`, `status.ts`; routes `src/app/(app)/p/[projectId]/contract/page.tsx` (`ModuleGate contracts`) และ `src/app/(print)/print/contract/[contractId]/page.tsx`; แท็บ `contract` ใน `PROJECT_TABS` (`contracts.read`)
+- i18n (th+en): namespace `contracts`; `nav.tabs.contract`; `enums.contractStatus|milestoneKind|milestoneStatus|guaranteeKind|guaranteeForm|guaranteeStatus|retentionRelease|penaltyBase` และ `enums.milestoneTrigger.date`; `documents.contract.*`
+- ไม่มี migration / ไม่แก้ backend; ไม่เขียนเทสต์ (คำสั่งเจ้าของ: ส่งของก่อน)
+- WP ถัดไปต้องรู้: ลิงก์ไปสัญญา `/p/<id>/contract`, พิมพ์ `/print/contract/<contractId>`; `useContractPrintModel(contract)` ใช้ซ้ำได้; ยังไม่มีปุ่ม "ส่งมอบ/complete" (เป็นของ WP-53) — หน้าสัญญาแสดงปุ่มปิดสัญญาเมื่อสถานะ `completed`; ยังไม่มี UI แก้ `bodyTh/bodyEn` (D-221) และไม่มีเงินล่วงหน้า/วางบิล (WP-29)
+- ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/features/erp/contracts` + route ใหม่ + `nav-registry.ts` ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/features/erp/hub src/i18n` ผ่าน; ยังไม่ได้เปิดเบราว์เซอร์/พิมพ์จริงกับ backend

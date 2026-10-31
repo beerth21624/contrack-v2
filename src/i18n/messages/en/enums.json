@@ -60,6 +60,7 @@
   "milestoneTrigger": {
     "signing": "On signing",
     "progress": "On progress",
+    "date": "On a date",
     "handover": "On handover",
     "manual": "Manual"
   },
@@ -114,5 +115,51 @@
     "expired": "Expired",
     "superseded": "Superseded",
     "cancelled": "Cancelled"
+  },
+  "contractStatus": {
+    "draft": "Draft",
+    "signed": "Signed",
+    "completed": "Completed",
+    "closed": "Closed",
+    "cancelled": "Cancelled",
+    "terminated": "Terminated"
+  },
+  "milestoneKind": {
+    "advance": "Advance",
+    "work": "Milestone",
+    "final": "Final milestone"
+  },
+  "milestoneStatus": {
+    "planned": "Not due yet",
+    "claimable": "Claimable",
+    "claimed": "Claimed",
+    "invoiced": "Invoiced",
+    "paid": "Paid"
+  },
+  "guaranteeKind": {
+    "performance": "Performance guarantee",
+    "advance_payment": "Advance payment guarantee",
+    "warranty": "Warranty guarantee"
+  },
+  "guaranteeForm": {
+    "bank_guarantee": "Bank guarantee",
+    "cash": "Cash",
+    "cheque": "Cheque",
+    "bond": "Bond"
+  },
+  "guaranteeStatus": {
+    "active": "Active",
+    "returned": "Returned",
+    "claimed": "Claimed",
+    "expired": "Expired"
+  },
+  "retentionRelease": {
+    "half_at_completion_half_after_warranty": "Half at handover, half after the warranty",
+    "all_after_warranty": "All after the warranty",
+    "all_at_completion": "All at handover"
+  },
+  "penaltyBase": {
+    "contract_value": "Contract value",
+    "remaining_work": "Value of the remaining work"
   }
 }

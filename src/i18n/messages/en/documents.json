@@ -68,5 +68,23 @@
     "vatBase": "Construction cost before VAT",
     "vatIncluded": "VAT {rate} is included in Factor F: THB {amount}",
     "noVat": "No VAT"
+  },
+  "contract": {
+    "draftNote": "Draft, no contract number yet",
+    "annexTitle": "Annex: milestones and payments",
+    "no": "No.",
+    "description": "Description",
+    "trigger": "Due when",
+    "share": "%",
+    "amount": "Amount (THB)",
+    "total": "Total of the milestones",
+    "variation": "variation",
+    "triggerSigning": "On signing the contract",
+    "triggerProgress": "When the works reach {pct}",
+    "triggerDate": "On {date}",
+    "triggerHandover": "On handover of the works",
+    "triggerManual": "As agreed by the parties",
+    "vatNote": "The amounts above exclude value added tax at {rate}",
+    "noVatNote": "The amounts above carry no value added tax"
   }
 }

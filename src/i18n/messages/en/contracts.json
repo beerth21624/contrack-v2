@@ -1,0 +1,169 @@
+{
+  "loadFailed": "Could not load the contract",
+  "retry": "Retry",
+  "empty": {
+    "title": "This project has no main contract yet",
+    "readOnly": "Your role can view contracts only"
+  },
+  "languages": {
+    "th": "ไทย",
+    "en": "English"
+  },
+  "actions": {
+    "save": "Save",
+    "saveContinue": "Save and continue",
+    "remove": "Remove",
+    "up": "Move up",
+    "down": "Move down",
+    "print": "Print contract",
+    "sign": "Sign contract",
+    "cancelDraft": "Cancel draft",
+    "cancelConfirm": "Cancel this draft contract? The project can then start a new one.",
+    "terminate": "Terminate contract",
+    "close": "Close contract",
+    "closeConfirm": "Close this contract? (after handover and with all guarantees returned)"
+  },
+  "fields": {
+    "title": "Contract title",
+    "titleHint": "Leave empty for the default",
+    "customer": "Employer (customer)",
+    "originalValue": "Contract value (excl. VAT)",
+    "currentValue": "Current value",
+    "language": "Contract language",
+    "billingMode": "Billing method",
+    "startDate": "Start date",
+    "finishDate": "Completion date",
+    "signDate": "Signing date",
+    "number": "Contract no.",
+    "status": "Status",
+    "vatRate": "VAT rate",
+    "quotedMargin": "Margin quoted",
+    "progress": "Progress",
+    "completedAt": "Completed on",
+    "closedAt": "Closed on",
+    "terminatedAt": "Terminated on"
+  },
+  "wizard": {
+    "steps": {
+      "source": "Quotation",
+      "basics": "Contract details",
+      "terms": "Terms",
+      "milestones": "Milestones",
+      "preview": "Preview",
+      "sign": "Sign"
+    },
+    "sourceTitle": "Create the main contract",
+    "fromQuotation": "From an accepted quotation",
+    "blank": "Blank contract (enter customer and value)",
+    "quotationHint": "Contract value = the accepted version's total before VAT; milestones come from the quotation's payment terms",
+    "noAccepted": "This project has no accepted quotation yet",
+    "goQuotations": "Go to quotations",
+    "untitled": "Untitled quotation",
+    "defaultOption": "Default",
+    "create": "Create draft contract",
+    "created": "Draft contract created",
+    "back": "Back",
+    "next": "Next",
+    "signHint": "Check the preview before signing. A signed contract can no longer be edited."
+  },
+  "basics": {
+    "saved": "Contract details saved",
+    "fromQuotation": "This contract comes from a quotation; changing the value recalculates the milestones",
+    "datesOrder": "The completion date must not be before the start date"
+  },
+  "terms": {
+    "saved": "Terms saved",
+    "advancePct": "Advance payment",
+    "advanceHint": "Up to 30%; the advance milestone is created for you",
+    "retentionPct": "Retention (held per milestone)",
+    "retentionCapPct": "Cumulative retention cap",
+    "retentionCapHint": "Empty = no cap",
+    "retentionRelease": "Retention release",
+    "customerWhtRate": "Withholding tax held by customer",
+    "paymentTermDays": "Payment within (days)",
+    "penaltyRatePerDay": "Delay damages per day",
+    "penaltyBase": "Damages base",
+    "penaltyCapPct": "Cumulative damages cap",
+    "warrantyMonths": "Warranty (months)",
+    "guaranteePct": "Performance guarantee",
+    "escalation": "K factor (price escalation)",
+    "escalationHint": "Weights and base indices are entered by hand",
+    "escFixed": "Fixed part of the K formula",
+    "escThreshold": "Change of K before anything is paid",
+    "escIndex": "Index",
+    "escWeight": "Weight",
+    "escBase": "Base index value",
+    "escAdd": "Add index",
+    "escSumWarning": "The fixed part plus the index weights should add up to 100%"
+  },
+  "milestones": {
+    "no": "No.",
+    "label": "Milestone",
+    "labelTh": "Name (Thai)",
+    "labelEn": "Name (English)",
+    "trigger": "Due when",
+    "triggerProgress": "Progress at which it falls due",
+    "pct": "Share",
+    "amount": "Amount",
+    "status": "Status",
+    "add": "Add milestone",
+    "sum": "Total share",
+    "sumOk": "100%",
+    "sumWarning": "Shares must add up to 100% ({remaining} missing)",
+    "saved": "Milestones saved",
+    "advanceNote": "Advance milestone, calculated from the terms; not part of the shares below",
+    "emptyMilestone": "A milestone-billed contract needs at least one milestone before it can be signed",
+    "emptyProgress": "A progress-billed contract needs no milestones"
+  },
+  "guarantees": {
+    "title": "Guarantees",
+    "add": "Add guarantee",
+    "added": "Guarantee added",
+    "empty": "No guarantees yet",
+    "kind": "Type",
+    "form": "Form",
+    "issuer": "Issuer",
+    "refNo": "Reference no.",
+    "amount": "Amount",
+    "issueDate": "Issue date",
+    "expiryDate": "Expiry date",
+    "status": "Status",
+    "files": "Attachments",
+    "note": "Note",
+    "return": "Return guarantee",
+    "returnConfirm": "Mark this guarantee as returned?",
+    "datesOrder": "The expiry date must not be before the issue date"
+  },
+  "sign": {
+    "title": "Sign contract",
+    "submit": "Sign contract",
+    "effects": "Signing issues the contract number, locks the BOQ as the cost baseline (if not locked yet), spreads the contract value over the cost codes and moves the project to in progress.",
+    "baselineLocked": "The BOQ is already locked as a baseline; the existing baseline is kept",
+    "baselineWillLock": "The BOQ is not locked yet; it will be locked from the accepted version",
+    "uncovered": "{count} cost codes have no selling price in the quotation (they get no contract value)",
+    "done": "Contract signed, no. {number}"
+  },
+  "terminate": {
+    "title": "Terminate contract",
+    "hint": "Termination cannot be undone; the project can then start a new contract.",
+    "reason": "Reason",
+    "submit": "Terminate contract",
+    "done": "Contract terminated"
+  },
+  "scans": {
+    "title": "Signed copy (scan)",
+    "empty": "No scans yet",
+    "upload": "Attach scan",
+    "added": "File attached",
+    "tooLarge": "The file is too large",
+    "badType": "This file type is not supported"
+  },
+  "detail": {
+    "extension": "Extended {days} days",
+    "termsTitle": "Contract terms",
+    "milestonesTitle": "Milestones"
+  },
+  "ended": {
+    "title": "Ended contracts"
+  }
+}

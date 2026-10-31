@@ -60,6 +60,7 @@
   "milestoneTrigger": {
     "signing": "เมื่อเซ็นสัญญา",
     "progress": "ตามความคืบหน้า",
+    "date": "ตามวันที่กำหนด",
     "handover": "เมื่อส่งมอบ",
     "manual": "กำหนดเอง"
   },
@@ -114,5 +115,51 @@
     "expired": "หมดอายุ",
     "superseded": "ถูกแทนที่ด้วยฉบับใหม่",
     "cancelled": "ยกเลิก"
+  },
+  "contractStatus": {
+    "draft": "ร่าง",
+    "signed": "เซ็นแล้ว",
+    "completed": "ส่งมอบแล้ว",
+    "closed": "ปิดสัญญา",
+    "cancelled": "ยกเลิก",
+    "terminated": "บอกเลิก"
+  },
+  "milestoneKind": {
+    "advance": "เงินล่วงหน้า",
+    "work": "งวดงาน",
+    "final": "งวดสุดท้าย"
+  },
+  "milestoneStatus": {
+    "planned": "ยังไม่ถึงกำหนด",
+    "claimable": "เบิกได้",
+    "claimed": "เบิกแล้ว",
+    "invoiced": "ออกใบแจ้งหนี้แล้ว",
+    "paid": "รับเงินแล้ว"
+  },
+  "guaranteeKind": {
+    "performance": "ค้ำประกันสัญญา",
+    "advance_payment": "ค้ำประกันเงินล่วงหน้า",
+    "warranty": "ค้ำประกันผลงาน"
+  },
+  "guaranteeForm": {
+    "bank_guarantee": "หนังสือค้ำประกันธนาคาร",
+    "cash": "เงินสด",
+    "cheque": "เช็ค",
+    "bond": "พันธบัตร"
+  },
+  "guaranteeStatus": {
+    "active": "มีผล",
+    "returned": "คืนแล้ว",
+    "claimed": "ถูกเรียกใช้",
+    "expired": "หมดอายุ"
+  },
+  "retentionRelease": {
+    "half_at_completion_half_after_warranty": "ครึ่งหนึ่งเมื่อส่งมอบ อีกครึ่งหลังพ้นรับประกัน",
+    "all_after_warranty": "ทั้งหมดหลังพ้นรับประกัน",
+    "all_at_completion": "ทั้งหมดเมื่อส่งมอบ"
+  },
+  "penaltyBase": {
+    "contract_value": "มูลค่าสัญญา",
+    "remaining_work": "มูลค่างานที่เหลือ"
   }
 }
