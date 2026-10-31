@@ -1,0 +1,165 @@
+# ERP — บันทึกความคืบหน้า
+
+อัปเดตล่าสุด: 2026-10-31 · branch: `epic/erp` · สถานะ: **ออกแบบครบ ยังไม่เริ่มเขียนโค้ด**
+
+วิธีอัปเดต (ทุก WP):
+1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
+2. จบงาน: status `done`, ใส่ commit hash สั้น, notes สั้น ๆ (เช่นเลข migration ที่ได้จริง)
+3. เพิ่ม **Handoff note** ท้ายไฟล์ (รูปแบบด้านล่าง) และบันทึกการตัดสินใจใหม่ใน **Decisions log** (เลข D ถัดไป)
+4. ห้ามลบหรือแก้บันทึกของ WP อื่น เพิ่มต่อท้ายเท่านั้น
+
+## Ledger — สายหลัก
+
+| WP | Title | Model | Status | Commit | Notes |
+|---|---|---|---|---|---|
+| WP-01 | i18n foundation (locale, format, parity, lint) | opus | todo | | |
+| WP-02 | ไลบรารีเงิน ภาษี วันที่ | opus | todo | | |
+| WP-03 | Module registry, flag 4 ชั้น, entitlement, ModuleAccess (backend + contract) | opus | todo | | |
+| WP-04 | หน้าโมดูลและทดลองใช้ (web) | sonnet | todo | | |
+| WP-05 | บทบาทและสิทธิ์ ERP | opus | todo | | |
+| WP-06 | ERP web foundation: UI kit, nav registry, กรอบพิมพ์ | opus | todo | | |
+| WP-07 | Platform admin: ให้สิทธิ์โมดูล (backend + web) | sonnet | todo | | |
+| WP-08 | Workflow อนุมัติ + audit log (backend) | opus | todo | | |
+| WP-09 | หน้าอนุมัติ นโยบาย และ audit (web) | sonnet | todo | | |
+| WP-10 | การแจ้งเตือน: channel, ภาษาผู้รับ, sweep | opus | todo | | |
+| WP-11 | บริการเลขเอกสาร + guard การลบ | opus | todo | | |
+| WP-12 | โปรไฟล์บริษัท + business profile + project type | sonnet | todo | | |
+| WP-13 | ทะเบียนลูกค้า | sonnet | todo | | |
+| WP-14 | ลิงก์ลูกค้า (public) | opus | todo | | |
+| WP-15 | Project Hub backend | opus | todo | | |
+| WP-16 | Project Hub web + ต่อ nav เข้า AppLayoutUI | opus | todo | | |
+| WP-17 | ประวัติ BOQ (versions, เทียบฉบับ) | opus | todo | | |
+| WP-18 | Baseline + cost codes (backend) | opus | todo | | |
+| WP-19 | Baseline web: BOQ อ่านอย่างเดียวเมื่อล็อก + CostCodePicker | opus | todo | | |
+| WP-20 | Cost ledger + financial events | opus | todo | | |
+| WP-21 | ราคากลางภาครัฐ | sonnet | todo | | |
+| WP-22 | Quotation: domain คำนวณ + overlay อังกฤษของ BOQ | opus | todo | | |
+| WP-23 | Quotation backend | opus | todo | | |
+| WP-24 | Quotation web: รายการ ตัวแก้ไข เทียบฉบับ | sonnet | todo | | |
+| WP-25 | Quotation เอกสารพิมพ์ TH/EN + หน้าลูกค้า | sonnet | todo | | |
+| WP-26 | สัญญาหลัก backend | opus | todo | | |
+| WP-27 | สัญญาหลัก web + พิมพ์สัญญา | sonnet | todo | | |
+| WP-28 | Billing domain คำนวณ | opus | todo | | |
+| WP-29 | งวดเบิก + ใบแจ้งหนี้ backend | opus | todo | | |
+| WP-30 | รับเงิน ใบกำกับภาษี ลูกหนี้ เตือน PromptPay backend | opus | todo | | |
+| WP-31 | Billing web | sonnet | todo | | |
+| WP-32 | Billing เอกสารพิมพ์ + QR | sonnet | todo | | |
+| WP-33 | VO backend | opus | todo | | |
+| WP-34 | VO web + ราคาด้วยเครื่องคำนวณ (sandbox) | opus | todo | | |
+| WP-35 | Portal backend + ค้นหา | opus | todo | | |
+| WP-36 | Portal web | sonnet | todo | | |
+| WP-37 | ทะเบียนผู้ขาย | opus | todo | | |
+| WP-38 | PR + RFQ backend | opus | todo | | |
+| WP-39 | PO + รับของ + 3-way match backend | opus | todo | | |
+| WP-40 | PR/RFQ web | sonnet | todo | | |
+| WP-41 | PO/รับของ web + พิมพ์ PO/RFQ | sonnet | todo | | |
+| WP-42 | รายงานประจำวัน backend | opus | todo | | |
+| WP-43 | รายงานประจำวัน web | sonnet | todo | | |
+| WP-44 | ใบลงเวลา งวดค่าแรง 15 วัน เบิกล่วงหน้า backend | opus | todo | | |
+| WP-45 | ค่าแรง web | sonnet | todo | | |
+| WP-46 | Job cost backend: ต้นทุน กำไร แจ้งเตือน | opus | todo | | |
+| WP-47 | กระแสเงินสดจริงข้ามโครงการ (backend) | opus | todo | | |
+| WP-48 | Job cost + กระแสเงินสด web | sonnet | todo | | |
+| WP-49 | เจ้าหนี้: บิลผู้ขาย / งวดจ้างช่วง / ค่าแรง + 3-way match (backend) | opus | todo | | |
+| WP-50 | รอบจ่าย ใบสำคัญจ่าย และ 50 ทวิ (backend) | opus | todo | | |
+| WP-51 | เจ้าหนี้ web + พิมพ์ 50 ทวิ / ใบสำคัญจ่าย | sonnet | todo | | |
+| WP-52 | รายงานภาษี + Excel ให้นักบัญชี | opus | todo | | |
+| WP-53 | ส่งมอบ + รับประกัน backend | opus | todo | | |
+| WP-54 | ส่งมอบ + รับประกัน web | sonnet | todo | | |
+| WP-55 | ปิดโครงการ + ราคาจริงกลับสู่ BOQ | opus | todo | | |
+| WP-56 | ข้อมูลตัวอย่าง ERP + เอกสาร API | sonnet | todo | | |
+
+## Ledger — Track I (ย้ายข้อความไทยเดิม)
+
+| WP | Title | Status | Commit | Notes |
+|---|---|---|---|---|
+| I-01 | เปลือกแอป บัญชี ล็อกอิน error | todo | | หลัง WP-16 |
+| I-02 | components/sheet | todo | | |
+| I-03 | components/sheet/journey | todo | | |
+| I-04 | boq-home + journey | todo | | |
+| I-05 | export (BOQ print/xlsx) | todo | | |
+| I-06 | calculators กลุ่ม 1 | todo | | |
+| I-07 | calculators กลุ่ม 2 | todo | | |
+| I-08 | calculators กลุ่ม 3 + overlay domain | todo | | หลังข้อนี้เปิดปุ่มภาษาทั่วไป |
+| I-09 | planning | todo | | |
+| I-10 | cloud ที่เหลือ | todo | | |
+| I-11 | workforce | todo | | |
+| I-12 | subcontracting buyer | todo | | |
+| I-13 | subcontracting contracts/shared + sc.* notification en | todo | | |
+| I-14 | vendor portal | todo | | |
+
+## Decisions log
+
+| # | วันที่ | การตัดสินใจ | เหตุผล / ความขัดแย้งที่พบ |
+|---|---|---|---|
+| D-01 | 2026-10-31 | ทำงานบน branch `epic/erp` | คำสั่งระบุ `feat/erp-foundation` แต่ branch ปัจจุบันของ repo คือ `epic/erp` (commit `9319ac2`) |
+| D-02 | 2026-10-31 | บทบาท "ผู้ช่วย (assistant)" = role id `admin` เดิม ไม่เปลี่ยนชื่อ id; เพิ่ม `pm`, `purchasing`, `accounting`, `foreman` ใน WP-05 | ไม่กระทบข้อมูล membership เดิมและ check constraint |
+| D-03 | 2026-10-31 | ราคากลางภาครัฐ: นำเข้า `goverment_price.json` เข้า `price_reference_*` ใน WP-21 (คาด 4,559 แถวที่มีราคา; ข้าม 1,012 แถวที่ราคาเป็น `-`) | เจ้าของเข้าใจว่า "มีอยู่แล้ว" แต่โค้ดที่ใช้ถูกลบใน commit `a985437`; มีแค่ไฟล์ JSON ดิบที่ root (5,571 แถว, ฟิลด์หน่วยชื่อ `unit_type`) |
+| D-04 | 2026-10-31 | เงินใช้ `number` + `round2` ทุกค่าที่เก็บ + `numeric(14,2)` ไม่ใช้ Decimal library | ตรงกับโค้ดจ้างช่วงเดิม; ช่วงสูงสุด 1e11 แม่นยำพอใน float64 |
+| D-05 | 2026-10-31 | เอกสาร ERP ปัดเงินต่อบรรทัด BOQ ตอนดึงเข้า ยอดรวมอาจต่างจากหน้า BOQ (ไม่ปัด) ไม่กี่สตางค์ เอกสาร ERP ใช้ยอดของตัวเองเสมอ | BOQ engine ไม่ปัดเงิน (ตรงกับ Excel) และห้ามเปลี่ยนตัวเลข BOQ |
+| D-06 | 2026-10-31 | ฐาน VAT ของงวดเบิก = งานงวดนี้ − หักเงินล่วงหน้า + ค่า K; ค่าปรับไม่ลดฐาน VAT; VAT คิดบนทั้งงวดรวมส่วนที่หักประกันผลงาน; ใบแจ้งหนี้คืนเงินประกันไม่มี VAT | แนวปฏิบัติทั่วไป (เงินล่วงหน้าเสีย VAT ตอนรับแล้ว) และทำให้สูตรเดียวทุกกลุ่มลูกค้า ปรับเป็นตัวเลือกได้ภายหลัง |
+| D-07 | 2026-10-31 | ใบกำกับภาษี (งานบริการ) ออกตอนรับเงินเป็นค่าเริ่มต้น รับบางส่วนออกตามสัดส่วน ใบสุดท้ายรับเศษ | จุดความรับผิด VAT ของบริการคือเมื่อได้รับชำระ |
+| D-08 | 2026-10-31 | เลขสัญญาจ้างช่วง `SC-YYYY-NNNN` (`sc_contract_counters`) ไม่ย้ายเข้าบริการเลขเอกสารกลาง | ไม่แตะโมดูลที่ใช้งานแล้ว และไม่ใช่เอกสารภาษี |
+| D-09 | 2026-10-31 | ลูกค้า/ที่อยู่ของ Hub ไม่ซิงก์อัตโนมัติกับ `meta.ownerName`/`meta.siteAddress` ของ BOQ (มีปุ่มคัดลอก) | กันสองที่เขียนทับกันผ่าน sync engine |
+| D-10 | 2026-10-31 | ทะเบียนผู้ขาย `sup_suppliers` แยกจาก `sc_vendor_list_entries` แต่ผูกกันได้และนำเข้าได้ | สมุดจ้างช่วงเดิมผูกกับเบอร์โทรและ flow OTP ของ vendor portal |
+| D-11 | 2026-10-31 | ผู้ขายวัสดุไม่ล็อกอินใน v1: RFQ พิมพ์/ส่งให้ผู้ขาย แล้วผู้รับเหมากรอกราคาเอง | ลดขอบเขต; supplier portal อยู่ใน marketplace (later) |
+| D-12 | 2026-10-31 | Factor F ป้อนเองต่อ part ของใบเสนอราคาราชการ; ยังไม่ฝังตาราง Factor F ทางการ | ต้องได้ตารางทางการจากเจ้าของ ห้ามเดาตัวเลข — **คำถามค้างถึงเจ้าของ** |
+| D-13 | 2026-10-31 | ค่า K: สูตรและสัมประสิทธิ์ป้อนเองต่อสัญญา ดัชนีป้อนเองต่องวด ยังไม่มี preset ตามประเภทงาน | ต้องได้สูตรทางการตามประเภทงานจากเจ้าของ — **คำถามค้างถึงเจ้าของ** |
+| D-14 | 2026-10-31 | ค่าแรงรายวัน: ไม่หัก ภ.ง.ด.1 / ประกันสังคม ใน v1 | เงินเดือน/HR อยู่ใน later |
+| D-15 | 2026-10-31 | ส่งข้อความทุก namespace ของภาษาปัจจุบันไปเบราว์เซอร์ | ง่ายและพอสำหรับตอนนี้; แยกด้วย `pick` ภายหลังถ้าใหญ่ |
+| D-16 | 2026-10-31 | ปุ่มสลับภาษาแสดงเมื่อ `NEXT_PUBLIC_LANGUAGE_SWITCH=1` (WP-01) หรือ `project-hub` active (เพิ่มใน WP-16) จนกว่า I-08 เสร็จ | หน้า BOQ เดิมยังเป็นไทยเกือบทั้งหมด สลับแล้วจะครึ่ง ๆ กลาง ๆ; ModuleId `project-hub` เกิดใน WP-03 จึงตรวจใน WP-01 ไม่ได้ |
+| D-17 | 2026-10-31 | ประวัติ BOQ v1: ดู เทียบ ล็อก baseline — ยังไม่มี "กู้คืนฉบับเก่า" | การเขียน project docs ทั้งชุดกลับมีผลกับ sync/realtime ต้องออกแบบแยก |
+| D-18 | 2026-10-31 | คอลัมน์ Hub อยู่ในตาราง `projects` แต่โมดูล `hub` เป็นเจ้าของ; `ProjectDto` เดิมไม่เปลี่ยน มี `HubProjectDto` แยก | ไม่กระทบ endpoint/sync เดิม |
+| D-19 | 2026-10-31 | ไม่มี FK ข้ามไฟล์ schema ยกเว้นไปยังตาราง core (`schema.ts`); id ข้ามโมดูลตรวจผ่าน lookup port | กฎเดิมใน `database.ts` ("no file imports another stream's file") |
+| D-20 | 2026-10-31 | Foundation (ลูกค้า บริษัท เลขเอกสาร อนุมัติ audit ลิงก์ ราคากลาง) gate ด้วย `project-hub` | ทุกโมดูล ERP พึ่ง `project-hub`; release 1 ปิดทั้งหมดได้ด้วย flag เดียว |
+| D-21 | 2026-10-31 | `ModuleUsage` (ผูกกับจ้างช่วง) เปลี่ยนเป็น registry `ModuleWorkRegistry` | ให้โมดูลใหม่รายงานงานค้างก่อนปิดได้ |
+| D-22 | 2026-10-31 | โมดูลเดิม (`subcontracting`, `workforce`, `ai-assist`, `materials`, `owner-leads`) ไม่ต้องมี entitlement | ไม่เปลี่ยนพฤติกรรมของลูกค้าที่ใช้อยู่ |
+| D-23 | 2026-10-31 | env `ENTITLEMENTS=enforce|open` ค่าเริ่มต้น enforce เฉพาะ production; `testEnv()` = open | dev/test ลองโมดูลได้ไม่ต้องให้สิทธิ์ |
+| D-24 | 2026-10-31 | platform admin = อีเมลใน env `PLATFORM_ADMIN_EMAILS` | ยังไม่มีแนวคิด platform admin ในโค้ด; admin panel แยก repo (docs/admin) ยังไม่ทำ |
+| D-25 | 2026-10-31 | UI แสดงปี ค.ศ. เสมอ; เอกสารพิมพ์ภาษาไทยเลือก พ.ศ. ได้ (`document_year_style`); เลขเอกสารค่าเริ่มต้นใช้ปี ค.ศ. | ตามกติกาเดิมในโค้ด (`-u-ca-gregory`) และเปิดทางให้บริษัทที่ใช้ พ.ศ. |
+| D-26 | 2026-10-31 | หนึ่งโครงการมีสัญญาหลักที่มีผลได้หนึ่งฉบับ (v1) | ง่ายต่อ baseline/cost code; หลายสัญญาต่อโครงการทำภายหลัง |
+| D-27 | 2026-10-31 | เอกสารพิมพ์ทำผ่าน route group `(print)` + `PrintFrame` และพิมพ์จากเบราว์เซอร์ | ไม่มี PDF ฝั่ง server เหมือนโมดูลจ้างช่วง |
+| D-28 | 2026-10-31 | ลบโครงการ/workspace ไม่ได้เมื่อมีเอกสารที่ออกเลขแล้วหรือมี `fin_events` | ข้อกำหนดเก็บเอกสารภาษี |
+| D-29 | 2026-10-31 | ต้นทุนค่าแรงจริง: มาจากใบลงเวลาเมื่อ `labour` active ไม่งั้นประมาณจากรายงานประจำวัน (crew daily cost) | กันนับซ้ำ |
+| D-30 | 2026-10-31 | ERP ไม่เขียน project docs ของ planning; S-curve จริงคำนวณแยกใน job-cost | กันชนกับ sync engine และเครื่องคำนวณเดิม |
+| D-31 | 2026-10-31 | ราคาขายใบเสนอราคา: `sellFactor = 1 + markup + overhead + profit` (บวกกันเป็นสัดส่วนต้นทุน) | อธิบายง่ายกับผู้รับเหมา; CashFlow เดิมใช้ factor 1.3 แบบเดียวกัน |
+| D-32 | 2026-10-31 | เอกสารออกเป็นภาษาเดียวต่อฉบับ (`th` หรือ `en`) ไม่มีแบบสองภาษาในหน้าเดียว v1; 50 ทวิ เป็นภาษาไทยเสมอ | ลดความซับซ้อน; แบบฟอร์มกรมสรรพากรเป็นภาษาไทย |
+| D-33 | 2026-10-31 | ใบแจ้งหนี้เงินล่วงหน้าสร้างด้วยปุ่มใน billing ไม่สร้างอัตโนมัติตอนเซ็นสัญญา | main-contracts (WP-26) ถูกสร้างก่อน billing และห้าม import ข้ามโมดูล |
+| D-34 | 2026-10-31 | PromptPay QR ใช้ npm `qrcode@1.5.4` ฝั่งเว็บ | ไม่มีไลบรารี QR ใน repo |
+| D-35 | 2026-10-31 | (ทบทวนแล้ว) **ไม่แก้** `fmtDate` ของสัญญาจ้างช่วง (`src/features/subcontracting/contracts/logic.ts`) ที่ใช้ปี พ.ศ. | คอมเมนต์ในโค้ดเขียนผลเป็น `30 ต.ค. 69` (พ.ศ.) และ `contract-template.ts` มีเทสต์ล็อก `26 ตุลาคม 2569` = ตั้งใจใช้ พ.ศ. ในเอกสารสัญญา; เจ้าของไม่ได้สั่งเปลี่ยน และงาน ERP ห้ามเปลี่ยนพฤติกรรมโมดูลเดิม กติกา ค.ศ. ใช้กับหน้าจอ ERP ใหม่เท่านั้น |
+| D-36 | 2026-10-31 | เรียงลำดับ WP ใหม่และเลขใหม่ (WP-01…WP-56): i18n (WP-01) และไลบรารีเงิน (WP-02) มาก่อน; แยก UI kit/nav registry/กรอบพิมพ์เป็น WP-06 ก่อนหน้าจอ ERP ตัวแรก; แยก platform admin (WP-07), baseline web (WP-19), กระแสเงินสด (WP-47), รอบจ่าย/50 ทวิ (WP-50) | ทบทวนแผน: เดิมหน้าจอ ERP (อนุมัติ เลขเอกสาร บริษัท ลูกค้า) ถูกสร้างก่อน UI kit และก่อน i18n ส่วน WP-01/14/43/45 เดิมใหญ่เกินหนึ่ง context |
+| D-37 | 2026-10-31 | หลังล็อก baseline ห้ามแก้ doc `journey` ด้วย (นอกจาก `calc:*`, `boq:*`) | การข้ามงาน "ไม่มีในโครงการนี้" ใน `journey` ทำให้ปริมาณ BOQ เปลี่ยน (`computeProject` → `skippedWork`) |
+| D-38 | 2026-10-31 | "มัดจำ" ในแม่แบบงวด = งวดงาน `trigger:'signing'` (ส่วนหนึ่งของมูลค่าสัญญา) ไม่ใช่เงินล่วงหน้าที่หักคืน (`advancePct`) | แม่แบบบ้าน "มัดจำ 20% + 8×10%" รวม 100% จึงต้องเป็นงวดงาน; เงินล่วงหน้าของงานราชการ/พาณิชย์หักคืนตามสูตร A |
+| D-39 | 2026-10-31 | ราคาขายต่อ cost code = `allocate(original_value, sell_amount ของบรรทัดใบเสนอราคา)` สูตรเดียวทุกรูปแบบ; ตอนเซ็นถ้ายังไม่มี baseline ให้ล็อกจาก `boq_version_id` ของใบเสนอราคาที่รับ | ให้ Σ `contract_amount` = มูลค่าสัญญาพอดีแม้มีส่วนลด/ปัดเศษ และบรรทัดใบเสนอราคาตรงกับ baseline |
+| D-40 | 2026-10-31 | ใบเสนอราคาราชการ (Factor F รวม VAT): แยกฐานไม่รวม VAT ด้วย `splitVatInclusive(grandTotal)` เพื่อใช้เป็นมูลค่าสัญญา | สัญญาและงวดเบิกคิด VAT แยกเสมอ (`mc_contracts.original_value` ไม่รวม VAT) |
+| D-41 | 2026-10-31 | VO `billing='next_claim'` ใช้ได้เฉพาะสัญญาแบบ progress; สัญญาแบบงวดต้องเลือก `spread` หรือ `separate_milestone` | สูตร W ของ milestone mode = ยอดงวด จึงไม่มีที่ใส่ยอด VO โดยไม่มีงวด |
+| D-42 | 2026-10-31 | ใบเสร็จหนึ่งใบรับได้หลายใบแจ้งหนี้ของลูกค้าเดียว และออก TI หนึ่งใบต่อใบแจ้งหนี้ (`ar_receipts.tax_invoice_ids`) | `ar_invoices.related_invoice_id` ชี้ใบแจ้งหนี้ต้นทางได้ใบเดียว |
+| D-43 | 2026-10-31 | ค่าแรงงวด 15 วันจ่ายในโมดูล labour ได้เมื่อ `payables` ปิด; เมื่อ `payables` เปิด จ่ายผ่านบิล `kind='labour'` ในรอบจ่าย (กันจ่ายซ้ำด้วย `PayPeriodBillChecks`) | ข้อกำหนดโมดูล 8 "labour → payment runs" และ release ทีละโมดูลต้องใช้ได้ทั้งสองแบบ |
+| D-44 | 2026-10-31 | รอบจ่าย v1 จ่ายบิลเต็มยอดคงเหลือเท่านั้น (ไม่แบ่งจ่าย) | ลดความซับซ้อนของ WHT/50 ทวิ ต่อการจ่ายบางส่วน |
+| D-45 | 2026-10-31 | บทบาทใหม่ (pm/purchasing/accounting/foreman) แสดงในหน้าสมาชิกเฉพาะเมื่อ `project-hub` active; `isReadOnly` ของ BOQ ใช้ `can(role,'projects.edit')` | release 1 ต้องเหมือนเดิม; บทบาทใหม่ส่วนใหญ่ไม่มีสิทธิ์แก้ BOQ |
+| D-46 | 2026-10-31 | รหัสโครงการ (docType `project`) ไม่นับใน guard ห้ามลบโครงการ | ไม่ใช่เอกสารภาษี; ไม่งั้นโครงการที่แค่ออกรหัสจะลบไม่ได้ |
+| D-47 | 2026-10-31 | ประวัติราคาผู้ขายเป็น endpoint ของ procurement (WP-39) ไม่ใช่ suppliers | `pc_order_lines` เป็นของโมดูล procurement ห้ามโมดูลอื่น query ตรง |
+| D-48 | 2026-10-31 | ลิงก์ลูกค้า: ใบเสนอราคา = รับ/ขอแก้/ปฏิเสธ; VO = รับ/ปฏิเสธ; ใบแจ้งหนี้ = ดูอย่างเดียว | ขอแก้ VO = ปฏิเสธพร้อมหมายเหตุแล้วทำ VO ใหม่ |
+| D-49 | 2026-10-31 | แผนเงินสดรวบรวมผ่าน registry `CashPlanSources` (แต่ละโมดูลคืนรายการของตัวเอง) | job-cost ห้าม query ตารางโมดูลอื่น และ payables ถูกสร้างหลัง job-cost |
+| D-50 | 2026-10-31 | หน้า `/workspace/modules` ไม่แสดงโมดูล ERP ที่เซิร์ฟเวอร์ไม่ได้เปิด (`available=false`) | release 1 ต้องไม่เผยโมดูลที่ยังไม่ขาย |
+| D-51 | 2026-10-31 | `quotations` dependsOn `boq-control` (เดิม `project-hub`) | ใบเสนอราคาสร้างจาก `boq_version_lines` ที่มีเฉพาะเมื่อ `boq-control` active |
+
+### คำถามค้างถึงเจ้าของ
+1. ตาราง Factor F ทางการ (กรมบัญชีกลาง) ฉบับที่ต้องการใช้ (D-12)
+2. สูตรค่า K ตามประเภทงานที่ใช้บ่อย (D-13)
+3. ต้องการเอกสารสองภาษาในหน้าเดียว (ไทย/อังกฤษคู่กัน) หรือไม่ (D-32)
+
+## Handoff notes
+
+รูปแบบ (เพิ่มต่อท้าย ห้ามแก้ของคนอื่น):
+
+```
+### WP-xx — <title> (<commit>)
+- สร้าง: <ไฟล์/ตาราง/endpoint หลัก>
+- migration: <เลขจริง>
+- เบี่ยงจากแผน: <อะไร ทำไม> (ถ้ามีการตัดสินใจใหม่ ให้เพิ่ม D-xx ด้วย)
+- WP ถัดไปต้องรู้: <สิ่งที่ไม่อยู่ในเอกสาร เช่น ชื่อ helper, ข้อจำกัด, TODO>
+- ตรวจแล้ว: <คำสั่งที่รันและผล>
+```
+
+(ยังไม่มีบันทึก)
