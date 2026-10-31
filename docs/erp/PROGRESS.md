@@ -25,7 +25,7 @@
 | WP-11 | บริการเลขเอกสาร + guard การลบ | opus | done | 4706b00 | migration `0011_wp11_numbering`; โมดูล `numbering`, port `DocumentNumbering`, `ProjectDeletionGuards`/`WorkspaceDeletionGuards`, หน้า `/workspace/numbering`; D-114…D-120 |
 | WP-12 | โปรไฟล์บริษัท + business profile + project type | sonnet | done | fa2dfb1 | migration `0012_wp12_company`; โมดูล `company`, port `CompanyProfiles`, `src/domain/erp/profiles.ts`, หน้า `/workspace/company`; D-121…D-125 |
 | WP-13 | ทะเบียนลูกค้า | sonnet | done | 02b2acf | migration `0013_wp13_customers`; โมดูล `customers`, port `CustomerLookup`, หน้า `/customers`, `CustomerPicker`; D-126…D-130 |
-| WP-14 | ลิงก์ลูกค้า (public) | opus | done | (ดู Handoff) | migration `0014_wp14_customer_links`; โมดูล `customer-links`, registry `CustomerLinkHandlers`, route `(public)/c/[token]`, `ShareLinkButton`; D-131…D-136 |
+| WP-14 | ลิงก์ลูกค้า (public) | opus | done | 0fdbc23 | migration `0014_wp14_customer_links`; โมดูล `customer-links`, registry `CustomerLinkHandlers`, route `(public)/c/[token]`, `ShareLinkButton`; D-131…D-136 |
 | WP-15 | Project Hub backend | opus | todo | | |
 | WP-16 | Project Hub web + ต่อ nav เข้า AppLayoutUI | opus | todo | | |
 | WP-17 | ประวัติ BOQ (versions, เทียบฉบับ) | opus | todo | | |
@@ -463,7 +463,7 @@
   - `SearchSources` ของลูกค้าให้ WP-35 ลงทะเบียน; หน้าลูกค้ายังไม่มีประวัติการขาย (WP-36)
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (web + backend) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/features/erp` ผ่าน; `cd backend && npx jest src/modules/platform/domain src/modules/company` ผ่าน; e2e ชั่วคราว (ลบแล้ว, memory): ไม่มีชื่อ → 400, tax id+สาขาซ้ำ → 409, สาขาอื่นได้ 201, viewer สร้าง → 403, ค้นหา `q` ได้, คนนอก workspace → 404, PATCH ล้างชื่อทั้งคู่ → 400, archive แล้วสร้างซ้ำได้ + restore ชน → 409, `snapshot` ได้ whtRate ที่ตั้งเอง; `npm run db:generate -- --name wp13_customers` ได้ `0013` ไม่ถาม interactive; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์ / PostgreSQL จริง
 
-### WP-14 — ลิงก์ลูกค้า (public)
+### WP-14 — ลิงก์ลูกค้า (public) (0fdbc23)
 - สร้าง (contract): `src/shared/contract/erp/customer-links.ts` (`CUSTOMER_LINK_SUBJECTS`, `CUSTOMER_LINK_ACTIONS`, `CUSTOMER_LINK_SUBJECT_ACTIONS`, `CUSTOMER_LINK_DEFAULT_DAYS`, `CUSTOMER_LINK_STATUSES`, `customerLinkDtoSchema`/`customerLinkListDtoSchema`, `createCustomerLinkRequestSchema`, `createCustomerLinkResponseSchema`, `customerLinkListQuerySchema`, `respondRequestSchema` (+ `RespondRequestInput`), `customerLinkViewDtoSchema` (discriminated union, `payload: unknown`))
 - schema: `customer_links` ใน `schema-erp-core.ts` (+ `erpCoreTables`, type `CustomerLinkResponseRow`); unique `token_hash`, index `(workspace_id, subject_type, subject_id)`, tenant FK cascade (ลบโครงการ/workspace ลบลิงก์เอง ไม่ต้องลง `ProjectDependents`); migration `0014_wp14_customer_links` → WP ถัดไปที่แก้ schema ได้ `0015_*`
 - core (`ports.ts` + `core.module.ts`): `CustomerLinkHandlers` (`register(subjectType, handler)`, `handlerOf`), types `CustomerLinkHandler` `{permission, view(ws, subjectId), respond?(input)}`, `CustomerLinkSubjectView`, `CustomerLinkRespondInput`
