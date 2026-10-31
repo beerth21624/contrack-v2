@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-18 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-19 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -30,7 +30,7 @@
 | WP-16 | Project Hub web + ต่อ nav เข้า AppLayoutUI | opus | done | 60a7001 | ไม่มี migration; `src/features/erp/hub/*`, routes `/`, `/hub`, `/p/[projectId]`; เมนู ERP ใน `AppLayoutUI` เมื่อ `project-hub` active; D-143…D-149 |
 | WP-17 | ประวัติ BOQ (versions, เทียบฉบับ) | opus | done | 874d2b5 | migration `0016_wp17_boq_versions`; โมดูล `boq-control` (versions), registry `RevisionHooks` (core), ports `RevisionWriter`/`RevisionLookup` (projects), route `/p/[projectId]/versions`; D-150…D-156 |
 | WP-18 | Baseline + cost codes (backend) | opus | done | cba4d4e | migration `0017_wp18_baseline`; `project_baselines`/`project_cost_codes`, registries `BoqEditLocks`/`BaselineUnlockGuards` (core), ports `CostCodeLookup`/`BaselineControl` (boq-control); D-157…D-163 |
-| WP-19 | Baseline web: BOQ อ่านอย่างเดียวเมื่อล็อก + CostCodePicker | opus | todo | | |
+| WP-19 | Baseline web: BOQ อ่านอย่างเดียวเมื่อล็อก + CostCodePicker | opus | done | (pending) | ไม่มี migration; `BaselinePanel` บนหน้า versions, `CloudBinding.locked`, sync event `locked`, `BaselineLockedBanner`, `CostCodePicker`; D-164…D-169 |
 | WP-20 | Cost ledger + financial events | opus | todo | | |
 | WP-21 | ราคากลางภาครัฐ | sonnet | todo | | |
 | WP-22 | Quotation: domain คำนวณ + overlay อังกฤษของ BOQ | opus | todo | | |
@@ -260,6 +260,12 @@
 | D-161 | 2026-11-01 | (WP-18) `BoqEditLocks` ของ boq-control ล็อกเฉพาะเมื่อ `boq-control` active: ปิดโมดูลขณะมี baseline active → แก้ BOQ ได้ตามเดิม (release 1) เปิดใหม่ → ล็อกอีก; baseline ไม่ถูกปลดอัตโนมัติ | เกณฑ์ "โมดูลปิด: PUT doc ทุก key เหมือนเดิม" |
 | D-162 | 2026-11-01 | (WP-18) `CostCodeLookup`: `applyVariation` บรรทัด `qtyDelta < 0` ที่ทำให้ `baseline_qty + vo_qty ≤ 0` → `omitted`; รายการใหม่ `VO{voSeq}-{n}` sort ต่อท้าย; `allocateContractAmounts` น้ำหนักติดลบ = 0, จับคู่เฉพาะ cost code baseline ที่ active, ไม่จับคู่ → `X-{n}` ใหม่ (เลขต่อจากเดิม), cost code อื่นทั้งหมด (รวม manual เดิม) = 0, ไม่มีอะไรให้จัดสรร → 422 `no_cost_codes`; progress ถูก clamp 0–1 ปัด 6 ตำแหน่ง | 02 §1.10 ไม่ระบุกรณีขอบ |
 | D-163 | 2026-11-01 | (WP-18) ไม่เขียนเทสต์สั้นของ `allocateContractAmounts` (`src/domain/boq-control/contract-allocation.ts`) ตามคำสั่งรอบนี้ ("ห้ามเขียนเทสต์ใหม่") — ตรวจด้วย smoke e2e ชั่วคราวแทน (ลบแล้ว) | เกณฑ์รับงานข้อ 4 ขอเทสต์สั้น แต่คำสั่งของเจ้าของรอบนี้สำคัญกว่า |
+| D-164 | 2026-11-01 | (WP-19) `CloudBinding.locked` เป็น optional (`locked?: boolean`, ไม่มี = false) | `openCloudProject(binding)` และเทสต์เดิมส่ง binding ไม่มี `locked` — ไม่ต้องแก้ผู้เรียกเดิม พฤติกรรม release 1 เหมือนเดิม |
+| D-165 | 2026-11-01 | (WP-19) `isReadOnly(binding)` = role อ่านอย่างเดียว **หรือ** `locked` (ตาม 04) แต่เพิ่ม `isRoleReadOnly` (เดิม) และ `isBaselineLocked`; store กันเฉพาะ action ของ doc ที่ server ล็อก (`setBoqOverride`, `resetBoqSection`, `setCalculatorInput`, `setLevelMark`) ด้วย notice `boqControl.lockedNotice` ส่วน `setMeta`/`setPlanning` ยังแก้ได้; `ReadOnlyBanner` และ `ManDayPage` เปลี่ยนไปใช้ `isRoleReadOnly` | server (`isBaselineDoc`) ล็อกแค่ `calc:`/`boq:`/`journey` — ถ้ากันทั้งหมด หัวโครงการ/แผนงานจะแก้ไม่ได้โดยไม่จำเป็น และแบนเนอร์ "ดูอย่างเดียว" ของ viewer ต้องไม่ขึ้นกับโครงการที่ล็อก |
+| D-166 | 2026-11-01 | (WP-19) sync engine: 409 `details.reason='baseline_locked'` → ทิ้ง pending ของ doc นั้น + **pending อื่นที่เป็น doc ล็อก** (ที่ยังไม่อยู่ระหว่างส่ง) แล้วคืนค่า server ให้ working copy; emit event ใหม่ `{type:'locked', docKey}`; controller ตั้ง `locked=true` + notice (key `baseline-locked`) เฉพาะครั้งแรก | ไม่ retry วน และไม่ยิง 409 ซ้ำต่อ doc ที่รู้แล้วว่าจะโดนปฏิเสธ; ค่าที่ไม่ถูกบันทึกไม่ค้างอยู่บนหน้าจอ |
+| D-167 | 2026-11-01 | (WP-19) `openCloudProject` อ่าน baseline เฉพาะเมื่อ platform เสนอ `boq-control` และ workspace เปิด `active` (ผ่าน cache `moduleKeys.platform` / `moduleKeys.workspace`) ผิดพลาด = ไม่ล็อก; ปลดล็อก/ล็อกจากแท็บอื่นไม่ถูก push มา — แท็บนี้รู้เมื่อเปิดโครงการใหม่ หรือเมื่อ PUT ได้ 409 (ล็อก) | ไม่มี realtime event ของ baseline; โมดูลปิด → ไม่มี request baseline |
+| D-168 | 2026-11-01 | (WP-19) ข้อความ notice จากโค้ดที่ไม่ใช่ React ใช้ `src/store/baseline-locked-text.ts` (`createTranslator` + locale จากคุกกี้ `NEXT_LOCALE`) | store/controller ไม่มี `useTranslations`; แบบเดียวกับ `documentTranslator` |
+| D-169 | 2026-11-01 | (WP-19) `CostCodePicker` แสดง "งบ" = `budgetTotal` (null → ไม่แสดง เมื่อไม่มี `cost.read`) ยังไม่ใช่ "งบคงเหลือ" เพราะยังไม่มี ledger (WP-20) — WP-48 ค่อยหักต้นทุนจริง/ผูกพัน; ค้นหาด้วยรหัส ชื่อ TH/EN เลขหมวด และชื่อหมวด (จาก version ของ baseline ที่ active) ซ่อน cost code `omitted` (ยกเว้นตัวที่เลือกอยู่หรือ `includeOmitted`); ไม่เขียนเทสต์ใหม่ตามคำสั่งรอบนี้ | ข้อมูลคงเหลือยังไม่มีให้แสดง |
 
 ## Handoff notes
 
@@ -567,3 +573,16 @@
   - WP-33: `applyVariation(ws, projectId, { variationId, voSeq, lines })` คืน id ต่อบรรทัด (ลำดับเดิม); `baselineProject(ws, projectId)` = snapshot ของ revision ที่ล็อก
   - ทุกเมธอดของ port ไม่ตรวจโมดูล/สิทธิ์ (ผู้เรียกตรวจเอง) และเขียนผ่าน executor ของ transaction ผู้เรียก — ตรวจทุกอย่างก่อนเขียน เพราะ `err` ที่ return (ไม่ throw) ไม่ rollback
 - ตรวจแล้ว: `npx tsc --noEmit` backend + web ผ่าน; eslint ไฟล์ที่แก้ผ่าน; i18n parity ผ่าน; `npx jest src/modules/projects` 199 ผ่าน; e2e `projects` 23 ผ่าน; `npx vitest run src/shared/contract src/i18n` ผ่าน; smoke e2e ชั่วคราว (memory, ลบแล้ว): โมดูลปิด → `GET baseline` 404 `module_disabled`; lock → `BASELINE-1`, cost code 203 = `lineCount` 203, version kind `baseline`; viewer เห็น `baselineTotal: null`; PUT `boq:R58`/`journey` → 409 `baseline_locked`, `meta` → 200; lock ซ้ำ → 409; guard มีเหตุ → 409 `baseline_unlock_blocked` + `blockers`; unlock → แก้ `boq:R9 {qty:0}` → lock ใหม่ `BASELINE-2` → id เดิมทุก code, 1 omitted / 202 active; allocate ไม่มีใบเสนอราคา Σ = 1,234,567.89 พอดี; มีบรรทัด (5 จับคู่ + 1 ไม่มี lineKey) Σ = 1,000 พอดี, สร้าง `X-1`, uncovered 198; `applyVariation` คืน 2 id; ปิดโมดูล → PUT `journey` 200; ยังไม่ได้ทดสอบบน PostgreSQL จริง
+
+### WP-19 — Baseline web: BOQ อ่านอย่างเดียวเมื่อล็อก + CostCodePicker (pending)
+- สร้าง (web): `src/features/erp/boq-control/{BaselinePanel.tsx,BaselineLockedBanner.tsx}`, `src/features/erp/shared/CostCodePicker.tsx`, `src/store/baseline-locked-text.ts`
+- แก้: `boq-control/api.ts` (`baseline`, `lock`, `unlock`, `costCodes`), `boq-control/hooks.ts` (`boqControlKeys.baseline|costCodes`, `useBaseline`, `useCostCodes`, `useLockBaseline(projectId)` (arg = versionId | undefined), `useUnlockBaseline(projectId)` (arg = reason)), `VersionsPage.tsx` (การ์ด baseline บนสุด ทั้งตอนมี/ไม่มีฉบับ), `src/store/project-store.ts` (`CloudBinding.locked?`, `isRoleReadOnly`, `isBaselineLocked`, `isReadOnly`, `setCloudLocked`), `src/features/cloud/sync/engine.ts` (event `locked`, `isBaselineLockedError`, `isBaselineLockedDoc`), `src/features/cloud/projects/controller.ts` (`readBaselineLocked` ตอนเปิดโครงการ + handler `locked`), `ReadOnlyBanner.tsx` / `ManDayPage.tsx` (`isRoleReadOnly`), `AppLayoutUI.tsx` (`<BaselineLockedBanner />` ใต้ `ReadOnlyBanner`)
+- i18n (th+en) `boqControl`: `lockedNotice`, `banner.*`, `baseline.*` (รวม `reasons.*`, `blockers.{contract_signed,claims,variations,ledger,other}`), `costCodePicker.*`
+- migration: ไม่มี (WP ถัดไปที่แก้ schema ยังได้ `0018_*`)
+- เบี่ยงจากแผน: D-164 … D-169
+- WP ถัดไปต้องรู้:
+  - `<CostCodePicker projectId={id} value={costCodeId} onChange={(id, code) => …} />` ใช้ใน `Form.Item` ได้ (`value`/`onChange`); `includeOmitted` เพื่อแสดงรหัสที่ VO ตัดออก; ไม่มี baseline = รายการว่าง (ข้อความ "ล็อกฉบับฐานก่อน")
+  - guard ปลดล็อก (WP-20/26/29/33): ตั้ง `reason` เป็น `contract_signed` / `claims` / `variations` / `ledger` เพื่อให้หน้าเว็บแสดงข้อความที่แปลแล้ว (อย่างอื่นแสดงชื่อ reason ดิบ + จำนวน ผ่าน `blockers.other`)
+  - การเปลี่ยน lock จาก use case อื่นในเว็บ (เช่นเซ็นสัญญา WP-27): invalidate `boqControlKeys.baseline(projectId)` และเรียก `useProjectStore.getState().setCloudLocked(true)` ถ้าโครงการนั้นเปิดอยู่
+  - หน้า BOQ ไม่ได้ disable input เมื่อ `locked` (เหมือน viewer เดิม: แก้แล้วได้ notice และค่าไม่เปลี่ยน) — ถ้าต้อง disable ให้อ่าน `isBaselineLocked(binding)`
+- ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ทั้งหมดผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/store src/features/cloud/sync src/i18n` 79 ผ่าน; ไม่มีการแก้ backend; ยังไม่ได้เปิดหน้าในเบราว์เซอร์ (ไม่มี backend ที่เปิดโมดูลไว้) — มือถือ 375 px ตรวจจากโค้ด (Select เต็มความกว้าง, popup ≤ `100vw − 32px`, ข้อความตัดบรรทัด)

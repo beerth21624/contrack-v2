@@ -14,6 +14,7 @@ import { CloudRuntime } from '@/features/cloud/CloudRuntime';
 import { AccountMenu } from '@/features/cloud/ui/AccountMenu';
 import { ProjectBadge } from '@/features/cloud/ui/ProjectBadge';
 import { ReadOnlyBanner } from '@/features/cloud/ui/ReadOnlyBanner';
+import { BaselineLockedBanner } from '@/features/erp/boq-control/BaselineLockedBanner';
 import { useModuleEnabled } from '@/features/modules/modules';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 import { useHasVendorWorkspace } from '@/features/subcontracting/shared/useHasVendorWorkspace';
@@ -185,6 +186,7 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
                 ) : (
                     <>
                         <ReadOnlyBanner />
+                        <BaselineLockedBanner />
                         {children}
                     </>
                 )}

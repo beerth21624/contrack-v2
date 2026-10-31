@@ -9,6 +9,9 @@
 //   Success → the new version is recorded. Edited again while the request was out → sent again on the new version.
 // - 409 `version_conflict` → the server's document (`details.current`) replaces the local one and the local edit is
 //   dropped (someone else changed it first). Applied without being sent back.
+// - 409 `details.reason = 'baseline_locked'` (the BOQ was locked by a baseline) → the document and every other waiting
+//   BOQ document (calculators, BOQ lines, journey) go back to the server version and are dropped, never retried;
+//   `locked` is emitted for each document so the app can turn the BOQ read-only.
 // - Other refusals (422 cannot compute, 403, 404, archived …) → the document goes back to the last server version.
 // - No answer (offline, server down, 5xx, 429, 401) → retried with exponential backoff; while the browser is offline
 //   nothing is sent and everything is sent when it comes back online.
@@ -71,7 +74,8 @@ export type SyncEvent =
     | { type: 'saved'; doc: ProjectDocDto; project: ProjectDto }
     | { type: 'conflict'; docKey: string; current: ProjectDocDto | null }
     | { type: 'rejected'; docKey: string; error: unknown }
-    | { type: 'remote'; doc: ProjectDocDto };
+    | { type: 'remote'; doc: ProjectDocDto }
+    | { type: 'locked'; docKey: string };
 
 export type ErrorKind = 'conflict' | 'rejected' | 'retry';
 
@@ -99,6 +103,18 @@ interface Entry extends PendingDoc {
     phase: Phase;
     timer: unknown;
     attempt: number;
+}
+
+/** Documents a baseline lock refuses (the server's `isBaselineDoc`): calculators, BOQ lines and journey marks. */
+export function isBaselineLockedDoc(docKey: string): boolean {
+    return docKey.startsWith('calc:') || docKey.startsWith('boq:') || docKey === 'journey';
+}
+
+/** 409 of a write refused because the BOQ is locked by a baseline. */
+export function isBaselineLockedError(error: unknown): boolean {
+    if (!isApiError(error) || error.status !== 409) return false;
+    const d = error.details;
+    return d !== null && typeof d === 'object' && (d as { reason?: unknown }).reason === 'baseline_locked';
 }
 
 export function classifyError(error: unknown): ErrorKind {
@@ -345,6 +361,19 @@ export class SyncEngine {
     }
 
     private async onSendError(docKey: string, e: Entry, error: unknown): Promise<void> {
+        if (isBaselineLockedError(error)) {
+            this.pending.delete(docKey);
+            this.applyLocal(docKey, this.serverData.get(docKey) ?? null);
+            this.opts.onEvent?.({ type: 'locked', docKey });
+            // The other BOQ edits waiting would be refused the same way: drop them now (one in flight answers itself).
+            for (const [key, other] of [...this.pending]) {
+                if (other.phase === 'flight' || !isBaselineLockedDoc(key)) continue;
+                this.opts.timers.clearTimeout(other.timer);
+                this.pending.delete(key);
+                this.applyLocal(key, this.serverData.get(key) ?? null);
+            }
+            return;
+        }
         const kind = classifyError(error);
         if (kind === 'retry') {
             e.attempt += 1;

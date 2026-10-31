@@ -17,6 +17,7 @@ import { useOpenProjectBoq } from '../hub/ProjectShell';
 import type { CompareTarget } from './api';
 import { useBoqVersion, useBoqVersions } from './hooks';
 import { VersionCompareTable } from './VersionCompareTable';
+import { BaselinePanel } from './BaselinePanel';
 
 function VersionName({ v }: { v: BoqVersionDto }) {
     const t = useTranslations('boqControl');
@@ -94,10 +95,13 @@ export function VersionsPage({ projectId }: { projectId: string }) {
     const list = versions.data ?? [];
     if (list.length === 0) {
         return (
-            <SectionCard title={t('title')}>
-                <EmptyState title={t('empty.title')} hint={t('empty.hint')}
-                    action={<Button type="primary" loading={opening} onClick={() => { void open(); }}>{t('empty.openBoq')}</Button>} />
-            </SectionCard>
+            <div className="flex min-w-0 flex-col gap-4">
+                <BaselinePanel projectId={projectId} versions={list} />
+                <SectionCard title={t('title')}>
+                    <EmptyState title={t('empty.title')} hint={t('empty.hint')}
+                        action={<Button type="primary" loading={opening} onClick={() => { void open(); }}>{t('empty.openBoq')}</Button>} />
+                </SectionCard>
+            </div>
         );
     }
 
@@ -120,6 +124,7 @@ export function VersionsPage({ projectId }: { projectId: string }) {
 
     return (
         <div className="flex min-w-0 flex-col gap-4">
+            <BaselinePanel projectId={projectId} versions={list} />
             <SectionCard title={t('title')}>
                 <div className="mb-3 text-[13px] text-gray-500">{t('subtitle')}</div>
                 <Table<BoqVersionDto> size="small" rowKey="id" columns={columns} dataSource={list}

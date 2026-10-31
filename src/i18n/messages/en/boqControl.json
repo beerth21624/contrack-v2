@@ -69,5 +69,56 @@
     "labTotal": "Labour",
     "total": "Total",
     "sectionTotal": "Section total"
+  },
+  "lockedNotice": "The BOQ is locked as the baseline and cannot be edited — make changes through a variation order (VO)",
+  "banner": {
+    "title": "Baseline locked — change it through a VO",
+    "description": "This project's BOQ is the baseline: its lines, quantities and calculators cannot be edited. The project header and the plans stay editable.",
+    "openHistory": "View baseline"
+  },
+  "baseline": {
+    "title": "Baseline",
+    "notLocked": "No baseline yet. Once locked, the BOQ cannot be edited and a cost code is made for every line.",
+    "lockedFrom": "Locked from version {no} · {label}",
+    "lockedAt": "Locked at",
+    "reasonLabel": "Locked because",
+    "costCodes": "{count} cost codes",
+    "pickVersion": "Version to lock",
+    "currentBoq": "Current BOQ (a new version is issued automatically)",
+    "lock": "Lock as baseline",
+    "lockConfirm": "Lock the BOQ as the baseline?",
+    "lockConfirmHint": "After locking, the BOQ cannot be edited; change it through a variation order (VO) or unlock it with a reason.",
+    "locked": "Baseline locked",
+    "unlock": "Unlock",
+    "unlockTitle": "Unlock the baseline",
+    "unlockHint": "Unlocking makes the BOQ editable again. Existing cost codes are kept. Give a reason for the record.",
+    "unlockReason": "Reason for unlocking",
+    "unlockReasonRequired": "Please give a reason",
+    "unlocked": "Baseline unlocked",
+    "cannotUnlock": "Cannot unlock: these documents refer to this baseline:",
+    "noPermission": "You may not lock or unlock the baseline",
+    "history": "Baseline history",
+    "historyItem": "{label} · unlocked",
+    "historyReason": "Reason: {reason}",
+    "reasons": {
+      "manual": "Locked manually",
+      "contract_signed": "Main contract signed"
+    },
+    "blockers": {
+      "contract_signed": "{count} signed main contract(s)",
+      "claims": "{count} progress claim(s)",
+      "variations": "{count} approved variation order(s)",
+      "ledger": "{count} cost entr(ies)",
+      "other": "{count} × {reason}"
+    }
+  },
+  "costCodePicker": {
+    "placeholder": "Pick a cost code (search code, name or section)",
+    "empty": "No cost codes yet — lock the baseline first",
+    "noMatch": "No matching cost code",
+    "section": "Section {no}",
+    "budget": "Budget",
+    "omitted": "Omitted",
+    "loadFailed": "Could not load the cost codes"
   }
 }

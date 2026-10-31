@@ -1,4 +1,6 @@
 import {
+    type BaselineStatusDto, type CostCodeDto, type LockBaselineRequest, type UnlockBaselineRequest, baselineStatusDtoSchema,
+    costCodeListDtoSchema,
     type BoqVersionCompareDto, type BoqVersionDetailDto, type BoqVersionDto, boqVersionCompareDtoSchema, boqVersionDetailDtoSchema,
     boqVersionListDtoSchema,
 } from '@/shared/contract';
@@ -17,4 +19,12 @@ export const boqControlApi = {
         const qs = new URLSearchParams({ from, to });
         return apiClient.request('GET', `${projectPath(projectId, 'boq-versions', 'compare')}?${qs.toString()}`, { schema: boqVersionCompareDtoSchema });
     },
+    baseline: (projectId: string): Promise<BaselineStatusDto> =>
+        apiClient.request('GET', projectPath(projectId, 'baseline'), { schema: baselineStatusDtoSchema }),
+    lock: (projectId: string, body: Partial<LockBaselineRequest>): Promise<BaselineStatusDto> =>
+        apiClient.request('POST', projectPath(projectId, 'baseline'), { body, schema: baselineStatusDtoSchema }),
+    unlock: (projectId: string, body: UnlockBaselineRequest): Promise<BaselineStatusDto> =>
+        apiClient.request('POST', projectPath(projectId, 'baseline', 'unlock'), { body, schema: baselineStatusDtoSchema }),
+    costCodes: (projectId: string): Promise<CostCodeDto[]> =>
+        apiClient.request('GET', projectPath(projectId, 'cost-codes'), { schema: costCodeListDtoSchema }),
 };

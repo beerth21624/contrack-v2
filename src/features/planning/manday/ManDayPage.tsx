@@ -12,7 +12,7 @@ import { SheetCard } from '@/components/sheet/SheetFields';
 import {
     wageSetLabel, type ManDayBlockInput, type ManDayBlockResult, type ManDayInput, type WageSet,
 } from '@/domain/planning';
-import { isReadOnly, useProjectStore } from '@/store/project-store';
+import { isRoleReadOnly, useProjectStore } from '@/store/project-store';
 import { CalcText, NoBoqYet, PlanningHeader, StatTile, SummaryBanner, formatDate, money, usePlanning } from '../shared/planning-ui';
 import { useCompanyLibrary } from './CompanyWageSets';
 import { useManDayTab } from './manday-tab';
@@ -40,7 +40,7 @@ export function ManDayPage() {
     const save = (next: ManDayInput) => setPlanning({ manday: next });
     // Cloud projects: the company rate-card library (pick a card in, save a user set out). Viewers can't edit the project.
     const library = useCompanyLibrary();
-    const readOnly = useProjectStore(s => isReadOnly(s.binding));
+    const readOnly = useProjectStore(s => isRoleReadOnly(s.binding));
     const [tab, setTab] = useManDayTab();
 
     const rows: Row[] = res.blocks.map(b => ({

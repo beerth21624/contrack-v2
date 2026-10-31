@@ -3,6 +3,10 @@ import type { QueryClient } from '@tanstack/react-query';
 import { docsToProject, isDocKey, type DocEntry } from '@/domain/sync';
 import { useProjectStore } from '@/store/project-store';
 import { emitNotice } from '@/store/notices';
+import { baselineLockedText } from '@/store/baseline-locked-text';
+import { boqControlApi } from '@/features/erp/boq-control/api';
+import { boqControlKeys } from '@/features/erp/boq-control/hooks';
+import { moduleKeys, modulesApi } from '@/features/modules/modules';
 import type { ProjectDocDto } from '@/shared/contract';
 import { api } from '../api/routes';
 import { ApiError, isApiError, thaiErrorMessage } from '../api/errors';
@@ -60,8 +64,41 @@ function syncEventHandler(queryClient: QueryClient, projectId: string) {
             }
             case 'remote':
                 return;
+            case 'locked': {
+                // Locked from elsewhere (another tab, the contract): read-only from now on, told once.
+                const store = useProjectStore.getState();
+                if (store.binding.kind === 'cloud' && store.binding.projectId === projectId && store.binding.locked !== true) {
+                    store.setCloudLocked(true);
+                    emitNotice({ level: 'warning', key: 'baseline-locked', text: baselineLockedText() });
+                }
+                void queryClient.invalidateQueries({ queryKey: boqControlKeys.baseline(projectId) });
+                return;
+            }
         }
     };
+}
+
+/**
+ * Whether the project's BOQ is locked by a baseline. Asked only when `boq-control` is active in the workspace (no
+ * request about baselines otherwise); any failure reads as not locked (the server still refuses locked writes).
+ */
+async function readBaselineLocked(queryClient: QueryClient, workspaceId: string, projectId: string): Promise<boolean> {
+    try {
+        const offered = await queryClient.query({
+            queryKey: moduleKeys.platform, queryFn: async () => (await modulesApi.platform()).modules, staleTime: 5 * 60_000,
+        });
+        if (!offered.includes('boq-control')) return false;
+        const modules = await queryClient.query({
+            queryKey: moduleKeys.workspace(workspaceId), queryFn: () => modulesApi.ofWorkspace(workspaceId), staleTime: 60_000,
+        });
+        if (!modules.some(m => m.module === 'boq-control' && m.active)) return false;
+        const status = await queryClient.query({
+            queryKey: boqControlKeys.baseline(projectId), queryFn: () => boqControlApi.baseline(projectId), staleTime: 0,
+        });
+        return status.locked;
+    } catch {
+        return false;
+    }
 }
 
 /** Wait (shortly) for edits in flight, then stop the engine. Unsent edits stay queued for the next open. */
@@ -87,6 +124,7 @@ export async function openCloudProject(queryClient: QueryClient, projectId: stri
         ]);
         const workspace = me.workspaces.find(w => w.id === detail.project.workspaceId);
         if (!workspace) throw new ApiError(404, 'not_found', 'not a member of the project workspace');
+        const locked = await readBaselineLocked(queryClient, workspace.id, projectId);
 
         await stopEngine();
         const loaded = docsToProject(detail.project.start, toEntries(detail.docs));
@@ -95,7 +133,7 @@ export async function openCloudProject(queryClient: QueryClient, projectId: stri
         const project = loaded.meta.projectName.trim() === ''
             ? { ...loaded, meta: { ...loaded.meta, projectName: detail.project.name } }
             : loaded;
-        useProjectStore.getState().openCloudProject({ projectId, workspaceId: workspace.id, role: workspace.role }, project);
+        useProjectStore.getState().openCloudProject({ projectId, workspaceId: workspace.id, role: workspace.role, locked }, project);
 
         const engine = new SyncEngine({
             store: projectStoreAdapter(projectId),

@@ -8,6 +8,7 @@ import { createProject, PROJECT_SCHEMA_VERSION, type Project, type ProjectMeta, 
 import type { LevelMark } from '@/domain/journey/progress';
 import { can, type Role } from '@/shared/contract';
 import { emitNotice } from './notices';
+import { baselineLockedText } from './baseline-locked-text';
 
 /** Field of a BOQ line the user can edit on the BOQ (Home) page. */
 export type BoqEditableField = keyof BoqLineOverride;
@@ -20,6 +21,11 @@ export interface CloudBinding {
     projectId: string;
     workspaceId: string;
     role: Role;
+    /**
+     * The BOQ is locked by a baseline (`boq-control`, WP-19): BOQ lines, calculators and journey marks are read-only
+     * (project header and planning stay editable, as on the server). Missing = false (release 1).
+     */
+    locked?: boolean;
 }
 
 /**
@@ -58,6 +64,8 @@ interface ProjectState {
     guestProject: Project | null;
     /** Make a cloud project the working copy. The guest project is kept aside (and stays saved in this browser). */
     openCloudProject: (binding: Omit<CloudBinding, 'kind'>, project: Project) => void;
+    /** The open cloud project's BOQ was locked / unlocked by a baseline. */
+    setCloudLocked: (locked: boolean) => void;
     /** Back to the guest project of this browser. */
     closeCloudProject: () => void;
     /** Replace the working copy without the edit checks (the sync engine: remote docs, conflicts, reverts). */
@@ -67,8 +75,18 @@ interface ProjectState {
 }
 
 /** A cloud project opens read-only for a role that may not edit it (viewer, and the ERP purchasing/accounting/foreman). */
-export function isReadOnly(binding: ProjectBinding): boolean {
+export function isRoleReadOnly(binding: ProjectBinding): boolean {
     return binding.kind === 'cloud' && !can(binding.role, 'projects.edit');
+}
+
+/** The open cloud project's BOQ is locked by a baseline (edits go through a VO). */
+export function isBaselineLocked(binding: ProjectBinding): boolean {
+    return binding.kind === 'cloud' && binding.locked === true;
+}
+
+/** The BOQ of the working copy cannot be edited: a read-only role, or a baseline lock. */
+export function isReadOnly(binding: ProjectBinding): boolean {
+    return isRoleReadOnly(binding) || isBaselineLocked(binding);
 }
 
 /** Stable fallback (selectors must not return a new object on every call). */
@@ -121,12 +139,20 @@ export const useProjectStore = create<ProjectState>()(
     persist(
         (set, get) => {
             /** Edits of the working copy; a viewer of a cloud project cannot edit (notice instead). */
-            const edit = (fn: (s: ProjectState) => Partial<ProjectState>) => {
-                if (isReadOnly(get().binding)) {
+            const editAny = (fn: (s: ProjectState) => Partial<ProjectState>) => {
+                if (isRoleReadOnly(get().binding)) {
                     emitNotice({ level: 'warning', text: READ_ONLY_TEXT, key: 'read-only' });
                     return;
                 }
                 set(fn);
+            };
+            /** Edits of the BOQ (lines, calculators, journey): also refused while a baseline locks it. */
+            const edit = (fn: (s: ProjectState) => Partial<ProjectState>) => {
+                if (!isRoleReadOnly(get().binding) && isBaselineLocked(get().binding)) {
+                    emitNotice({ level: 'warning', text: baselineLockedText(), key: 'baseline-locked' });
+                    return;
+                }
+                editAny(fn);
             };
             const startOver = (start: ProjectStart | undefined) => {
                 if (get().binding.kind === 'cloud') {
@@ -139,7 +165,7 @@ export const useProjectStore = create<ProjectState>()(
                 hasHydrated: false,
                 setHasHydrated: () => set({ hasHydrated: true }),
                 project: createProject(),
-                setMeta: (patch) => edit(s => ({ project: { ...s.project, meta: { ...s.project.meta, ...patch } } })),
+                setMeta: (patch) => editAny(s => ({ project: { ...s.project, meta: { ...s.project.meta, ...patch } } })),
                 setBoqOverride: (key, field, value) => edit(s => {
                     const merged: BoqLineOverride = { ...s.project.boqOverrides[key], [field]: value };
                     const current = Object.fromEntries(
@@ -163,7 +189,7 @@ export const useProjectStore = create<ProjectState>()(
                     const calculators = Object.fromEntries(input === undefined ? others : [...others, [id, input]]);
                     return { project: { ...s.project, calculators } };
                 }),
-                setPlanning: (patch) => edit(s => {
+                setPlanning: (patch) => editAny(s => {
                     const merged: Record<string, unknown> = { ...s.project.planning, ...patch };
                     const planning = Object.fromEntries(
                         Object.entries(merged).filter(([, v]) => v !== undefined),
@@ -195,6 +221,8 @@ export const useProjectStore = create<ProjectState>()(
                     writesSuspended = false;
                     set({ binding: GUEST, project: readSavedGuestProject() ?? s.guestProject ?? createProject(), guestProject: null });
                 },
+                setCloudLocked: (locked) => set(s => (s.binding.kind === 'cloud' && (s.binding.locked === true) !== locked
+                    ? { binding: { ...s.binding, locked } } : {})),
                 replaceProject: (project) => set({ project }),
                 setCloudRole: (role) => set(s => (s.binding.kind === 'cloud' ? { binding: { ...s.binding, role } } : {})),
             };
