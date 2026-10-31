@@ -36,7 +36,7 @@
 | WP-22 | Quotation: domain คำนวณ + overlay อังกฤษของ BOQ | opus | done | 831e5a5 | ไม่มี migration; `src/domain/quotation/*` (pricing/build/compare/government/costing), `template.v5.en.ts` + `units.ts`, contract `erp/quotations.ts` (ค่าคงที่); D-180…D-185 |
 | WP-23 | Quotation backend | opus | done | 87e6361 | migration `0020_wp23_quotations`; โมดูล `quotations`, ports `BoqVersionSource` (boq-control) + `ProjectLifecycle.hubFields`, hooks `afterRespond`/`onViewed` ของลิงก์; D-186…D-195 |
 | WP-24 | Quotation web: รายการ ตัวแก้ไข เทียบฉบับ | sonnet | done | 8ecea92 | `src/features/erp/quotations/*`, routes `/p/[id]/quotations[/[quotationId]]`, แท็บ nav, ปุ่มสร้างบน ProjectOverviewPage + BoqHomePage; i18n `quotations`; D-196…D-200 |
-| WP-25 | Quotation เอกสารพิมพ์ TH/EN + หน้าลูกค้า | sonnet | done | HASH25 | `print-model.ts`, `QuotationPrintDocument`, `GovernmentForms`, `QuotationPrintPage`, `QuotationCustomerView` (renderer ลิงก์), route `/print/quotation/[versionId]`, ปุ่มพิมพ์ในตัวแก้ไข; i18n `documents.quotation/government`; D-201…D-203 |
+| WP-25 | Quotation เอกสารพิมพ์ TH/EN + หน้าลูกค้า | sonnet | done | df51c70 | `print-model.ts`, `QuotationPrintDocument`, `GovernmentForms`, `QuotationPrintPage`, `QuotationCustomerView` (renderer ลิงก์), route `/print/quotation/[versionId]`, ปุ่มพิมพ์ในตัวแก้ไข; i18n `documents.quotation/government`; D-201…D-203 |
 | WP-26 | สัญญาหลัก backend | opus | todo | | |
 | WP-27 | สัญญาหลัก web + พิมพ์สัญญา | sonnet | todo | | |
 | WP-28 | Billing domain คำนวณ | opus | todo | | |
@@ -682,7 +682,7 @@
 - WP ถัดไปต้องรู้ (WP-25/26): ปุ่มพิมพ์/ดาวน์โหลดยังไม่มี (WP-25 เพิ่มใน header ของ `QuotationEditorPage` ข้าง `ShareLinkButton`); ปุ่มแชร์ลิงก์แสดงเมื่อฉบับ `issued` และมี `quotations.issue`; `logic.ts` `pricedFromDto` แปลง DTO เป็นโมเดล `src/domain/quotation` (ต้นทุนที่ถูกซ่อน = 0) ใช้เรนเดอร์เอกสารได้; หน้า `/p/<id>/quotations/<quotationId>` เปิดฉบับ `currentVersionId` ก่อน; ข้อความไทย/อังกฤษของชื่อหมวด/รายการใช้ `titleTh/descTh` เป็นหลัก (`titleEn` ว่าง → ไทย)
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้/สร้างผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/features/boq-home` ผ่าน; ยังไม่ได้เปิดเบราว์เซอร์ทดสอบกับ backend จริง
 
-### WP-25 — Quotation เอกสารพิมพ์ TH/EN + หน้าลูกค้า (HASH25)
+### WP-25 — Quotation เอกสารพิมพ์ TH/EN + หน้าลูกค้า (df51c70)
 - สร้าง `src/features/erp/quotations/`: `print-model.ts` (pure: `buildQuotationPrintModel`, `companyFromSnapshot/FromProfile`, `customerFromSnapshot/FromDto`, `standardMode`), `QuotationPrintDocument.tsx` (แผ่นเอกสารใช้ร่วมกับหน้าพิมพ์และหน้าลูกค้า; ภาษา/ตัวเลข/วันที่ตาม `version.language` + ปีพ.ศ. ตาม `yearStyle`; จำนวนเงินเป็นคำ; สีแบรนด์), `GovernmentForms.tsx` (ปร.6/ปร.5/ปร.4), `QuotationPrintPage.tsx`, `QuotationCustomerView.tsx` (ลงทะเบียน renderer `quotation` ผ่าน import ใน `src/app/(public)/c/[token]/page.tsx`); route `src/app/(print)/print/quotation/[versionId]/page.tsx`; ปุ่ม "พิมพ์ / PDF" (เปิดแท็บใหม่) ใน header ของ `QuotationEditorPage`
 - i18n: `documents.quotation.*`, `documents.government.*`, `quotations.print.button` (th+en); ปุ่มแชร์ลิงก์มีอยู่แล้วจาก WP-24
 - หน้าลูกค้า: ตอบรับ/ขอแก้/ปฏิเสธใช้ `RespondForm` เดิม; backend `afterRespond` (WP-23) เปลี่ยนสถานะฉบับ; มือถือ ≤600px ซ่อนคอลัมน์จำนวน/หน่วย/ราคาต่อหน่วย แล้วแสดง "จำนวน หน่วย × ราคา" ใต้ชื่อรายการ
