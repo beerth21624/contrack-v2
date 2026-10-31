@@ -79,7 +79,10 @@ export const workspaceModuleDtoSchema = z.object({
     active: z.boolean(),
     /** Modules of the dependency closure (roots first) that are not active yet. */
     missingDependencies: z.array(moduleIdSchema),
-    /** A 30-day trial can be started (POST …/trial): the module offers one, it was never used and no live grant exists. */
+    /**
+     * A 30-day trial can be started (POST …/trial): the module offers one, it was never used and no live grant exists,
+     * and every dependency is offered and entitled or can start its own trial with it.
+     */
     trialAvailable: z.boolean(),
 });
 export type WorkspaceModuleDto = z.infer<typeof workspaceModuleDtoSchema>;

@@ -102,6 +102,9 @@ describe('ERP module flags with ENTITLEMENTS=enforce', () => {
         kit.clock.advance(31 * DAY_MS);
         expect(errorOf(await trial.execute({ actorId: s.byRole.owner, workspaceId: s.workspaceId, module: 'portal' })))
             .toMatchObject({ code: 'unprocessable', details: { reason: 'missing_dependencies', missing: ['project-hub'] } });
+        // …so the list offers no trial button for it either.
+        const views = valueOf(await list.execute({ actorId: s.byRole.owner, workspaceId: s.workspaceId }));
+        expect(views.find(v => v.module === 'portal')).toMatchObject({ trialAvailable: false, entitlement: { status: 'none' } });
         expect(outcome(await trial.execute({ actorId: s.byRole.estimator, workspaceId: s.workspaceId, module: 'portal' }))).toBe('forbidden');
         expect(outcome(await trial.execute({ actorId: s.outsider, workspaceId: s.workspaceId, module: 'portal' }))).toBe('not_found');
     });

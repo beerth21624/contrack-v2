@@ -29,4 +29,7 @@ MODULE_IDS = [
     "project-hub", "portal", "boq-control", "quotations", "contracts", "billing", "variations",
     "procurement", "site-diary", "labour", "job-cost", "payables", "handover",
 ]
+# Rows of the /workspace/modules page: ERP modules the server does not offer are hidden there (D-50), so the page
+# shows the legacy modules only.
+LEGACY_MODULE_IDS = MODULE_IDS[:5]
 OFFERED_MODULES = ["subcontracting", "workforce"]

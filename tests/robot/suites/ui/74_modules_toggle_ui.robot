@@ -139,15 +139,15 @@ Outsider Cannot Read Or Change Another Workspace's Modules
     Module Should Be Stored As    ${team}[ws]    ${False}
 
 Modules That The Platform Does Not Offer Are Locked
-    [Documentation]    Modules this server does not offer (``MODULE_IDS`` minus ``OFFERED_MODULES``: materials, owner-leads
+    [Documentation]    Modules this server does not offer (``LEGACY_MODULE_IDS`` minus ``OFFERED_MODULES``: materials, owner-leads
     ...    and the AI assistant): each shows "ยังไม่เปิดให้บริการ" and its switch is disabled, even for the owner.
     [Tags]    edge
     ${team}=    Create Company Team
     Open Context As    ${team}[owner][email]    ${team}[owner][password]    /workspace/modules
     Wait For Elements State    ${SUBCONTRACT_SWITCH}    visible    timeout=60s
-    Get Element Count    css=button[role="switch"]    ==    ${{ len($MODULE_IDS) }}
-    Get Element Count    css=button[role="switch"][disabled]    ==    ${{ len($MODULE_IDS) - len($OFFERED_MODULES) }}
-    Get Element Count    css=.ant-tag:has-text("ยังไม่เปิดให้บริการ")    ==    ${{ len($MODULE_IDS) - len($OFFERED_MODULES) }}
+    Get Element Count    css=button[role="switch"]    ==    ${{ len($LEGACY_MODULE_IDS) }}
+    Get Element Count    css=button[role="switch"][disabled]    ==    ${{ len($LEGACY_MODULE_IDS) - len($OFFERED_MODULES) }}
+    Get Element Count    css=.ant-tag:has-text("ยังไม่เปิดให้บริการ")    ==    ${{ len($LEGACY_MODULE_IDS) - len($OFFERED_MODULES) }}
     Get Attribute    ${SUBCONTRACT_SWITCH}    disabled    ==    ${None}
 
 Subcontracting Page Says It Is Off And Offers The Way To Turn It On
@@ -318,7 +318,7 @@ Personal Workspace Modules Page Does Not Crash
     Open Context As    ${user}[email]    ${user}[password]    /workspace/modules
     Wait For Elements State    css=button[role="switch"] >> nth=0    visible    timeout=60s
     Page Should Have No Error Overlay
-    Get Element Count    css=button[role="switch"]    ==    ${{ len($MODULE_IDS) }}
+    Get Element Count    css=button[role="switch"]    ==    ${{ len($LEGACY_MODULE_IDS) }}
 
 
 *** Keywords ***

@@ -2,7 +2,7 @@
 // sourcing  (vendor profiles, vendor lists, packages, invitations, questions)  provides PackageDirectory, VendorDirectory
 // bidding   (bids, negotiation, leveling, award, vendor inbox)                provides BidDirectory
 // contracts (subcontracts, variations, claims, retention, ratings, settings)   provides SubcontractCreator,
-//            SubcontractingSettingsReader, VendorStats, VendorLinkListener (+ ModuleUsage from shared/application/ports)
+//            SubcontractingSettingsReader, VendorStats, VendorLinkListener (+ registers its running work in ModuleWorkRegistry)
 // A stream never imports another stream's files: only these ports (abstract classes = Nest DI tokens).
 // Writes through a port join the caller's UnitOfWork transaction (repositories use DatabaseContext.executor).
 import type {

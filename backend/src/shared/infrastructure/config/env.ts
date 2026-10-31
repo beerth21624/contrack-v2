@@ -1,13 +1,10 @@
 // ─── Environment, validated once at start-up (the process refuses to start on a bad value) ───
 import { isIP } from 'node:net';
 import { z } from 'zod';
-import { MODULE_IDS, type ModuleId } from '@contrack/contract';
+import { MODULE_IDS, MODULE_REGISTRY, type ModuleId } from '@contrack/contract';
 
-/** ERP modules (docs/erp/01-architecture.md §4.1); testEnv() offers them all. */
-const ERP_MODULE_IDS: readonly ModuleId[] = [
-    'project-hub', 'portal', 'boq-control', 'quotations', 'contracts', 'billing', 'variations',
-    'procurement', 'site-diary', 'labour', 'job-cost', 'payables', 'handover',
-];
+/** ERP modules (docs/erp/01-architecture.md §4.1, `kind: 'erp'` in the registry); testEnv() offers them all. */
+const ERP_MODULE_IDS: readonly ModuleId[] = MODULE_IDS.filter(m => MODULE_REGISTRY[m].kind === 'erp');
 
 const bool = z.enum(['true', 'false']).transform(v => v === 'true');
 

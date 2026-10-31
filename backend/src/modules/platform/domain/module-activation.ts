@@ -36,6 +36,7 @@ export interface ModuleState {
     active: boolean;
     /** Not-active modules of the dependency closure (roots first). */
     missingDependencies: ModuleId[];
+    /** POST …/trial would succeed (trialStartable). */
     trialAvailable: boolean;
 }
 
@@ -56,6 +57,15 @@ export function trialAvailable(inputs: ModuleFlagInputs, module: ModuleId): bool
     const grant = inputs.grants.get(module);
     if (grant === undefined) return true;
     return grant.trialUsedAt === null && grant.status !== 'revoked' && !grantIsLive(grant, inputs.now);
+}
+
+/**
+ * POST …/trial would succeed (StartTrialUseCase): the module's own trial is available and every module of its
+ * dependency closure is offered and either entitled already or can start its own trial too.
+ */
+export function trialStartable(inputs: ModuleFlagInputs, module: ModuleId): boolean {
+    return trialAvailable(inputs, module)
+        && dependencyClosure(module).every(d => inputs.released.has(d) && (isEntitled(inputs, d) || trialAvailable(inputs, d)));
 }
 
 /** All four layers, dependencies included. */
@@ -84,7 +94,7 @@ export function moduleState(inputs: ModuleFlagInputs, module: ModuleId): ModuleS
         entitlementExpiresAt: legacy ? null : (inputs.grants.get(module)?.expiresAt ?? null),
         active: isActive(inputs, module),
         missingDependencies: dependencyClosure(module).filter(d => !isActive(inputs, d)),
-        trialAvailable: trialAvailable(inputs, module),
+        trialAvailable: trialStartable(inputs, module),
     };
 }
 
