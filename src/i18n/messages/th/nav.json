@@ -23,6 +23,7 @@
   "modules": "โมดูลเสริม",
   "tabs": {
     "overview": "ภาพรวม",
-    "boq": "BOQ"
+    "boq": "BOQ",
+    "versions": "ประวัติ BOQ"
   }
 }

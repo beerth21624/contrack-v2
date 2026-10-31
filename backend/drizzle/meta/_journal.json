@@ -113,6 +113,13 @@
       "when": 1793469931958,
       "tag": "0015_wp15_project_hub",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793471189717,
+      "tag": "0016_wp17_boq_versions",
+      "breakpoints": true
     }
   ]
 }

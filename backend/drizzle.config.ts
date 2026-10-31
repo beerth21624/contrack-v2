@@ -12,6 +12,7 @@ export default defineConfig({
         './src/shared/infrastructure/database/schema-sc-bidding.ts',
         './src/shared/infrastructure/database/schema-sc-contracts.ts',
         './src/shared/infrastructure/database/schema-erp-core.ts',
+        './src/shared/infrastructure/database/schema-boq-control.ts',
     ],
     out: './drizzle',
     dbCredentials: { url: process.env.DATABASE_URL ?? 'postgres://contrack:contrack@localhost:5432/contrack' },

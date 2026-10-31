@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-16 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-17 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -28,7 +28,7 @@
 | WP-14 | ลิงก์ลูกค้า (public) | opus | done | 0fdbc23 | migration `0014_wp14_customer_links`; โมดูล `customer-links`, registry `CustomerLinkHandlers`, route `(public)/c/[token]`, `ShareLinkButton`; D-131…D-136 |
 | WP-15 | Project Hub backend | opus | done | 7f5ad76 | migration `0015_wp15_project_hub`; โมดูล `backend/src/modules/hub/`; ports `ProjectCatalog` (projects), `ProjectLifecycle` (hub), registry `HubRollups` (core); D-137…D-142 |
 | WP-16 | Project Hub web + ต่อ nav เข้า AppLayoutUI | opus | done | 60a7001 | ไม่มี migration; `src/features/erp/hub/*`, routes `/`, `/hub`, `/p/[projectId]`; เมนู ERP ใน `AppLayoutUI` เมื่อ `project-hub` active; D-143…D-149 |
-| WP-17 | ประวัติ BOQ (versions, เทียบฉบับ) | opus | todo | | |
+| WP-17 | ประวัติ BOQ (versions, เทียบฉบับ) | opus | done | HASH | migration `0016_wp17_boq_versions`; โมดูล `boq-control` (versions), registry `RevisionHooks` (core), ports `RevisionWriter`/`RevisionLookup` (projects), route `/p/[projectId]/versions`; D-150…D-156 |
 | WP-18 | Baseline + cost codes (backend) | opus | todo | | |
 | WP-19 | Baseline web: BOQ อ่านอย่างเดียวเมื่อล็อก + CostCodePicker | opus | todo | | |
 | WP-20 | Cost ledger + financial events | opus | todo | | |
@@ -246,6 +246,13 @@
 | D-147 | 2026-11-01 | (WP-16) สร้างโครงการจาก Hub: modal เดิม (`CreateProjectModal` export จาก `ProjectsPage.tsx`, ไม่เปลี่ยนพฤติกรรม) → POST code อัตโนมัติ (ล้มเหลว = เตือน ไม่บล็อก) → เปิด `HubFieldsDrawer` (โหมดใหม่ ปุ่ม "ไว้ทีหลัง") → ปิดแล้วไป `/p/<id>`; drawer PATCH เฉพาะช่องที่เปลี่ยน (ส่ง code เดิมซ้ำจะถูกตรวจซ้ำ) | 04 ให้ "PATCH hub fields + assign code" |
 | D-148 | 2026-11-01 | (WP-16) `HubFieldsDrawer` ยังไม่แก้ `settings` (ค่าเชิงพาณิชย์ทับรายโครงการ) — overview แสดง `effectiveSettings` อ่านอย่างเดียว; ประเภทโครงการบนการ์ด = ของโครงการ หรือค่าเริ่มต้นบริษัท (`company.defaultProjectType ?? defaultProjectTypeFor`) ถ้าอ่านโปรไฟล์ได้ (`company.read`) ไม่งั้นไม่แสดง | ไม่อยู่ใน acceptance; list DTO ไม่มี effective type |
 | D-149 | 2026-11-01 | (WP-16) แท็บโครงการ `overview` (`project-hub`) และ `boq` (`projects.read`, href `/boq`); `ProjectShell` แท็บ boq / ปุ่ม "เปิด BOQ" ใช้ `useOpenProjectBoq(projectId).open(meta?)` (เปิดโครงการถ้ายังไม่ได้เปิด → `setMeta` → `/boq`); "คัดลอกลูกค้า/ที่อยู่ไปหัว BOQ" เขียน `ownerName` = ชื่อลูกค้า, `siteAddress` เฉพาะค่าที่ไม่ว่าง แสดงเมื่อ `detail.canEdit`; เปลี่ยนสถานะจากปุ่มสถานะในหัว shell (เมนูจาก `nextStatuses`) | ตาม 04 |
+| D-150 | 2026-11-01 | (WP-17) เพิ่ม port `RevisionLookup` (projects provide: `list(ws, projectId)` เก่า→ใหม่ ไม่มี snapshot, `snapshot(ws, projectId, revisionId)`) นอกเหนือจาก `RevisionWriter` | boq-control ต้องอ่าน revision เก่ามา backfill และต้องการ label/note แสดงในรายการ แต่ห้าม import repository ของ projects |
+| D-151 | 2026-11-01 | (WP-17) `RevisionHooks` (core) รับ `RevisionCreated` (= `RevisionInfo` + `snapshot`); `CreateRevisionUseCase` ได้ param สุดท้าย `hooks: RevisionHooks = new RevisionHooks()` (test kit เดิมไม่ต้องแก้) และ method `createIn(ws, projectId, {userId,label,note})` ที่ไม่ตรวจสิทธิ์ ซึ่ง `RevisionWriter` (`ProjectsRevisionWriter`) เรียก; hook throw → revision rollback | ใช้ตรรกะเดียวกันทุกทาง ไม่ต้องแยก service ใหม่ |
+| D-152 | 2026-11-01 | (WP-17) เลข `version_no` ตามลำดับสร้าง revision เสมอ: ทั้ง hook และ lazy backfill (ตอน `GET .../boq-versions`) สร้าง version ที่ขาดของ revision เก่าก่อน (เรียง `createdAt`) ใต้ล็อกแถว `projects` (`BoqVersionRepository.lockProject` = `select id … for update`); `created_at`/`created_by` ของ version = ของ revision; snapshot ที่คำนวณไม่ได้ → ข้าม (log warn) ไม่สร้าง version | revision ที่สร้างตอนโมดูลปิดจะไม่ทำให้เลขสลับลำดับ; GET จึงเขียนได้ (lazy backfill ตาม 02 §1.10) |
+| D-153 | 2026-11-01 | (WP-17) `boq_version_lines.waste` = `numeric(12,6)` ไม่ใช่ `rate()` (`numeric(7,6)`) | waste มาจาก override ที่ผู้ใช้พิมพ์ได้ ค่า ≥ 10 จะทำให้ insert พังและ revision ทั้งก้อน rollback |
+| D-154 | 2026-11-01 | (WP-17) ผลรวมของ version: section `mat_total`/`lab_total` = `sumMoney` ของบรรทัดที่ปัดแล้ว, `total = mat + lab`; `construction_total` = Σ หมวด `inConstructionTotal`, `pre_construction_total` = Σ หมวดอื่น; `line_key` ซ้ำ (ไม่ควรเกิด) ได้ suffix `#2`; `sort` = ลำดับแถว item ในทั้ง BOQ (นับทุกแถว item รวมที่ถูกตัดทิ้ง) | ตาม D-05 และ PK `(version_id, line_key)` |
+| D-155 | 2026-11-01 | (WP-17) compare: line `changed` เมื่อ qty, ราคาต่อหน่วย, ยอด, หน่วย, ชื่อ, gross qty หรือหมวดต่างกัน; DTO มี `counts` และ `totals {before, after, delta}` ของ construction/pre/mat/lab เพิ่มจาก 02; `to=live` คำนวณจาก `ProjectReader` (คำนวณไม่ได้ → 422 reason `project_does_not_compute`); `from`/`to` ต้องเป็น version ของ `:projectId` ไม่งั้น 404 | หน้าเว็บต้องสรุปตัวเลขโดยไม่คำนวณเอง |
+| D-156 | 2026-11-01 | (WP-17) ลิงก์ "ดูประวัติและเทียบ" ใน `RevisionButtons` ใช้ `useTranslations('boqControl')` (ข้อความเดิมของไฟล์ยังเป็นไทยตรง รอ track I) แสดงเมื่อ `boq-control` active ของ workspace ของโครงการที่เปิด | release 1 (โมดูลปิด) หน้าตาเดิมทุกประการ |
 
 ## Handoff notes
 
@@ -521,3 +528,20 @@
   - `/home` (portal, WP-36): `HomeRedirect` ส่งไป `/home` เมื่อ `portal` active แล้ว และ `TOP_NAV.home` จะแสดงเอง
   - ป้ายสถานะ: `<StatusTag enumName="projectStatus" value={s} tones={PROJECT_STATUS_TONES} />` (`./status.ts`)
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; `npx eslint src/features/erp/hub src/components/AppLayoutUI.tsx src/features/cloud/ui/AccountMenu.tsx src/features/cloud/projects/ProjectsPage.tsx src/app/page.tsx "src/app/(app)/hub" "src/app/(app)/p"` ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/features/erp src/i18n` ผ่าน; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์ (ไม่มี backend ที่เปิดโมดูลไว้)
+
+### WP-17 — ประวัติ BOQ (versions, เทียบฉบับ) (HASH)
+- สร้าง: `backend/src/shared/infrastructure/database/schema-boq-control.ts` (`boq_versions`, `boq_version_sections`, `boq_version_lines`; `boqControlTables`) + `database.ts` + `drizzle.config.ts`; migration `0016_wp17_boq_versions` (ตรงตามคาด, ไม่ถาม interactive) → WP ถัดไปที่แก้ schema ได้ `0017_*`
+- `ENGINE_VERSION` ย้ายไป `src/domain/project.ts`; `project.entity.ts` re-export ชื่อเดิม (ค่าเดิม `'excel-v5'`)
+- pure: `src/domain/boq-control/version-lines.ts` (`boqVersionLines(boq)` → `{sections, lines, totals}`), `diff.ts` (`diffBoqVersions(a, b)` → `{sections, lines, totals, counts}`); ไม่เขียนเทสต์ใหม่ (ตามคำสั่งรอบนี้)
+- contract `src/shared/contract/erp/boq-control.ts`: `BOQ_VERSION_KINDS`, `BOQ_LINE_CHANGES`, `boqVersionDtoSchema`/`boqVersionListDtoSchema`, `boqVersionDetailDtoSchema`, `boqVersionLineDtoSchema`, `boqVersionSectionDtoSchema`, `boqVersionCompareQuerySchema`, `boqVersionCompareDtoSchema`
+- ports (`ports.ts`): `RevisionHooks` (core provide/export), `RevisionInfo`/`RevisionCreated`, `RevisionWriter` + `RevisionLookup` (projects provide: `revision-ports.adapter.ts`); `CreateRevisionUseCase.createIn(...)` + เรียก hooks ใน transaction หลัง insert + activity
+- backend `backend/src/modules/boq-control/`: repo `BoqVersionRepository` (drizzle / in-memory), `boq-versions.use-cases.ts` (`BoqVersionRecorder` = hook + lazy backfill, `BoqVersionReader`, `ListBoqVersionsUseCase`, `GetBoqVersionUseCase`, `CompareBoqVersionsUseCase`), `BoqControlController` (`@RequiresModule('boq-control')`), `boq-control.module.ts` (`@Global`, ลงทะเบียน `RevisionHooks` + `ProjectDependents`); `app.module.ts`; `backend/API.md`
+- web: `src/features/erp/boq-control/{api.ts,hooks.ts,VersionsPage.tsx,VersionCompareTable.tsx}`, route `src/app/(app)/p/[projectId]/versions/page.tsx` (`ModuleGate boq-control`), แท็บ `versions` ใน `PROJECT_TABS`, ลิงก์ "ดูประวัติและเทียบ" ใน `RevisionButtons.tsx` (เฉพาะ `boq-control` active)
+- i18n (th+en): namespace `boqControl`; `nav.tabs.versions`; `enums.boqVersionKind`, `enums.boqLineChange`; `errors.reasons.project_does_not_compute`
+- ค่าจริงของเกณฑ์ผลรวม: โครงการตัวอย่าง (`createProject('sample')`) 203 บรรทัด, Σ version `construction_total` = 1,855,162.36 vs `totals.constructionTotal` = 1,855,162.2485 → ต่าง 0.11 (เพดาน 0.01 × 203 = 2.03); `pre_construction_total` 7,500 ตรงกัน
+- WP ถัดไปต้องรู้:
+  - WP-18 baseline: ตาราง `project_baselines`/`project_cost_codes` ใส่ใน `schema-boq-control.ts` (`boqControlTables`); `boq_versions.kind` มี `'baseline'` แล้ว (default `'snapshot'`) — ยังไม่มี method เปลี่ยน kind ใน `BoqVersionRepository` (เพิ่ม `setKind`); สร้าง revision อัตโนมัติ: `await revisionWriter.create(ws, projectId, { label: 'BASELINE-<n>', by })` ภายใน `uow.run` ของตัวเอง แล้ว hook จะสร้าง version ให้ใน transaction เดียวกัน (ถ้า `boq-control` active) — หา version ได้ด้วย `repo.listByProject(...)` แล้วจับ `revisionId`
+  - บรรทัดสำหรับ cost code / ใบเสนอราคา: `repo.rows(ws, versionId).lines` (`lineKey`, `sectionNo`, `sort`, `descTh`, `unit`, `qty`, `matUnit`, `labUnit`, `matTotal`, `labTotal`, `total`)
+  - `BoqVersionRecorder.ensure(ws, projectId)` = backfill + รายการ (ใช้ก่อนอ่าน version ของโครงการที่อาจมี revision เก่า); ยังไม่ export port ของ boq-control ให้โมดูลอื่น (WP-18 เพิ่ม `CostCodeLookup`/`BaselineControl`)
+  - เว็บ: `useBoqVersions(projectId)` (`staleTime: 0`), `useBoqVersion(id)`, `useBoqCompare(projectId, from, to|'live')`; key `boqControlKeys`
+- ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend + web) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/shared/contract src/i18n src/features/erp` ผ่าน; `cd backend && npx jest src/modules/projects` 199 ผ่าน, e2e `projects` 23 ผ่าน; smoke e2e ชั่วคราว (memory, ลบแล้ว): revision ตอนโมดูลปิด → `GET boq-versions` 404 `module_disabled`; trial + เปิด → list backfill R1 เป็นฉบับ 1; R2 ขณะเปิด → ฉบับ 2 (203 บรรทัด); เทียบ R1/R2 → same 203; เทียบกับ live → 200, `to: null`; คนนอก → 404; `to=bad` → 400; ปิดโมดูลแล้วสร้าง revision ได้ปกติ; ยังไม่ได้ทดสอบบน PostgreSQL จริงและยังไม่เปิดหน้าในเบราว์เซอร์

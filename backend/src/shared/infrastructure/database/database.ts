@@ -4,6 +4,7 @@ import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { UnitOfWork } from '../../application/ports';
 import { schema as coreSchema } from './schema';
+import { boqControlTables } from './schema-boq-control';
 import { erpCoreTables } from './schema-erp-core';
 import { identityPhoneTables } from './schema-identity-phone';
 import { platformTables } from './schema-platform';
@@ -15,7 +16,7 @@ import { scSourcingTables } from './schema-sc-sourcing';
 /** Core tables (schema.ts) + one file per business work stream (no file imports another stream's file). */
 export const schema = {
     ...coreSchema, ...identityPhoneTables, ...platformTables, ...scSharedTables, ...scSourcingTables, ...scBiddingTables,
-    ...scContractsTables, ...erpCoreTables,
+    ...scContractsTables, ...erpCoreTables, ...boqControlTables,
 };
 
 export type Database = NodePgDatabase<typeof schema>;

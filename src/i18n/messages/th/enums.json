@@ -93,5 +93,15 @@
     "closed": "ปิดโครงการ",
     "lost": "ไม่ได้งาน",
     "cancelled": "ยกเลิก"
+  },
+  "boqVersionKind": {
+    "snapshot": "ฉบับแก้ไข",
+    "baseline": "ฉบับฐาน"
+  },
+  "boqLineChange": {
+    "added": "เพิ่ม",
+    "removed": "ตัดออก",
+    "changed": "เปลี่ยน",
+    "same": "เท่าเดิม"
   }
 }

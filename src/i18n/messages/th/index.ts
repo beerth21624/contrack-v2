@@ -18,6 +18,7 @@ import company from './company.json';
 import customers from './customers.json';
 import customerLinks from './customerLinks.json';
 import hub from './hub.json';
+import boqControl from './boqControl.json';
 
 const messages = {
   common,
@@ -40,6 +41,7 @@ const messages = {
   customers,
   customerLinks,
   hub,
+  boqControl,
 };
 
 export default messages;

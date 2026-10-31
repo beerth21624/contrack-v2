@@ -27,6 +27,9 @@ function prefixSlotRows(rows: SlotRow[], prefix: string, excelRow: number): (Boq
 
 export const PROJECT_SCHEMA_VERSION = 1;
 
+/** The calculation engine every cloud project is computed with (Excel v5 is the source of truth). */
+export const ENGINE_VERSION = 'excel-v5';
+
 /** Header block of BOQ (Home), rows 2–4. */
 export interface ProjectMeta {
     projectName: string;   // D2 📂 โครงการ

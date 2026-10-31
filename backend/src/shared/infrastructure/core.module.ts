@@ -1,8 +1,8 @@
 // ─── Global infrastructure: config, clock, ids, database, unit of work ───
 import { Global, Module, type DynamicModule, type OnApplicationShutdown, type OnModuleInit, type Provider, Inject, Optional } from '@nestjs/common';
 import {
-    ApprovalHandlers, Clock, CustomerLinkHandlers, DailySweeps, HubRollups, IdGenerator, ModuleWorkRegistry, ProjectDeletionGuards, ProjectDependents, UnitOfWork,
-    WorkspaceDeletionGuards,
+    ApprovalHandlers, Clock, CustomerLinkHandlers, DailySweeps, HubRollups, IdGenerator, ModuleWorkRegistry, ProjectDeletionGuards, ProjectDependents,
+    RevisionHooks, UnitOfWork, WorkspaceDeletionGuards,
 } from '../application/ports';
 import { AppConfig, type Env } from './config/env';
 import { DatabaseContext, DrizzleUnitOfWork, InMemoryUnitOfWork, createDatabase, createPool } from './database/database';
@@ -56,6 +56,7 @@ export class CoreModule {
             { provide: WorkspaceDeletionGuards, useValue: new WorkspaceDeletionGuards() },
             { provide: CustomerLinkHandlers, useValue: new CustomerLinkHandlers() },
             { provide: HubRollups, useValue: new HubRollups() },
+            { provide: RevisionHooks, useValue: new RevisionHooks() },
         ];
         if (config.persistence === 'postgres') {
             const url = options.env.DATABASE_URL;
@@ -76,7 +77,7 @@ export class CoreModule {
             providers,
             exports: [
                 AppConfig, Clock, IdGenerator, UnitOfWork, ProjectDependents, ModuleWorkRegistry, ApprovalHandlers, DailySweeps,
-                ProjectDeletionGuards, WorkspaceDeletionGuards, CustomerLinkHandlers, HubRollups,
+                ProjectDeletionGuards, WorkspaceDeletionGuards, CustomerLinkHandlers, HubRollups, RevisionHooks,
                 ...(config.persistence === 'postgres' ? [DatabaseContext] : []),
             ],
         };

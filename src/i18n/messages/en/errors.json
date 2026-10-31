@@ -49,6 +49,7 @@
     "respond_not_supported": "This document cannot be answered from a link",
     "action_not_supported": "This document does not take that answer",
     "project_code_exists": "This project already has a code",
-    "duplicate_project_code": "Another project already uses this code"
+    "duplicate_project_code": "Another project already uses this code",
+    "project_does_not_compute": "The current BOQ does not compute; check the BOQ page"
   }
 }

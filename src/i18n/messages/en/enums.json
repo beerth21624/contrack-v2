@@ -93,5 +93,15 @@
     "closed": "Closed",
     "lost": "Lost",
     "cancelled": "Cancelled"
+  },
+  "boqVersionKind": {
+    "snapshot": "Revision",
+    "baseline": "Baseline"
+  },
+  "boqLineChange": {
+    "added": "Added",
+    "removed": "Removed",
+    "changed": "Changed",
+    "same": "Same"
   }
 }

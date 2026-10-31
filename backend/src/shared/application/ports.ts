@@ -9,7 +9,7 @@ import type {
     DocLanguage, DocType, FileDto, FilePurpose, HubProjectStatus, ModuleId, Permission, ProjectRollup, ProjectType,
 } from '@contrack/contract';
 import type { DomainError } from '../domain/domain-error';
-import type { ProjectId, RateCardId, UserId, WorkspaceId } from '../domain/ids';
+import type { ProjectId, RateCardId, RevisionId, UserId, WorkspaceId } from '../domain/ids';
 import type { Result } from '../domain/result';
 import type { Project as BoqProject } from '@contrack/domain/project';
 
@@ -736,4 +736,59 @@ export class HubRollups {
     sources(): readonly { module: ModuleId; source: HubRollupSource }[] {
         return this.entries;
     }
+}
+
+// ── BOQ history (WP-17, docs/erp/01-architecture.md §11) ──
+
+/** A project revision as other modules see it (without its snapshot). */
+export interface RevisionInfo {
+    id: RevisionId;
+    workspaceId: WorkspaceId;
+    projectId: ProjectId;
+    label: string;
+    note: string | null;
+    createdBy: UserId;
+    createdAt: Date;
+}
+
+/** What a revision hook receives: the revision just inserted, with the project snapshot it stores. */
+export interface RevisionCreated extends RevisionInfo {
+    snapshot: BoqProject;
+}
+
+export type RevisionHook = (revision: RevisionCreated) => Promise<void>;
+
+/**
+ * Provided by core: run by CreateRevisionUseCase inside its transaction right after the revision row is inserted
+ * (the project row is locked). A hook checks itself that its module is active; a throw rolls the revision back.
+ */
+export class RevisionHooks {
+    private readonly hooks: RevisionHook[] = [];
+
+    register(hook: RevisionHook): void {
+        this.hooks.push(hook);
+    }
+
+    async run(revision: RevisionCreated): Promise<void> {
+        for (const hook of this.hooks) await hook(revision);
+    }
+}
+
+/**
+ * Provided by projects: creates a revision of the project's current documents exactly as `POST /projects/:id/revisions`
+ * does (lock, recompute, insert, activity, hooks) without checking permissions — the caller did. Joins the caller's
+ * `uow.run`. Conflict (`details.label`) when the label is taken; unprocessable when the project no longer computes.
+ */
+export abstract class RevisionWriter {
+    abstract create(
+        workspaceId: WorkspaceId, projectId: ProjectId, input: { label: string; note?: string; by: UserId },
+    ): Promise<Result<RevisionInfo, DomainError>>;
+}
+
+/** Provided by projects: revisions of a project (callers check access themselves). */
+export abstract class RevisionLookup {
+    /** Oldest first. */
+    abstract list(workspaceId: WorkspaceId, projectId: ProjectId): Promise<RevisionInfo[]>;
+    /** The stored project snapshot of one revision; undefined when it is not a revision of that project. */
+    abstract snapshot(workspaceId: WorkspaceId, projectId: ProjectId, revisionId: RevisionId): Promise<BoqProject | undefined>;
 }

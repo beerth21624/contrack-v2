@@ -1,11 +1,11 @@
 // ─── Project: aggregate root of a cloud project (its documents, revisions, assignments hang off its id) ───
 import type { ProjectSummaryValues } from '@contrack/domain/sync';
-import { PROJECT_SCHEMA_VERSION, type ProjectStart } from '@contrack/domain/project';
+import { ENGINE_VERSION, PROJECT_SCHEMA_VERSION, type ProjectStart } from '@contrack/domain/project';
 import type { ProjectId, UserId, WorkspaceId } from '../../../../shared/domain';
 import type { ProjectName } from '../value-objects/project-name.value-object';
 
-/** The calculation engine every cloud project is computed with (Excel v5 is the source of truth). */
-export const ENGINE_VERSION = 'excel-v5';
+/** The calculation engine every cloud project is computed with (declared in @contrack/domain/project). */
+export { ENGINE_VERSION };
 export type EngineVersion = typeof ENGINE_VERSION;
 
 export type ProjectSummary = Readonly<ProjectSummaryValues>;

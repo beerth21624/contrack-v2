@@ -1,0 +1,73 @@
+{
+  "title": "BOQ history",
+  "subtitle": "Every version issued from the BOQ page: open its lines and compare what each version added, removed or changed",
+  "openHistory": "History & compare",
+  "loadFailed": "Could not load the BOQ history",
+  "retry": "Try again",
+  "roundingNote": "Version figures are rounded line by line; totals may differ from the BOQ page by a few satang",
+  "empty": {
+    "title": "No BOQ versions yet",
+    "hint": "Issue a revision on the BOQ page and it will show here",
+    "openBoq": "Go to BOQ"
+  },
+  "list": {
+    "title": "All versions",
+    "versionNo": "Version {no}",
+    "view": "View lines",
+    "columns": {
+      "version": "Version",
+      "createdAt": "Issued",
+      "constructionTotal": "Construction total",
+      "lineCount": "Lines"
+    }
+  },
+  "compare": {
+    "title": "Compare versions",
+    "from": "From",
+    "to": "Compare with",
+    "live": "Current BOQ (not issued)",
+    "swap": "Swap",
+    "pickDifferent": "Pick two different versions to compare",
+    "needMore": "Only one version: compare it with the current BOQ",
+    "counts": "Added {added} · Removed {removed} · Changed {changed} · Same {same}",
+    "before": "Before",
+    "after": "After",
+    "delta": "Difference",
+    "totals": {
+      "constructionTotal": "Construction total",
+      "preConstructionTotal": "Pre-construction",
+      "matTotal": "Material total",
+      "labTotal": "Labour total"
+    },
+    "sections": {
+      "title": "Difference by section",
+      "section": "Section",
+      "outside": "Not in the construction total",
+      "onlyChanged": "Changed sections only"
+    },
+    "lines": {
+      "title": "Lines",
+      "onlyChanged": "Changed lines only",
+      "none": "No line changed",
+      "change": "Status",
+      "item": "Item",
+      "qty": "Quantity",
+      "unitPrice": "Unit price (material + labour)",
+      "total": "Amount",
+      "deltaQty": "Qty difference",
+      "deltaTotal": "Amount difference"
+    }
+  },
+  "detail": {
+    "title": "Version {no} · {label}",
+    "itemNo": "No.",
+    "desc": "Item",
+    "qty": "Quantity",
+    "matUnit": "Material/unit",
+    "labUnit": "Labour/unit",
+    "matTotal": "Material",
+    "labTotal": "Labour",
+    "total": "Total",
+    "sectionTotal": "Section total"
+  }
+}

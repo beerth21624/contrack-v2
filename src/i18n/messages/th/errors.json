@@ -49,6 +49,7 @@
     "respond_not_supported": "เอกสารนี้ตอบกลับผ่านลิงก์ไม่ได้",
     "action_not_supported": "เอกสารนี้ไม่รองรับคำตอบนี้",
     "project_code_exists": "โครงการนี้มีรหัสแล้ว",
-    "duplicate_project_code": "รหัสโครงการนี้ถูกใช้กับโครงการอื่นแล้ว"
+    "duplicate_project_code": "รหัสโครงการนี้ถูกใช้กับโครงการอื่นแล้ว",
+    "project_does_not_compute": "BOQ ปัจจุบันคำนวณไม่ได้ ตรวจข้อมูลในหน้า BOQ"
   }
 }

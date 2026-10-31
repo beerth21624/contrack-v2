@@ -3,11 +3,14 @@
 // ─── "ออกฉบับแก้ไข" + the list of revisions of the open cloud project (nothing in guest mode) ───
 // A revision is a frozen copy of the whole project (what was sent to the owner). Each one can be exported again.
 import { useState } from 'react';
+import Link from 'next/link';
 import { App, Button, Drawer, Empty, Form, Input, Modal, Space, Spin, Tag } from 'antd';
-import { HistoryOutlined, SnippetsOutlined } from '@ant-design/icons';
+import { DiffOutlined, HistoryOutlined, SnippetsOutlined } from '@ant-design/icons';
+import { useTranslations } from 'next-intl';
 import type { Project } from '@/domain/project';
 import { formatNumber } from '@/components/sheet/NumberCell';
 import { BoqExportButtons } from '@/features/export/BoqExportButtons';
+import { useActiveModules } from '@/features/modules/modules';
 import { useProjectStore } from '@/store/project-store';
 import type { RevisionDto } from '@/shared/contract';
 import { thaiErrorMessage } from '../api/errors';
@@ -44,6 +47,9 @@ export function RevisionButtons({ size = 'middle' }: { size?: 'small' | 'middle'
     const revisions = useRevisions(cloud?.projectId);
     const [createOpen, setCreateOpen] = useState(false);
     const [listOpen, setListOpen] = useState(false);
+    const tBoq = useTranslations('boqControl');
+    // ERP: the BOQ history page (versions + compare) while boq-control is active; nothing changes otherwise.
+    const historyOn = useActiveModules(cloud?.workspaceId).has('boq-control');
 
     if (!cloud) return null;
     const count = revisions.data?.length ?? 0;
@@ -57,6 +63,11 @@ export function RevisionButtons({ size = 'middle' }: { size?: 'small' | 'middle'
                 <Button size={size} type="text" icon={<HistoryOutlined />} onClick={() => setListOpen(true)}>
                     ฉบับแก้ไขทั้งหมด{count > 0 ? ` (${String(count)})` : ''}
                 </Button>
+                {historyOn && (
+                    <Link href={`/p/${encodeURIComponent(cloud.projectId)}/versions`}>
+                        <Button size={size} type="text" icon={<DiffOutlined />}>{tBoq('openHistory')}</Button>
+                    </Link>
+                )}
             </Space>
             <CreateRevisionModal open={createOpen} projectId={cloud.projectId} used={(revisions.data ?? []).map(r => r.label)}
                 onClose={() => setCreateOpen(false)} onCreated={() => { setCreateOpen(false); setListOpen(true); }} />

@@ -95,6 +95,7 @@ const projectRoot = /^\/p\/[^/]+\/?$/;
 export const PROJECT_TABS: readonly ErpProjectTab[] = [
     { key: 'overview', labelKey: 'tabs.overview', href: id => `/p/${encodeURIComponent(id)}`, module: 'project-hub', match: p => projectRoot.test(p) },
     { key: 'boq', labelKey: 'tabs.boq', href: () => '/boq', permission: 'projects.read', match: p => p.startsWith('/boq') },
+    { key: 'versions', labelKey: 'tabs.versions', href: id => `/p/${encodeURIComponent(id)}/versions`, module: 'boq-control', match: p => /^\/p\/[^/]+\/versions/.test(p) },
 ];
 
 /** The entry passes its module / permission gate. */

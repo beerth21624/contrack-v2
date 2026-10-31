@@ -3,7 +3,8 @@
 // ProjectDocLookup, ProjectStatusLookup and MemberAssignmentCleanup to the others (runs ProjectDependents on delete).
 import { Global, Module } from '@nestjs/common';
 import {
-    MemberAssignmentCleanup, ProjectCatalog, ProjectDirectory, ProjectDocLookup, ProjectReader, ProjectStatusLookup,
+    MemberAssignmentCleanup, ProjectCatalog, ProjectDirectory, ProjectDocLookup, ProjectReader, ProjectStatusLookup, RevisionLookup,
+    RevisionWriter,
 } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
 import { ActivityRepository } from './application/ports/activity.repository';
@@ -42,6 +43,7 @@ import {
     RepositoryProjectCatalog, RepositoryProjectDirectory, RepositoryProjectDocLookup, RepositoryProjectStatusLookup,
 } from './infrastructure/adapters/project-directory.adapter';
 import { RepositoryProjectReader } from './infrastructure/adapters/project-reader.adapter';
+import { ProjectsRevisionLookup, ProjectsRevisionWriter } from './infrastructure/adapters/revision-ports.adapter';
 import { ProjectsController } from './presentation/projects.controller';
 import { WorkspaceProjectsController } from './presentation/workspace-projects.controller';
 
@@ -76,7 +78,11 @@ import { WorkspaceProjectsController } from './presentation/workspace-projects.c
         { provide: MemberAssignmentCleanup, useClass: ProjectsMemberAssignmentCleanup },
         { provide: ProjectReader, useClass: RepositoryProjectReader },
         { provide: ProjectCatalog, useClass: RepositoryProjectCatalog },
+        { provide: RevisionWriter, useClass: ProjectsRevisionWriter },
+        { provide: RevisionLookup, useClass: ProjectsRevisionLookup },
     ],
-    exports: [ProjectDirectory, ProjectDocLookup, ProjectStatusLookup, MemberAssignmentCleanup, ProjectReader, ProjectCatalog],
+    exports: [
+        ProjectDirectory, ProjectDocLookup, ProjectStatusLookup, MemberAssignmentCleanup, ProjectReader, ProjectCatalog, RevisionWriter, RevisionLookup,
+    ],
 })
 export class ProjectsModule {}

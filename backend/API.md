@@ -243,3 +243,12 @@ Schemas: `../src/shared/contract/erp/hub.ts`. The hub columns live on `projects`
 | GET | `/projects/:projectId/hub` | → `HubProjectDetailDto` | `projects.read`; + effective type/settings, manager name, `canEdit`, `nextStatuses` |
 | PATCH | `/projects/:projectId/hub` | `UpdateHubProjectRequest` → `HubProjectDetailDto` | `projects.edit`; archived → 409 `project_archived`; customer of another workspace → 404; manager not a member → 400; off-table status → 409 `invalid_transition`; `closed → warranty` owner only (403); code in use → 409 `duplicate_project_code`; `settings` merged, `settingsReset` removes keys; audited `project` / `status_change\|hub_update` |
 | POST | `/projects/:projectId/hub/code` | → `HubProjectDetailDto` | `projects.edit`; next `project` number (DocumentNumbering, dated today in Bangkok); has a code → 409 `project_code_exists` |
+
+## BOQ history (module `boq-control`; WP-17)
+Schemas: `../src/shared/contract/erp/boq-control.ts`. One `boq_versions` row (+ `boq_version_sections`, `boq_version_lines`) per project revision: made in the revision's transaction by a `RevisionHooks` hook while `boq-control` is active, and lazily (oldest first) for revisions without one when versions are read. Lines = BOQ item rows with qty ≠ 0 or total ≠ 0, amounts rounded per line (D-05). Ports from projects: `RevisionWriter.create(ws, projectId, {label, note, by})` (no permission check, joins the caller's `uow.run`), `RevisionLookup`. Every route: `projects.read`; not a member → 404 `not_found`; `boq-control` not active → 404 `module_disabled`.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/projects/:projectId/boq-versions` | → `BoqVersionDto[]` | newest first; backfills missing versions first |
+| GET | `/boq-versions/:versionId` | → `BoqVersionDetailDto` | sections (section order) + lines (BOQ order) |
+| GET | `/projects/:projectId/boq-versions/compare?from=&to=` | → `BoqVersionCompareDto` | `to` = a version id of the same project or `live` (current documents, not stored; `to: null` in the answer); lines `added\|removed\|changed\|same` + Δqty/Δtotal, per-section and total deltas; version of another project → 404 |

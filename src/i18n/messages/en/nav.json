@@ -23,6 +23,7 @@
   "modules": "Add-on modules",
   "tabs": {
     "overview": "Overview",
-    "boq": "BOQ"
+    "boq": "BOQ",
+    "versions": "BOQ history"
   }
 }
