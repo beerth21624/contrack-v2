@@ -19,6 +19,7 @@ import customers from './customers.json';
 import customerLinks from './customerLinks.json';
 import hub from './hub.json';
 import boqControl from './boqControl.json';
+import priceReference from './priceReference.json';
 
 const messages = {
   common,
@@ -42,6 +43,7 @@ const messages = {
   customerLinks,
   hub,
   boqControl,
+  priceReference,
 };
 
 export default messages;

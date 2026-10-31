@@ -23,6 +23,7 @@ import { CustomerLinksModule } from './modules/customer-links/customer-links.mod
 import { HubModule } from './modules/hub/hub.module';
 import { BoqControlModule } from './modules/boq-control/boq-control.module';
 import { LedgerModule } from './modules/ledger/ledger.module';
+import { PriceReferenceModule } from './modules/price-reference/price-reference.module';
 
 @Module({})
 export class AppModule {
@@ -41,6 +42,7 @@ export class AppModule {
                 HubModule,
                 BoqControlModule,
                 LedgerModule,
+                PriceReferenceModule,
             ],
             controllers: [HealthController],
             providers: [

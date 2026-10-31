@@ -15,6 +15,7 @@
     "test:all": "npm run test && npm run test:e2e && npm run test:int",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/shared/infrastructure/database/migrate.ts",
+    "db:import-prices": "tsx src/cli/import-price-reference.ts",
     "db:studio": "drizzle-kit studio",
     "db:local": "node scripts/local-postgres.mjs",
     "db:seed": "npm run build && node dist/backend/src/cli/seed-demo.js",

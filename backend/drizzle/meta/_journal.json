@@ -134,6 +134,13 @@
       "when": 1793473423771,
       "tag": "0018_wp20_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793473972224,
+      "tag": "0019_wp21_price_reference",
+      "breakpoints": true
     }
   ]
 }

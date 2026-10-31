@@ -4,7 +4,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Input, Select, Spin, Tooltip, Typography } from 'antd';
 import { AuditOutlined, CaretDownOutlined, CaretRightOutlined, UndoOutlined, LinkOutlined, SearchOutlined } from '@ant-design/icons';
 import { useLocale, useTranslations } from 'next-intl';
-import { useProjectStore } from '@/store/project-store';
+import { isReadOnly, useProjectStore } from '@/store/project-store';
+import { useModuleEnabled } from '@/features/modules/modules';
+import { PriceReferenceButton } from '@/features/erp/price-reference/PriceReferencePicker';
 import { computeProject } from '@/domain/project';
 import type { BoqItemRow, BoqSectionResult } from '@/domain/boq/types';
 import { BOQ_TEMPLATE_V5 } from '@/domain/boq/template.v5';
@@ -88,6 +90,10 @@ export function BoqHomePage() {
     const setMeta = useProjectStore(s => s.setMeta);
     const setOverride = useProjectStore(s => s.setBoqOverride);
     const resetSection = useProjectStore(s => s.resetBoqSection);
+    // "ราคากลาง" button on material prices: cloud project the user may edit, with the `project-hub` module active (WP-21).
+    const hub = useModuleEnabled('project-hub');
+    const priceWorkspaceId = useProjectStore(s => (s.binding.kind === 'cloud' && !isReadOnly(s.binding) ? s.binding.workspaceId : undefined));
+    const showPriceRef = hub.enabled && priceWorkspaceId !== undefined;
     const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
     const [query, setQuery] = useState('');
     const [flashKey, setFlashKey] = useState<string | null>(null);
@@ -204,8 +210,21 @@ export function BoqHomePage() {
                 </td>
                 <td className={num} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.grossQty} /></td>
                 <td className={`${num} ${editedCls(ov.mat !== undefined)}`} style={{ minWidth: 90 }}>
-                    <NumberCell value={r.matUnit} edited={ov.mat !== undefined} tone={r.fromCalc.mat ? 'calc' : 'input'}
-                        onCommit={v => setOverride(r.key, 'mat', v)} ariaLabel={`${r.desc} ${t('colMat')}`} />
+                    {showPriceRef
+                        ? (
+                            <div className="flex items-center justify-end gap-0.5">
+                                <PriceReferenceButton workspaceId={priceWorkspaceId} unit={r.unit}
+                                    onPick={price => setOverride(r.key, 'mat', price)} />
+                                <div className="flex-1">
+                                    <NumberCell value={r.matUnit} edited={ov.mat !== undefined} tone={r.fromCalc.mat ? 'calc' : 'input'}
+                                        onCommit={v => setOverride(r.key, 'mat', v)} ariaLabel={`${r.desc} ${t('colMat')}`} />
+                                </div>
+                            </div>
+                        )
+                        : (
+                            <NumberCell value={r.matUnit} edited={ov.mat !== undefined} tone={r.fromCalc.mat ? 'calc' : 'input'}
+                                onCommit={v => setOverride(r.key, 'mat', v)} ariaLabel={`${r.desc} ${t('colMat')}`} />
+                        )}
                 </td>
                 <td className={num} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.matTotal} /></td>
                 <td className={`${num} ${editedCls(ov.lab !== undefined)}`} style={{ minWidth: 90 }}>

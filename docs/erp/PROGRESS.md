@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-20 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-21 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -32,7 +32,7 @@
 | WP-18 | Baseline + cost codes (backend) | opus | done | cba4d4e | migration `0017_wp18_baseline`; `project_baselines`/`project_cost_codes`, registries `BoqEditLocks`/`BaselineUnlockGuards` (core), ports `CostCodeLookup`/`BaselineControl` (boq-control); D-157…D-163 |
 | WP-19 | Baseline web: BOQ อ่านอย่างเดียวเมื่อล็อก + CostCodePicker | opus | done | 225f97b | ไม่มี migration; `BaselinePanel` บนหน้า versions, `CloudBinding.locked`, sync event `locked`, `BaselineLockedBanner`, `CostCodePicker`; D-164…D-169 |
 | WP-20 | Cost ledger + financial events | opus | done | 4867142 | migration `0018_wp20_ledger`; `cost_ledger_entries`/`fin_events`, ports `CostLedger`/`FinancialEvents`, module `ledger`, guards ลบโครงการ/ปลดล็อก baseline; D-170…D-176 |
-| WP-21 | ราคากลางภาครัฐ | sonnet | todo | | |
+| WP-21 | ราคากลางภาครัฐ | sonnet | done | HASH21 | migration `0019_wp21_price_reference`; `price_reference_books/items`, CLI `db:import-prices`, module `price-reference`, ปุ่ม "ราคากลาง" บน BOQ; D-177…D-179 |
 | WP-22 | Quotation: domain คำนวณ + overlay อังกฤษของ BOQ | opus | todo | | |
 | WP-23 | Quotation backend | opus | todo | | |
 | WP-24 | Quotation web: รายการ ตัวแก้ไข เทียบฉบับ | sonnet | todo | | |
@@ -273,6 +273,9 @@
 | D-174 | 2026-11-01 | (WP-20) กันเขียนพร้อมกันด้วย `pg_advisory_xact_lock(hashtextextended('ledger:'+ref,0))` ต่อ commitment ref (เรียงก่อนล็อก) + `for update` แถวต้นฉบับตอนกลับรายการ + partial unique `(reverses_id) where reverses_id is not null` ทั้งสองตาราง; `source_type` เป็น text ไม่มี check (ค่าแนะนำ `COST_SOURCE_TYPES` ใน contract); check `fin_events_event_type_check` เขียนรายการซ้ำใน schema (schema ไม่ import contract ตอน runtime) — เพิ่มประเภทใหม่ต้องแก้ทั้ง contract และ schema + migration | ไม่ล็อกแถว `projects` เพื่อไม่ให้ลำดับล็อกชนกับ use case ของผู้เรียก |
 | D-175 | 2026-11-01 | (WP-20) `CostLedgerDto = {entries (เก่า→ใหม่), byCostCode, totals}` คำนวณจากแถวที่เลือก (`costCodeId` กรอง); `fin-events` ไม่แบ่งหน้า (คืนทั้งช่วงที่ขอ เรียง event_date → created_at) | รายงานภาษี/กระแสเงินสดต้องการทั้งช่วง; WP-48/52 ค่อยเพิ่ม paging ถ้าจำเป็น |
 | D-176 | 2026-11-01 | (WP-20) ไม่เขียนเทสต์ใหม่ตามคำสั่งรอบนี้ — ตรวจด้วย smoke spec ชั่วคราว (unit + e2e, ลบแล้ว) | คำสั่งเจ้าของ: เน้นส่งของก่อน demo |
+| D-177 | 2026-11-01 | (WP-21) ปุ่ม "ราคากลาง" แสดงเมื่อ `project-hub` active + โครงการคลาวด์ที่แก้ได้ (ไม่อ่านอย่างเดียว/ไม่ล็อก baseline) เท่านั้น ไม่ผูกกับ `priceSource='government'` (ยังไม่มีฟิลด์นี้ในโค้ด); ราคาเติมเป็น `mat` override ผ่าน `setBoqOverride` เดิม | โมดูลปิด/โครงการ guest = หน้าเดิมทุกประการ |
+| D-178 | 2026-11-01 | (WP-21) ค้นหา: ทุกคำ (แยกด้วยช่องว่าง) ต้องอยู่ใน `search` (`like %คำ%`, escape wildcard) เรียงปีใหม่→ชื่อวัสดุ→ราคา; ไม่กรองตาม workspace เพราะ book เป็นระดับแพลตฟอร์ม; index `text_pattern_ops` ช่วยเฉพาะ prefix แต่ 4.5k แถวสแกนเร็วอยู่แล้ว | ไม่ใช้ extension |
+| D-179 | 2026-11-01 | (WP-21) เทียบหน่วยไม่อัตโนมัติ: dialog แสดงหน่วยของรายการ BOQ ให้ผู้ใช้ตรวจเอง; ไม่เขียนเทสต์ใหม่ ยังไม่ได้รัน import บน PostgreSQL จริง (นับด้วยสคริปต์: 5,571 แถว → 4,559 มีราคา, 1,012 ข้าม) | ตามคำสั่งเจ้าของให้ส่งของก่อน |
 
 ## Handoff notes
 
@@ -609,3 +612,9 @@
   - hub roll-up/job cost (WP-46): `totalsByProject(ws, projectIds)` query เดียวต่อชุด; ต่อ cost code `totalsByCostCode(ws, projectId)`
   - เว็บ (WP-48): `GET /projects/:id/cost-ledger?costCodeId=` (`cost.read`) และ `GET /workspaces/:ws/fin-events?from&to&type&projectId`
 - ตรวจแล้ว: `npx tsc --noEmit` backend + web ผ่าน; eslint ไฟล์ที่แก้ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/shared/contract src/i18n` 623 ผ่าน; `cd backend && npx jest src/modules/projects src/shared` 219 ผ่าน; e2e `projects` 23 ผ่าน; smoke ชั่วคราว (ลบแล้ว) — unit: commit 1,000 → release −400 → actual 400 = committed_open 600 / actual 400 (ทั้ง `totalsByCostCode` และ `totalsByProject`), release เกิน → 422 `commitment_exceeded`, `reverseSource` ของ PO ก่อนกลับ GR → 422, กลับ GR → 2 แถว แล้ว open กลับเป็น 1,000, กลับซ้ำ → `[]`, cost code ของโครงการอื่น → 404, fin event reverse ได้ยอดติดลบ + `reversesId` / ซ้ำ → 409; e2e: โมดูลปิด → 404 `module_disabled`, `cost-ledger` totals ถูก, viewer → 403, fin-events กรอง type/วันที่ได้, `type=nope` → 400, viewer เห็นเฉพาะ `ar.*`, ลบโครงการที่มี fin event → 409 `financial_events_exist`; ยังไม่ได้ทดสอบบน PostgreSQL จริง (advisory lock / SQL sum)
+
+### WP-21 — ราคากลางภาครัฐ (HASH21)
+- สร้าง: `price_reference_books/items` ใน `schema-erp-core.ts` + migration `0019_wp21_price_reference` (WP ถัดไปที่แก้ schema ได้ `0020_*`); contract `src/shared/contract/erp/price-reference.ts`; backend `backend/src/modules/price-reference/` (GET `/workspaces/:ws/price-reference/items?q=&category=&limit=`, `projects.read`, gate `project-hub`); CLI `backend/src/cli/import-price-reference.ts` + `npm run db:import-prices [-- --file ..]` (รันจาก `backend/`, ต้องมี `DATABASE_URL`; แทนที่ book `government_green_2568`/2568 ใน transaction เดียว)
+- web: `src/features/erp/price-reference/{api.ts,hooks.ts,PriceReferencePicker.tsx}` (`PriceReferencePicker` dialog + `PriceReferenceButton`), namespace `priceReference` (th+en), ปุ่มในเซลล์ราคาวัสดุของ `BoqHomePage.tsx`
+- WP ถัดไปต้องรู้: ต้องรัน `db:migrate` แล้ว `db:import-prices` บนฐานที่จะ demo ก่อน ไม่งั้นค้นหาได้ว่าง; ใช้ `PriceReferencePicker` ซ้ำได้ (เช่นใบเสนอราคา/PR) โดยรับ `onPick(item)`
+- ตรวจแล้ว: tsc backend + web ผ่าน; eslint ไฟล์ที่แก้ผ่าน; i18n parity ผ่าน; `vitest run src/shared/contract src/i18n` ผ่าน; ยังไม่ได้ทดสอบบน PostgreSQL/เบราว์เซอร์จริง

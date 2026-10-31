@@ -255,7 +255,41 @@ export const customerLinks = pgTable('customer_links', {
     check('customer_links_subject_type_check', sql`${t.subjectType} in ('quotation', 'variation', 'invoice')`),
 ]);
 
+// ── government reference prices (WP-21, docs/erp/02-domain-model.md §1.12) ──
+
+/** One imported price book (null workspace = the whole platform; this table is exempt from the workspace_id rule). */
+export const priceReferenceBooks = pgTable('price_reference_books', {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
+    source: text('source').notNull(),
+    year: text('year').notNull(),
+    titleTh: text('title_th').notNull(),
+    titleEn: text('title_en').notNull(),
+    itemCount: integer('item_count').notNull().default(0),
+    importedAt: timestamp('imported_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => [index('price_reference_books_source_year_idx').on(t.source, t.year)]);
+
+export const priceReferenceItems = pgTable('price_reference_items', {
+    id: uuid('id').primaryKey(),
+    bookId: uuid('book_id').notNull().references(() => priceReferenceBooks.id, { onDelete: 'cascade' }),
+    mid: text('mid').notNull(),
+    category: text('category').notNull().default(''),
+    material: text('material').notNull(),
+    spec: text('spec').notNull().default(''),
+    brand: text('brand').notNull().default(''),
+    model: text('model').notNull().default(''),
+    unit: text('unit').notNull().default(''),
+    greenLabel: boolean('green_label').notNull().default(false),
+    price: money('price').notNull(),
+    /** Lower-case material + spec + brand + model + category (prefix / substring search without an extension). */
+    search: text('search').notNull(),
+}, t => [
+    index('price_reference_items_book_category_idx').on(t.bookId, t.category),
+    index('price_reference_items_search_idx').on(t.search.op('text_pattern_ops')),
+]);
+
 export const erpCoreTables = {
+    priceReferenceBooks, priceReferenceItems,
     approvalPolicies, approvalRequests, approvalSteps, auditEvents, docNumberSeries, docNumberCounters, issuedDocuments, companyProfiles, customers,
     customerLinks,
 };

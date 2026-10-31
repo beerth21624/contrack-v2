@@ -1,0 +1,17 @@
+{
+  "title": "Choose a government reference price",
+  "button": "Reference price",
+  "searchPlaceholder": "Search material, brand or model, e.g. cement",
+  "lineUnit": "This line's unit: {unit} (check the units match before using a price)",
+  "loadFailed": "Could not load reference prices",
+  "emptyHint": "Type a material name to search",
+  "noResults": "No items match your search",
+  "green": "Green label",
+  "use": "Use this price",
+  "source": "Source: government green-label construction material reference prices, 2025 (B.E. 2568)",
+  "columns": {
+    "material": "Material",
+    "unit": "Unit",
+    "price": "Price (THB)"
+  }
+}
