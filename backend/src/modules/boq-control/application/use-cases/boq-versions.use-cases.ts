@@ -5,7 +5,8 @@ import { type BoqVersionContent, boqVersionLines } from '@contrack/domain/boq-co
 import { ENGINE_VERSION, type Project as BoqProject, computeProject } from '@contrack/domain/project';
 import { ModuleAccess } from '../../../../shared/application/module-access';
 import {
-    IdGenerator, ModuleFlags, ProjectReader, type RevisionCreated, type RevisionInfo, RevisionLookup, UnitOfWork,
+    type BoqVersionSourceContent, BoqVersionSource, IdGenerator, ModuleFlags, ProjectReader, type RevisionCreated, type RevisionInfo, RevisionLookup,
+    RevisionWriter, UnitOfWork,
 } from '../../../../shared/application/ports';
 import { DomainError } from '../../../../shared/domain/domain-error';
 import type { ProjectId, RevisionId, UserId, WorkspaceId } from '../../../../shared/domain/ids';
@@ -211,5 +212,48 @@ export class CompareBoqVersionsUseCase {
         }
         const diff = diffBoqVersions(before, after);
         return ok({ from: await this.reader.dto(from.value), to, ...diff });
+    }
+}
+
+/** Implements BoqVersionSource (quotations build their sections and lines from a BOQ version). */
+@Injectable()
+export class BoqVersionSourceService extends BoqVersionSource {
+    constructor(
+        private readonly repo: BoqVersionRepository,
+        private readonly recorder: BoqVersionRecorder,
+        private readonly writer: RevisionWriter,
+        private readonly revisions: RevisionLookup,
+        private readonly uow: UnitOfWork,
+    ) {
+        super();
+    }
+
+    async content(workspaceId: WorkspaceId, projectId: ProjectId, versionId: string): Promise<BoqVersionSourceContent | undefined> {
+        const version = await this.repo.findById(versionId);
+        if (version?.workspaceId !== workspaceId || version.projectId !== projectId) return undefined;
+        const rows = await this.repo.rows(workspaceId, version.id);
+        return { versionId: version.id, versionNo: version.versionNo, sections: rows.sections, lines: rows.lines };
+    }
+
+    snapshot(
+        workspaceId: WorkspaceId, projectId: ProjectId, input: { labelPrefix: string; by: UserId },
+    ): Promise<Result<BoqVersionSourceContent, DomainError>> {
+        return this.uow.run(async (): Promise<Result<BoqVersionSourceContent, DomainError>> => {
+            await this.repo.lockProject(workspaceId, projectId);
+            const taken = new Set((await this.revisions.list(workspaceId, projectId)).map(r => r.label));
+            const prefix = `${input.labelPrefix}-`;
+            let n = [...taken].filter(l => l.startsWith(prefix)).length + 1;
+            while (taken.has(`${prefix}${n}`)) n += 1;
+            const created = await this.writer.create(workspaceId, projectId, { label: `${prefix}${n}`, by: input.by });
+            if (!created.ok) return created;
+            // The revision hook made the version when the module is active; make sure of it either way.
+            const all = await this.recorder.syncInTransaction(workspaceId, projectId);
+            const version = all.find(v => v.revisionId === created.value.id);
+            if (version === undefined) {
+                return err(DomainError.unprocessable('the project no longer computes', { reason: 'project_does_not_compute' }));
+            }
+            const rows = await this.repo.rows(workspaceId, version.id);
+            return ok({ versionId: version.id, versionNo: version.versionNo, sections: rows.sections, lines: rows.lines });
+        });
     }
 }

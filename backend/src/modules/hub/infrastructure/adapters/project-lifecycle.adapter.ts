@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import type { HubProjectStatus } from '@contrack/contract';
+import type { HubProjectFields, HubProjectStatus } from '@contrack/contract';
 import { AuditLog, ProjectCatalog, ProjectLifecycle, UnitOfWork } from '../../../../shared/application/ports';
 import type { ProjectId, UserId, WorkspaceId } from '../../../../shared/domain/ids';
 import { HubProjectRepository } from '../../application/ports/hub-project.repository';
 import { advancedStatus } from '../../domain/hub-state';
 
-/** `ProjectLifecycle` over the hub columns: forward-only status changes from other modules' events. */
+/** `ProjectLifecycle` over the hub columns: forward-only status changes from other modules' events, hub fields. */
 @Injectable()
 export class HubProjectLifecycle extends ProjectLifecycle {
     constructor(
@@ -31,5 +31,10 @@ export class HubProjectLifecycle extends ProjectLifecycle {
             });
             return next;
         });
+    }
+
+    async hubFields(workspaceId: WorkspaceId, projectId: ProjectId): Promise<HubProjectFields | undefined> {
+        if ((await this.catalog.find(workspaceId, projectId)) === undefined) return undefined;
+        return this.repo.find(workspaceId, projectId);
     }
 }

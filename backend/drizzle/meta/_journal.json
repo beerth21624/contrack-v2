@@ -141,6 +141,13 @@
       "when": 1793473972224,
       "tag": "0019_wp21_price_reference",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793475205428,
+      "tag": "0020_wp23_quotations",
+      "breakpoints": true
     }
   ]
 }

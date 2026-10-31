@@ -270,3 +270,19 @@ Schemas: `../src/shared/contract/erp/ledger.ts`. Both tables are append-only and
 |---|---|---|---|
 | GET | `/projects/:projectId/cost-ledger?costCodeId=` | → `CostLedgerDto` | `cost.read`; entries oldest first + totals per cost code and overall (of the selection) |
 | GET | `/workspaces/:workspaceId/fin-events?from=&to=&type=&projectId=` | → `FinEventDto[]` | `tax.reports` (every type) or `billing.read` (`ar.*` only); dates inclusive; `type` comma-separated `FIN_EVENT_TYPES`; oldest first |
+
+## Quotations (module `quotations`; WP-23)
+Schemas: `../src/shared/contract/erp/quotations.ts`; pricing `../src/domain/quotation`. Read `quotations.read`, edit / new version / cancel `quotations.manage`, issue / record an answer `quotations.issue`. Without `quotations.seeMargins` every `cost*` / `margin*` field, the section rates and `pricing.defaults` are left out (`seesMargins: false`). Amounts are always priced on the server. Not a member → 404; module not active → 404 `module_disabled`; archived project → 409 `project_archived` on writes. Customer links: `subjectType: 'quotation'`, `subjectId` = the **version** id (issued versions answerable; drafts / cancelled → 404). Daily sweep `quotations.expire`: issued versions past `validUntil` → `expired`.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/projects/:projectId/quotations` | → `QuotationDto[]` | newest first, every version summarised |
+| POST | `/projects/:projectId/quotations` | `CreateQuotationRequest` → `QuotationVersionDto` (201) | from `boqVersionId`, or a new revision `QT-<n>` of the current BOQ; terms from the project's commercial settings; customer default = the project's |
+| GET | `/quotations/:quotationId` | → `QuotationDto` | |
+| GET | `/quotations/:quotationId/compare?from=&to=` | → `QuotationCompareDto` | both versions of that quotation |
+| POST | `/quotations/:quotationId/versions` | `NewQuotationVersionRequest` → `QuotationVersionDto` (201) | copy (default the latest) or `fromBoq` / `boqVersionId` rebuild; open draft → 409 `draft_exists`; accepted → 409 `invalid_transition` |
+| GET | `/quotation-versions/:versionId` | → `QuotationVersionDto` | sections, lines, government parts, snapshots once issued |
+| PATCH | `/quotation-versions/:versionId` | `PatchQuotationVersionRequest` → `QuotationVersionDto` | draft only: issued → 409 `already_issued`, waiting → 409 `approval_pending`; pricing problem → 400 `details.reason` (`QUOTATION_PRICING_ISSUES`) |
+| POST | `/quotation-versions/:versionId/issue` | `IssueQuotationVersionRequest` → `QuotationVersionDto` (200) | approval `quotation.issue` (auto-skip → `issued` now, else `pending_approval`); first issue numbers `QT…` (docType `quotation`, subject = quotation id), later ones `${base}-R<n>`; earlier issued versions → `superseded`; project → `quoted` |
+| POST | `/quotation-versions/:versionId/cancel` | → `QuotationVersionDto` (200) | draft or pending approval (the request is cancelled) |
+| POST | `/quotation-versions/:versionId/record-response` | `RecordQuotationResponseRequest` → `QuotationVersionDto` (200) | issued only; accept → `accepted`, project `won`, other issued versions `superseded`; members notified |

@@ -7,11 +7,12 @@ import type {
 import type {
     ApprovalDecision, ApprovalStatus, ApprovalSubject, BankAccount, BaselineReason, BaselineStatus, BusinessProfile, CompanyDefaults,
     CostCategory, CostCodeSource, CostCodeStatus, CostEntryKind, CustomerLinkAction, CustomerLinkSubject, DocLanguage, DocType, FileDto,
-    FilePurpose, FinCounterpartyType, FinDirection, FinEventType, HubProjectStatus, ModuleId, Permission, ProjectRollup, ProjectType,
+    FilePurpose, FinCounterpartyType, FinDirection, FinEventType, HubProjectFields, HubProjectStatus, ModuleId, Permission, ProjectRollup, ProjectType,
 } from '@contrack/contract';
 import type { DomainError } from '../domain/domain-error';
 import type { ProjectId, RateCardId, RevisionId, UserId, WorkspaceId } from '../domain/ids';
 import type { Result } from '../domain/result';
+import type { BoqVersionLine, BoqVersionSection } from '@contrack/domain/boq-control/version-lines';
 import type { Project as BoqProject } from '@contrack/domain/project';
 
 /** Current time (fixed in tests). */
@@ -687,6 +688,18 @@ export interface CustomerLinkHandler {
      * longer answerable → conflict `invalid_transition`. Omitted = view only (respond → 422 `respond_not_supported`).
      */
     respond?(input: CustomerLinkRespondInput): Promise<Result<void, DomainError>>;
+    /** After an answer committed (notify the team). Errors are logged, never returned to the customer. */
+    afterRespond?(input: CustomerLinkRespondInput): Promise<void>;
+    /** After the public page was opened (`firstView` = the link's first opening). Errors are logged and ignored. */
+    onViewed?(input: CustomerLinkViewedInput): Promise<void>;
+}
+
+export interface CustomerLinkViewedInput {
+    workspaceId: WorkspaceId;
+    projectId: ProjectId;
+    subjectId: string;
+    linkId: string;
+    firstView: boolean;
 }
 
 /** Provided by core: one handler per subject type, registered once at start-up. */
@@ -715,6 +728,8 @@ export class CustomerLinkHandlers {
 export abstract class ProjectLifecycle {
     /** The status after the call; undefined when the project does not exist in that workspace. */
     abstract advance(workspaceId: WorkspaceId, projectId: ProjectId, to: HubProjectStatus, by: UserId | null): Promise<HubProjectStatus | undefined>;
+    /** The hub columns of a project (customer, project type, settings); undefined when not a project of that workspace. */
+    abstract hubFields(workspaceId: WorkspaceId, projectId: ProjectId): Promise<HubProjectFields | undefined>;
 }
 
 /**
@@ -792,6 +807,27 @@ export abstract class RevisionLookup {
     abstract list(workspaceId: WorkspaceId, projectId: ProjectId): Promise<RevisionInfo[]>;
     /** The stored project snapshot of one revision; undefined when it is not a revision of that project. */
     abstract snapshot(workspaceId: WorkspaceId, projectId: ProjectId, revisionId: RevisionId): Promise<BoqProject | undefined>;
+}
+
+/** Sections and lines of one BOQ version (`boq_version_sections` / `boq_version_lines`). */
+export interface BoqVersionSourceContent {
+    versionId: string;
+    versionNo: number;
+    sections: BoqVersionSection[];
+    lines: BoqVersionLine[];
+}
+
+/** Provided by boq-control: BOQ versions as documents are built from them (no module check: the caller checked its own). */
+export abstract class BoqVersionSource {
+    /** A version of the project; undefined when it is not one (another project, workspace, or unknown id). */
+    abstract content(workspaceId: WorkspaceId, projectId: ProjectId, versionId: string): Promise<BoqVersionSourceContent | undefined>;
+    /**
+     * A new revision `<labelPrefix>-<n>` of the project's current documents and its BOQ version, inside the caller's
+     * `uow.run`. unprocessable `project_does_not_compute` when the project no longer computes.
+     */
+    abstract snapshot(
+        workspaceId: WorkspaceId, projectId: ProjectId, input: { labelPrefix: string; by: UserId },
+    ): Promise<Result<BoqVersionSourceContent, DomainError>>;
 }
 
 // ── Baseline + cost codes (WP-18, docs/erp/02-domain-model.md §1.10, 01-architecture §11) ──

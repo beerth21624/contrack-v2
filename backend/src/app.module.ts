@@ -24,6 +24,7 @@ import { HubModule } from './modules/hub/hub.module';
 import { BoqControlModule } from './modules/boq-control/boq-control.module';
 import { LedgerModule } from './modules/ledger/ledger.module';
 import { PriceReferenceModule } from './modules/price-reference/price-reference.module';
+import { QuotationsModule } from './modules/quotations/quotations.module';
 
 @Module({})
 export class AppModule {
@@ -43,6 +44,7 @@ export class AppModule {
                 BoqControlModule,
                 LedgerModule,
                 PriceReferenceModule,
+                QuotationsModule,
             ],
             controllers: [HealthController],
             providers: [

@@ -58,6 +58,8 @@
     "commitment_exceeded": "The release is larger than the open commitment",
     "already_reversed": "This entry has already been reversed",
     "reversal_entry": "A reversal entry cannot be reversed",
-    "financial_events_exist": "This cannot be done because financial transactions have been recorded"
+    "financial_events_exist": "This cannot be done because financial transactions have been recorded",
+    "draft_exists": "This quotation already has a draft. Issue or cancel it first.",
+    "valid_until_before_issue_date": "The valid-until date cannot be before the issue date."
   }
 }

@@ -9,6 +9,7 @@ import { erpCoreTables } from './schema-erp-core';
 import { identityPhoneTables } from './schema-identity-phone';
 import { ledgerTables } from './schema-ledger';
 import { platformTables } from './schema-platform';
+import { quotationTables } from './schema-quotations';
 import { scBiddingTables } from './schema-sc-bidding';
 import { scContractsTables } from './schema-sc-contracts';
 import { scSharedTables } from './schema-sc-shared';
@@ -17,7 +18,7 @@ import { scSourcingTables } from './schema-sc-sourcing';
 /** Core tables (schema.ts) + one file per business work stream (no file imports another stream's file). */
 export const schema = {
     ...coreSchema, ...identityPhoneTables, ...platformTables, ...scSharedTables, ...scSourcingTables, ...scBiddingTables,
-    ...scContractsTables, ...erpCoreTables, ...boqControlTables, ...ledgerTables,
+    ...scContractsTables, ...erpCoreTables, ...boqControlTables, ...ledgerTables, ...quotationTables,
 };
 
 export type Database = NodePgDatabase<typeof schema>;

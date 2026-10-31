@@ -2,11 +2,11 @@
 // WP-17: one `boq_versions` row (+ sections, lines) per project revision, made by a RevisionHooks hook while the
 // module is active and lazily for older revisions when versions are read; list / get / compare (also with the live BOQ).
 // WP-18: baseline lock / unlock + cost codes; BoqEditLocks freezes `calc:*` / `boq:*` / `journey` while locked;
-// provides CostCodeLookup and BaselineControl to the other ERP modules.
+// provides CostCodeLookup, BaselineControl and BoqVersionSource (WP-23) to the other ERP modules.
 // Reads revisions through RevisionLookup and the live project through ProjectReader (both provided by projects).
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
 import {
-    BaselineControl, BoqEditLocks, CostCodeLookup, ModuleFlags, ProjectDependents, RevisionHooks,
+    BaselineControl, BoqEditLocks, BoqVersionSource, CostCodeLookup, ModuleFlags, ProjectDependents, RevisionHooks,
 } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
 import { BaselineRepository, CostCodeRepository } from './application/ports/baseline.repository';
@@ -16,7 +16,7 @@ import {
     isBaselineDoc,
 } from './application/use-cases/baseline.use-cases';
 import {
-    BoqVersionReader, BoqVersionRecorder, CompareBoqVersionsUseCase, GetBoqVersionUseCase, ListBoqVersionsUseCase,
+    BoqVersionReader, BoqVersionRecorder, BoqVersionSourceService, CompareBoqVersionsUseCase, GetBoqVersionUseCase, ListBoqVersionsUseCase,
 } from './application/use-cases/boq-versions.use-cases';
 import { DrizzleBaselineRepository, DrizzleCostCodeRepository } from './infrastructure/adapters/drizzle-baseline.repository';
 import { DrizzleBoqVersionRepository } from './infrastructure/adapters/drizzle-boq-version.repository';
@@ -45,8 +45,10 @@ import { BoqControlController } from './presentation/boq-control.controller';
         ListCostCodesUseCase,
         { provide: CostCodeLookup, useExisting: CostCodeService },
         { provide: BaselineControl, useExisting: BaselineService },
+        BoqVersionSourceService,
+        { provide: BoqVersionSource, useExisting: BoqVersionSourceService },
     ],
-    exports: [CostCodeLookup, BaselineControl],
+    exports: [CostCodeLookup, BaselineControl, BoqVersionSource],
 })
 export class BoqControlModule implements OnModuleInit {
     constructor(

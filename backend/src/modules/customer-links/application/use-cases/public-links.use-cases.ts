@@ -1,10 +1,11 @@
 // ─── The customer's side of a link: view and answer, no sign-in (docs/erp/02-domain-model.md §1.8) ───
 // Every "not there" case — wrong / expired / revoked token, project-hub not active for the workspace, no handler for the
 // subject, the subject gone or its module off — answers the same 404 so a token reveals nothing.
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CUSTOMER_LINK_SUBJECT_ACTIONS, type CustomerLinkAction, type CustomerLinkViewDto, type RespondRequest } from '@contrack/contract';
 import {
-    AuditLog, Clock, CompanyProfiles, type CustomerLinkHandler, CustomerLinkHandlers, type CustomerLinkSubjectView, ModuleFlags, UnitOfWork,
+    AuditLog, Clock, CompanyProfiles, type CustomerLinkHandler, CustomerLinkHandlers, type CustomerLinkRespondInput, type CustomerLinkSubjectView,
+    ModuleFlags, UnitOfWork,
 } from '../../../../shared/application/ports';
 import { DomainError } from '../../../../shared/domain/domain-error';
 import { type Result, err, ok } from '../../../../shared/domain/result';
@@ -93,6 +94,8 @@ export class PublicLinkResolver {
 /** GET /public/links/:token — counts the view. */
 @Injectable()
 export class ViewPublicLinkUseCase {
+    private readonly logger = new Logger(ViewPublicLinkUseCase.name);
+
     constructor(private readonly links: PublicLinkResolver, private readonly repo: CustomerLinkRepository, private readonly clock: Clock) {}
 
     async execute(token: string, caller: PublicCaller): Promise<Result<CustomerLinkViewDto, DomainError>> {
@@ -101,7 +104,18 @@ export class ViewPublicLinkUseCase {
         const resolved = await this.links.resolve(token);
         if (!resolved.ok) return resolved;
         const now = this.clock.now();
-        await this.repo.recordView(resolved.value.link.id, now);
+        const { link, handler } = resolved.value;
+        await this.repo.recordView(link.id, now);
+        if (handler.onViewed !== undefined) {
+            try {
+                await handler.onViewed({
+                    workspaceId: link.workspaceId, projectId: link.projectId, subjectId: link.subjectId, linkId: link.id,
+                    firstView: link.viewCount === 0,
+                });
+            } catch (e) {
+                this.logger.error(`onViewed of ${link.subjectType} failed: ${e instanceof Error ? e.message : String(e)}`);
+            }
+        }
         return ok(await this.links.toView({ ...resolved.value, link: { ...resolved.value.link, viewCount: resolved.value.link.viewCount + 1, lastViewedAt: now } }));
     }
 }
@@ -113,6 +127,8 @@ export class ViewPublicLinkUseCase {
  */
 @Injectable()
 export class RespondPublicLinkUseCase {
+    private readonly logger = new Logger(RespondPublicLinkUseCase.name);
+
     constructor(
         private readonly links: PublicLinkResolver,
         private readonly repo: CustomerLinkRepository,
@@ -135,7 +151,7 @@ export class RespondPublicLinkUseCase {
         }
 
         try {
-            const view = await this.uow.run(async () => {
+            const { view, input } = await this.uow.run(async () => {
                 const locked = await this.repo.lockByTokenHash(sha256(token));
                 const current = await this.links.resolve(token, locked);
                 if (!current.ok) throw new AnswerRefused(current.error);
@@ -147,25 +163,33 @@ export class RespondPublicLinkUseCase {
                     throw new AnswerRefused(DomainError.conflict('The document can no longer be answered', { reason: 'invalid_transition' }));
                 }
                 const at = this.clock.now();
-                const handled = await handler.respond({
+                const input: CustomerLinkRespondInput = {
                     workspaceId: link.workspaceId, projectId: link.projectId, subjectId: link.subjectId, linkId: link.id,
                     action: body.action, name: body.name, note: body.note, at,
-                });
+                };
+                const handled = await handler.respond(input);
                 if (!handled.ok) throw new AnswerRefused(handled.error);
-                const answered: CustomerLink = {
+                const saved: CustomerLink = {
                     ...link,
                     respondedAt: at,
                     response: { action: body.action, name: body.name, note: body.note, ip: caller.ip, userAgent: caller.userAgent.slice(0, 500), at },
                 };
-                await this.repo.save(answered);
+                await this.repo.save(saved);
                 await this.audit.record({
                     workspaceId: link.workspaceId, projectId: link.projectId, actor: null, entityType: 'customer_link', entityId: link.id,
                     action: 'respond', data: { subjectType: link.subjectType, subjectId: link.subjectId, action: body.action },
                 });
                 // The subject may have changed state through the handler: show it as it is now.
                 const after = await handler.view(link.workspaceId, link.subjectId);
-                return this.links.toView({ link: answered, handler, subject: after ?? subject });
+                return { view: await this.links.toView({ link: saved, handler, subject: after ?? subject }), input };
             });
+            if (first.value.handler.afterRespond !== undefined) {
+                try {
+                    await first.value.handler.afterRespond(input);
+                } catch (e) {
+                    this.logger.error(`afterRespond failed: ${e instanceof Error ? e.message : String(e)}`);
+                }
+            }
             return ok(view);
         } catch (e) {
             if (e instanceof AnswerRefused) return err(e.error);

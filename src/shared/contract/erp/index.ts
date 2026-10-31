@@ -10,3 +10,4 @@ export * from './hub';
 export * from './boq-control';
 export * from './ledger';
 export * from './price-reference';
+export * from './quotations';
