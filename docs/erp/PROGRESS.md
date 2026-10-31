@@ -13,7 +13,7 @@
 | WP | Title | Model | Status | Commit | Notes |
 |---|---|---|---|---|---|
 | WP-01 | i18n foundation (locale, format, parity, lint) | opus | done | 3adace6 | migration `0006_wp01_user_locale`; `amountInWords` เลื่อนไป WP-02 (D-52) |
-| WP-02 | ไลบรารีเงิน ภาษี วันที่ | opus | done | COMMIT_HASH | ไม่มี migration; `round2` ย้ายไป `src/domain/money/money.ts`; `amountInWords(v, locale)` ใน `src/i18n/format.ts` (D-52) |
+| WP-02 | ไลบรารีเงิน ภาษี วันที่ | opus | done | cad77d2 | ไม่มี migration; `round2` ย้ายไป `src/domain/money/money.ts`; `amountInWords(v, locale)` ใน `src/i18n/format.ts` (D-52) |
 | WP-03 | Module registry, flag 4 ชั้น, entitlement, ModuleAccess (backend + contract) | opus | todo | | |
 | WP-04 | หน้าโมดูลและทดลองใช้ (web) | sonnet | todo | | |
 | WP-05 | บทบาทและสิทธิ์ ERP | opus | todo | | |
@@ -195,7 +195,7 @@
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน (นอกจาก `.next/*` เก่า); eslint ไฟล์ที่แก้ทั้ง backend/web ผ่าน 0 error; `node scripts/i18n/check-parity.mjs` exit 0 (ลบคีย์ en หนึ่งตัวในสำเนา → exit 1); `npx vitest run src/i18n src/features/cloud/api` 16 ผ่าน; `cd backend && npx jest src/modules/identity` 188 ผ่าน; `npx jest --config test/jest-e2e.config.js test/e2e/auth.e2e-spec.ts` 21 ผ่าน; `next dev` ชั่วคราว: ไม่มี cookie → `<html lang="th">` + title/เมนู/footer ไทยเดิม; `NEXT_LOCALE=en` → `<html lang="en">`, title และเมนู `nav` อังกฤษ (ปิด server แล้ว)
 - review (fix(erp): WP-01 review fixes): `setLocale` บันทึกโปรไฟล์ก่อน ไม่สำเร็จ = ไม่เปลี่ยน (D-57) + ข้อความ `account.languageSaveFailed` ใหม่; `shell.openMenu` ("เปิดเมนู" ไม่มีในโค้ดเดิม) → `shell.menu` = `เมนู` ตรงกับ `aria-label` เดิมที่ Robot ใช้เป็น locator; `formatDate` en แสดง `Sep` เสมอ (ICU ≥ 72 ของ en-GB ให้ `Sept`) — ตรวจ: tsc ทั้งสองฝั่งผ่าน, eslint ผ่าน, parity ผ่าน, vitest `src/i18n src/features/cloud/api` 16 ผ่าน, `next build` ผ่าน (ทุก route เป็น dynamic ตามคาด; `.next` ถูกสร้างใหม่ error `.next/types` เก่าหายแล้ว), ลอง probe ไฟล์ใต้ `(app)/hub`, `(print)`, `(app)/workspace/numbering` → eslint จับไทยครบ (ลบ probe แล้ว)
 
-### WP-02 — ไลบรารีเงิน ภาษี วันที่ (COMMIT_HASH)
+### WP-02 — ไลบรารีเงิน ภาษี วันที่ (cad77d2)
 - สร้าง: `src/domain/money/money.ts` (`MONEY_MAX`, `round2`, `roundQty`, `sumMoney`, `pctOf`, `allocate`), `tax.ts` (`THAI_VAT_RATE`, `vatOf`, `splitVatInclusive` → `VatSplit`, `whtOf`, `WHT_PRESETS`, `WhtPresetKey`, `WHT_PRESET_KEYS`), `amount-in-words.ts` (`amountInWordsEn`), `index.ts`; `src/domain/dates/business-date.ts` (`bangkokToday`, `isBusinessDate`, `addDays`, `addMonths`, `daysBetween`, `compareDates`, `payPeriodOf`, type `PayPeriod`); `src/domain/erp/tax-id.ts` (`isThaiTaxId`); `amountInWords(value, locale)` ใน `src/i18n/format.ts` (th = `bahtText`, en = `amountInWordsEn`) ตาม D-52
 - `src/domain/subcontracting/snapshot.ts` import + re-export `round2` จาก `../money/money` (สูตรเดิมตรงตัว; เทสต์ยืนยันว่าเป็นฟังก์ชันเดียวกัน)
 - เทสต์: `src/domain/money/__tests__/{money,tax,amount-in-words}.test.ts`, `src/domain/dates/__tests__/business-date.test.ts`, `src/domain/erp/__tests__/tax-id.test.ts`, เพิ่มเคส `amountInWords` ใน `src/i18n/__tests__/format.test.ts`
