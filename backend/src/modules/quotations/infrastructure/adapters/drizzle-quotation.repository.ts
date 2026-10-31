@@ -1,6 +1,6 @@
 import type { QuotationLineKind, QuotationVersionStatus } from '@contrack/contract';
 import type { DetailLevel, QuotationFormat } from '@contrack/domain/quotation';
-import { and, asc, desc, eq, inArray, lt } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lt, lte } from 'drizzle-orm';
 import { type ProjectId, type WorkspaceId, asProjectId, asUserId, asWorkspaceId } from '../../../../shared/domain/ids';
 import type { DatabaseContext } from '../../../../shared/infrastructure/database/database';
 import {
@@ -147,6 +147,15 @@ export class DrizzleQuotationRepository extends QuotationRepository {
             .where(and(eq(qtQuotationVersions.status, 'issued'), lt(qtQuotationVersions.validUntil, today)))
             .limit(limit);
         return rows.map(r => ({ id: r.id, workspaceId: asWorkspaceId(r.workspaceId) }));
+    }
+
+    async issuedValidBetween(workspaceId: WorkspaceId, from: string, to: string): Promise<QuotationVersionRecord[]> {
+        const rows = await this.ctx.executor.select().from(qtQuotationVersions)
+            .where(and(
+                eq(qtQuotationVersions.workspaceId, workspaceId), eq(qtQuotationVersions.status, 'issued'),
+                gte(qtQuotationVersions.validUntil, from), lte(qtQuotationVersions.validUntil, to),
+            ));
+        return rows.map(toVersion);
     }
 
     async deleteByProject(): Promise<void> {

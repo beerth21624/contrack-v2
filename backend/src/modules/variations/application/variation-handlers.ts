@@ -3,7 +3,8 @@
 import { Injectable } from '@nestjs/common';
 import { type ProjectRollup, VARIATION_OPEN_STATUSES, type VariationLinkPayload } from '@contrack/contract';
 import {
-    type ApprovalDecidedEvent, AuditLog, Clock, type CustomerLinkRespondInput, type CustomerLinkSubjectView, ModuleFlags, UnitOfWork,
+    type ApprovalDecidedEvent, AuditLog, Clock, type CustomerLinkRespondInput, type CustomerLinkSubjectView, ModuleFlags, type PortalContext,
+    type PortalTaskItem, UnitOfWork,
 } from '../../../shared/application/ports';
 import { DomainError } from '../../../shared/domain/domain-error';
 import type { ProjectId, WorkspaceId } from '../../../shared/domain/ids';
@@ -104,5 +105,22 @@ export class VariationHandlers {
         if (!(await this.flags.isEnabled(workspaceId, MODULE))) return [];
         const accepted = (await this.repo.listByProject(workspaceId, projectId)).filter(v => v.status === 'accepted').length;
         return accepted > 0 ? [{ reason: 'variations', count: accepted }] : [];
+    }
+
+    // ── portal (WP-35) ──
+
+    /** VOs sent to the customer and not answered yet, of the workspace's live projects. */
+    async portalAwaitingCustomer(ctx: PortalContext): Promise<PortalTaskItem[]> {
+        if (!(await this.flags.isEnabled(ctx.workspaceId, MODULE))) return [];
+        return (await this.repo.listByProjects(ctx.workspaceId, [...ctx.projects.keys()]))
+            .filter(v => v.status === 'submitted')
+            .map(v => ({
+                kind: 'variation_awaiting_customer' as const,
+                params: { number: v.number ?? '', title: v.title },
+                href: `/p/${v.projectId}/variations/${v.id}`,
+                dueDate: null,
+                amount: v.sellTotal,
+                projectId: v.projectId,
+            }));
     }
 }

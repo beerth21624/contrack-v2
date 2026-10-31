@@ -9,6 +9,7 @@ import type {
     CostCategory, CostCodeSource, CostCodeStatus, CostEntryKind, CustomerLinkAction, CustomerLinkSubject, DocLanguage, DocType, FileDto,
     FilePurpose, FinCounterpartyType, FinDirection, FinEventType, HubProjectFields, HubProjectStatus, ModuleId, Permission, ProjectRollup, ProjectType,
 } from '@contrack/contract';
+import type { EntitlementStatus, PortalTaskKind, SearchHit } from '@contrack/contract';
 import type {
     ContractMilestoneKind, ContractMilestoneSource, ContractMilestoneStatus, ContractMilestoneTrigger, ContractVariationBilling,
     MainContractBillingMode, MainContractStatus, MainContractTerms, MilestoneTemplateItem,
@@ -763,6 +764,87 @@ export class HubRollups {
     sources(): readonly { module: ModuleId; source: HubRollupSource }[] {
         return this.entries;
     }
+}
+
+// ─── Portal (WP-35, docs/erp/02-domain-model.md §6): tasks and global search gathered from the modules ───
+
+/** Who asks, and the workspace's live projects (not archived), read once by the portal for every source. */
+export interface PortalContext {
+    workspaceId: WorkspaceId;
+    userId: UserId;
+    role: Role;
+    /** Bangkok business date. */
+    today: string;
+    /** Names of the workspace's projects that are not archived (tasks of other projects are left out). */
+    projects: ReadonlyMap<ProjectId, string>;
+}
+
+/** One task as a source returns it (`projectName` is filled by the portal from `projects`). */
+export interface PortalTaskItem {
+    kind: PortalTaskKind;
+    params: Record<string, string | number>;
+    href: string;
+    dueDate: string | null;
+    amount: number | null;
+    projectId: ProjectId | null;
+}
+
+export type PortalSource = (ctx: PortalContext) => Promise<PortalTaskItem[]>;
+
+/**
+ * Provided by core: task sources registered by modules in `onModuleInit`. The portal calls a source only when its
+ * module is active for the workspace and the caller's role holds `permission` (when given); a source still returns
+ * `[]` when its module is off.
+ */
+export class PortalSources {
+    private readonly entries: { module: ModuleId; permission: Permission | null; source: PortalSource }[] = [];
+
+    register(module: ModuleId, permission: Permission | null, source: PortalSource): void {
+        this.entries.push({ module, permission, source });
+    }
+
+    sources(): readonly { module: ModuleId; permission: Permission | null; source: PortalSource }[] {
+        return this.entries;
+    }
+}
+
+export interface SearchContext {
+    workspaceId: WorkspaceId;
+    userId: UserId;
+    role: Role;
+    /** Trimmed, 1–100 characters; sources match it case-insensitively. */
+    q: string;
+    limit: number;
+}
+
+export type SearchSource = (ctx: SearchContext) => Promise<SearchHit[]>;
+
+/** Provided by core: search sources (same calling rules as PortalSources). */
+export class SearchSources {
+    private readonly entries: { module: ModuleId; permission: Permission | null; source: SearchSource }[] = [];
+
+    register(module: ModuleId, permission: Permission | null, source: SearchSource): void {
+        this.entries.push({ module, permission, source });
+    }
+
+    sources(): readonly { module: ModuleId; permission: Permission | null; source: SearchSource }[] {
+        return this.entries;
+    }
+}
+
+/** One module's four-layer state for a workspace (the module page's view without the switch row). */
+export interface ModuleStateInfo {
+    module: ModuleId;
+    available: boolean;
+    active: boolean;
+    entitlementStatus: EntitlementStatus;
+    entitlementExpiresAt: Date | null;
+    trialAvailable: boolean;
+}
+
+/** Provided by platform: every module's state for a workspace (MODULE_IDS order). No access check. */
+export abstract class ModuleStatesLookup {
+    abstract forWorkspace(workspaceId: WorkspaceId): Promise<ModuleStateInfo[]>;
 }
 
 // ── BOQ history (WP-17, docs/erp/01-architecture.md §11) ──

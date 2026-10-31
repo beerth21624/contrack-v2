@@ -2,18 +2,18 @@
 // Quotations of a project built from a BOQ version (BoqVersionSource, boq-control) and priced by src/domain/quotation;
 // issue through the approval `quotation.issue` (Approvals) and numbering (DocumentNumbering, docType `quotation`);
 // answers from customer links (CustomerLinkHandlers 'quotation') or recorded by the team; project status through
-// ProjectLifecycle (hub). Registers ApprovalHandlers, CustomerLinkHandlers, DailySweeps and ProjectDependents.
+// ProjectLifecycle (hub). Registers ApprovalHandlers, CustomerLinkHandlers, DailySweeps, ProjectDependents and PortalSources.
 // Provides QuotationLookup (accepted versions for main-contracts, WP-26) and QuotationPricingLookup (VO prices, WP-33).
 // Deleting a project with an issued number is refused by numbering's guard, so no ProjectDeletionGuards entry here.
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
 import {
-    ApprovalHandlers, CustomerLinkHandlers, DailySweeps, ProjectDependents, QuotationLookup, QuotationPricingLookup,
+    ApprovalHandlers, CustomerLinkHandlers, DailySweeps, PortalSources, ProjectDependents, QuotationLookup, QuotationPricingLookup,
 } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
 import { QuotationRepository } from './application/ports/quotation.repository';
 import { EXPIRE_SWEEP, QuotationHandlers } from './application/quotation-handlers';
 import { RepositoryQuotationLookup, RepositoryQuotationPricingLookup } from './application/quotation-lookup';
-import { QuotationAccess, QuotationWorkflow } from './application/quotation.service';
+import { MODULE, QuotationAccess, QuotationWorkflow } from './application/quotation.service';
 import {
     CancelQuotationVersionUseCase, CompareQuotationVersionsUseCase, CreateQuotationUseCase, GetQuotationUseCase, GetQuotationVersionUseCase,
     IssueQuotationVersionUseCase, ListQuotationsUseCase, NewQuotationVersionUseCase, PatchQuotationVersionUseCase, QuotationVersionViews,
@@ -57,6 +57,7 @@ export class QuotationsModule implements OnModuleInit {
         private readonly dependents: ProjectDependents,
         private readonly repo: QuotationRepository,
         private readonly handlers: QuotationHandlers,
+        private readonly portal: PortalSources,
     ) {}
 
     onModuleInit(): void {
@@ -69,6 +70,7 @@ export class QuotationsModule implements OnModuleInit {
             onViewed: i => this.handlers.onLinkViewed(i),
         });
         this.sweeps.register(EXPIRE_SWEEP, ctx => this.handlers.expire(ctx));
+        this.portal.register(MODULE, 'quotations.manage', ctx => this.handlers.portalExpiring(ctx));
         // Memory adapter: forget a deleted project's quotations (PostgreSQL drops them with the project).
         this.dependents.register((workspaceId, projectId) => this.repo.deleteByProject(workspaceId, projectId));
     }

@@ -1,10 +1,12 @@
 // ─── What the quotations module plugs into the core registries (wired in QuotationsModule.onModuleInit) ───
-// ApprovalHandlers('quotation.issue'), CustomerLinkHandlers('quotation'), DailySweeps('quotations.expire').
+// ApprovalHandlers('quotation.issue'), CustomerLinkHandlers('quotation'), DailySweeps('quotations.expire'),
+// PortalSources (issued versions expiring within 7 days, WP-35).
 import { Injectable, Logger } from '@nestjs/common';
-import type { QuotationLinkPayload, QuotationResponseAction } from '@contrack/contract';
+import { PORTAL_QUOTATION_EXPIRY_DAYS, type QuotationLinkPayload, type QuotationResponseAction } from '@contrack/contract';
+import { addDays } from '@contrack/domain/dates/business-date';
 import {
     type ApprovalDecidedEvent, AuditLog, Clock, type CustomerLinkRespondInput, type CustomerLinkSubjectView,
-    type CustomerLinkViewedInput, ModuleFlags, type SweepContext, UnitOfWork,
+    type CustomerLinkViewedInput, ModuleFlags, type PortalContext, type PortalTaskItem, type SweepContext, UnitOfWork,
 } from '../../../shared/application/ports';
 import { DomainError } from '../../../shared/domain/domain-error';
 import type { WorkspaceId } from '../../../shared/domain/ids';
@@ -148,5 +150,28 @@ export class QuotationHandlers {
                 this.logger.error(`expiring quotation version ${ref.id} failed: ${e instanceof Error ? e.message : String(e)}`);
             }
         }
+    }
+
+    // ── portal ──
+
+    /** Issued versions whose `validUntil` is today … today + 7 days (of the workspace's live projects). */
+    async portalExpiring(ctx: PortalContext): Promise<PortalTaskItem[]> {
+        if (!(await this.flags.isEnabled(ctx.workspaceId, MODULE))) return [];
+        const versions = (await this.repo.issuedValidBetween(ctx.workspaceId, ctx.today, addDays(ctx.today, PORTAL_QUOTATION_EXPIRY_DAYS)))
+            .filter(v => ctx.projects.has(v.projectId));
+        const out: PortalTaskItem[] = [];
+        for (const v of versions) {
+            const q = await this.repo.findQuotation(v.quotationId);
+            if (q?.workspaceId !== ctx.workspaceId) continue;
+            out.push({
+                kind: 'quotation_expiring',
+                params: { number: v.number ?? q.number ?? '', title: q.title, versionNo: v.versionNo },
+                href: `/p/${v.projectId}/quotations/${q.id}`,
+                dueDate: v.validUntil,
+                amount: v.totals.grandTotal,
+                projectId: v.projectId,
+            });
+        }
+        return out;
     }
 }

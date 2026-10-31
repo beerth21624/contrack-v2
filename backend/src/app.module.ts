@@ -28,6 +28,7 @@ import { QuotationsModule } from './modules/quotations/quotations.module';
 import { MainContractsModule } from './modules/main-contracts/main-contracts.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { VariationsModule } from './modules/variations/variations.module';
+import { PortalModule } from './modules/portal/portal.module';
 
 @Module({})
 export class AppModule {
@@ -51,6 +52,7 @@ export class AppModule {
                 MainContractsModule,
                 BillingModule,
                 VariationsModule,
+                PortalModule,
             ],
             controllers: [HealthController],
             providers: [

@@ -94,5 +94,7 @@ export abstract class QuotationRepository {
     /** Issued versions (every workspace) whose `valid_until` is before `today`. */
     abstract issuedValidBefore(today: string, limit: number): Promise<ExpiredVersionRef[]>;
     /** Memory adapter only (PostgreSQL cascades from projects). */
+    /** Issued versions of the workspace whose `valid_until` is within [from, to] (portal, WP-35). */
+    abstract issuedValidBetween(workspaceId: WorkspaceId, from: string, to: string): Promise<QuotationVersionRecord[]>;
     abstract deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void>;
 }

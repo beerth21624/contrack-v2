@@ -88,6 +88,11 @@ export class InMemoryQuotationRepository extends QuotationRepository {
             .map(v => ({ id: v.id, workspaceId: v.workspaceId })));
     }
 
+    issuedValidBetween(workspaceId: WorkspaceId, from: string, to: string): Promise<QuotationVersionRecord[]> {
+        return Promise.resolve([...this.versions.values()].filter(v => v.workspaceId === workspaceId && v.status === 'issued'
+            && v.validUntil !== null && v.validUntil >= from && v.validUntil <= to));
+    }
+
     deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void> {
         for (const v of [...this.versions.values()]) {
             if (v.workspaceId === workspaceId && v.projectId === projectId) {

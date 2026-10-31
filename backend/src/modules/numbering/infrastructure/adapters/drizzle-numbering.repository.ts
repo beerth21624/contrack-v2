@@ -1,4 +1,4 @@
-import { and, count, eq, max, notInArray, sql } from 'drizzle-orm';
+import { and, count, desc, eq, max, notInArray, sql } from 'drizzle-orm';
 import { DOC_TYPES, type DocType } from '@contrack/contract';
 import { type ProjectId, type UserId, type WorkspaceId, asUserId } from '../../../../shared/domain/ids';
 import type { DatabaseContext } from '../../../../shared/infrastructure/database/database';
@@ -179,6 +179,15 @@ export class DrizzleNumberingRepository extends NumberingRepository {
         await this.ctx.executor.update(issuedDocuments)
             .set({ status: 'voided', voidedBy: by, voidedAt: at, voidReason: reason })
             .where(and(eq(issuedDocuments.workspaceId, workspaceId), eq(issuedDocuments.id, id)));
+    }
+
+    async searchNumbers(workspaceId: WorkspaceId, q: string, limit: number): Promise<IssuedDocumentRecord[]> {
+        const like = `%${q.replace(/[\\%_]/g, m => `\\${m}`)}%`;
+        const rows = await this.ctx.executor.select().from(issuedDocuments)
+            .where(and(eq(issuedDocuments.workspaceId, workspaceId), sql`${issuedDocuments.number} ilike ${like}`))
+            .orderBy(desc(issuedDocuments.issuedAt))
+            .limit(limit);
+        return rows.filter(r => KNOWN.has(r.docType)).map(toIssued);
     }
 
     async countBlocking(workspaceId: WorkspaceId, projectId: ProjectId | null, exemptTypes: readonly DocType[]): Promise<number> {

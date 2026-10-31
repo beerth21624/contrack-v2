@@ -2,7 +2,7 @@
 import { Global, Module, type DynamicModule, type OnApplicationShutdown, type OnModuleInit, type Provider, Inject, Optional } from '@nestjs/common';
 import {
     ApprovalHandlers, BaselineUnlockGuards, BoqEditLocks, Clock, CustomerLinkHandlers, DailySweeps, HubRollups, IdGenerator, ModuleWorkRegistry,
-    ProjectDeletionGuards, ProjectDependents, RevisionHooks, UnitOfWork, WorkspaceDeletionGuards,
+    PortalSources, ProjectDeletionGuards, ProjectDependents, RevisionHooks, SearchSources, UnitOfWork, WorkspaceDeletionGuards,
 } from '../application/ports';
 import { AppConfig, type Env } from './config/env';
 import { DatabaseContext, DrizzleUnitOfWork, InMemoryUnitOfWork, createDatabase, createPool } from './database/database';
@@ -56,6 +56,8 @@ export class CoreModule {
             { provide: WorkspaceDeletionGuards, useValue: new WorkspaceDeletionGuards() },
             { provide: CustomerLinkHandlers, useValue: new CustomerLinkHandlers() },
             { provide: HubRollups, useValue: new HubRollups() },
+            { provide: PortalSources, useValue: new PortalSources() },
+            { provide: SearchSources, useValue: new SearchSources() },
             { provide: RevisionHooks, useValue: new RevisionHooks() },
             { provide: BoqEditLocks, useValue: new BoqEditLocks() },
             { provide: BaselineUnlockGuards, useValue: new BaselineUnlockGuards() },
@@ -79,7 +81,7 @@ export class CoreModule {
             providers,
             exports: [
                 AppConfig, Clock, IdGenerator, UnitOfWork, ProjectDependents, ModuleWorkRegistry, ApprovalHandlers, DailySweeps,
-                ProjectDeletionGuards, WorkspaceDeletionGuards, CustomerLinkHandlers, HubRollups, RevisionHooks,
+                ProjectDeletionGuards, WorkspaceDeletionGuards, CustomerLinkHandlers, HubRollups, PortalSources, SearchSources, RevisionHooks,
                 BoqEditLocks, BaselineUnlockGuards,
                 ...(config.persistence === 'postgres' ? [DatabaseContext] : []),
             ],

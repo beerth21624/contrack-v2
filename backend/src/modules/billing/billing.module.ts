@@ -6,13 +6,15 @@
 // receipt or ahead, credit notes (`CN`), AR aging, customer statement, PromptPay payload.
 // Registers ApprovalHandlers('claim.submit'), HubRollups (billedToDate, receivedToDate, overdueReceivable),
 // BaselineUnlockGuards, ProjectDeletionGuards, ProjectDependents, CustomerLinkHandlers('invoice') and the daily sweeps
-// `billing.invoice-due` / `billing.retention-release-due`; provides the BillingTotals port (global).
+// `billing.invoice-due` / `billing.retention-release-due`, PortalSources (overdue invoices, claimable milestones; WP-35);
+// provides the BillingTotals port (global).
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
 import {
-    ApprovalHandlers, BaselineUnlockGuards, BillingTotals, CustomerLinkHandlers, DailySweeps, HubRollups, ProjectDeletionGuards,
+    ApprovalHandlers, BaselineUnlockGuards, BillingTotals, CustomerLinkHandlers, DailySweeps, HubRollups, PortalSources, ProjectDeletionGuards,
     ProjectDependents,
 } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
+import { BillingPortal } from './application/billing-portal';
 import { BillingViews } from './application/billing-views';
 import { BillingAccess, BillingHandlers, ClaimCalculator, InvoiceIssuer, MODULE } from './application/billing.service';
 import { BillingRepository } from './application/ports/billing.repository';
@@ -45,6 +47,7 @@ import { BillingController } from './presentation/billing.controller';
         InvoiceIssuer,
         BillingViews,
         BillingHandlers,
+        BillingPortal,
         ListClaimsUseCase,
         GetClaimUseCase,
         CreateClaimUseCase,
@@ -88,6 +91,8 @@ export class BillingModule implements OnModuleInit {
         private readonly links: CustomerLinkHandlers,
         private readonly sweeps: DailySweeps,
         private readonly receivables: ReceivablesHandlers,
+        private readonly portal: PortalSources,
+        private readonly portalTasks: BillingPortal,
     ) {}
 
     onModuleInit(): void {
@@ -98,6 +103,8 @@ export class BillingModule implements OnModuleInit {
         this.links.register('invoice', { permission: 'billing.read', view: (ws, id) => this.receivables.linkView(ws, id) });
         this.sweeps.register(INVOICE_DUE_SWEEP, ctx => this.receivables.invoiceDue(ctx));
         this.sweeps.register(RETENTION_DUE_SWEEP, ctx => this.receivables.retentionDue(ctx));
+        this.portal.register(MODULE, 'billing.receive', ctx => this.portalTasks.overdueInvoices(ctx));
+        this.portal.register(MODULE, 'billing.manage', ctx => this.portalTasks.claimableMilestones(ctx));
         // Memory adapter: forget a deleted project's billing rows (PostgreSQL drops them with the project).
         this.dependents.register((workspaceId, projectId) => this.repo.deleteByProject(workspaceId, projectId));
     }

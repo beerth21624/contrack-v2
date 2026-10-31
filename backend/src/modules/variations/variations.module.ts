@@ -3,11 +3,12 @@
 // (BaselineControl), priced with the accepted quotation's sell factors (QuotationPricingLookup); submit through the
 // approval `variation.submit` (Approvals) and numbering (docType `variation`); answers from customer links or recorded
 // with evidence; acceptance applies to the contract (MainContracts), the cost codes (CostCodeLookup) and the project's
-// planned finish (ProjectLifecycle). Registers ApprovalHandlers, CustomerLinkHandlers, HubRollups, BaselineUnlockGuards
-// and ProjectDependents. Deleting a project with a VO number is refused by numbering's guard.
+// planned finish (ProjectLifecycle). Registers ApprovalHandlers, CustomerLinkHandlers, HubRollups, BaselineUnlockGuards,
+// ProjectDependents and PortalSources (VOs waiting for the customer). Deleting a project with a VO number is refused
+// by numbering's guard.
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
 import {
-    ApprovalHandlers, BaselineUnlockGuards, CustomerLinkHandlers, HubRollups, ProjectDependents,
+    ApprovalHandlers, BaselineUnlockGuards, CustomerLinkHandlers, HubRollups, PortalSources, ProjectDependents,
 } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
 import { VariationRepository } from './application/ports/variation.repository';
@@ -55,6 +56,7 @@ export class VariationsModule implements OnModuleInit {
         private readonly dependents: ProjectDependents,
         private readonly repo: VariationRepository,
         private readonly handlers: VariationHandlers,
+        private readonly portal: PortalSources,
     ) {}
 
     onModuleInit(): void {
@@ -67,6 +69,7 @@ export class VariationsModule implements OnModuleInit {
         });
         this.rollups.register(MODULE, (ws, projectIds) => this.handlers.rollup(ws, projectIds));
         this.unlockGuards.register((ws, projectId) => this.handlers.unlockBlockers(ws, projectId));
+        this.portal.register(MODULE, 'variations.manage', ctx => this.handlers.portalAwaitingCustomer(ctx));
         // Memory adapter: forget a deleted project's variations (PostgreSQL drops them with the project).
         this.dependents.register((workspaceId, projectId) => this.repo.deleteByProject(workspaceId, projectId));
     }

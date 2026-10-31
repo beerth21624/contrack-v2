@@ -57,6 +57,9 @@ export abstract class NumberingRepository {
     abstract insertIssued(record: IssuedDocumentRecord): Promise<void>;
     abstract markVoided(workspaceId: WorkspaceId, id: string, by: UserId, at: Date, reason: string): Promise<void>;
 
+    /** Numbers of the workspace containing `q` (case-insensitive), newest first, at most `limit` (global search, WP-35). */
+    abstract searchNumbers(workspaceId: WorkspaceId, q: string, limit: number): Promise<IssuedDocumentRecord[]>;
+
     /** Numbers (issued or voided) of other types than `exemptTypes`, of one project or (null) of the whole workspace. */
     abstract countBlocking(workspaceId: WorkspaceId, projectId: ProjectId | null, exemptTypes: readonly DocType[]): Promise<number>;
 }

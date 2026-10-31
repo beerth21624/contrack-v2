@@ -82,6 +82,15 @@ export class InMemoryNumberingRepository extends NumberingRepository {
         return Promise.resolve();
     }
 
+    searchNumbers(workspaceId: WorkspaceId, q: string, limit: number): Promise<IssuedDocumentRecord[]> {
+        const needle = q.toLowerCase();
+        return Promise.resolve([...this.issued.values()]
+            .filter(r => r.workspaceId === workspaceId && r.number.toLowerCase().includes(needle))
+            .sort((a, b) => b.issuedAt.getTime() - a.issuedAt.getTime())
+            .slice(0, limit)
+            .map(r => ({ ...r })));
+    }
+
     countBlocking(workspaceId: WorkspaceId, projectId: ProjectId | null, exemptTypes: readonly DocType[]): Promise<number> {
         return Promise.resolve(this.rows(workspaceId)
             .filter(r => !exemptTypes.includes(r.docType) && (projectId === null || r.projectId === projectId)).length);

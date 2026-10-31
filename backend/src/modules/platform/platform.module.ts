@@ -6,7 +6,7 @@
 // filled by the business modules) and DailySweeps (core; DailySweepsRunner runs them).
 import { Global, Module } from '@nestjs/common';
 import { ModuleAccess } from '../../shared/application/module-access';
-import { AppLinks, FileService, ModuleFlags, Notifier, SweepMarks, WorkspaceDirectory } from '../../shared/application/ports';
+import { AppLinks, FileService, ModuleFlags, ModuleStatesLookup, Notifier, SweepMarks, WorkspaceDirectory } from '../../shared/application/ports';
 import { AppConfig } from '../../shared/infrastructure/config/env';
 import { persistence } from '../../shared/infrastructure/core.module';
 import { FileLinkSigner } from './application/ports/file-link-signer.port';
@@ -58,6 +58,7 @@ import { InMemoryWorkspaceEntitlementRepository } from './infrastructure/adapter
 import { InMemoryWorkspaceModuleRepository } from './infrastructure/adapters/in-memory-workspace-module.repository';
 import { LoggingLineSender } from './infrastructure/adapters/logging-line-sender.adapter';
 import { RepositoryModuleFlags } from './infrastructure/adapters/module-flags.adapter';
+import { RepositoryModuleStatesLookup } from './infrastructure/adapters/module-states-lookup.adapter';
 import { SenderNotificationChannels } from './infrastructure/adapters/notification-channels.adapter';
 import { ConfigAppLinks, UseCaseNotifier } from './infrastructure/adapters/notifier.adapter';
 import { ConsoleSmsSender, ThaiBulkSmsSender } from './infrastructure/adapters/sms-sender.adapter';
@@ -149,11 +150,12 @@ function smsSender(config: AppConfig): SmsSender {
         TrialExpiringSweep,
         DailySweepsRunner,
         { provide: ModuleFlags, useClass: RepositoryModuleFlags },
+        { provide: ModuleStatesLookup, useClass: RepositoryModuleStatesLookup },
         ModuleAccess,
         { provide: FileService, useClass: RepositoryFileService },
         { provide: Notifier, useClass: UseCaseNotifier },
         { provide: AppLinks, inject: [PlatformSettings], useFactory: (s: PlatformSettings): AppLinks => new ConfigAppLinks(s.publicAppUrl) },
     ],
-    exports: [ModuleFlags, ModuleAccess, FileService, Notifier, AppLinks, SmsSender, SweepMarks],
+    exports: [ModuleFlags, ModuleStatesLookup, ModuleAccess, FileService, Notifier, AppLinks, SmsSender, SweepMarks],
 })
 export class PlatformModule {}
