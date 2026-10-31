@@ -58,7 +58,7 @@ never changes a project. No realtime event: clients refetch after their own writ
 | Method | Path | Body → Response | Permission |
 |---|---|---|---|
 | GET | `/workspaces/:workspaceId/rate-cards` | → `RateCardDto[]` (active only, oldest first) | `rateCards.read` (every role) |
-| POST | `/workspaces/:workspaceId/rate-cards` | `CreateRateCardRequest` → `RateCardDto` (201) | `rateCards.create` (owner, admin, estimator); name taken or 50 active cards → 409 `conflict` with `RateCardConflictDetails` (`{ reason: 'name_taken', name }` / `{ reason: 'limit_reached', limit }`) |
+| POST | `/workspaces/:workspaceId/rate-cards` | `CreateRateCardRequest` → `RateCardDto` (201) | `rateCards.create` (owner, admin, estimator, pm); name taken or 50 active cards → 409 `conflict` with `RateCardConflictDetails` (`{ reason: 'name_taken', name }` / `{ reason: 'limit_reached', limit }`) |
 | PATCH | `/workspaces/:workspaceId/rate-cards/:rateCardId` | `UpdateRateCardRequest` → `RateCardDto` | `rateCards.edit` (owner, admin); any subset of the fields, at least one (`note: null` clears it); an unchanged value is a no-op; an archived card → 404; name taken → 409 `conflict` (`name_taken`) |
 | DELETE | `/workspaces/:workspaceId/rate-cards/:rateCardId` | → 204 | `rateCards.archive` (owner, admin); soft delete (`archived_at`); archiving an archived card again → 204 |
 
@@ -88,10 +88,11 @@ answers 404 `module_disabled` while `workforce` is not in `MODULES_ENABLED`. Not
 project's workspace) → 404 on every route; ids of another workspace (or malformed ids) → 404. No realtime event: clients
 refetch after their own writes.
 
-**Permissions** (`src/shared/domain/permissions.ts`): `workforce.read` every role; `workforce.manage` (people and crews:
-create, edit, archive) owner and admin; `workforce.assign` (crew assignments and site supervisors) owner, admin and
-estimator. **Wages** are hidden in the response mapper by role: a person's `dailyWage` only for owner/admin
-(`workforce.seeWages`); a crew's `dailyCost` and `dailyCostOverride` for owner/admin/estimator (`workforce.seeCrewCost`).
+**Permissions** (`src/shared/contract/permissions.ts`, re-exported by `src/shared/domain/permissions.ts`): `workforce.read`
+every role; `workforce.manage` (people and crews: create, edit, archive) owner, admin and pm; `workforce.assign` (crew
+assignments and site supervisors) owner, admin, estimator, pm and foreman. **Wages** are hidden in the response mapper by
+role: a person's `dailyWage` only for owner/admin/accounting (`workforce.seeWages`); a crew's `dailyCost` and
+`dailyCostOverride` for owner/admin/estimator/pm/accounting (`workforce.seeCrewCost`).
 Hidden values are `null` with `wagesHidden: true`.
 
 **Rules.** People and crews are archived (soft delete, `archived_at`) and leave the lists; lists show active ones, oldest
@@ -129,7 +130,7 @@ assignment write and on PUT supervisors.
 | GET | `/projects/:projectId/supervisors` | → `ProjectSupervisorsDto` `{ projectId, personIds }` | `workforce.read` in the project's workspace (also for an archived project) |
 | PUT | `/projects/:projectId/supervisors` | `PutProjectSupervisorsRequest` `{ personIds }` (≤ 20) → `ProjectSupervisorsDto` | `workforce.assign`; replaces the list (order kept, duplicates dropped, `[]` clears) |
 | GET | `/projects/:projectId/task-lags` | → `ProjectTaskLagsDto` `{ projectId, lags }` | `workforce.read` (every role) in the project's workspace, also for an archived project; `lags` in numeric task order (`"1.9"` before `"1.10"`); `[]` for a project that kept every default |
-| PUT | `/projects/:projectId/task-lags` | `PutProjectTaskLagsRequest` `{ lags }` (≤ 64) → `ProjectTaskLagsDto` | `workforce.assign` (owner/admin/estimator); **replaces all** of the project's overrides (tasks left out are deleted, `[]` clears them); archived project → 409 `conflict` |
+| PUT | `/projects/:projectId/task-lags` | `PutProjectTaskLagsRequest` `{ lags }` (≤ 64) → `ProjectTaskLagsDto` | `workforce.assign` (owner/admin/estimator/pm/foreman); **replaces all** of the project's overrides (tasks left out are deleted, `[]` clears them); archived project → 409 `conflict` |
 | GET | `/workspaces/:workspaceId/task-lags` | → `WorkspaceTaskLagsDto` `[{ projectId, lags }]` | `workforce.read`; every **non-archived** project of the workspace **that has at least one override** (a project without one is left out: its waits are all the defaults), by project id, each in task order. For the crew board |
 
 ### Waiting windows after planned tasks (ช่วงรอ, W2)
