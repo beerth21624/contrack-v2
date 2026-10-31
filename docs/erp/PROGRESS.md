@@ -39,7 +39,7 @@
 | WP-25 | Quotation เอกสารพิมพ์ TH/EN + หน้าลูกค้า | sonnet | done | df51c70 | `print-model.ts`, `QuotationPrintDocument`, `GovernmentForms`, `QuotationPrintPage`, `QuotationCustomerView` (renderer ลิงก์), route `/print/quotation/[versionId]`, ปุ่มพิมพ์ในตัวแก้ไข; i18n `documents.quotation/government`; D-201…D-203 |
 | WP-26 | สัญญาหลัก backend | opus | done | 4723693 | migration `0021_wp26_main_contracts`; โมดูล `main-contracts`, ports `MainContracts` + `QuotationLookup`, `html-sanitize.ts` + `main-contract-template.ts`; D-204…D-217 |
 | WP-27 | สัญญาหลัก web + พิมพ์สัญญา | sonnet | done | 524d852 | `src/features/erp/contracts/*` (ContractPage, ContractWizard, TermsForm, MilestonesEditor, GuaranteesCard, SignDialog, print-model, ContractPrintDocument/Page), routes `/p/[projectId]/contract` + `/print/contract/[contractId]`, แท็บ `contract`; i18n `contracts`, `enums.contractStatus|milestoneKind|milestoneStatus|guarantee*|retentionRelease|penaltyBase`, `documents.contract`; D-218…D-221 |
-| WP-28 | Billing domain คำนวณ | opus | done | COMMIT | `src/domain/billing/*` (claim, advance, retention, penalty, escalation, tax-invoice, aging), `src/domain/payments/promptpay.ts`; D-222…D-226 |
+| WP-28 | Billing domain คำนวณ | opus | done | e60a390 | `src/domain/billing/*` (claim, advance, retention, penalty, escalation, tax-invoice, aging), `src/domain/payments/promptpay.ts`; D-222…D-226 |
 | WP-29 | งวดเบิก + ใบแจ้งหนี้ backend | opus | todo | | |
 | WP-30 | รับเงิน ใบกำกับภาษี ลูกหนี้ เตือน PromptPay backend | opus | todo | | |
 | WP-31 | Billing web | sonnet | todo | | |
@@ -736,7 +736,7 @@
 - WP ถัดไปต้องรู้: ลิงก์ไปสัญญา `/p/<id>/contract`, พิมพ์ `/print/contract/<contractId>`; `useContractPrintModel(contract)` ใช้ซ้ำได้; ยังไม่มีปุ่ม "ส่งมอบ/complete" (เป็นของ WP-53) — หน้าสัญญาแสดงปุ่มปิดสัญญาเมื่อสถานะ `completed`; ยังไม่มี UI แก้ `bodyTh/bodyEn` (D-221) และไม่มีเงินล่วงหน้า/วางบิล (WP-29)
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/features/erp/contracts` + route ใหม่ + `nav-registry.ts` ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/features/erp/hub src/i18n` ผ่าน; ยังไม่ได้เปิดเบราว์เซอร์/พิมพ์จริงกับ backend
 
-### WP-28 — Billing domain คำนวณ (COMMIT)
+### WP-28 — Billing domain คำนวณ (e60a390)
 - สร้าง (pure ไม่มี IO): `src/domain/billing/claim.ts` (`claimLine`, `claimLineIssues`, `computeClaim` → `ClaimBreakdown`, `invoiceAmountsFromClaim`, `advanceInvoiceAmounts`, `retentionReleaseInvoiceAmounts`; types `ClaimTerms`, `ClaimInput`, `ClaimLineInput`/`ClaimLine`, `InvoiceAmounts`), `advance.ts` (`advanceTotals`, `advanceRecovery`), `retention.ts` (`arRetentionTotals`, `retentionCap`, `claimRetention`, `retentionReleasePlan`), `penalty.ts` (`penaltyBaseValue`, `penaltyCapLeft`, `claimPenalty` → `{baseValue, computed, max, amount}`), `escalation.ts` (`escalationK`, `escalationAmount`), `tax-invoice.ts` (`invoiceDue`, `invoiceOutstanding`, `invoiceSettlementStatus`, `taxInvoiceForReceipt`, `remainingTaxInvoice`), `aging.ts` (`AGING_BUCKETS`, `daysOverdue`, `agingBucket`, `agingSummary`), `index.ts`; `src/domain/payments/promptpay.ts` (`crc16Ccitt`, `promptPayIdKind`, `promptPayPayload`)
 - migration: ไม่มี (WP-29 ได้ `0022_*`)
 - เบี่ยงจากแผน: ไม่เขียนเทสต์ (คำสั่งเจ้าของ: ส่งของก่อน) — ตรวจด้วยสคริปต์ชั่วคราวแทน; D-222 … D-226
