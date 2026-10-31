@@ -4,7 +4,7 @@
 import type {
     AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDeletedEvent, ProjectDocDto, ProjectUpdatedEvent, Role,
 } from '@contrack/contract';
-import type { FileDto, FilePurpose, ModuleId } from '@contrack/contract';
+import type { ApprovalDecision, ApprovalStatus, ApprovalSubject, FileDto, FilePurpose, ModuleId } from '@contrack/contract';
 import type { DomainError } from '../domain/domain-error';
 import type { ProjectId, RateCardId, UserId, WorkspaceId } from '../domain/ids';
 import type { Result } from '../domain/result';
@@ -222,11 +222,18 @@ export abstract class WorkspaceDirectory {
     abstract personalWorkspaceOf(userId: UserId): Promise<WorkspaceId | undefined>;
     /** User ids of every member of a workspace (notification recipients). */
     abstract memberIds(workspaceId: WorkspaceId): Promise<UserId[]>;
+    /** Every member of a workspace with their role (who may approve, docs/erp/01-architecture.md §6.3). */
+    abstract members(workspaceId: WorkspaceId): Promise<WorkspaceMember[]>;
     /**
      * Platform admin search: workspaces whose name contains `q` (case-insensitive) or whose id is `q`; empty `q` = every
      * workspace. Newest first, at most `limit`.
      */
     abstract search(q: string, limit: number): Promise<WorkspaceSummary[]>;
+}
+
+export interface WorkspaceMember {
+    userId: UserId;
+    role: Role;
 }
 
 export interface WorkspaceSummary {
@@ -276,4 +283,90 @@ export class ModuleWorkRegistry {
         }
         return out;
     }
+}
+
+// ─── Approvals and audit (ERP foundation, docs/erp/01-architecture.md §6, §10). Implemented by src/modules/approvals and
+// src/modules/audit; ApprovalHandlers lives in core. ───
+
+export interface ApprovalRequestInput {
+    workspaceId: WorkspaceId;
+    subject: ApprovalSubject;
+    /** The document waiting for approval (purchase order id, claim id, …). */
+    subjectId: string;
+    projectId: ProjectId | null;
+    /** Baht (round2) compared with the policy's `minAmount`; null = the document has no amount. */
+    amount: number | null;
+    /** Shown in the inbox, e.g. the document number or name. */
+    title: string;
+    requestedBy: UserId;
+    requesterRole: Role;
+}
+
+export interface ApprovalTicket {
+    requestId: string;
+    status: 'approved' | 'pending';
+    /** Approved by the auto-skip rules: the caller applies the outcome itself, in the same transaction. */
+    auto: boolean;
+}
+
+/**
+ * Provided by approvals. `request` runs inside the caller's `uow.run` and answers `approved` at once when an auto-skip
+ * rule applies (a solo owner never sees an approval step); every call stores a request row for the audit trail.
+ * While a request of the same (subject, subjectId) is pending: conflict `approval_pending`.
+ */
+export abstract class Approvals {
+    abstract request(input: ApprovalRequestInput): Promise<Result<ApprovalTicket, DomainError>>;
+    /** Cancels the pending request of a document (e.g. the draft was withdrawn); nothing when none is pending. */
+    abstract cancel(workspaceId: WorkspaceId, subject: ApprovalSubject, subjectId: string, by: UserId): Promise<void>;
+    /** Status of the latest request of a document; undefined when it was never sent. */
+    abstract statusOf(workspaceId: WorkspaceId, subject: ApprovalSubject, subjectId: string): Promise<ApprovalStatus | undefined>;
+}
+
+export interface ApprovalDecidedEvent {
+    workspaceId: WorkspaceId;
+    projectId: ProjectId | null;
+    requestId: string;
+    subjectId: string;
+    decision: ApprovalDecision;
+    decidedBy: UserId;
+    note: string;
+}
+
+export interface ApprovalHandler {
+    /**
+     * Runs inside the transaction of the decision: changes the document's status, issues its number, posts the ledger.
+     * An error rolls the decision back (the request stays pending). Do nothing (ok) while the module is not active.
+     */
+    onDecided(e: ApprovalDecidedEvent): Promise<Result<void, DomainError>>;
+}
+
+/** Provided by core: the module that owns a subject registers its handler once, at start-up (`onModuleInit`). */
+export class ApprovalHandlers {
+    private readonly handlers = new Map<ApprovalSubject, ApprovalHandler>();
+
+    register(subject: ApprovalSubject, handler: ApprovalHandler): void {
+        if (this.handlers.has(subject)) throw new Error(`An approval handler for "${subject}" is already registered`);
+        this.handlers.set(subject, handler);
+    }
+
+    handlerOf(subject: ApprovalSubject): ApprovalHandler | undefined {
+        return this.handlers.get(subject);
+    }
+}
+
+export interface AuditEntry {
+    workspaceId: WorkspaceId;
+    projectId: ProjectId | null;
+    /** null = the system (a sweep, a customer link). */
+    actor: UserId | null;
+    entityType: string;
+    entityId: string;
+    action: string;
+    /** Only the changed fields (`{field: [before, after]}`) or a numeric summary, never the whole document. */
+    data: Record<string, unknown>;
+}
+
+/** Provided by audit: append-only trail of money / status actions. Call inside the same `uow.run` as the change. */
+export abstract class AuditLog {
+    abstract record(e: AuditEntry): Promise<void>;
 }

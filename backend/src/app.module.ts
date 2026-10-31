@@ -14,6 +14,8 @@ import { SubcontractingModule } from './modules/subcontracting/subcontracting.mo
 import { AiAssistModule } from './modules/ai-assist/ai-assist.module';
 import { RateCardsModule } from './modules/rate-cards/rate-cards.module';
 import { WorkforceModule } from './modules/workforce/workforce.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { ApprovalsModule } from './modules/approvals/approvals.module';
 
 @Module({})
 export class AppModule {
@@ -24,7 +26,7 @@ export class AppModule {
             // A project's deletion still removes their rows while they are off.
             imports: [
                 CoreModule.forRoot(options), IdentityModule, WorkspacesModule, ProjectsModule, RealtimeModule,
-                PlatformModule, SubcontractingModule, AiAssistModule, RateCardsModule, WorkforceModule,
+                PlatformModule, SubcontractingModule, AiAssistModule, RateCardsModule, WorkforceModule, AuditModule, ApprovalsModule,
             ],
             controllers: [HealthController],
             providers: [

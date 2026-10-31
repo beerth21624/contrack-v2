@@ -2,7 +2,7 @@ import { MODULE_IDS } from '@contrack/contract';
 import { type UserProfile, UserDirectory } from '../../../../shared/application/ports';
 import type { UserId } from '../../../../shared/domain/ids';
 import { AppConfig, testEnv } from '../../../../shared/infrastructure/config/env';
-import { FakeWorkspaceDirectory } from '../../../../shared/testing/platform-fakes';
+import { FakeWorkspaceDirectory, RecordingAuditLog } from '../../../../shared/testing/platform-fakes';
 import { RepositoryModuleFlags } from '../../infrastructure/adapters/module-flags.adapter';
 import { PlatformTestKit, errorOf, outcome, valueOf } from '../../testing/platform-test-kit';
 import { PlatformAdminAccess } from '../platform-admin-access';
@@ -52,6 +52,7 @@ describe('platform admin entitlements', () => {
     let kit: PlatformTestKit;
     let dir: FakeWorkspaceDirectory;
     let set: SetEntitlementUseCase;
+    let audit: RecordingAuditLog;
     let list: ListAdminWorkspacesUseCase;
     let trial: StartTrialUseCase;
     let admin: UserId;
@@ -66,7 +67,8 @@ describe('platform admin entitlements', () => {
         users.emails.set(admin, 'OPS@contrack.co.th');
         users.emails.set(other, 'a@b.c');
         const access = new PlatformAdminAccess(users, config('ops@contrack.co.th'));
-        set = new SetEntitlementUseCase(access, dir, kit.entitlements, kit.states, kit.uow, kit.clock);
+        audit = new RecordingAuditLog();
+        set = new SetEntitlementUseCase(access, dir, kit.entitlements, kit.states, kit.uow, kit.clock, audit);
         list = new ListAdminWorkspacesUseCase(access, dir, kit.entitlements, kit.clock);
         trial = new StartTrialUseCase(kit.roles, kit.states, kit.modules, kit.entitlements, kit.uow, kit.clock);
     });
@@ -87,7 +89,11 @@ describe('platform admin entitlements', () => {
         expect(view).toMatchObject({ module: 'project-hub', status: 'purchased', expiresAt: null, note: 'paid' });
         const row = await kit.entitlements.find(s.workspaceId, 'project-hub');
         expect(row?.toProps().grantedBy).toBe(admin);
-        
+        expect(audit.entries).toEqual([{
+            workspaceId: s.workspaceId, projectId: null, actor: admin, entityType: 'entitlement', entityId: 'project-hub', action: 'set',
+            data: { status: [null, 'purchased'], expiresAt: [null, null], note: ['', 'paid'] },
+        }]);
+
         const states = await kit.states.cachedInputs(s.workspaceId);
         expect(states.grants.get('project-hub')?.status).toBe('purchased');
     });

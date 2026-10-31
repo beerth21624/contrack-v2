@@ -85,6 +85,19 @@ switched on (`workspace_modules`) and every dependency (`src/shared/contract/mod
 `ENTITLEMENTS` = `enforce` | `open` (default enforce in production, open elsewhere); `PLATFORM_ADMIN_EMAILS` (WP-07).
 ERP use cases authorize through `ModuleAccess` (`src/shared/application/module-access.ts`): not_found → module_disabled → forbidden.
 
+## approvals and audit (ERP foundation, gated by `project-hub`; WP-08)
+Schemas: `../src/shared/contract/erp/approvals.ts`, `erp/audit.ts`. Requests are created only inside other modules
+(`Approvals.request` port, `docs/erp/01-architecture.md` §6): a solo workspace is approved at once (`auto`, `autoReason`).
+Every route: not a member → 404 `not_found`; `project-hub` not active → 404 `module_disabled`.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/workspaces/:workspaceId/approvals?status=&mine=&limit=&before=` | → `ApprovalListDto` `{ items, nextBefore }` (newest first) | every member; `mine=true` = pending requests the caller may decide (`canDecide`); otherwise all (`audit.read`) or the caller's own / the ones their role may decide; `before` = `nextBefore` of the previous page |
+| POST | `/approvals/:requestId/decide` | `{ decision: approved\|rejected, note? }` → `ApprovalRequestDto` (200) | the caller's role must be an approver of the request and not its requester (unless the policy's `selfApprove`) → else 403; not pending → 409 `{ reason: 'invalid_transition' }`; the owning module's handler runs in the same transaction (its error rolls the decision back and is returned) |
+| GET | `/workspaces/:workspaceId/approval-policies` | → `ApprovalPolicyDto[]` (APPROVAL_SUBJECTS order; `isDefault` = no saved row) | `company.read` |
+| PUT | `/workspaces/:workspaceId/approval-policies/:subject` | `PutApprovalPolicyRequest` `{ enabled, minAmount, approverRoles, selfApprove }` → `ApprovalPolicyDto` | `company.manage`; unknown subject → 404; `owner` is always added to `approverRoles`; new requests only |
+| GET | `/workspaces/:workspaceId/audit?entityType=&entityId=&limit=&before=` | → `AuditListDto` `{ items, nextBefore }` (newest first, `before` = event id) | `audit.read`; append-only trail (approvals, approval policies, entitlements, …) |
+
 ## workforce: crews and people (ทีมช่างและบุคลากร), business module `workforce` (W1)
 Schemas: `../src/shared/contract/workforce.ts`; design: `../docs/workforce/00-crew-management-design.md`. Every route below
 answers 404 `module_disabled` while `workforce` is not in `MODULES_ENABLED`. Not a member of the workspace (or of the

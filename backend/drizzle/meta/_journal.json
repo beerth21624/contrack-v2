@@ -64,6 +64,13 @@
       "when": 1793461876486,
       "tag": "0008_wp05_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793464964157,
+      "tag": "0009_wp08_approvals_audit",
+      "breakpoints": true
     }
   ]
 }

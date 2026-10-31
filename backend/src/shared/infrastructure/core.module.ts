@@ -1,6 +1,6 @@
 // ─── Global infrastructure: config, clock, ids, database, unit of work ───
 import { Global, Module, type DynamicModule, type OnApplicationShutdown, type OnModuleInit, type Provider, Inject, Optional } from '@nestjs/common';
-import { Clock, IdGenerator, ModuleWorkRegistry, ProjectDependents, UnitOfWork } from '../application/ports';
+import { ApprovalHandlers, Clock, IdGenerator, ModuleWorkRegistry, ProjectDependents, UnitOfWork } from '../application/ports';
 import { AppConfig, type Env } from './config/env';
 import { DatabaseContext, DrizzleUnitOfWork, InMemoryUnitOfWork, createDatabase, createPool } from './database/database';
 import { RandomIdGenerator, SystemClock } from './system';
@@ -47,6 +47,7 @@ export class CoreModule {
             { provide: IdGenerator, useValue: options.ids ?? new RandomIdGenerator() },
             { provide: ProjectDependents, useValue: new ProjectDependents() },
             { provide: ModuleWorkRegistry, useValue: new ModuleWorkRegistry() },
+            { provide: ApprovalHandlers, useValue: new ApprovalHandlers() },
         ];
         if (config.persistence === 'postgres') {
             const url = options.env.DATABASE_URL;
@@ -65,7 +66,10 @@ export class CoreModule {
         return {
             module: CoreModule,
             providers,
-            exports: [AppConfig, Clock, IdGenerator, UnitOfWork, ProjectDependents, ModuleWorkRegistry, ...(config.persistence === 'postgres' ? [DatabaseContext] : [])],
+            exports: [
+                AppConfig, Clock, IdGenerator, UnitOfWork, ProjectDependents, ModuleWorkRegistry, ApprovalHandlers,
+                ...(config.persistence === 'postgres' ? [DatabaseContext] : []),
+            ],
         };
     }
 }

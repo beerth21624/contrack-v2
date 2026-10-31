@@ -23,7 +23,8 @@ describe('ModuleAccess', () => {
         projects.set(PROJECT, { workspaceId: WS, archived: false });
         projects.set(ARCHIVED, { workspaceId: WS, archived: true });
         const members = new FakeWorkspaceDirectory();
-        members.members.set(WS, [OWNER, VIEWER]);
+        members.addMember(WS, OWNER, 'owner');
+        members.addMember(WS, VIEWER, 'viewer');
         flags = new FakeModuleFlags();
         access = new ModuleAccess(roles, projects, flags, members);
     });

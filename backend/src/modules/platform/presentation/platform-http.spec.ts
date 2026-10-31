@@ -7,7 +7,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { MAX_FILE_BYTES, MODULE_IDS, adminWorkspacesDtoSchema, startTrialResponseSchema, workspaceModulesDtoSchema } from '@contrack/contract';
 import {
-    AccessTokenVerifier, type AuthenticatedUser, ModuleFlags, ModuleWorkRegistry, Notifier, ProjectStatusLookup, WorkspaceAccess,
+    AccessTokenVerifier, AuditLog, type AuthenticatedUser, ModuleFlags, ModuleWorkRegistry, Notifier, ProjectStatusLookup, WorkspaceAccess,
     UserDirectory, type UserProfile, WorkspaceDirectory,
 } from '../../../shared/application/ports';
 import { type UserId, asUserId } from '../../../shared/domain/ids';
@@ -15,7 +15,7 @@ import { testEnv } from '../../../shared/infrastructure/config/env';
 import { CoreModule } from '../../../shared/infrastructure/core.module';
 import { AuthGuard } from '../../../shared/presentation/auth';
 import { ErrorFilter } from '../../../shared/presentation/http';
-import { FakeProjectStatuses, FakeRoles, FakeWorkspaceDirectory } from '../../../shared/testing/platform-fakes';
+import { FakeProjectStatuses, FakeRoles, FakeWorkspaceDirectory, RecordingAuditLog } from '../../../shared/testing/platform-fakes';
 import { NotificationDeliveryRepository } from '../application/ports/notification-delivery.repository';
 import { SmsSender } from '../application/ports/sms-sender.port';
 import { DeliveryWorker } from '../infrastructure/adapters/delivery-worker';
@@ -49,8 +49,9 @@ const usage = new FakeModuleWork();
         { provide: AccessTokenVerifier, useClass: TokenIsUserId },
         { provide: WorkspaceDirectory, useValue: fakeWorkspaces },
         { provide: UserDirectory, useClass: FakeUsers },
+        { provide: AuditLog, useClass: RecordingAuditLog },
     ],
-    exports: [WorkspaceAccess, ProjectStatusLookup, AccessTokenVerifier, WorkspaceDirectory, UserDirectory],
+    exports: [WorkspaceAccess, ProjectStatusLookup, AccessTokenVerifier, WorkspaceDirectory, UserDirectory, AuditLog],
 })
 class OtherModulesFakes {}
 

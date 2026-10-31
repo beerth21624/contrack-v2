@@ -1,8 +1,9 @@
 // ─── Fakes of the platform / cross-module ports, for unit tests of any module (not a spec itself) ───
 import { type FileDto, type FilePurpose, MODULE_IDS, type ModuleId, type Role } from '@contrack/contract';
 import {
-    AppLinks, FileService, ModuleFlags, type NotificationRequest, Notifier, ProjectDirectory, ProjectReader, type ProjectRead,
-    type ProjectStatus, ProjectStatusLookup, WorkspaceAccess, WorkspaceDirectory, type WorkspaceSummary,
+    AppLinks, type AuditEntry, AuditLog, FileService, ModuleFlags, type NotificationRequest, Notifier, ProjectDirectory, ProjectReader,
+    type ProjectRead, type ProjectStatus, ProjectStatusLookup, WorkspaceAccess, WorkspaceDirectory, type WorkspaceMember,
+    type WorkspaceSummary,
 } from '../application/ports';
 import { DomainError, type ProjectId, type Result, type UserId, type WorkspaceId, err, okVoid } from '../domain';
 
@@ -90,10 +91,20 @@ export class FakeWorkspaceDirectory extends WorkspaceDirectory {
         return Promise.resolve(this.personal.get(userId));
     }
 
-    readonly members = new Map<WorkspaceId, UserId[]>();
+    /** Members per workspace, set with `addMember` (memberIds and members both read it). */
+    readonly memberList = new Map<WorkspaceId, WorkspaceMember[]>();
+
+    addMember(workspaceId: WorkspaceId, userId: UserId, role: Role = 'viewer'): void {
+        const list = (this.memberList.get(workspaceId) ?? []).filter(m => m.userId !== userId);
+        this.memberList.set(workspaceId, [...list, { userId, role }]);
+    }
 
     memberIds(workspaceId: WorkspaceId): Promise<UserId[]> {
-        return Promise.resolve([...(this.members.get(workspaceId) ?? [])]);
+        return Promise.resolve((this.memberList.get(workspaceId) ?? []).map(m => m.userId));
+    }
+
+    members(workspaceId: WorkspaceId): Promise<WorkspaceMember[]> {
+        return Promise.resolve((this.memberList.get(workspaceId) ?? []).map(m => ({ ...m })));
     }
 
     search(q: string, limit: number): Promise<WorkspaceSummary[]> {
@@ -102,9 +113,19 @@ export class FakeWorkspaceDirectory extends WorkspaceDirectory {
             .filter(([id, name]) => needle === '' || id.toLowerCase() === needle || name.toLowerCase().includes(needle))
             .slice(0, limit)
             .map(([id, name]): WorkspaceSummary => ({
-                id, name, kind: 'company', memberCount: this.members.get(id)?.length ?? 0, createdAt: new Date(0),
+                id, name, kind: 'company', memberCount: this.memberList.get(id)?.length ?? 0, createdAt: new Date(0),
             }));
         return Promise.resolve(found);
+    }
+}
+
+/** Keeps every audit entry in `entries` (unit tests read them). */
+export class RecordingAuditLog extends AuditLog {
+    readonly entries: AuditEntry[] = [];
+
+    record(e: AuditEntry): Promise<void> {
+        this.entries.push(structuredClone(e));
+        return Promise.resolve();
     }
 }
 
