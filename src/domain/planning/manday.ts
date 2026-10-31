@@ -68,6 +68,15 @@ const finite = (x: number | undefined): number => (x !== undefined && Number.isF
 
 /** Labour and total of the BOQ rows a block reads. */
 export function blockBoqTotals(def: ManDayBlockDef, boq: BoqResult): { labour: number; total: number } {
+    const own = ownBlockTotals(def, boq);
+    for (const no of def.alsoSections ?? []) {
+        const s = boq.sections.find(x => x.no === no);
+        if (s) { own.labour += s.labTotal; own.total += s.total; }
+    }
+    return own;
+}
+
+function ownBlockTotals(def: ManDayBlockDef, boq: BoqResult): { labour: number; total: number } {
     const section = boq.sections.find(s => s.no === def.section);
     if (!section) return { labour: 0, total: 0 };
     if (!def.rows) return { labour: section.labTotal, total: section.total };

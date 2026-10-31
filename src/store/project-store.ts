@@ -95,8 +95,21 @@ function readSavedGuestProject(): Project | null {
  * holds the guest project, and a cloud tab never overwrites what a guest tab saved.
  */
 let writesSuspended = false;
+const isRecord = (v: unknown): v is Record<string, unknown> & Partial<Project> =>
+    v !== null && typeof v === 'object' && !Array.isArray(v);
 const guestStorage: StateStorage = {
-    getItem: (name) => localStorage.getItem(name),
+    // Text that is not JSON (hand-edited or cut-off storage) reads as nothing saved: a fresh project instead of a
+    // hydration error that would leave every page on its spinner.
+    getItem: (name) => {
+        const raw = localStorage.getItem(name);
+        if (raw === null) return null;
+        try {
+            JSON.parse(raw);
+            return raw;
+        } catch {
+            return null;
+        }
+    },
     setItem: (name, value) => {
         if (!writesSuspended) localStorage.setItem(name, value);
     },
@@ -195,16 +208,30 @@ export const useProjectStore = create<ProjectState>()(
             }),
             // Only the guest project is ever saved here (writes are skipped while a cloud project is open).
             partialize: (s) => ({ project: selectGuestProject(s) }),
-            migrate: (persisted) => persisted as { project: Project },
+            // A version newer than this app knows (saved by a later build) cannot be read: start fresh.
+            migrate: (persisted, version) => (version > PROJECT_SCHEMA_VERSION ? {} : persisted) as { project: Project },
             // Restoring from storage only ever touches the guest project.
             merge: (persisted, current) => {
-                const project = (persisted as { project?: Project } | undefined)?.project;
-                if (!project) return current;
+                const stored = (persisted as { project?: unknown } | undefined)?.project;
+                if (!isRecord(stored)) return current;
+                // Hand-edited storage may lack whole parts: the ones the engine needs come from a new project.
+                const base = createProject('sample');
+                const project: Project = {
+                    ...base,
+                    ...stored,
+                    meta: { ...base.meta, ...(isRecord(stored.meta) ? stored.meta : {}) },
+                    calculators: isRecord(stored.calculators) ? stored.calculators : {},
+                    boqOverrides: isRecord(stored.boqOverrides) ? stored.boqOverrides : {},
+                };
                 return current.binding.kind === 'guest' ? { ...current, project } : { ...current, guestProject: project };
             },
             // localStorage hydrates synchronously inside create(), before `useProjectStore` exists,
-            // so mark hydration through the state handed to the callback.
-            onRehydrateStorage: () => (state) => { state?.setHasHydrated(); },
+            // so mark hydration through the state handed to the callback. A failed restore (no state) keeps the
+            // fresh project and still ends the spinner, once the store exists.
+            onRehydrateStorage: () => (state, error) => {
+                state?.setHasHydrated();
+                if (state === undefined || error !== undefined) queueMicrotask(() => useProjectStore.setState({ hasHydrated: true }));
+            },
         },
     ),
 );

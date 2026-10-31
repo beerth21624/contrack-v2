@@ -55,7 +55,7 @@ export function PilesJourney({ input, update }: { input: PilesInput; update: (pa
                 { label: 'เสาเข็ม', value: count, unit: 'ต้น', digits: 0, detail: `ราคาเหมาต้นละ ${formatNumber(price, 0)} บาท` },
             ]} note={count > 0 ? <>
                 {spec ? <>รายการใน BOQ: {spec}</> : 'ยังไม่ได้เลือกชนิดและหน้าตัดเสาเข็ม'}
-                {' · '}ค่าตัดหัวเสาเข็ม {formatNumber(count, 0)} ต้น คิดให้อัตโนมัติในขั้นตอนฐานราก
+                {' · '}ค่าตัดหัวเสาเข็ม {formatNumber(count, 0)} ต้น คิดให้อัตโนมัติและรวมอยู่ในมูลค่าขั้นตอนนี้
             </> : undefined}
             empty={<>เลือกชนิดเสาเข็ม หน้าตัด ความยาว และใส่จำนวนต้นจากแปลนฐานราก — หากไม่ใช้เสาเข็ม กด &quot;ไม่มีในโครงการนี้&quot; ด้านล่าง</>} />
         </div>

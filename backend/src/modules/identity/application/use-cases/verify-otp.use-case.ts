@@ -169,5 +169,5 @@ export class VerifyOtpUseCase {
 }
 
 function displayNameRequired(): DomainError {
-    return DomainError.validation('A name is required for a new phone number', { reason: 'name_required', field: 'displayName' });
+    return DomainError.unprocessable('A name is required for a new phone number', { reason: 'name_required', field: 'displayName' });
 }

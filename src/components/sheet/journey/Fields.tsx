@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import { Button, Popconfirm, Select } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { REBAR_SIZES } from '@/domain/boq/slots';
-import { NumberCell, TextCell, SHEET_COLORS } from '@/components/sheet/NumberCell';
+import { NEGATIVE_VALUE_WARNING, NumberCell, TextCell, SHEET_COLORS } from '@/components/sheet/NumberCell';
 import { fieldHintCls as hintCls, fieldLabelCls as labelCls, missingRing, numberBoxCls } from './PlanField';
 import { RequiredMark, useRequiredField } from './RequiredContext';
 
@@ -28,6 +28,7 @@ export function JNumber({ label, value, onChange, unit, hint, digits = 2, blankZ
                 {unit && <span className="text-[12px] text-gray-500 whitespace-nowrap">{unit}</span>}
             </span>
             {hint && <span className={hintCls}>{hint}</span>}
+            {value < 0 && <span className="text-[12px] text-orange-600">{NEGATIVE_VALUE_WARNING}</span>}
         </label>
     );
 }

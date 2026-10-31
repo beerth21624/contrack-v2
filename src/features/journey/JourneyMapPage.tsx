@@ -10,14 +10,14 @@ import {
     JOURNEY, JOURNEY_LEVELS, availableLevels, blockingLevels, journeyComplete, levelStates, levelTotal, missingRequirements,
     phaseOf, type JourneyLevel, type JourneyPhase, type LevelState,
 } from '@/domain/journey';
-import { formatNumber } from '@/components/sheet/NumberCell';
+import { totalText } from './total-text';
 import { NewProjectButton } from './NewProjectButton';
 import { BoqExportButtons } from '@/features/export/BoqExportButtons';
 import { LevelAssignee, LevelPresenceAvatars, useCloudLevelInfo, type CloudLevelInfo } from '@/features/cloud/presence/LevelPresence';
 import { RevisionButtons } from '@/features/cloud/revisions/RevisionButtons';
 import { useCloud } from '@/features/cloud/state';
 
-const baht = (v: number) => formatNumber(v, 0);
+const baht = totalText;
 const numberOf = (level: JourneyLevel) => JOURNEY_LEVELS.indexOf(level) + 1;
 
 /** Money of a group: its steps that are not marked "ไม่มีในโครงการนี้". */
@@ -79,7 +79,12 @@ function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
                     {level.title}
                 </div>
                 {waits && <div className="sm:hidden text-[12px] leading-[18px] text-gray-400 line-clamp-2">{waitingList(waiting)}</div>}
-                {team.enabled && <div className="mt-0.5"><LevelAssignee info={team} levelId={level.id} /></div>}
+                {/* The assign control sits inside the row's link: its clicks (and its menu's, which bubble through the portal) must not open the step. */}
+                {team.enabled && (
+                    <div className="mt-0.5" onClick={e => { e.preventDefault(); e.stopPropagation(); }}>
+                        <LevelAssignee info={team} levelId={level.id} />
+                    </div>
+                )}
             </div>
             <div className="flex items-center gap-2">
                 <LevelPresenceAvatars info={team} levelId={level.id} />
@@ -217,7 +222,7 @@ export function JourneyMapPage() {
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-[12px] text-gray-500">
                         <span className="whitespace-nowrap">ภาพรวมโครงการ</span>
-                        {project.start !== 'blank' && <Tag variant="filled" className="!text-[12px] !m-0 min-w-0 truncate">บ้านตัวอย่าง Excel v5</Tag>}
+                        {project.start !== 'blank' && <Tag variant="filled" className="!text-[12px] !m-0 min-w-0 truncate">เทมเพลตบ้านเดี่ยว 1 ชั้น</Tag>}
                     </div>
                     <h1 className="m-0 mt-1 text-[26px] leading-tight font-semibold text-gray-900" style={{ overflowWrap: 'anywhere' }}>{title}</h1>
                     {project.meta.siteAddress !== '' && <div className="mt-1 text-[13px] text-gray-500">{project.meta.siteAddress}</div>}

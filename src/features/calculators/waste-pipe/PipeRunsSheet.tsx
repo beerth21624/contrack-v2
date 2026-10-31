@@ -72,7 +72,7 @@ export function PipeRunsSheet({ def, input, onChange, result, subtitle, items, s
                 <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
                     <li>ยาว รวม = ยาว แนวราบ + ยาว แนวดิ่ง</li>
                     <li>
-                        แถว 1–{lines.length} ส่งเข้า BOQ หมวด {sectionNo} ตามลำดับแถวเหมือน Excel ({positional});
+                        แถว 1–{lines.length} ส่งเข้า BOQ หมวด {sectionNo} ตามลำดับแถว ({positional});
                         แถวที่เพิ่มเองจะรวมเข้าแถว BOQ ที่มีขนาดท่อเดียวกัน
                     </li>
                     <li>ใน BOQ คิดเผื่อ 15 %, ค่าแรงคิดจากปริมาณเผื่อแล้ว และวัสดุอุปกรณ์สิ้นเปลือง 50 % ของค่าวัสดุและค่าแรง</li>

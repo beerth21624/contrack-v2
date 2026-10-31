@@ -89,6 +89,11 @@ export class AwardPackageUseCase {
         for (const [bidId, idxs] of linesOfBid) {
             const bid = latestById.get(bidId);
             const invitation = bid === undefined ? undefined : invitationById.get(bid.invitationId);
+            // Another award won the race and already marked the bids: the package is no longer open (same answer as
+            // the markAwarded lock below, instead of a race-dependent 422 bid_not_latest).
+            if (bid?.status === 'selected' || bid?.status === 'not_selected') {
+                return err(DomainError.conflict('The package was already awarded', { reason: 'package_not_open', status: 'awarded' }));
+            }
             if (bid?.status !== 'submitted' || invitation === undefined || invitation.status === 'withdrawn') {
                 return err(DomainError.unprocessable('Only the latest submitted bid of an invitation can win', { reason: 'bid_not_latest', bidId }));
             }

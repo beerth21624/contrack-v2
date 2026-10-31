@@ -105,7 +105,7 @@ export function CashFlowPage() {
                     <InputNumberField label="ค่าใช้จ่ายดำเนินงาน" percent value={ci.operatingCostRate} unit="ของต้นทุน"
                         onChange={v => save({ ...ci, operatingCostRate: v })} />
                     <InputNumberField label="กำไร" percent value={ci.profitRate} unit="ของต้นทุน" onChange={v => save({ ...ci, profitRate: v })} />
-                    <div className="text-[12px] text-gray-500 mt-1">ไม่มี VAT / เงินประกันผลงาน (ตาม Excel)</div>
+                    <div className="text-[12px] text-gray-500 mt-1">ไม่มี VAT / เงินประกันผลงาน</div>
                 </SheetCard>
                 {/* The lowest cash point is the banner headline: not repeated as a tile. */}
                 <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-4 md:grid-rows-[auto_1fr]">
@@ -148,7 +148,7 @@ export function CashFlowPage() {
                 <EvmPanel cf={cf} input={ci} onChange={save} />
             </DetailSection>
 
-            <DetailSection label="ดูตารางละเอียด (ตาราง Cash Flow รายสัปดาห์แบบ Excel)">
+            <DetailSection label="ดูตารางละเอียด (ตาราง Cash Flow รายสัปดาห์)">
                 <CashFlowDetailGrid cf={cf} opexRate={ci.operatingCostRate} profitRate={ci.profitRate} />
             </DetailSection>
         </div>

@@ -6,7 +6,6 @@ import {
 } from '@/domain/calculators/roof-beam';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { CalcField, SheetCard } from '@/components/sheet/SheetFields';
-import { formatNumber } from '@/components/sheet/NumberCell';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
 import { RebarSummary } from '@/components/sheet/RebarSummary';
@@ -92,8 +91,7 @@ export default function RoofBeamPage() {
                 <div className="mt-3 text-[12px] text-gray-500 space-y-1">
                     <p>จำนวนปลอก = ปัดขึ้น(ยาว ÷ ระยะห่าง) · ความยาวปลอก/เส้น = 2 × (กว้าง + ลึก) · ไม้ค้ำยัน = ปัดขึ้น(ยาว ÷ 0.6) ต้น</p>
                     <p>
-                        ไม้แบบ = 2 × ลึก × ยาว + กว้าง × ยาว (ข้าง 2 ด้าน + ท้องคาน). ใน Excel สูตรคือ 2 × ลึก × ยาว + กว้าง
-                        (บวกความกว้างครั้งเดียว) = {formatNumber(outputs.formworkExcel)} ตร.ม. — แก้ตามข้อตัดสินใจ D1
+                        ไม้แบบ = 2 × ลึก × ยาว + กว้าง × ยาว (ข้าง 2 ด้าน + ท้องคาน)
                     </p>
                     <p>เหล็กเสริมส่งเข้า BOQ แยกตามขนาด พร้อม %เผื่อตามขนาด (RB6 6 %, RB9 9 %, DB12–DB20 12 %) และลวดผูกเหล็ก 3 %</p>
                 </div>

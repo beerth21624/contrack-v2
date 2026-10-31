@@ -118,13 +118,13 @@ export function CalculatorShell({ def, result, isDefault, onReset, children, asi
                         หมวด BOQ {def.sections.join(', ')}
                     </Text>
                     <Title level={4} style={{ margin: 0 }}>{def.title}</Title>
-                    <Text type="secondary" className="text-[12px] [overflow-wrap:anywhere]">ชีต Excel: {def.sheetName}</Text>
+                    <Text type="secondary" className="text-[12px] [overflow-wrap:anywhere]">แบบฟอร์ม: {def.sheetName}</Text>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
                     {isDefault
-                        ? <Tag>ค่าตัวอย่างจาก Excel</Tag>
+                        ? <Tag>ค่าตัวอย่างจากเทมเพลต</Tag>
                         : (
-                            <Popconfirm title="คืนค่าตัวอย่างจาก Excel?" okText="คืนค่า" cancelText="ยกเลิก" onConfirm={onReset}>
+                            <Popconfirm title="คืนค่าตัวอย่างจากเทมเพลต?" okText="คืนค่า" cancelText="ยกเลิก" onConfirm={onReset}>
                                 <Button icon={<UndoOutlined />}>คืนค่าตัวอย่าง</Button>
                             </Popconfirm>
                         )}

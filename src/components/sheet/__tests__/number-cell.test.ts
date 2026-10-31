@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { numberCellEditText, numberCellText } from '../NumberCell';
+import { describe, expect, it, vi } from 'vitest';
+import { numberCellEditText, numberCellText, selectIfFocused } from '../NumberCell';
 
 describe('numberCellText', () => {
     it('formats like before by default', () => {
@@ -13,6 +13,22 @@ describe('numberCellText', () => {
         expect(numberCellText(0, { blankZero: true })).toBe('');
         expect(numberCellText(0, { blankZero: true, percent: true })).toBe('');
         expect(numberCellText(2.5, { blankZero: true })).toBe(formatted(2.5, 2));
+    });
+});
+
+describe('selectIfFocused', () => {
+    it('selects the text while the cell still has the focus', () => {
+        const select = vi.fn();
+        const el = { select, ownerDocument: { activeElement: null as unknown } };
+        el.ownerDocument.activeElement = el;
+        selectIfFocused(el);
+        expect(select).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves a cell alone that was already left (select() would take the focus back)', () => {
+        const select = vi.fn();
+        selectIfFocused({ select, ownerDocument: { activeElement: {} } });
+        expect(select).not.toHaveBeenCalled();
     });
 });
 

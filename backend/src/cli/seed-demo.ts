@@ -105,7 +105,7 @@ async function main(): Promise<void> {
         }
 
         // 1) The Excel sample house, part-way through the journey, with a revision and assignments
-        const sample = await call<Project>('POST', `/workspaces/${company.id}/projects`, { name: 'บ้านตัวอย่าง Excel v5 (ทีม)', start: 'sample' }, t('owner'));
+        const sample = await call<Project>('POST', `/workspaces/${company.id}/projects`, { name: 'บ้านตัวอย่าง 1 ชั้น (ทีม)', start: 'sample' }, t('owner'));
         const sid = sample.project.id;
         await putDoc(t('owner'), sid, 'meta', {
             projectName: 'บ้านพักอาศัย คสล. 1 ชั้น (ตัวอย่าง)', siteAddress: 'ต.คลองหนึ่ง อ.คลองหลวง จ.ปทุมธานี',

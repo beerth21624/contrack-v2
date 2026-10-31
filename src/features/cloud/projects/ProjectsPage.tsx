@@ -55,7 +55,7 @@ export function sortProjects(list: readonly ProjectDto[], sort: ProjectSort): Pr
 
 const START_CHOICES: { start: ProjectStart; icon: React.ReactNode; title: string; text: string }[] = [
     { start: 'blank', icon: <FileAddOutlined />, title: 'เริ่มจากแบบแปลนของฉัน', text: 'ทุกขั้นตอนเริ่มจากค่าว่าง กรอกขนาดและจำนวนตามแบบ' },
-    { start: 'sample', icon: <HomeOutlined />, title: 'ลองกับบ้านตัวอย่าง', text: 'บ้านชั้นเดียวจาก Excel v5 กรอกไว้ครบ' },
+    { start: 'sample', icon: <HomeOutlined />, title: 'ลองกับบ้านตัวอย่าง', text: 'เทมเพลตบ้านเดี่ยว 1 ชั้น กรอกข้อมูลไว้ครบ' },
 ];
 
 export function ProjectsPage() {
@@ -263,7 +263,7 @@ function ProjectsContent() {
                                 <div className="flex items-start gap-2">
                                     <div className="flex-1 min-w-0">
                                         <button type="button" onClick={own(activate)} disabled={!canOpen} title={p.name}
-                                            className="block w-full text-left font-semibold text-[15px] text-gray-900 line-clamp-2 [overflow-wrap:anywhere] bg-transparent border-0 p-0 cursor-pointer hover:text-orange-600 disabled:cursor-default disabled:hover:text-gray-900">
+                                            className="w-full text-left font-semibold text-[15px] text-gray-900 line-clamp-2 [overflow-wrap:anywhere] bg-transparent border-0 p-0 cursor-pointer hover:text-orange-600 disabled:cursor-default disabled:hover:text-gray-900">
                                             {p.name}
                                         </button>
                                         <div className="text-[12px] text-gray-500">แก้ล่าสุด {formatDateTime(p.updatedAt)}</div>
@@ -291,7 +291,7 @@ function ProjectsContent() {
                                     <span className="text-[12px] text-gray-600 whitespace-nowrap tabular-nums">{p.summary.levelsDone}/{p.summary.levelsTotal} ขั้นตอน</span>
                                 </div>
                                 {/* The whole card opens it: a quiet button, so "สร้างโครงการใหม่" stays the page's one primary action. */}
-                                <Button block icon={<FolderOpenOutlined />}
+                                <Button block icon={<FolderOpenOutlined />} className="!mt-auto"
                                     loading={opening} disabled={!canOpen} onClick={own(activate)}>
                                     {p.id === openId ? 'ไปที่โครงการ' : p.archivedAt !== null ? 'กู้คืนก่อนเปิด' : 'เปิด'}
                                 </Button>

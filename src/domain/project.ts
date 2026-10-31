@@ -95,13 +95,22 @@ export function projectPlanningInput(project: Project): PlanningInput {
     return resolvePlanningInput(project.planning, project.start === 'blank' ? blankPlanningInput() : undefined);
 }
 
+/** Item line keys of BOQ (Home) sections (a BOQ-typed journey level). */
+function boqItemKeys(sections: number[]): BoqLineKey[] {
+    return BOQ_TEMPLATE_V5.filter(s => sections.includes(s.no)).flatMap(s => s.lines.flatMap(l => (l.type === 'item' ? [l.key] : [])));
+}
+
 /** Journey levels marked "ไม่มีในโครงการนี้": their calculators and extra lines put nothing into the BOQ. */
 function skippedWork(project: Project): { calcs: Set<string>; lines: Set<BoqLineKey> } {
     const progress = project.journey ?? {};
     const levels = JOURNEY_LEVELS.filter(l => progress[l.id] === 'skipped');
     return {
         calcs: new Set(levels.flatMap(l => (l.kind.type === 'calc' ? [l.kind.calc] : []))),
-        lines: new Set(levels.flatMap(l => l.extraRows ?? [])),
+        lines: new Set(levels.flatMap(l => [
+            ...(l.extraRows ?? []),
+            // A level typed straight into BOQ rows (column plates): skipping it zeroes those rows' quantities.
+            ...(l.kind.type === 'boq' ? boqItemKeys(l.kind.sections) : []),
+        ])),
     };
 }
 

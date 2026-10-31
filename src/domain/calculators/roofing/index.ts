@@ -68,11 +68,18 @@ export const FASCIA_ROW = 11;
 
 const num = (v: number) => (Number.isFinite(v) ? v : 0);
 const sum = (xs: number[]) => xs.reduce((s, x) => s + num(x), 0);
-const cosDeg = (deg: number) => Math.cos((num(deg) * Math.PI) / 180);
+/**
+ * 1/COS(RADIANS(deg)). A pitch of 90° or more is not a roof: COS is 0 or negative there (Excel gives about 1e16
+ * times the plan area, or a negative one), so it counts as no slope length at all; the page warns about the pitch.
+ */
+const perCos = (deg: number) => {
+    const c = Math.cos((num(deg) * Math.PI) / 180);
+    return c > 1e-6 ? 1 / c : 0;
+};
 
 /** K7 = K5/COS(RADIANS(K6)). */
 export function slopeArea(input: Pick<RoofingInput, 'planArea' | 'slopeDeg'>): number {
-    return num(input.planArea) / cosDeg(input.slopeDeg);
+    return num(input.planArea) * perCos(input.slopeDeg);
 }
 
 /**
@@ -100,7 +107,7 @@ export function roofingTakeoffs(input: RoofingInput): number[] {
         switch (t.kind) {
             case 'slope': v = k7; break;
             case 'lengths': v = sum(t.lengths); break;
-            case 'rake': v = sum(t.lengths) / cosDeg(t.deg); break;
+            case 'rake': v = sum(t.lengths) * perCos(t.deg); break;
             case 'row': {
                 const j = byKey.get(t.ref);
                 // A missing or circular reference counts as 0 (Excel would show #REF! / a circular warning).
@@ -217,7 +224,10 @@ function computeRoofing(input: RoofingInput): Record<string, number> {
     BOQ_LINES.forEach((line, i) => { out[line] = qtys[i] ?? 0; });
     // E175 ค่าแรงมุงหลังคา = K7; E176 ค่าแรงติดตั้งไม้เชิงชาย = E16 (fascia take-off).
     out.R175 = k7;
-    out.R176 = takeoffs[FASCIA_ROW] ?? 0;
+    // Found by the row's key, not its position: deleting or adding a row above it must not turn another take-off
+    // (e.g. the foil slope area) into the fascia length. Excel's fixed row 16 is the fallback for keyless data.
+    const fasciaIdx = input.rows.findIndex(r => r.key === 'fascia');
+    out.R176 = takeoffs[fasciaIdx >= 0 ? fasciaIdx : FASCIA_ROW] ?? 0;
     // Named outputs for other sheets (the Paint sheet reads the fascia length).
     out.fasciaLength = out.R176;
     return out;

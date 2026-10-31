@@ -65,7 +65,7 @@ function sampleMaterials(): LayoutMaterialLine[] {
 export const layout = defineCalculator<LayoutInput>({
     id: 'layout',
     // The real sheet name is unknown (external file, D8).
-    sheetName: 'Google Sheet ภายนอก — วางผัง / ปักหมุด (สร้างจากภาพสไลด์)',
+    sheetName: 'วางผัง / ปักหมุด',
     title: 'STEP 04 : โปรแกรมคำนวณวางผัง / ปักหมุด',
     titleEn: 'Layout / Setting-out',
     sections: [4],

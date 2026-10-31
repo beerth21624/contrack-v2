@@ -34,7 +34,7 @@ export function EvmPanel({ cf, input, onChange }: {
         { label: 'ดัชนีผลงานด้านต้นทุน (CPI)', formula: 'EV/AC', value: e.cpi, digits: 3, note: 'น้อยกว่า 1 = เกินงบ' },
         { label: 'คาดการณ์เวลาเมื่อแล้วเสร็จ', formula: 'ระยะเวลา/SPI', value: e.eacDays, unit: 'วัน', digits: 1 },
         { label: 'คาดการณ์ต้นทุนเมื่อแล้วเสร็จ (EAC)', formula: 'งบประมาณ/CPI', value: e.eacCost, unit: 'บาท' },
-        { label: 'งบประมาณ − EAC', value: e.vac, unit: 'บาท', note: 'Excel AA13 (ไม่มีชื่อ)' },
+        { label: 'งบประมาณ − EAC', value: e.vac, unit: 'บาท', note: 'ผลต่างเมื่อจบโครงการ (VAC)' },
         { label: 'กำไรสุทธิตามแผน', value: e.profitPlan, unit: 'บาท' },
         { label: 'กำไรสุทธิคาดการณ์', value: e.profitForecast, unit: 'บาท', note: 'กำไรตามแผน + (งบประมาณ − EAC)' },
     ];

@@ -91,7 +91,10 @@ export function computeBoq({ sections: rawSections, overrides = {}, linked = {},
         });
     };
 
-    const waste = (key: BoqLineKey) => overrides[key]?.waste ?? get(key).waste;
+    // A non-finite override (NaN / Infinity typed or imported) is ignored: the template value stands, so one bad cell
+    // cannot turn the section, the grand total, the plan and the export into NaN.
+    const finite = (v: number | undefined): number | undefined => (v !== undefined && Number.isFinite(v) ? v : undefined);
+    const waste = (key: BoqLineKey) => finite(overrides[key]?.waste) ?? get(key).waste;
 
     const gross = (key: BoqLineKey): number | null => {
         const m = slot(key);
@@ -118,13 +121,14 @@ export function computeBoq({ sections: rawSections, overrides = {}, linked = {},
         if (cached !== undefined) return cached;
         return guard(`${key}.${field}`, () => {
             const t = get(key);
-            const ov = overrides[key]?.[field] ?? linked[key]?.[field];
+            const ov = finite(overrides[key]?.[field]) ?? finite(linked[key]?.[field]);
             const rule: PriceRule = t[field];
             let v: number;
             if (ov !== undefined) v = ov;
             else if (typeof rule === 'number') v = rule;
             else if (rule.kind === 'linePrice') v = price(rule.ref, field) * rule.factor;
             else v = rule.refs.reduce((s, r) => s + matTotal(r) + labTotal(r), 0) * rule.pct;
+            if (!Number.isFinite(v)) v = 0;
             m[cacheKey] = v;
             return v;
         });

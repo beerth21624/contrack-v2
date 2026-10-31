@@ -116,7 +116,7 @@ describe('reviewBoqRules on the untouched sample', () => {
 
     it('flags site camp (section 3, 4 typed rows) and painting (section 23) as sample values, attached to the first row', () => {
         const f3 = findings.find(f => f.kind === 'sample-values' && f.key === 'R19');
-        expect(f3?.message).toBe('หมวด งานเตรียมพื้นที่หน้างาน — ยังเป็นค่าตัวอย่างจาก Excel');
+        expect(f3?.message).toBe('หมวด งานเตรียมพื้นที่หน้างาน — ยังเป็นค่าตัวอย่างจากเทมเพลต');
         expect(findings.some(f => f.kind === 'sample-values' && f.key === 'R223')).toBe(true);
     });
 

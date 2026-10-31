@@ -11,17 +11,30 @@ export function isoToSerial(iso: string | null | undefined): number | null {
     if (!iso) return null;
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
     if (!m) return null;
-    const t = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-    return Number.isFinite(t) ? Math.round((t - EXCEL_EPOCH) / MS_PER_DAY) : null;
+    const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+    const t = Date.UTC(y, mo - 1, d);
+    if (!Number.isFinite(t)) return null;
+    // Date.UTC rolls impossible dates over (2026-02-30 → 2026-03-02): refuse them instead.
+    const dt = new Date(t);
+    if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return null;
+    return Math.round((t - EXCEL_EPOCH) / MS_PER_DAY);
 }
 
-/** Excel serial → 'YYYY-MM-DD'. */
+/** Serials of 0001-01-01 and 9999-12-31: the dates a 'YYYY-MM-DD' can hold. */
+export const MIN_DATE_SERIAL = Math.round((Date.parse('0001-01-01T00:00:00Z') - EXCEL_EPOCH) / MS_PER_DAY);
+export const MAX_DATE_SERIAL = Math.round((Date.parse('9999-12-31T00:00:00Z') - EXCEL_EPOCH) / MS_PER_DAY);
+
+/** A serial kept to 0001-01-01 … 9999-12-31: a typed duration of a billion days would leave the JavaScript date range. */
+const inDateRange = (serial: number) =>
+    Number.isFinite(serial) ? Math.min(MAX_DATE_SERIAL, Math.max(MIN_DATE_SERIAL, Math.round(serial))) : 0;
+
+/** Excel serial → 'YYYY-MM-DD' (dates beyond 9999-12-31 or before 0001-01-01 show as that edge). */
 export function serialToIso(serial: number): string {
-    return new Date(EXCEL_EPOCH + Math.round(serial) * MS_PER_DAY).toISOString().slice(0, 10);
+    return new Date(EXCEL_EPOCH + inDateRange(serial) * MS_PER_DAY).toISOString().slice(0, 10);
 }
 
 function serialToParts(serial: number): { y: number; m: number; d: number } {
-    const dt = new Date(EXCEL_EPOCH + Math.round(serial) * MS_PER_DAY);
+    const dt = new Date(EXCEL_EPOCH + inDateRange(serial) * MS_PER_DAY);
     return { y: dt.getUTCFullYear(), m: dt.getUTCMonth(), d: dt.getUTCDate() };
 }
 

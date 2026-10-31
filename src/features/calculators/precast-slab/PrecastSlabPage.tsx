@@ -58,7 +58,7 @@ export default function PrecastSlabPage() {
                                 <CalcField label={`ค่าวัสดุ + ค่าแรง (เผื่อ ${formatNumber(r.waste * 100, 0)}%)`} value={r.total} unit="บาท" />
                             </div>
                         ))}
-                    <p className="mt-1 text-[12px] text-gray-500">ไม่มีแถวลวดผูกเหล็ก (ตาม Excel)</p>
+                    <p className="mt-1 text-[12px] text-gray-500">ไม่มีแถวลวดผูกเหล็ก</p>
                 </SheetCard>
             )}>
             <SheetCard title="สรุปปริมาณงานพื้นสำเร็จรูป">
@@ -123,7 +123,7 @@ export default function PrecastSlabPage() {
                 />
                 <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
                     <li>1 แถว = 1 แผง (กว้าง × ยาว) · ไวร์เมช = พื้นที่แผ่นพื้น</li>
-                    <li>เหล็กล็อคหัวแผ่น: จำนวน = ปัดขึ้น (2 × กว้าง ÷ ระยะห่าง), ยาวเส้นละ 0.80 ม. (ตาม Excel)</li>
+                    <li>เหล็กล็อคหัวแผ่น: จำนวน = ปัดขึ้น (2 × กว้าง ÷ ระยะห่าง), ยาวเส้นละ 0.80 ม.</li>
                     <li>ไม้แบบ = เส้นรอบรูป 2 × (กว้าง + ยาว) × ความหนาคอนกรีตทับหน้า · คอนกรีตทับหน้า = พื้นที่ × หนา</li>
                     <li>
                         ส่งเข้า BOQ หมวด 10: พื้นสำเร็จรูป {formatNumber(outputs.area)} ตร.ม. (ไม้ค้ำยัน = 0.1 × พื้นที่ ลบ.ฟ. คิดใน BOQ),

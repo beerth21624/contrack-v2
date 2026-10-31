@@ -86,13 +86,13 @@ export function PlanningHeader({ current, title, sheetName, isDefault, onReset }
             <div className="flex flex-wrap items-center gap-3">
                 <div className="min-w-0">
                     <Title level={4} style={{ margin: 0 }}>{title}</Title>
-                    <Text type="secondary" className="text-[12px] [overflow-wrap:anywhere]">ชีต Excel: {sheetName}</Text>
+                    <Text type="secondary" className="text-[12px] [overflow-wrap:anywhere]">แบบฟอร์ม: {sheetName}</Text>
                 </div>
                 <div className="ml-auto">
                     {isDefault
-                        ? <Tag>ค่าตัวอย่างจาก Excel</Tag>
+                        ? <Tag>ค่าตัวอย่างจากเทมเพลต</Tag>
                         : (
-                            <Popconfirm title="คืนค่าตัวอย่างจาก Excel ของหน้านี้?" okText="คืนค่า" cancelText="ยกเลิก" onConfirm={onReset}>
+                            <Popconfirm title="คืนค่าตัวอย่างจากเทมเพลตของหน้านี้?" okText="คืนค่า" cancelText="ยกเลิก" onConfirm={onReset}>
                                 <Button icon={<UndoOutlined />}>คืนค่าตัวอย่าง</Button>
                             </Popconfirm>
                         )}

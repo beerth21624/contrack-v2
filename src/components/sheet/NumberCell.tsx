@@ -34,6 +34,8 @@ interface NumberCellProps {
     placeholder?: string;
     /** Show an empty cell (and the placeholder) instead of "0.00" while the value is 0, e.g. an unfilled plan value. */
     blankZero?: boolean;
+    /** A value below 0 is a normal entry here (no negative-value warning). */
+    allowNegative?: boolean;
 }
 
 interface CellFormat { digits?: number; percent?: boolean; blankZero?: boolean }
@@ -61,12 +63,28 @@ export function numberCellEditText(value: number, { percent, blankZero }: CellFo
 }
 
 /**
+ * Select the text of a cell that got focus, one frame later. `select()` also focuses its element, so a cell
+ * that was already left again (Enter / Tab right after the click) must not be selected: it would take the focus
+ * back and show its draft text instead of the formatted value.
+ */
+export function selectIfFocused(el: Pick<HTMLInputElement, 'select'> & { ownerDocument?: { activeElement: unknown } }): void {
+    if (el.ownerDocument !== undefined && el.ownerDocument.activeElement !== el) return;
+    el.select();
+}
+
+/** Tooltip of a cell holding a value below 0 (kept and computed; the user is asked to check it). */
+export const NEGATIVE_VALUE_WARNING = 'ค่าติดลบ — ตรวจสอบอีกครั้ง (ระบบคำนวณตามที่กรอก)';
+const NEGATIVE_BORDER = '#f59e0b';
+
+/**
  * A yellow input cell that edits like a spreadsheet: type, then Enter/Tab/blur commits.
  * Clearing the cell commits `undefined` (back to the template default).
  */
 export function NumberCell({
-    value, onCommit, edited, digits = 2, percent, ariaLabel, tone = 'input', placeholder, blankZero,
+    value, onCommit, edited, digits = 2, percent, ariaLabel, tone = 'input', placeholder, blankZero, allowNegative,
 }: NumberCellProps) {
+    // Sizes, quantities and prices below 0 are kept and computed as typed (as Excel does), with a warning outline.
+    const negative = !allowNegative && Number.isFinite(value) && value < 0;
     // Draft text only while the cell is being edited; otherwise the formatted value is shown.
     const [text, setText] = useState<string | null>(null);
     // Text the cell started with on focus: leaving the cell without typing commits nothing, so a value that
@@ -94,12 +112,14 @@ export function NumberCell({
             aria-label={ariaLabel}
             inputMode="decimal"
             placeholder={placeholder}
+            title={negative ? NEGATIVE_VALUE_WARNING : undefined}
+            data-warning={negative ? 'negative' : undefined}
             value={text ?? numberCellText(value, { digits, percent, blankZero })}
             onFocus={(e) => {
                 const start = numberCellEditText(value, { percent, blankZero });
                 setText(start);
                 setInitial(start);
-                requestAnimationFrame(() => e.target.select());
+                requestAnimationFrame(() => selectIfFocused(e.target));
             }}
             onChange={(e) => setText(e.target.value)}
             onBlur={commit}
@@ -108,7 +128,7 @@ export function NumberCell({
                 if (e.key === 'Escape') { cancelled.current = true; setText(null); (e.target as HTMLInputElement).blur(); }
             }}
             style={{
-                width: '100%', minWidth: 0, textAlign: 'right', border: '1px solid transparent',
+                width: '100%', minWidth: 0, textAlign: 'right', border: `1px solid ${negative ? NEGATIVE_BORDER : 'transparent'}`,
                 background: tone === 'calc' ? SHEET_COLORS.calc : SHEET_COLORS.input, padding: '0 6px', borderRadius: 4,
                 ...INHERIT_FONT, fontWeight: edited ? 700 : 400,
             }}

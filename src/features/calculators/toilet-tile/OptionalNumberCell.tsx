@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { SHEET_COLORS, formatNumber, selectIfFocused } from '@/components/sheet/NumberCell';
 import { evaluateNumber } from '@/components/sheet/evaluate';
 
 /**
@@ -37,7 +37,7 @@ export function OptionalNumberCell({ value, onCommit, ariaLabel, placeholder }: 
             value={text ?? (shown === undefined ? '' : formatNumber(shown))}
             onFocus={(e) => {
                 setText(start);
-                requestAnimationFrame(() => e.target.select());
+                requestAnimationFrame(() => selectIfFocused(e.target));
             }}
             onChange={(e) => setText(e.target.value)}
             onBlur={commit}

@@ -95,7 +95,7 @@ export function ManDayPage() {
             kind: 'label', key: 'calcDays', title: <>5.วันตามค่าแรง<br /><span className="font-normal">(วัน)</span></>, width: 84,
             get: r => (
                 <Tooltip title={r.result.calcDays === null
-                    ? (r.result.labourBasis === 'none' ? 'งานนี้ไม่มีสูตรใน Excel' : 'ยังไม่มีคนทำงาน (ค่าแรงต่อวัน = 0)')
+                    ? (r.result.labourBasis === 'none' ? 'งานนี้ไม่มีสูตรคำนวณคนงาน' : 'ยังไม่มีคนทำงาน (ค่าแรงต่อวัน = 0)')
                     : 'ค่าแรงของงาน ÷ ค่าแรงต่อวัน'}>
                     <div><CalcText>{r.result.calcDays === null ? '–' : formatNumber(r.result.calcDays, 2)}</CalcText></div>
                 </Tooltip>
@@ -162,7 +162,8 @@ export function ManDayPage() {
                 extra={tab !== 'plan' ? undefined : differs.length === 0
                     ? <span className="text-[12px] text-gray-500">วันประเมินทุกงานเท่ากับค่าที่คำนวณ (ปัดเศษ)</span>
                     : (
-                        <span className="text-[12px] text-gray-500 flex items-center gap-2">
+                        // Wraps under the tabs on a phone instead of widening the page.
+                        <span className="text-[12px] text-gray-500 flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
                             <span>วันประเมิน {differs.length} งาน ต่างจากค่าที่คำนวณ (ปัดเศษ)</span>
                             <Popconfirm title="ตั้งวันประเมินทุกงาน = ค่าที่คำนวณ (ปัดเศษ)?" okText="ตั้งค่า" cancelText="ยกเลิก"
                                 onConfirm={applyAllSuggested}>

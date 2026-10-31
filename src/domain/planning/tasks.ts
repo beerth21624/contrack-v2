@@ -31,6 +31,12 @@ export interface ManDayBlockDef {
      * ฉาบปูน items 1–3 (189–191) / สายไฟ (192–196).
      */
     rows?: { from?: number; to?: number };
+    /**
+     * Further whole BOQ sections the block also reads. Excel's Man-Day has no block for section 1 (งานเตรียมพื้นที่:
+     * demolition, fill), so its money never reached the plan; it is site preparation, so block 1.2 carries it.
+     * Zero in the Excel sample, so the Excel figures are unchanged.
+     */
+    alsoSections?: number[];
     labourBasis: ManDayLabourBasis;
 }
 
@@ -57,13 +63,13 @@ export interface PlanTaskDef {
 
 interface Row {
     id: string; inst: number; name: string; sc: number; cf: number;
-    md: number; title: string; sec: number; rows?: { from?: number; to?: number }; basis?: ManDayLabourBasis;
+    md: number; title: string; sec: number; rows?: { from?: number; to?: number }; basis?: ManDayLabourBasis; also?: number[];
     o: number; p: number; set: BuiltInWageSetId; t: number; start: string;
 }
 
 const ROWS: Row[] = [
     { id: '1.1', inst: 1, name: 'งานน้ำ-ไฟชั่วคราว', sc: 14, cf: 21, md: 15, title: 'งานน้ำ-ไฟชั่วคราว', sec: 2, o: 1, p: 1, set: 'A', t: 1, start: '2026-01-10' },
-    { id: '1.2', inst: 1, name: 'งานเตรียมพื้นที่หน้างาน', sc: 16, cf: 22, md: 18, title: 'งานเตรียมพื้นที่หน้างาน', sec: 3, o: 1, p: 5, set: 'A', t: 2, start: '2026-01-10' },
+    { id: '1.2', inst: 1, name: 'งานเตรียมพื้นที่หน้างาน', sc: 16, cf: 22, md: 18, title: 'งานเตรียมพื้นที่หน้างาน', sec: 3, also: [1], o: 1, p: 5, set: 'A', t: 2, start: '2026-01-10' },
     { id: '1.3', inst: 1, name: 'งานวางผัง / ปักหมุด', sc: 18, cf: 23, md: 31, title: 'งานวางผัง / ปักหมุด', sec: 4, o: 1, p: 1, set: 'A', t: 1, start: '2026-01-12' },
     { id: '1.4', inst: 1, name: 'งานเสาเข็ม', sc: 20, cf: 24, md: 34, title: 'งานเสาเข็ม', sec: 5, basis: 'none', o: 0, p: 0, set: 'A', t: 1, start: '2026-01-13' },
     { id: '1.5', inst: 1, name: 'งานฐานราก', sc: 22, cf: 25, md: 37, title: 'งานฐานราก', sec: 6, o: 1, p: 5, set: 'A', t: 10, start: '2026-01-22' },
@@ -105,6 +111,7 @@ export const PLAN_TASKS: readonly PlanTaskDef[] = ROWS.map(r => ({
     manday: {
         excelRow: r.md, title: r.title, section: r.sec, labourBasis: r.basis ?? 'labour',
         ...(r.rows ? { rows: r.rows } : {}),
+        ...(r.also ? { alsoSections: r.also } : {}),
     },
     sample: { skilled: r.o, labourers: r.p, wageSet: r.set, days: r.t, start: r.start },
 }));

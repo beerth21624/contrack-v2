@@ -189,7 +189,7 @@ export default function FloorTilePage() {
                 />
                 <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
                     <li>รวม (ตร.ม.) = กว้าง × ยาว</li>
-                    <li>ตัวอย่าง Excel บันได (1)–(3): ยาว = 0.9 + 0.45 = 1.35 ม.</li>
+                    <li>ค่าตัวอย่างในเทมเพลต บันได (1)–(3): ยาว = 0.9 + 0.45 = 1.35 ม.</li>
                     <li>สัญลักษณ์ F1 / F3 / F4 ใช้รวมปริมาณเข้า BOQ หมวด 20 (ห้องน้ำอยู่ในโปรแกรมปูกระเบื้องห้องน้ำ)</li>
                 </ul>
             </SheetCard>
