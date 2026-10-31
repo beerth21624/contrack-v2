@@ -22,6 +22,7 @@ import { NumberingModule } from './modules/numbering/numbering.module';
 import { CustomerLinksModule } from './modules/customer-links/customer-links.module';
 import { HubModule } from './modules/hub/hub.module';
 import { BoqControlModule } from './modules/boq-control/boq-control.module';
+import { LedgerModule } from './modules/ledger/ledger.module';
 
 @Module({})
 export class AppModule {
@@ -39,6 +40,7 @@ export class AppModule {
                 CustomerLinksModule,
                 HubModule,
                 BoqControlModule,
+                LedgerModule,
             ],
             controllers: [HealthController],
             providers: [

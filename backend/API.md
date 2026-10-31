@@ -262,3 +262,11 @@ Schemas: `../src/shared/contract/erp/boq-control.ts`. Locking freezes one BOQ ve
 | POST | `/projects/:projectId/baseline` | `LockBaselineRequest` → `BaselineStatusDto` (201) | `boq.baseline.lock`; no `versionId` = new revision `BASELINE-<n>` of the current documents; already locked → 409 `baseline_already_locked`; version of another project → 404; archived → 409 `project_archived`; BOQ does not compute → 422 |
 | POST | `/projects/:projectId/baseline/unlock` | `UnlockBaselineRequest` → `BaselineStatusDto` (200) | `boq.baseline.unlock`; not locked → 409 `baseline_not_locked`; a guard blocker → 409 `baseline_unlock_blocked` with `details.blockers[]`; cost codes are kept |
 | GET | `/projects/:projectId/cost-codes` | → `CostCodeDto[]` | `projects.read`; baseline → variation → manual, BOQ order; cost fields null without `cost.read` |
+
+## Cost ledger + financial events (ERP foundation, gated by `project-hub`; WP-20)
+Schemas: `../src/shared/contract/erp/ledger.ts`. Both tables are append-only and written only through the ports `CostLedger` (`post`, `reverse`, `reverseSource`, `totalsByCostCode`, `totalsByProject`, `entriesBySource`, `openCommitments`) and `FinancialEvents` (`post`, `reverse`, `list`, `bySource`) inside the caller's transaction; a correction is a new row with negated amounts and `reversesId` (one reversal per row: 409 `already_reversed` / `reversal_entry`). `committedOpen = Σ commit + Σ commit_release` (per `commitment_ref` + cost code never below 0: 422 `commitment_exceeded`), `actual = Σ actual`. A project with financial events cannot be deleted (409 `financial_events_exist`); ledger rows block a baseline unlock (blocker `ledger`). Not a member → 404; module not active → 404 `module_disabled`.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/projects/:projectId/cost-ledger?costCodeId=` | → `CostLedgerDto` | `cost.read`; entries oldest first + totals per cost code and overall (of the selection) |
+| GET | `/workspaces/:workspaceId/fin-events?from=&to=&type=&projectId=` | → `FinEventDto[]` | `tax.reports` (every type) or `billing.read` (`ar.*` only); dates inclusive; `type` comma-separated `FIN_EVENT_TYPES`; oldest first |

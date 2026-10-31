@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-19 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-20 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -31,7 +31,7 @@
 | WP-17 | ประวัติ BOQ (versions, เทียบฉบับ) | opus | done | 874d2b5 | migration `0016_wp17_boq_versions`; โมดูล `boq-control` (versions), registry `RevisionHooks` (core), ports `RevisionWriter`/`RevisionLookup` (projects), route `/p/[projectId]/versions`; D-150…D-156 |
 | WP-18 | Baseline + cost codes (backend) | opus | done | cba4d4e | migration `0017_wp18_baseline`; `project_baselines`/`project_cost_codes`, registries `BoqEditLocks`/`BaselineUnlockGuards` (core), ports `CostCodeLookup`/`BaselineControl` (boq-control); D-157…D-163 |
 | WP-19 | Baseline web: BOQ อ่านอย่างเดียวเมื่อล็อก + CostCodePicker | opus | done | 225f97b | ไม่มี migration; `BaselinePanel` บนหน้า versions, `CloudBinding.locked`, sync event `locked`, `BaselineLockedBanner`, `CostCodePicker`; D-164…D-169 |
-| WP-20 | Cost ledger + financial events | opus | todo | | |
+| WP-20 | Cost ledger + financial events | opus | done | HASH | migration `0018_wp20_ledger`; `cost_ledger_entries`/`fin_events`, ports `CostLedger`/`FinancialEvents`, module `ledger`, guards ลบโครงการ/ปลดล็อก baseline; D-170…D-176 |
 | WP-21 | ราคากลางภาครัฐ | sonnet | todo | | |
 | WP-22 | Quotation: domain คำนวณ + overlay อังกฤษของ BOQ | opus | todo | | |
 | WP-23 | Quotation backend | opus | todo | | |
@@ -266,6 +266,13 @@
 | D-167 | 2026-11-01 | (WP-19) `openCloudProject` อ่าน baseline เฉพาะเมื่อ platform เสนอ `boq-control` และ workspace เปิด `active` (ผ่าน cache `moduleKeys.platform` / `moduleKeys.workspace`) ผิดพลาด = ไม่ล็อก; ปลดล็อก/ล็อกจากแท็บอื่นไม่ถูก push มา — แท็บนี้รู้เมื่อเปิดโครงการใหม่ หรือเมื่อ PUT ได้ 409 (ล็อก) | ไม่มี realtime event ของ baseline; โมดูลปิด → ไม่มี request baseline |
 | D-168 | 2026-11-01 | (WP-19) ข้อความ notice จากโค้ดที่ไม่ใช่ React ใช้ `src/store/baseline-locked-text.ts` (`createTranslator` + locale จากคุกกี้ `NEXT_LOCALE`) | store/controller ไม่มี `useTranslations`; แบบเดียวกับ `documentTranslator` |
 | D-169 | 2026-11-01 | (WP-19) `CostCodePicker` แสดง "งบ" = `budgetTotal` (null → ไม่แสดง เมื่อไม่มี `cost.read`) ยังไม่ใช่ "งบคงเหลือ" เพราะยังไม่มี ledger (WP-20) — WP-48 ค่อยหักต้นทุนจริง/ผูกพัน; ค้นหาด้วยรหัส ชื่อ TH/EN เลขหมวด และชื่อหมวด (จาก version ของ baseline ที่ active) ซ่อน cost code `omitted` (ยกเว้นตัวที่เลือกอยู่หรือ `includeOmitted`); ไม่เขียนเทสต์ใหม่ตามคำสั่งรอบนี้ | ข้อมูลคงเหลือยังไม่มีให้แสดง |
+| D-170 | 2026-11-01 | (WP-20) port รับ `workspaceId` ทุกเมธอด: `CostLedger.post(ws, entries[])`, `reverse(ws, entryId, {by, date, note?})`, `FinancialEvents.post(ws, event)`, `reverse(ws, eventId, {by, date, note?})`, `list(ws, filter)`; เพิ่ม `CostLedger.reverseSource`, `openCommitments`, `FinancialEvents.bySource` | ตรงกับ D-157 (ทุก port กรองด้วย workspace); WP-39/49 ต้องกลับรายการทั้งเอกสาร และปลดผูกพันคงเหลือตอนปิด PO |
+| D-171 | 2026-11-01 | (WP-20) `GET /workspaces/:ws/fin-events`: `tax.reports` เห็นทุกประเภท; มีแค่ `billing.read` เห็นเฉพาะ `ar.*` (ประเภทอื่นที่ขอ → ว่าง) | viewer มี `billing.read` ตาม matrix — ไม่ควรเห็นค่าแรง/เจ้าหนี้ |
+| D-172 | 2026-11-01 | (WP-20) invariant ผูกพันตรวจต่อ `(commitment_ref, cost_code_id)` (ไม่ใช่ ref อย่างเดียว) → ยอดต่อ cost code ไม่ติดลบด้วย; `commit` ที่ไม่ส่ง `commitmentRef` ใช้ `sourceLineId ?? sourceId`; `commit_release` ต้องมี `commitmentRef` และ `amount ≤ 0`; การกลับรายการก็ตรวจ invariant (กลับ commit ได้ต่อเมื่อกลับ release ของมันก่อน); กลับรายการของรายการกลับ → 409 `reversal_entry`; กลับซ้ำ → 409 `already_reversed`; `reverseSource` ข้ามแถวที่กลับแล้ว (ไม่มีอะไรเหลือ → ok `[]`) | 02 §1.11 ไม่ระบุกรณีขอบ |
+| D-173 | 2026-11-01 | (WP-20) guard ทำงานโดยไม่ดู flag โมดูล (ledger เป็น foundation, เงินที่บันทึกแล้วต้องเก็บ): ลบโครงการที่มี `fin_events` → 409 reason `financial_events_exist`; ปลดล็อก baseline ที่มี `cost_ledger_entries` → blocker `{reason:'ledger'}`; โครงการที่มีแค่ ledger (ไม่มี fin_events) ลบได้ (cascade ตาม tenant FK) | ตามขอบเขต WP-20; release 1 ไม่มีแถวในสองตารางนี้จึงไม่เปลี่ยนพฤติกรรม |
+| D-174 | 2026-11-01 | (WP-20) กันเขียนพร้อมกันด้วย `pg_advisory_xact_lock(hashtextextended('ledger:'+ref,0))` ต่อ commitment ref (เรียงก่อนล็อก) + `for update` แถวต้นฉบับตอนกลับรายการ + partial unique `(reverses_id) where reverses_id is not null` ทั้งสองตาราง; `source_type` เป็น text ไม่มี check (ค่าแนะนำ `COST_SOURCE_TYPES` ใน contract); check `fin_events_event_type_check` เขียนรายการซ้ำใน schema (schema ไม่ import contract ตอน runtime) — เพิ่มประเภทใหม่ต้องแก้ทั้ง contract และ schema + migration | ไม่ล็อกแถว `projects` เพื่อไม่ให้ลำดับล็อกชนกับ use case ของผู้เรียก |
+| D-175 | 2026-11-01 | (WP-20) `CostLedgerDto = {entries (เก่า→ใหม่), byCostCode, totals}` คำนวณจากแถวที่เลือก (`costCodeId` กรอง); `fin-events` ไม่แบ่งหน้า (คืนทั้งช่วงที่ขอ เรียง event_date → created_at) | รายงานภาษี/กระแสเงินสดต้องการทั้งช่วง; WP-48/52 ค่อยเพิ่ม paging ถ้าจำเป็น |
+| D-176 | 2026-11-01 | (WP-20) ไม่เขียนเทสต์ใหม่ตามคำสั่งรอบนี้ — ตรวจด้วย smoke spec ชั่วคราว (unit + e2e, ลบแล้ว) | คำสั่งเจ้าของ: เน้นส่งของก่อน demo |
 
 ## Handoff notes
 
@@ -586,3 +593,19 @@
   - การเปลี่ยน lock จาก use case อื่นในเว็บ (เช่นเซ็นสัญญา WP-27): invalidate `boqControlKeys.baseline(projectId)` และเรียก `useProjectStore.getState().setCloudLocked(true)` ถ้าโครงการนั้นเปิดอยู่
   - หน้า BOQ ไม่ได้ disable input เมื่อ `locked` (เหมือน viewer เดิม: แก้แล้วได้ notice และค่าไม่เปลี่ยน) — ถ้าต้อง disable ให้อ่าน `isBaselineLocked(binding)`
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ทั้งหมดผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/store src/features/cloud/sync src/i18n` 79 ผ่าน; ไม่มีการแก้ backend; ยังไม่ได้เปิดหน้าในเบราว์เซอร์ (ไม่มี backend ที่เปิดโมดูลไว้) — มือถือ 375 px ตรวจจากโค้ด (Select เต็มความกว้าง, popup ≤ `100vw − 32px`, ข้อความตัดบรรทัด)
+
+### WP-20 — Cost ledger + financial events (HASH)
+- สร้าง: `backend/src/shared/infrastructure/database/schema-ledger.ts` (`cost_ledger_entries`, `fin_events`; `ledgerTables`) + `database.ts` + `drizzle.config.ts`; migration `0018_wp20_ledger` (ตรงตามคาด ไม่ถาม interactive) → WP ถัดไปที่แก้ schema ได้ `0019_*`
+- contract `src/shared/contract/erp/ledger.ts`: `COST_ENTRY_KINDS`, `COST_CATEGORIES`, `COST_SOURCE_TYPES`, `FIN_EVENT_TYPES`, `FIN_DIRECTIONS`, `FIN_COUNTERPARTY_TYPES` (+ schemas/types), `costLedgerEntryDtoSchema`, `costLedgerTotalsDtoSchema`, `costLedgerCodeTotalsDtoSchema`, `costLedgerQuerySchema`, `costLedgerDtoSchema`, `finEventDtoSchema`, `finEventListQuerySchema` (`type` คั่นด้วย comma), `finEventListDtoSchema`
+- `ports.ts`: `CostLedger`, `FinancialEvents`, types `CostLedgerEntryInput`, `CostLedgerEntry`, `CostLedgerTotals`, `CostLedgerCodeTotals`, `CostLedgerReverseInput`, `FinEventInput`, `FinEvent`, `FinEventFilter`
+- backend `backend/src/modules/ledger/`: `domain/ledger-rules.ts` (validation, `commitmentBreach`, `sumTotals`, `totalsByCode`), repo ports `CostLedgerRepository`/`FinEventRepository` + drizzle/in-memory, `application/ledger.services.ts` (`LedgerService` = `CostLedger`, `FinancialEventsService` = `FinancialEvents`), use cases `GetCostLedgerUseCase`/`ListFinEventsUseCase`, `LedgerController` (`@RequiresModule('project-hub')`), `ledger.module.ts` (`@Global`, export `CostLedger`/`FinancialEvents`; ลงทะเบียน `ProjectDeletionGuards`, `BaselineUnlockGuards`, `ProjectDependents`); `app.module.ts`; `backend/API.md`
+- i18n `errors.reasons` (th+en): `commitment_exceeded`, `already_reversed`, `reversal_entry`, `financial_events_exist` (blocker `ledger` ของหน้า baseline มีข้อความจาก WP-19 แล้ว)
+- เบี่ยงจากแผน: D-170 … D-176
+- WP ถัดไปต้องรู้:
+  - เรียกใน `uow.run` ของตัวเองเสมอ และ **ตรวจผลก่อนเขียนอย่างอื่น** (`const r = await this.ledger.post(ws, [...]); if (!r.ok) return r;`) — port ตรวจทุกแถวก่อนเขียน แต่ `err` ไม่ rollback งานที่ผู้เรียกเขียนไปก่อนหน้า จึงควรเรียก post ก่อนเขียนเอกสารของตัวเอง หรือ throw เพื่อ rollback
+  - PO (WP-39): `kind:'commit'`, `sourceType:'purchase_order'`, `sourceId` = PO id, `sourceLineId` = บรรทัด PO (เป็น commitment ref อัตโนมัติ); GR: `commit_release` ยอดติดลบ + `commitmentRef` = บรรทัด PO + `actual` ยอดบวก (cost code เดียวกับ commit — invariant ต่อ ref+cost code); ปิด PO: `openCommitments(ws, lineIds)` แล้ว release ยอดคงเหลือ; ยกเลิกเอกสาร: `reverseSource(ws, sourceType, sourceId, {by, date})`
+  - เงินทุกค่าถูก `round2` ใน port (ส่งยอดไม่รวม VAT); `entryDate`/`eventDate` = `bangkokToday(clock.now())` หรือวันที่เอกสาร
+  - `FinancialEvents.post(ws, {projectId|null, eventDate, eventType, direction, counterpartyType, counterpartyName, sourceType, sourceId, net, vat?, wht?, retention?, cash?, docType?, docNumber?, docDate?, data?, by})` หนึ่งแถวต่อเหตุการณ์; กลับรายการ `reverse(ws, eventId, {by, date, note?})` (note ไปอยู่ใน `data.reversalNote`)
+  - hub roll-up/job cost (WP-46): `totalsByProject(ws, projectIds)` query เดียวต่อชุด; ต่อ cost code `totalsByCostCode(ws, projectId)`
+  - เว็บ (WP-48): `GET /projects/:id/cost-ledger?costCodeId=` (`cost.read`) และ `GET /workspaces/:ws/fin-events?from&to&type&projectId`
+- ตรวจแล้ว: `npx tsc --noEmit` backend + web ผ่าน; eslint ไฟล์ที่แก้ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/shared/contract src/i18n` 623 ผ่าน; `cd backend && npx jest src/modules/projects src/shared` 219 ผ่าน; e2e `projects` 23 ผ่าน; smoke ชั่วคราว (ลบแล้ว) — unit: commit 1,000 → release −400 → actual 400 = committed_open 600 / actual 400 (ทั้ง `totalsByCostCode` และ `totalsByProject`), release เกิน → 422 `commitment_exceeded`, `reverseSource` ของ PO ก่อนกลับ GR → 422, กลับ GR → 2 แถว แล้ว open กลับเป็น 1,000, กลับซ้ำ → `[]`, cost code ของโครงการอื่น → 404, fin event reverse ได้ยอดติดลบ + `reversesId` / ซ้ำ → 409; e2e: โมดูลปิด → 404 `module_disabled`, `cost-ledger` totals ถูก, viewer → 403, fin-events กรอง type/วันที่ได้, `type=nope` → 400, viewer เห็นเฉพาะ `ar.*`, ลบโครงการที่มี fin event → 409 `financial_events_exist`; ยังไม่ได้ทดสอบบน PostgreSQL จริง (advisory lock / SQL sum)

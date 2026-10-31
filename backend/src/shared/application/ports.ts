@@ -6,7 +6,8 @@ import type {
 } from '@contrack/contract';
 import type {
     ApprovalDecision, ApprovalStatus, ApprovalSubject, BankAccount, BaselineReason, BaselineStatus, BusinessProfile, CompanyDefaults,
-    CostCodeSource, CostCodeStatus, CustomerLinkAction, CustomerLinkSubject, DocLanguage, DocType, FileDto, FilePurpose, HubProjectStatus, ModuleId, Permission, ProjectRollup, ProjectType,
+    CostCategory, CostCodeSource, CostCodeStatus, CostEntryKind, CustomerLinkAction, CustomerLinkSubject, DocLanguage, DocType, FileDto,
+    FilePurpose, FinCounterpartyType, FinDirection, FinEventType, HubProjectStatus, ModuleId, Permission, ProjectRollup, ProjectType,
 } from '@contrack/contract';
 import type { DomainError } from '../domain/domain-error';
 import type { ProjectId, RateCardId, RevisionId, UserId, WorkspaceId } from '../domain/ids';
@@ -967,4 +968,170 @@ export abstract class BaselineControl {
     abstract status(workspaceId: WorkspaceId, projectId: ProjectId): Promise<BaselineInfo | undefined>;
     /** The project snapshot of the active baseline (for VO pricing); undefined when not locked. */
     abstract baselineProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<BoqProject | undefined>;
+}
+
+// ── Cost ledger + financial events (WP-20, docs/erp/02-domain-model.md §1.11, 01-architecture §12.4) ──
+// Provided by the ledger module (foundation, no module check: the calling module checked its own). Every write joins
+// the caller's `uow.run` and validates everything before writing (an `err` returned does not roll back).
+
+/** One cost row to post. `amount` signed, without VAT (rounded to 2 places on write). */
+export interface CostLedgerEntryInput {
+    projectId: ProjectId;
+    /** A cost code of the project (checked; omitted codes allowed), or null for overhead. */
+    costCodeId: string | null;
+    entryDate: string;
+    kind: CostEntryKind;
+    category: CostCategory;
+    amount: number;
+    qty?: number | null;
+    /** e.g. `purchase_order`, `goods_receipt` (COST_SOURCE_TYPES). */
+    sourceType: string;
+    sourceId: string;
+    sourceLineId?: string | null;
+    /**
+     * The PO / contract line the row opens (commit) or frees (commit_release, required). A commit without one uses
+     * `sourceLineId ?? sourceId`. The open amount per (commitmentRef, costCodeId) may never drop below 0.
+     */
+    commitmentRef?: string | null;
+    note?: string;
+    by: UserId;
+}
+
+export interface CostLedgerEntry {
+    id: string;
+    workspaceId: WorkspaceId;
+    projectId: ProjectId;
+    costCodeId: string | null;
+    entryDate: string;
+    kind: CostEntryKind;
+    category: CostCategory;
+    amount: number;
+    qty: number | null;
+    sourceType: string;
+    sourceId: string;
+    sourceLineId: string | null;
+    commitmentRef: string | null;
+    reversesId: string | null;
+    note: string;
+    createdBy: UserId;
+    createdAt: Date;
+}
+
+/** committedOpen = committed + released (released ≤ 0). */
+export interface CostLedgerTotals {
+    committed: number;
+    released: number;
+    committedOpen: number;
+    actual: number;
+}
+
+export interface CostLedgerCodeTotals extends CostLedgerTotals {
+    costCodeId: string | null;
+}
+
+export interface CostLedgerReverseInput {
+    by: UserId;
+    /** Business date of the reversal row. */
+    date: string;
+    note?: string;
+}
+
+export abstract class CostLedger {
+    /**
+     * Appends the rows (one call = one batch, inside the caller's transaction). validation_failed for a bad row,
+     * not_found for a project / cost code not of the workspace, unprocessable `commitment_exceeded` when a release
+     * (or a negative commit) would leave a commitment below 0.
+     */
+    abstract post(workspaceId: WorkspaceId, entries: readonly CostLedgerEntryInput[]): Promise<Result<CostLedgerEntry[], DomainError>>;
+    /**
+     * A new row with negated amount / qty pointing at the original. not_found; conflict `already_reversed` (also for a
+     * reversal row); unprocessable `commitment_exceeded` (reverse the releases of a commitment before its commit).
+     */
+    abstract reverse(workspaceId: WorkspaceId, entryId: string, input: CostLedgerReverseInput): Promise<Result<CostLedgerEntry, DomainError>>;
+    /** Reverses every not yet reversed row of a source (releases first). Ok with [] when there is nothing to reverse. */
+    abstract reverseSource(
+        workspaceId: WorkspaceId, sourceType: string, sourceId: string, input: CostLedgerReverseInput,
+    ): Promise<Result<CostLedgerEntry[], DomainError>>;
+    /** One row per cost code that has entries (null = overhead). */
+    abstract totalsByCostCode(workspaceId: WorkspaceId, projectId: ProjectId): Promise<CostLedgerCodeTotals[]>;
+    /** Totals per project (projects without entries are absent). One query for the whole set. */
+    abstract totalsByProject(workspaceId: WorkspaceId, projectIds: readonly ProjectId[]): Promise<Map<ProjectId, CostLedgerTotals>>;
+    /** Rows posted by a source, oldest first (reversals included). */
+    abstract entriesBySource(workspaceId: WorkspaceId, sourceType: string, sourceId: string): Promise<CostLedgerEntry[]>;
+    /** Open amount (Σ commit + Σ commit_release) per commitment ref; refs without rows are absent. */
+    abstract openCommitments(workspaceId: WorkspaceId, refs: readonly string[]): Promise<Map<string, number>>;
+}
+
+/** One money event to post (amounts signed, rounded to 2 places on write). */
+export interface FinEventInput {
+    projectId: ProjectId | null;
+    eventDate: string;
+    eventType: FinEventType;
+    direction: FinDirection;
+    counterpartyType: FinCounterpartyType;
+    counterpartyId?: string | null;
+    counterpartyName: string;
+    counterpartyTaxId?: string;
+    counterpartyBranch?: string;
+    docType?: string | null;
+    docNumber?: string | null;
+    docDate?: string | null;
+    sourceType: string;
+    sourceId: string;
+    /** Without VAT. */
+    net: number;
+    vat?: number;
+    wht?: number;
+    retention?: number;
+    /** Money that actually moved (0 when none). */
+    cash?: number;
+    data?: Record<string, unknown>;
+    by: UserId;
+}
+
+export interface FinEvent {
+    id: string;
+    workspaceId: WorkspaceId;
+    projectId: ProjectId | null;
+    eventDate: string;
+    eventType: FinEventType;
+    direction: FinDirection;
+    counterpartyType: FinCounterpartyType;
+    counterpartyId: string | null;
+    counterpartyName: string;
+    counterpartyTaxId: string;
+    counterpartyBranch: string;
+    docType: string | null;
+    docNumber: string | null;
+    docDate: string | null;
+    sourceType: string;
+    sourceId: string;
+    net: number;
+    vat: number;
+    wht: number;
+    retention: number;
+    cash: number;
+    reversesId: string | null;
+    data: Record<string, unknown>;
+    createdBy: UserId;
+    createdAt: Date;
+}
+
+/** Dates inclusive; `types` empty / absent = every type. */
+export interface FinEventFilter {
+    from?: string;
+    to?: string;
+    types?: readonly FinEventType[];
+    projectId?: ProjectId;
+}
+
+export abstract class FinancialEvents {
+    /** Appends one event inside the caller's transaction. validation_failed; not_found for a project of another workspace. */
+    abstract post(workspaceId: WorkspaceId, event: FinEventInput): Promise<Result<FinEvent, DomainError>>;
+    /** A new event with every amount negated, `reverses_id` = the original. not_found; conflict `already_reversed`. */
+    abstract reverse(workspaceId: WorkspaceId, eventId: string, input: CostLedgerReverseInput): Promise<Result<FinEvent, DomainError>>;
+    /** Oldest first (event date, then creation). */
+    abstract list(workspaceId: WorkspaceId, filter: FinEventFilter): Promise<FinEvent[]>;
+    /** Events of a source, oldest first (reversals included). */
+    abstract bySource(workspaceId: WorkspaceId, sourceType: string, sourceId: string): Promise<FinEvent[]>;
 }

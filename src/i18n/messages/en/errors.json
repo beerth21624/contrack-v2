@@ -54,6 +54,10 @@
     "baseline_already_locked": "The BOQ baseline is already locked",
     "baseline_not_locked": "The BOQ baseline is not locked",
     "baseline_unlock_blocked": "The baseline cannot be unlocked because documents already refer to it",
-    "no_cost_codes": "The project has no cost codes to allocate the contract value to"
+    "no_cost_codes": "The project has no cost codes to allocate the contract value to",
+    "commitment_exceeded": "The release is larger than the open commitment",
+    "already_reversed": "This entry has already been reversed",
+    "reversal_entry": "A reversal entry cannot be reversed",
+    "financial_events_exist": "This cannot be done because financial transactions have been recorded"
   }
 }
