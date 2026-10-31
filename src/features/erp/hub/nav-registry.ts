@@ -107,6 +107,7 @@ export const PROJECT_TABS: readonly ErpProjectTab[] = [
     { key: 'contract', labelKey: 'tabs.contract', href: id => `/p/${encodeURIComponent(id)}/contract`, module: 'contracts', permission: 'contracts.read', match: p => /^\/p\/[^/]+\/contract/.test(p) },
     { key: 'variations', labelKey: 'tabs.variations', href: id => `/p/${encodeURIComponent(id)}/variations`, module: 'variations', permission: 'variations.read', match: p => /^\/p\/[^/]+\/variations/.test(p) },
     { key: 'billing', labelKey: 'tabs.billing', href: id => `/p/${encodeURIComponent(id)}/billing`, module: 'billing', permission: 'billing.read', match: p => /^\/p\/[^/]+\/billing/.test(p) },
+    { key: 'procurement', labelKey: 'tabs.procurement', href: id => `/p/${encodeURIComponent(id)}/procurement`, module: 'procurement', permission: 'procurement.read', match: p => /^\/p\/[^/]+\/procurement/.test(p) },
 ];
 
 /** Header slot: small controls next to the notification bell (global search, …); each shows when its gate passes. */

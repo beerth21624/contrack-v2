@@ -28,7 +28,8 @@
     "quotations": "Quotations",
     "contract": "Contract",
     "billing": "Billing",
-    "variations": "Variations"
+    "variations": "Variations",
+    "procurement": "Purchasing"
   },
   "receivables": "Receivables",
   "suppliers": "Suppliers"

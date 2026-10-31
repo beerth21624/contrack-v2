@@ -28,7 +28,8 @@
     "quotations": "ใบเสนอราคา",
     "contract": "สัญญา",
     "billing": "วางบิล",
-    "variations": "งานเพิ่ม-ลด"
+    "variations": "งานเพิ่ม-ลด",
+    "procurement": "จัดซื้อ"
   },
   "receivables": "ลูกหนี้",
   "suppliers": "ผู้ขาย"

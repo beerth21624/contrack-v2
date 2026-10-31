@@ -1,0 +1,240 @@
+{
+  "loadFailed": "Could not load purchasing data",
+  "retry": "Try again",
+  "tabs": {
+    "requests": "Purchase requests",
+    "rfqs": "RFQs",
+    "orders": "Purchase orders"
+  },
+  "requests": {
+    "title": "Purchase requests (PR)",
+    "create": "Request from site",
+    "fromBoq": "Request from BOQ",
+    "draft": "Draft",
+    "empty": {
+      "title": "No purchase requests yet",
+      "hint": "Type what the site needs, or pick items from the BOQ"
+    },
+    "warningCount": "{count} warning(s)",
+    "columns": {
+      "number": "No.",
+      "status": "Status",
+      "requiredDate": "Needed by",
+      "lines": "Items",
+      "estTotal": "Estimate",
+      "warnings": "Budget",
+      "updatedAt": "Last edited"
+    }
+  },
+  "editor": {
+    "newTitle": "New purchase request",
+    "draftTitle": "Purchase request (draft)",
+    "loadFailed": "Could not load the purchase request",
+    "close": "Close",
+    "saveDraft": "Save draft",
+    "submit": "Submit for approval",
+    "saved": "Purchase request saved",
+    "submitted": "Purchase request submitted, awaiting approval",
+    "submittedApproved": "Purchase request submitted and approved",
+    "cancel": "Cancel request",
+    "cancelConfirm": "Cancel this purchase request?",
+    "fields": {
+      "number": "No.",
+      "status": "Status",
+      "requiredDate": "Needed by",
+      "estTotal": "Estimate",
+      "note": "Note"
+    },
+    "lines": {
+      "title": "Items needed",
+      "add": "Add item",
+      "remove": "Remove item",
+      "desc": "Item",
+      "descPlaceholder": "Item, e.g. cement, coarse sand",
+      "qty": "Quantity",
+      "unit": "Unit",
+      "estUnitPrice": "Estimated unit price",
+      "costCode": "Cost code (optional)",
+      "ordered": "Ordered"
+    }
+  },
+  "warnings": {
+    "title": "Over the budget",
+    "over_quantity": "{code}: total quantity {value} exceeds the BOQ quantity ({limit})",
+    "over_price": "{code}: unit price {value} is above the BOQ price ({limit})",
+    "over_budget": "{code}: committed + actual cost {value} exceeds the material budget ({limit})",
+    "reason": "Reason",
+    "reasonLabel": "Why this is over budget (required to submit)",
+    "reasonPlaceholder": "Enter a reason"
+  },
+  "fromBoq": {
+    "title": "Pick items from the BOQ",
+    "hint": "The quantity not yet requested is filled in for you; edit it before submitting",
+    "search": "Search by code or name",
+    "empty": "No cost codes yet (lock the BOQ baseline first)",
+    "loadFailed": "Could not load cost codes",
+    "submit": "Create request ({count} items)",
+    "columns": {
+      "code": "Code",
+      "desc": "Item",
+      "qty": "BOQ quantity"
+    }
+  },
+  "rfqs": {
+    "title": "Requests for quotation (RFQ)",
+    "create": "New RFQ",
+    "draft": "Draft",
+    "empty": {
+      "title": "No RFQs yet",
+      "hint": "Approve a purchase request, then create an RFQ to compare suppliers"
+    },
+    "columns": {
+      "title": "Title",
+      "number": "No.",
+      "status": "Status",
+      "dueDate": "Quote due",
+      "lines": "Items",
+      "quotes": "Quoted",
+      "updatedAt": "Last edited"
+    }
+  },
+  "newRfq": {
+    "title": "New RFQ from purchase requests",
+    "submit": "Create RFQ ({count} items)",
+    "done": "RFQ created",
+    "hint": "Pick items of approved purchase requests (the quantity not yet ordered is shown)",
+    "empty": "No items on approved purchase requests",
+    "fields": {
+      "title": "RFQ title",
+      "titlePlaceholder": "Empty = the purchase request number",
+      "dueDate": "Quote due"
+    },
+    "columns": {
+      "request": "Request",
+      "desc": "Item",
+      "remaining": "Remaining"
+    }
+  },
+  "orders": {
+    "title": "Purchase orders (PO)",
+    "draft": "Draft",
+    "empty": {
+      "title": "No purchase orders yet",
+      "hint": "Choose a supplier in an RFQ and a draft purchase order is made for you"
+    },
+    "columns": {
+      "number": "No.",
+      "supplier": "Supplier",
+      "status": "Status",
+      "orderDate": "Order date",
+      "total": "Total"
+    }
+  },
+  "rfq": {
+    "untitled": "RFQ",
+    "loadFailed": "Could not load the RFQ",
+    "retry": "Try again",
+    "backToList": "Back to purchasing",
+    "needSuppliers": "Add at least one supplier before sending the RFQ",
+    "sentHint": "The RFQ is with the suppliers. When a quote arrives, type in its prices, then compare below",
+    "awardedBanner": "Supplier chosen: {name} (a draft purchase order was made)",
+    "openOrders": "Open purchase orders",
+    "send": {
+      "button": "Send RFQ",
+      "confirm": "Send the RFQ?",
+      "hint": "An RFQ number is issued and the items can no longer be changed",
+      "done": "RFQ sent"
+    },
+    "cancel": {
+      "button": "Cancel RFQ",
+      "confirm": "Cancel this RFQ?",
+      "done": "RFQ cancelled"
+    },
+    "details": {
+      "title": "Details",
+      "save": "Save",
+      "saved": "Saved"
+    },
+    "fields": {
+      "title": "RFQ title",
+      "dueDate": "Quote due",
+      "language": "Document language",
+      "deliveryAddress": "Delivery address",
+      "sentAt": "Sent"
+    },
+    "languages": {
+      "th": "Thai",
+      "en": "English"
+    },
+    "lines": {
+      "columns": {
+        "costCode": "Code",
+        "desc": "Item",
+        "qty": "Quantity"
+      }
+    },
+    "suppliers": {
+      "title": "Invited suppliers",
+      "add": "Add a supplier",
+      "empty": "No suppliers chosen yet",
+      "remove": "Remove",
+      "enterQuote": "Enter prices",
+      "editQuote": "Edit prices",
+      "columns": {
+        "name": "Supplier",
+        "contact": "Contact",
+        "status": "Status"
+      }
+    },
+    "compare": {
+      "title": "Compare quotes"
+    },
+    "award": {
+      "done": "Supplier chosen, a draft purchase order was made"
+    }
+  },
+  "quote": {
+    "title": "Prices from {name}",
+    "save": "Save prices",
+    "cancel": "Cancel",
+    "decline": "Supplier declined",
+    "saved": "Prices saved",
+    "declined": "Marked as declined",
+    "files": "Quotation files",
+    "fields": {
+      "quoteRef": "Supplier's quote number",
+      "quoteDate": "Quote date",
+      "validUntil": "Price valid until",
+      "deliveryDays": "Delivery within (days)",
+      "paymentTermDays": "Credit (days)",
+      "pricesIncludeVat": "Prices typed include VAT",
+      "note": "Note"
+    },
+    "lines": {
+      "title": "Unit prices",
+      "hint": "Leave empty = the supplier does not offer this item",
+      "notOffered": "Not offered"
+    }
+  },
+  "compare": {
+    "line": "Item",
+    "budgetPrice": "Budget",
+    "notOffered": "Not offered",
+    "best": "Lowest",
+    "quotedTotal": "Quoted total (before VAT)",
+    "normalizedTotal": "Comparable total",
+    "normalizedHint": "Items not offered are counted at the budget price",
+    "missing": "{count} item(s) not offered",
+    "lowestLines": "Items at the lowest price",
+    "vat": "VAT",
+    "total": "Total",
+    "deliveryDays": "Delivery (days)",
+    "paymentTermDays": "Credit (days)",
+    "validUntil": "Valid until",
+    "award": "Choose",
+    "awardConfirm": "Choose {name} and make a purchase order?",
+    "awardHint": "A draft purchase order is made from the quoted prices; you can check it before issuing",
+    "noQuotes": "No supplier has quoted yet",
+    "budgetTotal": "Budget total"
+  }
+}

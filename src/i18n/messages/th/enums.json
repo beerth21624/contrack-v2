@@ -253,5 +253,36 @@
     "painting": "ทาสี",
     "doors-windows": "ประตู-หน้าต่าง",
     "misc": "เบ็ดเตล็ด"
+  },
+  "purchaseRequestStatus": {
+    "draft": "ฉบับร่าง",
+    "pending_approval": "รออนุมัติ",
+    "approved": "อนุมัติแล้ว",
+    "rejected": "ไม่อนุมัติ",
+    "partially_ordered": "สั่งซื้อบางส่วน",
+    "ordered": "สั่งซื้อครบแล้ว",
+    "closed": "ปิดแล้ว",
+    "cancelled": "ยกเลิก"
+  },
+  "rfqStatus": {
+    "draft": "ฉบับร่าง",
+    "sent": "ส่งแล้ว รอใบเสนอราคา",
+    "awarded": "เลือกผู้ขายแล้ว",
+    "closed": "ปิดแล้ว",
+    "cancelled": "ยกเลิก"
+  },
+  "rfqSupplierStatus": {
+    "invited": "รอใบเสนอราคา",
+    "quoted": "เสนอราคาแล้ว",
+    "declined": "ไม่เสนอราคา"
+  },
+  "purchaseOrderStatus": {
+    "draft": "ฉบับร่าง",
+    "pending_approval": "รออนุมัติ",
+    "issued": "ออกแล้ว รอรับของ",
+    "partially_received": "รับของบางส่วน",
+    "received": "รับของครบ",
+    "closed": "ปิดแล้ว",
+    "cancelled": "ยกเลิก"
   }
 }

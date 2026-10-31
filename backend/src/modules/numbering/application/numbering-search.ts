@@ -22,6 +22,8 @@ const ROUTES: Readonly<Record<string, SubjectRoute>> = {
     ar_invoice: { module: 'billing', permission: 'billing.read', href: d => `/print/invoice/${d.subjectId}` },
     ar_receipt: { module: 'billing', permission: 'billing.read', href: d => `/print/receipt/${d.subjectId}` },
     variation: { module: 'variations', permission: 'variations.read', href: d => `/p/${d.projectId}/variations/${d.subjectId}` },
+    purchase_request: { module: 'procurement', permission: 'procurement.read', href: d => `/p/${d.projectId}/procurement` },
+    rfq: { module: 'procurement', permission: 'procurement.read', href: d => `/p/${d.projectId}/procurement/rfqs/${d.subjectId}` },
 };
 
 @Injectable()

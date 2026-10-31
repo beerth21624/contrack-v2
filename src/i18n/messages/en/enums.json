@@ -253,5 +253,36 @@
     "painting": "Painting",
     "doors-windows": "Doors & windows",
     "misc": "Miscellaneous"
+  },
+  "purchaseRequestStatus": {
+    "draft": "Draft",
+    "pending_approval": "Pending approval",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "partially_ordered": "Partly ordered",
+    "ordered": "Fully ordered",
+    "closed": "Closed",
+    "cancelled": "Cancelled"
+  },
+  "rfqStatus": {
+    "draft": "Draft",
+    "sent": "Sent, awaiting quotes",
+    "awarded": "Supplier chosen",
+    "closed": "Closed",
+    "cancelled": "Cancelled"
+  },
+  "rfqSupplierStatus": {
+    "invited": "Awaiting quote",
+    "quoted": "Quoted",
+    "declined": "Declined"
+  },
+  "purchaseOrderStatus": {
+    "draft": "Draft",
+    "pending_approval": "Pending approval",
+    "issued": "Issued, awaiting goods",
+    "partially_received": "Partly received",
+    "received": "Fully received",
+    "closed": "Closed",
+    "cancelled": "Cancelled"
   }
 }
