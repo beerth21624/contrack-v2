@@ -44,7 +44,7 @@
 | WP-30 | รับเงิน ใบกำกับภาษี ลูกหนี้ เตือน PromptPay backend | opus | done | 315cd6f | migration `0023_wp30_receipts`; receipts/TI/CN/aging/statement/PromptPay ในโมดูล `billing`, sweeps `billing.invoice-due`/`billing.retention-release-due`, ลิงก์ลูกค้า `invoice`, port `BillingTotals` + `CustomerLookup.locate`; D-236…D-243 |
 | WP-31 | Billing web | sonnet | done | 63c59b8 | หน้า `/p/<id>/billing` (งวดเบิก เงินล่วงหน้า เงินประกัน ใบแจ้งหนี้ รับเงิน), `/p/<id>/billing/claims/<id>`, `/receivables`, statement ในหน้าลูกค้า; i18n `billing` + enums; D-244…D-247 |
 | WP-32 | Billing เอกสารพิมพ์ + QR | sonnet | done | fa21ba1 | เอกสารพิมพ์ ใบแจ้งหนี้/ใบกำกับภาษี/ใบลดหนี้/ใบเสร็จ(รวม TI)/ใบรับรองงวดงาน + QR PromptPay + renderer ลิงก์ลูกค้า `invoice`; deps `qrcode@1.5.4`; D-248…D-250 |
-| WP-33 | VO backend | opus | done | | migration `0024_wp33_variations`; โมดูล `variations` (CRUD, lines, compute จาก sandbox, evidence, submit/approval, ลิงก์ลูกค้า, record-response, withdraw, cancel, ผลเมื่อ accepted), ports `QuotationPricingLookup` + `ProjectLifecycle.shiftPlannedFinish`; D-251…D-256 |
+| WP-33 | VO backend | opus | done | 37a9830 | migration `0024_wp33_variations`; โมดูล `variations` (CRUD, lines, compute จาก sandbox, evidence, submit/approval, ลิงก์ลูกค้า, record-response, withdraw, cancel, ผลเมื่อ accepted), ports `QuotationPricingLookup` + `ProjectLifecycle.shiftPlannedFinish`; D-251…D-256 |
 | WP-34 | VO web + ราคาด้วยเครื่องคำนวณ (sandbox) | opus | todo | | |
 | WP-35 | Portal backend + ค้นหา | opus | todo | | |
 | WP-36 | Portal web | sonnet | todo | | |
@@ -823,7 +823,7 @@
 - WP ถัดไปต้องรู้: `buildInvoicePrintModel` ใช้กับใบแจ้งหนี้ที่ WP อื่นต้องพิมพ์ได้; `PrintCompany.bankAccounts` ของ renderer ลิงก์มาจาก payload
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/features/erp/billing` + routes ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n` ผ่าน; **ยังไม่ได้ทดสอบมือ**: สแกน QR ด้วยแอปธนาคารให้ยอดตรง (ยอด = `GET /invoices/:id/promptpay` amount = ยอดค้างส่วนเงินสด) และยังไม่ได้ลองเปิดหน้าพิมพ์ใน browser
 
-### WP-33 — VO backend (COMMIT)
+### WP-33 — VO backend (37a9830)
 - schema: `backend/src/shared/infrastructure/database/schema-variations.ts` (`vo_variations`, `vo_lines`, `vo_evidence`; `variationTables`) + `database.ts` + `drizzle.config.ts`; unique `(contract_id, seq_no)`, `(workspace_id, number)`; tenant FK cascade; ไม่มี FK ไป contract/cost code/file (D-19); migration `0024_wp33_variations` (ไม่ถาม interactive) → WP ถัดไปที่แก้ schema ได้ `0025_*`
 - contract `src/shared/contract/erp/variations.ts` (export ใน `erp/index.ts`): `VARIATION_STATUSES`, `VARIATION_OPEN_STATUSES`, `VARIATION_REASONS`, `VARIATION_LINE_SOURCES`, `VARIATION_EVIDENCE_KINDS`, `VARIATION_RESPONSE_ACTIONS`, `variationSandboxSchema` + `EMPTY_VARIATION_SANDBOX`, DTO `variationOrderDtoSchema` / `variationOrderSummaryDtoSchema` / `variationOrderListDtoSchema` / `variationOrderLineDtoSchema` / `variationOrderEvidenceDtoSchema`, `variationLinkPayloadSchema`, requests `create|patchVariationOrderRequestSchema`, `putVariationOrderLinesRequestSchema` (+`variationOrderLineInputSchema`), `computeVariationOrderRequestSchema`, `addVariationEvidenceRequestSchema`, `recordVariationResponseRequestSchema`; FILE_PURPOSE `variation_evidence` → `variations`
 - pure: `src/domain/variations/pricing.ts` (`priceVariationLine`, `variationTotals`, `sellFactorOf`, `VariationSellFactors`), `sandbox.ts` (`applyVariationSandbox`, `variationLinesFromSandbox`, `projectBoqLines`)
