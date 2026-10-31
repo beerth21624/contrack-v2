@@ -53,7 +53,7 @@
 | WP-39 | PO + รับของ + 3-way match backend | opus | done | dd27f4f | migration `0027_wp39_po_gr`; PO/GR ในโมดูล procurement; port `PurchaseOrders`; D-284…D-291 |
 | WP-40 | PR/RFQ web | sonnet | done | 5f88435 | ไม่มี migration; `src/features/erp/procurement/*`, routes `/p/[id]/procurement`, `…/procurement/rfqs/[rfqId]`, แท็บ nav `procurement`; i18n `procurement` + enums; D-292…D-295 |
 | WP-41 | PO/รับของ web + พิมพ์ PO/RFQ | sonnet | done | 4b1b0be | ไม่มี migration; `PurchaseOrderPage`, `GoodsReceiptDialog`, `PurchasingPage`, พิมพ์ PO/RFQ, ประวัติราคาผู้ขาย; routes `…/procurement/orders/[orderId]`, `/purchasing`, `/print/purchase-order/[id]`, `/print/rfq/[id]`; D-296…D-299 |
-| WP-42 | รายงานประจำวัน backend | opus | done | COMMIT | migration `0028_wp42_site_diary`; โมดูล `backend/src/modules/site-diary/`, port `CrewDailyCost` (workforce), `CostCodeLookup.listByProjects`; D-300…D-305 |
+| WP-42 | รายงานประจำวัน backend | opus | done | edc7d7c | migration `0028_wp42_site_diary`; โมดูล `backend/src/modules/site-diary/`, port `CrewDailyCost` (workforce), `CostCodeLookup.listByProjects`; D-300…D-305 |
 | WP-43 | รายงานประจำวัน web | sonnet | todo | | |
 | WP-44 | ใบลงเวลา งวดค่าแรง 15 วัน เบิกล่วงหน้า backend | opus | todo | | |
 | WP-45 | ค่าแรง web | sonnet | todo | | |
@@ -976,7 +976,7 @@
 - WP ถัดไปต้องรู้: `useReceiveGoods`/`GoodsReceiptDialog` รับ `PurchaseOrderDto`; WP-49 ควรลิงก์จากบิลผู้ขายมาที่ `orderHref(projectId, orderId)`; คะแนนผู้ขายหลังรับของยังไม่มี UI (ใช้ endpoint ratings เดิม `sourceType 'goods_receipt'`); PO ที่ได้รับอนุมัติจาก inbox ทำให้สถานะเปลี่ยนที่เซิร์ฟเวอร์ — หน้า PO โหลดสดทุกครั้ง (`staleTime: 0`)
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` และ `-p backend/tsconfig.json` ผ่าน; eslint `src/features/erp/procurement`, `SupplierDetailPage.tsx`, `nav-registry.ts`, routes ใหม่, `numbering-search.ts` ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/features/erp/hub` ผ่าน
 
-### WP-42 — รายงานประจำวัน backend (COMMIT)
+### WP-42 — รายงานประจำวัน backend (edc7d7c)
 - schema: ไฟล์ใหม่ `schema-site.ts` (`sd_reports` unique `(project_id, report_date)`, `sd_manpower`, `sd_work_items` unique `(report_id, cost_code_id)`, `sd_photos`, `sd_issues`; `siteTables`) + `database.ts` + `drizzle.config.ts`; migration `0028_wp42_site_diary` (ตรงตามคาด ไม่ถาม interactive) → WP ถัดไปที่แก้ schema ได้ `0029_*` (labour เพิ่มตาราง `lb_*` ใน `schema-site.ts` ไฟล์เดียวกัน); คอลัมน์เพิ่มจาก 02 ดู D-301
 - contract `src/shared/contract/erp/site-diary.ts` (export ใน `erp/index.ts`): `SITE_REPORT_STATUSES`, `SITE_WEATHERS`, `SITE_ISSUE_KINDS|SEVERITIES|STATUSES`, `SITE_DAY_HOURS`, DTO `siteReport(Summary|List)DtoSchema`, `siteManpowerDtoSchema`, `siteWorkItemDtoSchema` (`progressBefore`), `sitePhotoDtoSchema`, `siteIssue(List)DtoSchema`, `siteProgressDtoSchema`, queries `siteReportListQuerySchema`/`siteIssueListQuerySchema`, requests `putSiteReportRequestSchema` (+ `siteManpower|WorkItem|Photo|IssueInputSchema`), `patchSiteIssueRequestSchema`; FILE_PURPOSE `site_photo` → `site-diary`; `PORTAL_TASK_KINDS` + `site_report_missing` (+ case ใน `TasksList.tsx`)
 - pure: `src/domain/site-diary/progress.ts` (`latestProgress`, `weightedProgress`, `actualProgressSeries`) — ไม่เขียนเทสต์ (คำสั่งเจ้าของ: ส่งของก่อน)
