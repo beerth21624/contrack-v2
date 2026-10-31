@@ -77,6 +77,13 @@ export class DrizzleCostCodeRepository extends CostCodeRepository {
         return rows.map(toCostCode);
     }
 
+    async listByProjects(workspaceId: WorkspaceId, projectIds: readonly ProjectId[]): Promise<CostCode[]> {
+        if (projectIds.length === 0) return [];
+        const rows = await this.ctx.executor.select().from(projectCostCodes)
+            .where(and(eq(projectCostCodes.workspaceId, workspaceId), inArray(projectCostCodes.projectId, [...projectIds])));
+        return rows.map(toCostCode);
+    }
+
     async findMany(workspaceId: WorkspaceId, projectId: ProjectId, ids: readonly string[]): Promise<CostCode[]> {
         if (ids.length === 0) return [];
         const rows = await this.ctx.executor.select().from(projectCostCodes)

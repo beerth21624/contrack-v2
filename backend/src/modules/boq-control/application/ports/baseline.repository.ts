@@ -32,6 +32,8 @@ export abstract class BaselineRepository {
 export abstract class CostCodeRepository {
     /** Every cost code of the project, in no particular order. */
     abstract listByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<CostCode[]>;
+    /** Every cost code of many projects of the workspace, in no particular order. */
+    abstract listByProjects(workspaceId: WorkspaceId, projectIds: readonly ProjectId[]): Promise<CostCode[]>;
     abstract findMany(workspaceId: WorkspaceId, projectId: ProjectId, ids: readonly string[]): Promise<CostCode[]>;
     abstract insertMany(codes: readonly CostCode[]): Promise<void>;
     /** Replaces the stored rows (by id, within their workspace) with these values. */

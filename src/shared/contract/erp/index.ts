@@ -17,3 +17,4 @@ export * from './variations';
 export * from './portal';
 export * from './suppliers';
 export * from './procurement';
+export * from './site-diary';

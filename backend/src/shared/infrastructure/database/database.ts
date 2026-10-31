@@ -16,13 +16,14 @@ import { scBiddingTables } from './schema-sc-bidding';
 import { scContractsTables } from './schema-sc-contracts';
 import { scSharedTables } from './schema-sc-shared';
 import { scSourcingTables } from './schema-sc-sourcing';
+import { siteTables } from './schema-site';
 import { variationTables } from './schema-variations';
 
 /** Core tables (schema.ts) + one file per business work stream (no file imports another stream's file). */
 export const schema = {
     ...coreSchema, ...identityPhoneTables, ...platformTables, ...scSharedTables, ...scSourcingTables, ...scBiddingTables,
     ...scContractsTables, ...erpCoreTables, ...boqControlTables, ...ledgerTables, ...quotationTables, ...contractsBillingTables,
-    ...variationTables, ...procurementTables,
+    ...variationTables, ...procurementTables, ...siteTables,
 };
 
 export type Database = NodePgDatabase<typeof schema>;

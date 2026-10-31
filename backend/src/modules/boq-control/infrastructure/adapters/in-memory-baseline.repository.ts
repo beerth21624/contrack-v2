@@ -58,6 +58,11 @@ export class InMemoryCostCodeRepository extends CostCodeRepository {
         return Promise.resolve([...this.rows.values()].filter(c => c.workspaceId === workspaceId && c.projectId === projectId).map(copyCode));
     }
 
+    listByProjects(workspaceId: WorkspaceId, projectIds: readonly ProjectId[]): Promise<CostCode[]> {
+        const wanted = new Set<string>(projectIds);
+        return Promise.resolve([...this.rows.values()].filter(c => c.workspaceId === workspaceId && wanted.has(c.projectId)).map(copyCode));
+    }
+
     findMany(workspaceId: WorkspaceId, projectId: ProjectId, ids: readonly string[]): Promise<CostCode[]> {
         const wanted = new Set(ids);
         return Promise.resolve([...this.rows.values()]

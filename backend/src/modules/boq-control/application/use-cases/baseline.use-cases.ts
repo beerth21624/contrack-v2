@@ -51,6 +51,10 @@ export class CostCodeService extends CostCodeLookup {
         return ordered(await this.repo.listByProject(workspaceId, projectId));
     }
 
+    async listByProjects(workspaceId: WorkspaceId, projectIds: readonly ProjectId[]): Promise<CostCode[]> {
+        return ordered(await this.repo.listByProjects(workspaceId, projectIds));
+    }
+
     /**
      * Upserts one baseline cost code per version line (code = line_key) and marks baseline codes whose line is gone
      * as omitted. VO / contract / progress figures of an existing code are kept. Returns {active, omitted} counts.

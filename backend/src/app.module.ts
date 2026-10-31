@@ -31,6 +31,7 @@ import { VariationsModule } from './modules/variations/variations.module';
 import { PortalModule } from './modules/portal/portal.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { ProcurementModule } from './modules/procurement/procurement.module';
+import { SiteDiaryModule } from './modules/site-diary/site-diary.module';
 
 @Module({})
 export class AppModule {
@@ -57,6 +58,7 @@ export class AppModule {
                 PortalModule,
                 SuppliersModule,
                 ProcurementModule,
+                SiteDiaryModule,
             ],
             controllers: [HealthController],
             providers: [

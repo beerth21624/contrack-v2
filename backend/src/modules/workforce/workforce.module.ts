@@ -1,12 +1,14 @@
 // ─── Workforce (W1/W2, business module `workforce`): people, crews, crews on planned tasks, site supervisors, waits ───
 // docs/workforce/00-crew-management-design.md. Needs WorkspaceAccess (workspaces), ProjectStatusLookup (projects) and
-// RateCardLookup (rate-cards); registers its per-project rows with ProjectDependents, so deleting a project removes its
+// RateCardLookup (rate-cards); provides CrewDailyCost (site diary, WP-42); registers its per-project rows with
+// ProjectDependents, so deleting a project removes its
 // assignments, supervisors and task waits (PostgreSQL also cascades). Always loaded: while MODULES_ENABLED leaves
 // `workforce` out, its routes answer 404 `module_disabled` (RequiresModule on every controller) and its data is kept.
 // No realtime: the gateway has project rooms only; clients refetch after their own writes.
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
-import { ProjectDependents } from '../../shared/application/ports';
+import { CrewDailyCost, ProjectDependents } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
+import { WorkforceCrewDailyCost } from './application/crew-daily-cost';
 import { CrewPricing } from './application/crew-pricing';
 import { CrewAssignmentRepository } from './application/ports/crew-assignment.repository';
 import { CrewRepository } from './application/ports/crew.repository';
@@ -61,6 +63,8 @@ import { TaskLagsController } from './presentation/task-lags.controller';
         WorkforceAccess,
         WorkforceReferences,
         CrewPricing,
+        WorkforceCrewDailyCost,
+        { provide: CrewDailyCost, useExisting: WorkforceCrewDailyCost },
         ListPeopleUseCase,
         CreatePersonUseCase,
         UpdatePersonUseCase,
@@ -79,6 +83,7 @@ import { TaskLagsController } from './presentation/task-lags.controller';
         PutProjectTaskLagsUseCase,
         ListWorkspaceTaskLagsUseCase,
     ],
+    exports: [CrewDailyCost],
 })
 export class WorkforceModule implements OnModuleInit {
     constructor(

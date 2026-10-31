@@ -32,6 +32,8 @@ function taskText(task: PortalTask, t: TaskTranslator, tEnums: ReturnType<typeof
             return t('tasks.purchase_request_to_order', { number: s('number') });
         case 'purchase_order_to_receive':
             return t('tasks.purchase_order_to_receive', { number: s('number'), supplierName: s('supplierName') });
+        case 'site_report_missing':
+            return t('tasks.site_report_missing', { date: s('date') });
         default:
             return task.kind;
     }

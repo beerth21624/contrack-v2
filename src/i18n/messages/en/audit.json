@@ -54,7 +54,8 @@
     "invite": "Invited suppliers",
     "quote": "Recorded a quote",
     "award": "Awarded",
-    "confirm": "Confirmed"
+    "confirm": "Confirmed",
+    "reopen": "Reopened"
   },
   "entities": {
     "approval_request": "Approval request",
@@ -76,6 +77,8 @@
     "purchase_request": "Purchase request",
     "rfq": "Request for quotation",
     "purchase_order": "Purchase order",
-    "goods_receipt": "Goods receipt"
+    "goods_receipt": "Goods receipt",
+    "site_report": "Daily report",
+    "site_issue": "Site issue"
   }
 }

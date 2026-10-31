@@ -135,6 +135,8 @@
     "goods_received": "Goods have been received on this purchase order",
     "unknown_order_line": "The line is not on this purchase order",
     "nothing_received": "Enter a quantity received or rejected",
-    "qty_exceeds_received": "More would be billed than was received"
+    "qty_exceeds_received": "More would be billed than was received",
+    "future_date": "A daily report cannot be written for a future date; pick today or an earlier day",
+    "duplicate_cost_code": "Each cost code can appear only once in a report"
   }
 }

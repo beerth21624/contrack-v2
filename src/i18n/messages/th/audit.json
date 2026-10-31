@@ -54,7 +54,8 @@
     "invite": "เชิญผู้ขาย",
     "quote": "บันทึกราคาเสนอ",
     "award": "เลือกผู้ขาย",
-    "confirm": "ยืนยัน"
+    "confirm": "ยืนยัน",
+    "reopen": "เปิดแก้ไขอีกครั้ง"
   },
   "entities": {
     "approval_request": "คำขออนุมัติ",
@@ -76,6 +77,8 @@
     "purchase_request": "ใบขอซื้อ",
     "rfq": "ใบขอใบเสนอราคา",
     "purchase_order": "ใบสั่งซื้อ",
-    "goods_receipt": "ใบรับของ"
+    "goods_receipt": "ใบรับของ",
+    "site_report": "รายงานประจำวัน",
+    "site_issue": "ปัญหาหน้างาน"
   }
 }

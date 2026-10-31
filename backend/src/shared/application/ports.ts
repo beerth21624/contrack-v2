@@ -1044,6 +1044,8 @@ export abstract class CostCodeLookup {
     abstract findMany(workspaceId: WorkspaceId, projectId: ProjectId, ids: readonly string[]): Promise<CostCode[]>;
     /** Every cost code of the project (also omitted ones): baseline, variation, manual; BOQ order. */
     abstract listByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<CostCode[]>;
+    /** Every cost code of many projects of a workspace in one read (hub roll-ups); BOQ order per project. */
+    abstract listByProjects(workspaceId: WorkspaceId, projectIds: readonly ProjectId[]): Promise<CostCode[]>;
     /**
      * Effect of an accepted VO: existing codes `vo_qty += qtyDelta`, `vo_cost += costAmount`, `budget_total`,
      * `vo_contract_amount += sellAmount` (a code cut to zero quantity → omitted); new items → `source='variation'`.
@@ -1514,4 +1516,21 @@ export abstract class PurchaseOrders {
      * every line before writing.
      */
     abstract markBilled(workspaceId: WorkspaceId, lines: readonly { orderLineId: string; qty: number }[]): Promise<Result<void, DomainError>>;
+}
+
+// ── Crew daily cost for the site diary (WP-42): provided by workforce ──
+
+/** A workforce crew as the site diary sees it. */
+export interface CrewDailyCostInfo {
+    crewId: string;
+    name: string;
+    trade: string;
+    /** ฿/day (override, else from the rate card); null when unknown. */
+    dailyCost: number | null;
+}
+
+/** Provided by workforce (`crew-pricing.ts`). No module check: the caller checked its own. Filters by workspace. */
+export abstract class CrewDailyCost {
+    /** The crews of the workspace among `crewIds` (active or archived); unknown ids are absent from the map. */
+    abstract dailyCostOf(workspaceId: WorkspaceId, crewIds: readonly string[]): Promise<Map<string, CrewDailyCostInfo>>;
 }
