@@ -6,6 +6,7 @@ import { AuditOutlined, CaretDownOutlined, CaretRightOutlined, UndoOutlined, Lin
 import { useLocale, useTranslations } from 'next-intl';
 import { isReadOnly, useProjectStore } from '@/store/project-store';
 import { useModuleEnabled } from '@/features/modules/modules';
+import { CreateQuotationButton } from '@/features/erp/quotations/CreateFromBoqDialog';
 import { PriceReferenceButton } from '@/features/erp/price-reference/PriceReferencePicker';
 import { computeProject } from '@/domain/project';
 import type { BoqItemRow, BoqSectionResult } from '@/domain/boq/types';
@@ -94,6 +95,8 @@ export function BoqHomePage() {
     const hub = useModuleEnabled('project-hub');
     const priceWorkspaceId = useProjectStore(s => (s.binding.kind === 'cloud' && !isReadOnly(s.binding) ? s.binding.workspaceId : undefined));
     const showPriceRef = hub.enabled && priceWorkspaceId !== undefined;
+    // "Create quotation from BOQ" (WP-24): a cloud project; the button itself checks the module and the role.
+    const cloud = useProjectStore(s => (s.binding.kind === 'cloud' ? s.binding : undefined));
     const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
     const [query, setQuery] = useState('');
     const [flashKey, setFlashKey] = useState<string | null>(null);
@@ -322,6 +325,7 @@ export function BoqHomePage() {
                         </Button>
                         <BoqExportButtons project={project} />
                         <RevisionButtons />
+                        {cloud !== undefined && <CreateQuotationButton projectId={cloud.projectId} workspaceId={cloud.workspaceId} />}
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mt-4">

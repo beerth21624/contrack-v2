@@ -60,6 +60,22 @@
     "reversal_entry": "A reversal entry cannot be reversed",
     "financial_events_exist": "This cannot be done because financial transactions have been recorded",
     "draft_exists": "This quotation already has a draft. Issue or cancel it first.",
-    "valid_until_before_issue_date": "The valid-until date cannot be before the issue date."
+    "valid_until_before_issue_date": "The valid-until date cannot be before the issue date.",
+    "per_category_vat_with_discount": "VAT per category cannot be combined with a discount.",
+    "per_category_vat_with_rounding": "VAT per category cannot be combined with rounding.",
+    "government_requires_included_vat": "A government quotation must include VAT in Factor F.",
+    "included_vat_requires_government": "VAT included in Factor F is only for government quotations.",
+    "government_with_discount": "A government quotation cannot have a discount.",
+    "government_with_rounding": "A government quotation cannot be rounded.",
+    "government_without_parts": "A government quotation needs at least one part.",
+    "government_duplicate_part": "Two parts have the same key.",
+    "government_bad_factor": "Factor F must be greater than 0.",
+    "government_section_without_part": "A category in the price is not in any part.",
+    "government_section_in_many_parts": "A category is in more than one part.",
+    "government_unknown_section": "A part refers to a category that does not exist.",
+    "discount_invalid": "The discount is not valid.",
+    "discount_exceeds_subtotal": "The discount is larger than the subtotal.",
+    "line_without_section": "An item does not belong to any category.",
+    "duplicate_section": "Two categories have the same number."
   }
 }

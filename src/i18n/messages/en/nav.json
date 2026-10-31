@@ -24,6 +24,7 @@
   "tabs": {
     "overview": "Overview",
     "boq": "BOQ",
-    "versions": "BOQ history"
+    "versions": "BOQ history",
+    "quotations": "Quotations"
   }
 }

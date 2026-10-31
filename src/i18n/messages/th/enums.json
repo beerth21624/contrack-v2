@@ -103,5 +103,16 @@
     "removed": "ตัดออก",
     "changed": "เปลี่ยน",
     "same": "เท่าเดิม"
+  },
+  "quotationVersionStatus": {
+    "draft": "ร่าง",
+    "pending_approval": "รออนุมัติ",
+    "issued": "ออกแล้ว",
+    "accepted": "ลูกค้ายอมรับ",
+    "change_requested": "ลูกค้าขอแก้ไข",
+    "rejected": "ลูกค้าปฏิเสธ",
+    "expired": "หมดอายุ",
+    "superseded": "ถูกแทนที่ด้วยฉบับใหม่",
+    "cancelled": "ยกเลิก"
   }
 }

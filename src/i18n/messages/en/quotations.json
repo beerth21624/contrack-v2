@@ -1,0 +1,244 @@
+{
+  "untitled": "Quotation (untitled)",
+  "versionNo": "Version {no}",
+  "loadFailed": "Could not load the quotation",
+  "retry": "Retry",
+  "backToList": "Quotations",
+  "readOnly": "View only",
+  "pendingApproval": "This version was sent for approval. It gets its number and can go to the customer once an approver decides.",
+  "openApprovals": "Go to approvals",
+  "create": {
+    "oneClick": "Create quotation from BOQ",
+    "title": "Create quotation from BOQ",
+    "hint": "The categories and items of the BOQ are priced for you; then adjust profit, discount and terms. Empty fields use the project's defaults.",
+    "submit": "Create",
+    "versionNo": "Version {no}",
+    "fields": {
+      "title": "Quotation title",
+      "titlePlaceholder": "Leave empty to use the project name",
+      "boqVersion": "BOQ version to use",
+      "boqCurrent": "Current BOQ (saved as a new version)",
+      "projectDefault": "Use the project default"
+    }
+  },
+  "fields": {
+    "format": "Quotation format",
+    "detailLevel": "Level of detail",
+    "language": "Document language",
+    "title": "Quotation title",
+    "customer": "Customer",
+    "issueDate": "Issue date",
+    "validUntil": "Valid until",
+    "termsTh": "Terms and remarks (Thai)",
+    "termsEn": "Terms and remarks (English)",
+    "note": "Internal note"
+  },
+  "languages": {
+    "th": "Thai",
+    "en": "English"
+  },
+  "list": {
+    "title": "Quotations",
+    "create": "New quotation",
+    "empty": {
+      "title": "This project has no quotation yet",
+      "hint": "Create one from the BOQ in one click, then adjust profit and terms before it gets a number."
+    },
+    "columns": {
+      "title": "Title",
+      "number": "Number",
+      "status": "Status",
+      "total": "Grand total",
+      "validUntil": "Valid until",
+      "updatedAt": "Last changed"
+    }
+  },
+  "statusShort": {
+    "draft": "Draft",
+    "pending_approval": "Awaiting approval",
+    "issued": "Issued",
+    "accepted": "Accepted",
+    "change_requested": "Change requested",
+    "rejected": "Rejected",
+    "expired": "Expired",
+    "superseded": "Superseded",
+    "cancelled": "Cancelled"
+  },
+  "version": {
+    "pick": "Pick a version"
+  },
+  "save": {
+    "saved": "Saved",
+    "dirty": "Unsaved changes",
+    "saving": "Saving",
+    "error": "Could not save"
+  },
+  "sections": {
+    "title": "Categories and items",
+    "included": "In the price",
+    "cost": "Cost",
+    "markupRate": "Markup",
+    "overheadRate": "Overhead",
+    "profitRate": "Profit",
+    "vatRate": "Category VAT",
+    "vatDocument": "Document rate",
+    "sell": "Selling price",
+    "remove": "Remove category",
+    "empty": "No categories",
+    "newTh": "New category name (Thai)",
+    "newEn": "New category name (English)",
+    "add": "Add category"
+  },
+  "lines": {
+    "desc": "Item",
+    "descTh": "Item name (Thai)",
+    "descEn": "Item name (English)",
+    "unit": "Unit",
+    "qty": "Quantity",
+    "costMatUnit": "Material cost / unit",
+    "costLabUnit": "Labour cost / unit",
+    "costAmount": "Total cost",
+    "sellUnit": "Price / unit",
+    "sellAmount": "Amount",
+    "remove": "Remove item",
+    "empty": "No items",
+    "addCustom": "Add item",
+    "addNote": "Add note",
+    "count": "{count, plural, one {# item} other {# items}}"
+  },
+  "totals": {
+    "title": "Totals",
+    "sell": "Subtotal",
+    "discount": "Discount",
+    "rounding": "Rounding",
+    "vatBase": "Amount before VAT",
+    "vat": "VAT",
+    "grandTotal": "Grand total",
+    "cost": "Cost",
+    "margin": "Margin",
+    "parts": "By part (Por.5 / Por.6)",
+    "notVatRegistered": "The company is not VAT registered, so no VAT is charged."
+  },
+  "settings": {
+    "title": "Document settings"
+  },
+  "pricing": {
+    "vatTitle": "Value added tax",
+    "notVatRegistered": "The company is not VAT registered (change it in the company profile), so the quotation charges no VAT.",
+    "vatMode": "How VAT is charged",
+    "vatRate": "VAT rate",
+    "ratesTitle": "Starting rates of a category",
+    "ratesHint": "Used for categories you add. Selling price = cost x (1 + markup + overhead + profit).",
+    "applyRates": "Apply to every category",
+    "discountTitle": "Discount and rounding",
+    "noDiscountGovernment": "A government quotation has no discount or rounding.",
+    "noDiscountPerCategory": "VAT per category cannot be combined with a discount or rounding.",
+    "discountKind": "Discount",
+    "noDiscount": "No discount",
+    "discountValue": "Discount value",
+    "rounding": "Round down to",
+    "partsTitle": "Parts and Factor F",
+    "partsHint": "Each part is priced as total cost x Factor F (VAT included). Every category in the price must belong to exactly one part.",
+    "partTitleTh": "Part name (Thai)",
+    "partTitleEn": "Part name (English)",
+    "factorF": "Factor F",
+    "partSections": "Categories in this part",
+    "removePart": "Remove part",
+    "addPart": "Add part"
+  },
+  "vatModes": {
+    "document": "On the whole document",
+    "per_category": "Per category",
+    "none": "No VAT",
+    "included_in_factor": "Included in Factor F"
+  },
+  "discountKinds": {
+    "amount": "Amount",
+    "pct": "Percent"
+  },
+  "roundings": {
+    "none": "No rounding",
+    "to_100": "Down to a multiple of 100",
+    "to_1000": "Down to a multiple of 1,000"
+  },
+  "payment": {
+    "title": "Payment terms",
+    "hint": "Instalments as a percent of the value; they must add up to 100% (leave empty to bill by progress).",
+    "labelTh": "Instalment name (Thai)",
+    "labelEn": "Instalment name (English)",
+    "pct": "Share",
+    "trigger": "When",
+    "progressAt": "Progress at which it falls due",
+    "remove": "Remove instalment",
+    "add": "Add instalment",
+    "total": "Total {pct}%"
+  },
+  "problems": {
+    "title": "Fix these before the changes can be saved",
+    "pricing": "This pricing is not allowed; your changes are not saved yet.",
+    "payment_terms_total": "The payment instalments must add up to 100%.",
+    "payment_terms_label": "Every instalment needs a Thai and an English name.",
+    "dates_order": "The valid-until date cannot be before the issue date."
+  },
+  "issue": {
+    "title": "Issue the quotation",
+    "hint": "Once issued it gets its number and this version can no longer be edited (start a new version instead). With an approval policy it waits for an approver first.",
+    "submit": "Issue",
+    "button": "Issue quotation",
+    "pending": "Sent for approval, waiting for an approver",
+    "done": "Quotation issued, number {number}"
+  },
+  "response": {
+    "title": "Record the customer's answer",
+    "hint": "Use it when the customer answered outside the link, for example by phone, e-mail or a signed copy.",
+    "action": "Answer",
+    "actions": {
+      "accept": "Customer accepts",
+      "request_change": "Customer asks for changes",
+      "reject": "Customer rejects"
+    },
+    "name": "Answered by",
+    "note": "Note",
+    "submit": "Save",
+    "done": "Answer recorded",
+    "button": "Record customer answer"
+  },
+  "responseBanner": {
+    "accepted": "The customer accepted this quotation, by {name}",
+    "change_requested": "The customer asked for changes, by {name}",
+    "rejected": "The customer rejected this quotation, by {name}"
+  },
+  "cancel": {
+    "confirm": "Cancel this version?",
+    "done": "Version cancelled",
+    "button": "Cancel draft",
+    "withdraw": "Withdraw the request and cancel"
+  },
+  "newVersion": {
+    "done": "New version created",
+    "copy": "New version (copy)",
+    "fromBoq": "New version from the latest BOQ",
+    "more": "More options"
+  },
+  "compare": {
+    "title": "Compare versions",
+    "button": "Compare versions",
+    "from": "Base version",
+    "to": "Compare with",
+    "needMore": "At least two versions are needed to compare.",
+    "pickDifferent": "Pick two different versions to compare.",
+    "change": {
+      "added": "Added",
+      "removed": "Removed",
+      "changed": "Changed",
+      "same": "Unchanged"
+    },
+    "changeCol": "Change",
+    "before": "Before",
+    "after": "After",
+    "delta": "Difference",
+    "sections": "Categories that changed",
+    "lines": "Items that changed",
+    "noChanges": "No changes"
+  }
+}

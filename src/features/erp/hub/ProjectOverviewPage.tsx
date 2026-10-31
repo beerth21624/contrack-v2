@@ -13,6 +13,7 @@ import { DateText } from '../shared/DateText';
 import { MoneyText } from '../shared/MoneyText';
 import { SectionCard } from '../shared/SectionCard';
 import { StatusTag } from '../shared/StatusTag';
+import { CreateQuotationButton } from '../quotations/CreateFromBoqDialog';
 import { HubFieldsDrawer } from './HubFieldsDrawer';
 import { useOpenProjectBoq } from './ProjectShell';
 import { useHubProject } from './hooks';
@@ -141,6 +142,7 @@ export function ProjectOverviewPage({ projectId }: { projectId: string }) {
                     {d.canEdit && (
                         <Button icon={<CopyOutlined />} disabled={boq.opening} onClick={copyToBoq}>{t('overview.copyToBoq')}</Button>
                     )}
+                    <CreateQuotationButton projectId={projectId} workspaceId={d.project.workspaceId} />
                 </div>
             </SectionCard>
 

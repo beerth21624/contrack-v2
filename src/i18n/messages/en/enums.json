@@ -103,5 +103,16 @@
     "removed": "Removed",
     "changed": "Changed",
     "same": "Same"
+  },
+  "quotationVersionStatus": {
+    "draft": "Draft",
+    "pending_approval": "Awaiting approval",
+    "issued": "Issued",
+    "accepted": "Accepted",
+    "change_requested": "Change requested",
+    "rejected": "Rejected",
+    "expired": "Expired",
+    "superseded": "Superseded",
+    "cancelled": "Cancelled"
   }
 }

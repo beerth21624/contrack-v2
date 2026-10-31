@@ -60,6 +60,22 @@
     "reversal_entry": "กลับรายการของรายการกลับไม่ได้",
     "financial_events_exist": "ทำรายการไม่ได้ เพราะมีการบันทึกรายการทางการเงินแล้ว",
     "draft_exists": "ใบเสนอราคานี้มีฉบับร่างอยู่แล้ว ออกหรือยกเลิกฉบับร่างก่อน",
-    "valid_until_before_issue_date": "วันที่ยืนราคาต้องไม่ก่อนวันที่ออกเอกสาร"
+    "valid_until_before_issue_date": "วันที่ยืนราคาต้องไม่ก่อนวันที่ออกเอกสาร",
+    "per_category_vat_with_discount": "VAT รายหมวดใช้ร่วมกับส่วนลดไม่ได้",
+    "per_category_vat_with_rounding": "VAT รายหมวดใช้ร่วมกับการปัดเศษไม่ได้",
+    "government_requires_included_vat": "แบบราชการต้องรวม VAT ใน Factor F",
+    "included_vat_requires_government": "รวม VAT ใน Factor F ใช้ได้เฉพาะแบบราชการ",
+    "government_with_discount": "แบบราชการใช้ส่วนลดไม่ได้",
+    "government_with_rounding": "แบบราชการใช้การปัดเศษไม่ได้",
+    "government_without_parts": "แบบราชการต้องมีอย่างน้อยหนึ่งส่วนงาน",
+    "government_duplicate_part": "มีส่วนงานซ้ำกัน",
+    "government_bad_factor": "Factor F ต้องมากกว่า 0",
+    "government_section_without_part": "มีหมวดที่รวมในราคาแต่ยังไม่อยู่ในส่วนงานใด",
+    "government_section_in_many_parts": "มีหมวดที่อยู่ในหลายส่วนงาน",
+    "government_unknown_section": "ส่วนงานอ้างถึงหมวดที่ไม่มีอยู่",
+    "discount_invalid": "ส่วนลดไม่ถูกต้อง",
+    "discount_exceeds_subtotal": "ส่วนลดมากกว่ายอดรวม",
+    "line_without_section": "มีรายการที่ไม่อยู่ในหมวดใด",
+    "duplicate_section": "มีหมวดซ้ำกัน"
   }
 }

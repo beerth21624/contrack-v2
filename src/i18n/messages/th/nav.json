@@ -24,6 +24,7 @@
   "tabs": {
     "overview": "ภาพรวม",
     "boq": "BOQ",
-    "versions": "ประวัติ BOQ"
+    "versions": "ประวัติ BOQ",
+    "quotations": "ใบเสนอราคา"
   }
 }
