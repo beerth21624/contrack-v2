@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-    amountInWords, formatBaht, formatDate, formatDateLong, formatDateTime, formatDocumentDate, formatMoney, formatPercent, formatQty,
+    amountInWords, formatBaht, formatDate, formatDateLong, formatDateTime, formatDocumentDate, formatMoney, formatNumberInput,
+    formatPercent, formatQty, parseNumberInput,
     pickLocalized,
 } from '../format';
 
@@ -40,5 +41,18 @@ describe('format', () => {
         expect(pickLocalized('ไทย', '', 'en')).toBe('ไทย');
         expect(pickLocalized('', 'English', 'th')).toBe('English');
         expect(pickLocalized('ไทย', 'English', 'en')).toBe('English');
+    });
+
+    it('number inputs: digits grouped while typing, decimals left as typed, and parsed back', () => {
+        for (const locale of ['th', 'en'] as const) {
+            expect(formatNumberInput('1234567.5', locale)).toBe('1,234,567.5');
+            expect(formatNumberInput('1234.', locale)).toBe('1,234.');
+            expect(formatNumberInput('-1000.50', locale)).toBe('-1,000.50');
+            expect(formatNumberInput('', locale)).toBe('');
+            expect(formatNumberInput('12a', locale)).toBe('12a');
+            expect(parseNumberInput('1,234,567.5', locale)).toBe('1234567.5');
+            expect(parseNumberInput(undefined, locale)).toBe('');
+            expect(formatMoney(1234.5, locale)).toBe('1,234.50');
+        }
     });
 });

@@ -1,1 +1,17 @@
-{}
+{
+  "common": {
+    "taxId": "Tax ID",
+    "branch": "Branch",
+    "headOffice": "Head office",
+    "page": "Page {page} of {pages}",
+    "draft": "DRAFT",
+    "void": "VOID",
+    "total": "Total",
+    "vat": "VAT {rate}",
+    "grandTotal": "Grand total",
+    "amountInWords": "Amount in words",
+    "signature": "Signature",
+    "date": "Date",
+    "number": "No."
+  }
+}

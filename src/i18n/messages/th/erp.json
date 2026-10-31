@@ -1,0 +1,31 @@
+{
+  "page": {
+    "breadcrumb": "เส้นทางหน้า"
+  },
+  "documentNumber": {
+    "draft": "ฉบับร่าง"
+  },
+  "empty": {
+    "default": "ยังไม่มีข้อมูล"
+  },
+  "confirm": {
+    "title": "ยืนยันการทำรายการนี้?"
+  },
+  "files": {
+    "upload": "อัปโหลดไฟล์",
+    "uploading": "กำลังอัปโหลด…",
+    "remove": "นำออก",
+    "empty": "ยังไม่มีไฟล์แนบ",
+    "uploaded": "อัปโหลด {name} แล้ว",
+    "tooLarge": "ไฟล์ใหญ่เกิน {mb} MB",
+    "badType": "รองรับเฉพาะรูปภาพ (JPG, PNG, WEBP, HEIC) และ PDF",
+    "sizeKb": "{size} KB",
+    "sizeMb": "{size} MB",
+    "limit": "แนบได้สูงสุด {count} ไฟล์"
+  },
+  "print": {
+    "print": "พิมพ์",
+    "toolbar": "เครื่องมือพิมพ์",
+    "paper": "กระดาษ A4"
+  }
+}

@@ -10,7 +10,7 @@ describe('RepositoryFileService', () => {
 
     beforeEach(() => {
         kit = new PlatformTestKit();
-        upload = new UploadFileUseCase(kit.files, kit.storage, kit.links, kit.settings, kit.clock, kit.ids);
+        upload = new UploadFileUseCase(kit.files, kit.storage, kit.links, kit.settings, kit.clock, kit.ids, kit.roles);
         service = new RepositoryFileService(kit.files, kit.links, upload);
     });
 

@@ -9,6 +9,7 @@ import account from './account.json';
 import documents from './documents.json';
 import modules from './modules.json';
 import roles from './roles.json';
+import erp from './erp.json';
 
 const messages = {
   common,
@@ -22,6 +23,7 @@ const messages = {
   documents,
   modules,
   roles,
+  erp,
 };
 
 export default messages;

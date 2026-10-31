@@ -6,9 +6,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { type Observable, catchError, throwError } from 'rxjs';
 import { z } from 'zod';
-import { type FileDto, MAX_FILE_BYTES, filePurposeSchema } from '@contrack/contract';
+import { type FileDto, MAX_FILE_BYTES, filePurposeSchema, uuidSchema } from '@contrack/contract';
 import type { AuthenticatedUser } from '../../../shared/application/ports';
 import { DomainError } from '../../../shared/domain/domain-error';
+import { asWorkspaceId } from '../../../shared/domain/ids';
 import { CurrentUser, Public } from '../../../shared/presentation/auth';
 import { DomainHttpException, ZodPipe, unwrap } from '../../../shared/presentation/http';
 import { ReadFileContentUseCase } from '../application/use-cases/read-file-content.use-case';
@@ -22,7 +23,8 @@ interface UploadedPart {
     buffer: Buffer;
 }
 
-const uploadFormSchema = z.object({ purpose: filePurposeSchema });
+/** `workspaceId` (optional): the workspace an ERP upload belongs to; the caller must be a member. */
+const uploadFormSchema = z.object({ purpose: filePurposeSchema, workspaceId: uuidSchema.optional() });
 type UploadForm = z.infer<typeof uploadFormSchema>;
 
 /** multer stops at MAX_FILE_BYTES with 413; the contract answers every refused file with 422 unprocessable. */
@@ -45,7 +47,7 @@ function contentDisposition(name: string): string {
 export class FilesController {
     constructor(private readonly upload: UploadFileUseCase, private readonly content: ReadFileContentUseCase) {}
 
-    /** multipart/form-data: `file` + `purpose`. */
+    /** multipart/form-data: `file` + `purpose` (+ `workspaceId` for ERP uploads). */
     @Post()
     @HttpCode(HttpStatus.CREATED)
     @UseInterceptors(UploadErrorsInterceptor, FileInterceptor('file', {
@@ -64,6 +66,7 @@ export class FilesController {
             name: file.originalname,
             contentType: file.mimetype,
             bytes: file.buffer,
+            workspaceId: form.workspaceId === undefined ? null : asWorkspaceId(form.workspaceId.toLowerCase()),
         }));
     }
 

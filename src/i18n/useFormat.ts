@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { useLocale } from 'next-intl';
 import {
     type NumberFormatOptions, formatBaht, formatDate, formatDateLong, formatDateTime, formatMoney, formatNumber,
-    formatPercent, formatQty,
+    formatNumberInput, formatPercent, formatQty, parseNumberInput,
 } from './format';
 
 export function useFormat() {
@@ -20,6 +20,10 @@ export function useFormat() {
         date: (value: string | Date) => formatDate(value, locale),
         dateLong: (value: string | Date) => formatDateLong(value, locale),
         dateTime: (value: string | Date) => formatDateTime(value, locale),
+        /** Digit grouping of a number input's text while typing (antd InputNumber `formatter`). */
+        numberInput: (text: string) => formatNumberInput(text, locale),
+        /** The inverse of `numberInput` (antd InputNumber `parser`). */
+        parseNumberInput: (text: string | undefined) => parseNumberInput(text, locale),
     }), [locale]);
 }
 

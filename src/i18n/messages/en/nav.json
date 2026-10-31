@@ -4,5 +4,11 @@
   "schedule": "Schedule",
   "manDay": "Man-Day Planning",
   "cashflow": "Cash Flow",
-  "subcontracting": "Subcontracting"
+  "subcontracting": "Subcontracting",
+  "groups": {
+    "sales": "Sales",
+    "purchasing": "Purchasing",
+    "finance": "Finance",
+    "settings": "Settings"
+  }
 }

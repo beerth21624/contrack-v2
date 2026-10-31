@@ -9,7 +9,7 @@ describe('UploadFileUseCase', () => {
 
     beforeEach(() => {
         kit = new PlatformTestKit();
-        useCase = new UploadFileUseCase(kit.files, kit.storage, kit.links, kit.settings, kit.clock, kit.ids);
+        useCase = new UploadFileUseCase(kit.files, kit.storage, kit.links, kit.settings, kit.clock, kit.ids, kit.roles);
     });
 
     const bytes = new Uint8Array([1, 2, 3, 4]);
@@ -50,10 +50,25 @@ describe('UploadFileUseCase', () => {
 
     it.each(FILE_PURPOSES)('refuses a %s upload with module_disabled when the platform offers no module for it, storing nothing', async purpose => {
         const plain = new PlatformTestKit([]);
-        const off = new UploadFileUseCase(plain.files, plain.storage, plain.links, plain.settings, plain.clock, plain.ids);
+        const off = new UploadFileUseCase(plain.files, plain.storage, plain.links, plain.settings, plain.clock, plain.ids, plain.roles);
         const r = await off.execute({ actorId: plain.newUserId(), purpose, name: 'a.jpg', contentType: 'image/jpeg', bytes });
         expect(errorOf(r).code).toBe('module_disabled');
         expect(await plain.files.findMany([asFileId('00000000-0000-4000-8000-000000000001')])).toEqual([]);
+    });
+
+    it('tags the file with the workspace of a member', async () => {
+        const { workspaceId, byRole } = kit.seedWorkspace();
+        const dto = valueOf(await useCase.execute({
+            actorId: byRole.viewer, purpose: 'bid_photo', name: 'a.jpg', contentType: 'image/jpeg', bytes, workspaceId,
+        }));
+        expect((await kit.files.findById(asFileId(dto.id)))?.toProps().workspaceId).toBe(workspaceId);
+    });
+
+    it('refuses a workspace the actor is not a member of (404) and stores nothing', async () => {
+        const { workspaceId, outsider } = kit.seedWorkspace();
+        const r = await useCase.execute({ actorId: outsider, purpose: 'bid_photo', name: 'a.jpg', contentType: 'image/jpeg', bytes, workspaceId });
+        expect(errorOf(r).code).toBe('not_found');
+        expect(await kit.files.findMany([asFileId('00000000-0000-4000-8000-000000000001')])).toEqual([]);
     });
 
     it('refuses an empty file (422)', async () => {

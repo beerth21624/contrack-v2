@@ -74,6 +74,30 @@ export function formatPercent(rate: number, locale: Locale, digits = 2): string 
     return tidySign(numberFormat(locale, { style: 'percent', minimumFractionDigits: 0, maximumFractionDigits: max }).format(rate));
 }
 
+/** The digit-group separator of `locale` (`,` for both th and en). */
+function groupSeparator(locale: Locale): string {
+    return numberFormat(locale, {}).formatToParts(1000).find(p => p.type === 'group')?.value ?? ',';
+}
+
+/**
+ * Digit grouping for a number input while the user types (`1234.5` → `1,234.5`): only the integer part changes, the
+ * typed decimals stay as they are (so `1.` and `1.50` keep the caret where it was). Text that is not a plain number
+ * comes back unchanged. Pair with `parseNumberInput`.
+ */
+export function formatNumberInput(text: string, locale: Locale): string {
+    const m = /^(-?)(\d*)(\.\d*)?$/.exec(text);
+    if (m === null) return text;
+    const grouped = (m[2] ?? '').replace(/\B(?=(\d{3})+(?!\d))/g, groupSeparator(locale));
+    return `${m[1] ?? ''}${grouped}${m[3] ?? ''}`;
+}
+
+/** The inverse of `formatNumberInput`: drops digit-group separators and spaces (`1,234.5` → `1234.5`). */
+export function parseNumberInput(text: string | undefined, locale: Locale): string {
+    if (text === undefined) return '';
+    const separator = groupSeparator(locale);
+    return text.split(separator).join('').replace(/\s/g, '');
+}
+
 // ── dates ──
 
 const BUSINESS_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;

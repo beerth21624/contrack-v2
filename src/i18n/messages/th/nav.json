@@ -4,5 +4,11 @@
   "schedule": "แผนเวลา",
   "manDay": "วางแผนคน-วัน",
   "cashflow": "แผนการเงิน",
-  "subcontracting": "จ้างช่วง"
+  "subcontracting": "จ้างช่วง",
+  "groups": {
+    "sales": "การขาย",
+    "purchasing": "จัดซื้อ",
+    "finance": "การเงิน",
+    "settings": "ตั้งค่า"
+  }
 }

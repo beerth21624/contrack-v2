@@ -1,0 +1,31 @@
+{
+  "page": {
+    "breadcrumb": "Breadcrumb"
+  },
+  "documentNumber": {
+    "draft": "Draft"
+  },
+  "empty": {
+    "default": "Nothing here yet"
+  },
+  "confirm": {
+    "title": "Confirm this action?"
+  },
+  "files": {
+    "upload": "Upload file",
+    "uploading": "Uploading…",
+    "remove": "Remove",
+    "empty": "No attachments yet",
+    "uploaded": "Uploaded {name}",
+    "tooLarge": "The file is larger than {mb} MB",
+    "badType": "Only images (JPG, PNG, WEBP, HEIC) and PDF are supported",
+    "sizeKb": "{size} KB",
+    "sizeMb": "{size} MB",
+    "limit": "Up to {count} files"
+  },
+  "print": {
+    "print": "Print",
+    "toolbar": "Print tools",
+    "paper": "A4 paper"
+  }
+}

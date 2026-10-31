@@ -15,7 +15,7 @@ Work streams: **B1** platform · **B2** identity/phone · **C1** sourcing · **C
 | GET | `/platform/modules` **public** | → `PlatformModulesDto` | env MODULES_ENABLED |
 | GET | `/workspaces/:ws/modules` | → `WorkspaceModuleDto[]` (every MODULE_IDS entry, in order) | member (`workspace.read`) |
 | PUT | `/workspaces/:ws/modules/:module` | `PutWorkspaceModuleRequest` → `WorkspaceModuleDto` | `modules.manage`; not offered by platform → 422; switching off with `ModuleUsage.activeWork(...).activeSubcontracts > 0` and no `confirm` → 409 `conflict` details `ModuleOffBlockers` |
-| POST | `/files` | multipart: `file`, `purpose` (`FilePurpose`) → `FileDto` (201) | signed in; ≤ `MAX_FILE_BYTES`; `ALLOWED_CONTENT_TYPES` else 422 |
+| POST | `/files` | multipart: `file`, `purpose` (`FilePurpose`), optional `workspaceId` (ERP uploads) → `FileDto` (201) | signed in; ≤ `MAX_FILE_BYTES`; `ALLOWED_CONTENT_TYPES` else 422; `workspaceId` of a workspace the caller is not a member of → 404 |
 | GET | `/files/:id/content?exp=&sig=` **public** | → bytes (Content-Type, inline) | HMAC signature + expiry, else 404 |
 | GET | `/notifications?limit=` | → `NotificationListDto` | own only |
 | POST | `/notifications/read` | `MarkNotificationsReadRequest` → 204 | own only |

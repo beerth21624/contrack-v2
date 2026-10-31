@@ -17,7 +17,7 @@ describe('ReadFileContentUseCase', () => {
     beforeEach(async () => {
         kit = new PlatformTestKit();
         useCase = new ReadFileContentUseCase(kit.files, kit.storage, kit.signer, kit.clock);
-        const upload = new UploadFileUseCase(kit.files, kit.storage, kit.links, kit.settings, kit.clock, kit.ids);
+        const upload = new UploadFileUseCase(kit.files, kit.storage, kit.links, kit.settings, kit.clock, kit.ids, kit.roles);
         dto = valueOf(await upload.execute({
             actorId: kit.newUserId(), purpose: 'contract_scan', name: 'สัญญา.pdf', contentType: 'application/pdf', bytes: new Uint8Array([9, 8, 7]),
         }));
