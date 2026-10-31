@@ -26,7 +26,7 @@
 | WP-12 | โปรไฟล์บริษัท + business profile + project type | sonnet | done | fa2dfb1 | migration `0012_wp12_company`; โมดูล `company`, port `CompanyProfiles`, `src/domain/erp/profiles.ts`, หน้า `/workspace/company`; D-121…D-125 |
 | WP-13 | ทะเบียนลูกค้า | sonnet | done | 02b2acf | migration `0013_wp13_customers`; โมดูล `customers`, port `CustomerLookup`, หน้า `/customers`, `CustomerPicker`; D-126…D-130 |
 | WP-14 | ลิงก์ลูกค้า (public) | opus | done | 0fdbc23 | migration `0014_wp14_customer_links`; โมดูล `customer-links`, registry `CustomerLinkHandlers`, route `(public)/c/[token]`, `ShareLinkButton`; D-131…D-136 |
-| WP-15 | Project Hub backend | opus | done | (hash) | migration `0015_wp15_project_hub`; โมดูล `backend/src/modules/hub/`; ports `ProjectCatalog` (projects), `ProjectLifecycle` (hub), registry `HubRollups` (core); D-137…D-142 |
+| WP-15 | Project Hub backend | opus | done | 7f5ad76 | migration `0015_wp15_project_hub`; โมดูล `backend/src/modules/hub/`; ports `ProjectCatalog` (projects), `ProjectLifecycle` (hub), registry `HubRollups` (core); D-137…D-142 |
 | WP-16 | Project Hub web + ต่อ nav เข้า AppLayoutUI | opus | todo | | |
 | WP-17 | ประวัติ BOQ (versions, เทียบฉบับ) | opus | todo | | |
 | WP-18 | Baseline + cost codes (backend) | opus | todo | | |
@@ -484,7 +484,7 @@
   - การแจ้งเตือนทีมเมื่อลูกค้าตอบเป็นหน้าที่ของ handler (ยังไม่มี template กลาง)
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (web + backend) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/features/erp` ผ่าน; `cd backend && npx jest src/modules/platform/presentation/platform-http.spec.ts` ผ่าน; smoke spec ชั่วคราว (Nest + supertest, memory, ลบแล้ว): viewer สร้าง → 403, ไม่มี handler → 404, สร้างได้ url `/c/<token>`, view ได้ companyName/actions, token ผิด → 404, ปิด project-hub → 404, ชื่อว่าง → 400, handler ปฏิเสธ → 409 และ rollback (ตอบใหม่ได้), ตอบสำเร็จ → `canRespond=false`, ตอบซ้ำ → 409 `already_responded`, list ได้ `responded`/`viewCount`, invoice respond → 422 `respond_not_supported`, revoke แล้ว → 404, ครั้งที่ 31 ใน 10 นาที → 429; `npm run db:generate -- --name wp14_customer_links` ได้ `0014` ไม่ถาม interactive; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์ / PostgreSQL จริง
 
-### WP-15 — Project Hub backend ((hash))
+### WP-15 — Project Hub backend (7f5ad76)
 - สร้าง (contract): `src/shared/contract/erp/hub.ts` (`PROJECT_STATUSES`/`projectStatusSchema`/`HubProjectStatus`, `PROJECT_STATUS_TRANSITIONS`, `PROJECT_STATUS_ORDER`, `hubProjectFieldsSchema`, `projectRollupSchema`/`ProjectRollup`, `EMPTY_PROJECT_ROLLUP`, `hubProjectDtoSchema`/`hubProjectListDtoSchema`, `hubProjectDetailDtoSchema`, `updateHubProjectRequestSchema`, `hubProjectListQuerySchema`, `hubSummaryDtoSchema`) export ใน `erp/index.ts`
 - schema: 12 คอลัมน์ hub ใน `projects` (`schema.ts`) ทั้งหมด nullable/มี default + partial unique `projects_workspace_code_key (workspace_id, code) where code is not null` + check `projects_status_check`, `projects_project_type_check`; migration `0015_wp15_project_hub` (ตรงตามคาด) → WP ถัดไปที่แก้ schema ได้ `0016_*`
 - ports (`ports.ts`): `ProjectCatalog` (projects provide: `RepositoryProjectCatalog` ใน `project-directory.adapter.ts`), `ProjectLifecycle` (hub provide), `HubRollups` + `HubRollupSource` (core provide/export ใน `CoreModule`)
