@@ -69,6 +69,10 @@ describe('approvals (e2e)', () => {
             .set(bearer(owner.accessToken))).body);
         expect(audit.items.map(e => e.action)).toEqual(['approved', 'requested']);
         expectError(await t.http().get(`/workspaces/${ws}/audit`).set(bearer(estimator.accessToken)), 403, 'forbidden');
+        // cursors beyond what PostgreSQL can compare are refused, not a 500
+        expectError(await t.http().get(`/workspaces/${ws}/audit?before=9999999999999999999`).set(bearer(owner.accessToken)), 400, 'validation_failed');
+        expectError(await t.http().get(`/workspaces/${ws}/approvals?before=${encodeURIComponent(`+275760-09-13T00:00:00.000Z_${requestId}`)}`)
+            .set(bearer(owner.accessToken)), 400, 'validation_failed');
     });
 
     it('policies: read by members, written with company.manage', async () => {

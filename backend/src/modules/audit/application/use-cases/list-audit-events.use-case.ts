@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleAccess } from '../../../../shared/application/module-access';
 import { UserDirectory, type UserProfile } from '../../../../shared/application/ports';
-import type { DomainError } from '../../../../shared/domain/domain-error';
+import { DomainError } from '../../../../shared/domain/domain-error';
 import type { UserId, WorkspaceId } from '../../../../shared/domain/ids';
-import { type Result, ok } from '../../../../shared/domain/result';
+import { type Result, err, ok } from '../../../../shared/domain/result';
 import { type AuditEvent, AuditEventRepository } from '../ports/audit-event.repository';
+
+const MAX_BIGINT = 9_223_372_036_854_775_807n;
 
 export interface ListAuditEventsInput {
     userId: UserId;
@@ -38,10 +40,13 @@ export class ListAuditEventsUseCase {
         const grant = await this.access.inWorkspace(input.userId, input.workspaceId, 'project-hub', 'audit.read');
         if (!grant.ok) return grant;
         const limit = Math.max(1, Math.min(200, Math.trunc(input.limit)));
+        // The contract allows 19 digits; above the bigint range PostgreSQL would fail the query (500).
+        const before = input.before === undefined || !/^\d{1,19}$/.test(input.before) ? undefined : BigInt(input.before);
+        if (input.before !== undefined && (before === undefined || before > MAX_BIGINT)) return err(DomainError.validation('Invalid cursor'));
         const rows = await this.events.list(input.workspaceId, {
             entityType: input.entityType,
             entityId: input.entityId,
-            before: input.before === undefined ? undefined : BigInt(input.before),
+            before,
             limit: limit + 1,
         });
         const page = rows.slice(0, limit);

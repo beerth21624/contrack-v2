@@ -34,7 +34,10 @@ function decodeCursor(raw: string): ApprovalCursor | undefined {
     if (at <= 0) return undefined;
     const requestedAt = new Date(raw.slice(0, at));
     const id = raw.slice(at + 1);
-    return Number.isNaN(requestedAt.getTime()) || !isUuid(id) ? undefined : { requestedAt, id: id.toLowerCase() };
+    // Outside years 1–9999 toISOString() has a sign/extended year that PostgreSQL cannot read back (500).
+    const year = requestedAt.getUTCFullYear();
+    if (Number.isNaN(requestedAt.getTime()) || year < 1 || year > 9999 || !isUuid(id)) return undefined;
+    return { requestedAt, id: id.toLowerCase() };
 }
 
 /**
