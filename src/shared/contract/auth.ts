@@ -50,9 +50,28 @@ export const workspaceSummaryDtoSchema = z.object({
 });
 export type WorkspaceSummaryDto = z.infer<typeof workspaceSummaryDtoSchema>;
 
+/** UI language of a user (web `src/i18n/config.ts` has the same list). */
+export const USER_LOCALES = ['th', 'en'] as const;
+export const userLocaleSchema = z.enum(USER_LOCALES);
+export type UserLocale = z.infer<typeof userLocaleSchema>;
+
+/** Per-user settings that follow the account to every device. */
+export const userPreferencesSchema = z.object({
+    locale: userLocaleSchema,
+});
+export type UserPreferences = z.infer<typeof userPreferencesSchema>;
+
+/** PATCH /me/preferences: answers the stored UserPreferences. */
+export const updatePreferencesRequestSchema = z.object({
+    locale: userLocaleSchema,
+});
+export type UpdatePreferencesRequest = z.infer<typeof updatePreferencesRequestSchema>;
+
 export const meResponseSchema = z.object({
     user: userDtoSchema,
     workspaces: z.array(workspaceSummaryDtoSchema),
+    /** Profile UI language; optional so a web build still reads an older server's answer (absent → Thai). */
+    locale: userLocaleSchema.optional(),
 });
 export type MeResponse = z.infer<typeof meResponseSchema>;
 

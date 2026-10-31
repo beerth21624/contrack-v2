@@ -12,6 +12,7 @@ import {
     type RevisionDto, type UpdateProjectRequest, type WorkspaceDto,
     boqReviewResponseSchema, matchItemsResponseSchema,
     type BoqReviewRequest, type BoqReviewResponse, type MatchItemsRequest, type MatchItemsResponse,
+    userPreferencesSchema, type UpdatePreferencesRequest, type UserPreferences,
 } from '@/shared/contract';
 import { apiClient, type ApiClient } from './client';
 
@@ -45,6 +46,10 @@ export function createApi(client: ApiClient) {
         },
 
         me: (): Promise<MeResponse> => client.request('GET', '/me', { schema: meResponseSchema }),
+        mePreferences: {
+            update: (body: UpdatePreferencesRequest): Promise<UserPreferences> =>
+                client.request('PATCH', '/me/preferences', { body, schema: userPreferencesSchema }),
+        },
 
         workspaces: {
             list: (): Promise<WorkspaceDto[]> => client.request('GET', '/workspaces', { schema: z.array(workspaceDtoSchema) }),

@@ -2,9 +2,6 @@
 
 import React, { useState } from 'react';
 import { Layout, Menu, Typography, Drawer, Button, ConfigProvider, theme, App as AntdApp, Spin } from 'antd';
-import thTH from 'antd/locale/th_TH';
-import dayjs from 'dayjs';
-import 'dayjs/locale/th';
 import { usePathname, useRouter } from 'next/navigation';
 import {
     FlagOutlined,
@@ -20,11 +17,7 @@ import { ReadOnlyBanner } from '@/features/cloud/ui/ReadOnlyBanner';
 import { useModuleEnabled } from '@/features/modules/modules';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 import { useHasVendorWorkspace } from '@/features/subcontracting/shared/useHasVendorWorkspace';
-
-// Thai names in the date picker (months, weekdays) and in every antd built-in text (placeholders, Popconfirm buttons,
-// Empty, pagination). Module level, so the server render and the client agree. Only the language changes: dates are
-// still shown with explicit formats (DD/MM/YYYY, Christian-era year), never the Buddhist year.
-dayjs.locale('th');
+import { useAntdLocale } from '@/i18n/LocaleProvider';
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -190,9 +183,13 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
 }
 
 export function AppLayoutUI({ children }: { children: React.ReactNode }) {
+    // Names in the date picker (months, weekdays) and every antd built-in text (placeholders, Popconfirm buttons,
+    // Empty, pagination) follow the UI locale (Thai by default). Only the language changes: dates are still shown
+    // with explicit formats (DD/MM/YYYY, Christian-era year), never the Buddhist year.
+    const antdLocale = useAntdLocale();
     return (
         <ConfigProvider
-            locale={thTH}
+            locale={antdLocale}
             theme={{
                 algorithm: theme.defaultAlgorithm,
                 cssVar: { key: 'app-theme' },

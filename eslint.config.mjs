@@ -68,6 +68,36 @@ const eslintConfig = defineConfig([
     },
   },
 
+  // ── ERP code: no hard-coded Thai text (docs/erp/03-i18n.md §8) ──
+  // Every UI text comes from the message files (src/i18n/messages/*). Track I adds the globs of the old screens
+  // here once they are moved. Globs of folders that do not exist yet are fine.
+  {
+    files: [
+      "src/features/erp/**/*.{ts,tsx}",
+      "src/app/(public)/**/*.{ts,tsx}",
+      "src/app/(print)/**/*.{ts,tsx}",
+      "src/app/(app)/{hub,home,p,customers,receivables,purchasing,suppliers,payables,tax-reports,finance,approvals,admin}/**/*.{ts,tsx}",
+      "src/app/(app)/workspace/{company,numbering,approval-policies,pay-periods}/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Literal[value=/[\u0E00-\u0E7F]/]",
+          message: "No Thai text in ERP code: put it in src/i18n/messages (th + en) and use useTranslations / getTranslations.",
+        },
+        {
+          selector: "TemplateElement[value.raw=/[\u0E00-\u0E7F]/]",
+          message: "No Thai text in ERP code: put it in src/i18n/messages (th + en) and use useTranslations / getTranslations.",
+        },
+        {
+          selector: "JSXText[value=/[\u0E00-\u0E7F]/]",
+          message: "No Thai text in ERP code: put it in src/i18n/messages (th + en) and use useTranslations / getTranslations.",
+        },
+      ],
+    },
+  },
+
   // Override default ignores of eslint-config-next.
   globalIgnores([
     ".next/**",

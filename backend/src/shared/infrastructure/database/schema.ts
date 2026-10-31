@@ -20,7 +20,13 @@ export const users = pgTable('users', {
     phone: text('phone'),
     phoneVerifiedAt: timestamp('phone_verified_at', { withTimezone: true }),
     createdAt: createdAt(),
-}, t => [uniqueIndex('users_email_key').on(t.email), uniqueIndex('users_phone_key').on(t.phone)]);
+    /** UI language ('th' | 'en', USER_LOCALES in the contract): follows the account to every device. */
+    locale: text('locale').notNull().default('th'),
+}, t => [
+    uniqueIndex('users_email_key').on(t.email),
+    uniqueIndex('users_phone_key').on(t.phone),
+    check('users_locale_check', sql`${t.locale} in ('th', 'en')`),
+]);
 
 export const refreshTokens = pgTable('refresh_tokens', {
     id: uuid('id').primaryKey(),

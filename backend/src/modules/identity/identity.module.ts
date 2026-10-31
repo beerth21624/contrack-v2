@@ -21,6 +21,7 @@ import { LogoutUseCase } from './application/use-cases/logout.use-case';
 import { RefreshSessionUseCase } from './application/use-cases/refresh-session.use-case';
 import { RegisterUserUseCase } from './application/use-cases/register-user.use-case';
 import { RequestOtpUseCase } from './application/use-cases/request-otp.use-case';
+import { UpdatePreferencesUseCase } from './application/use-cases/update-preferences.use-case';
 import { VerifyOtpUseCase } from './application/use-cases/verify-otp.use-case';
 import { DrizzleOtpCodeRepository } from './infrastructure/adapters/drizzle-otp-code.repository';
 import { DrizzleRefreshTokenRepository } from './infrastructure/adapters/drizzle-refresh-token.repository';
@@ -82,6 +83,7 @@ import { MeController } from './presentation/me.controller';
         RefreshSessionUseCase,
         LogoutUseCase,
         GetMeUseCase,
+        UpdatePreferencesUseCase,
         CheckPhoneUseCase,
         RequestOtpUseCase,
         VerifyOtpUseCase,

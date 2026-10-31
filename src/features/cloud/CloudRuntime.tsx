@@ -3,8 +3,10 @@
 // ─── Everything the cloud side runs in the background: session start, notices, realtime, role changes ───
 // Rendered once inside the app shell (needs antd's App context for messages). Renders nothing.
 import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { App } from 'antd';
 import { useQueryClient } from '@tanstack/react-query';
+import { readLocaleCookie, writeLocaleCookie } from '@/i18n/locale-cookie';
 import { onNotice } from '@/store/notices';
 import { useProjectStore } from '@/store/project-store';
 import { bootstrapSession, useSession } from './auth/session';
@@ -19,7 +21,9 @@ export function CloudRuntime() {
     const userId = useSession(s => s.user?.id ?? null);
     const binding = useProjectStore(s => s.binding);
     const me = useMe();
+    const router = useRouter();
     const prevUser = useRef<string | null>(null);
+    const profileLocale = me.data?.locale;
 
     useEffect(() => { void bootstrapSession(); }, []);
 
@@ -56,6 +60,14 @@ export function CloudRuntime() {
         }
         if (ws.role !== binding.role) useProjectStore.getState().setCloudRole(ws.role);
     }, [binding, me.data, message]);
+
+    // The profile language wins over this browser's cookie (signed in on another device, or switched there).
+    // A server without users.locale answers no locale: nothing changes. Release 1: every profile is Thai = no cookie.
+    useEffect(() => {
+        if (profileLocale === undefined || profileLocale === readLocaleCookie()) return;
+        writeLocaleCookie(profileLocale);
+        router.refresh();
+    }, [profileLocale, router]);
 
     useRealtime();
     return null;

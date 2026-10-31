@@ -1,3 +1,4 @@
+import type { UserLocale } from '@contrack/contract';
 import type { DomainError } from '../../../../shared/domain/domain-error';
 import type { UserId } from '../../../../shared/domain/ids';
 import type { Result } from '../../../../shared/domain/result';
@@ -19,4 +20,6 @@ export abstract class UserRepository {
     abstract insert(user: User): Promise<Result<void, DomainError>>;
     /** Sets the verified phone of an existing user. */
     abstract markPhoneVerified(id: UserId, phone: Phone, at: Date): Promise<void>;
+    /** Sets the UI language of an existing user (no-op for an unknown id). */
+    abstract setLocale(id: UserId, locale: UserLocale): Promise<void>;
 }

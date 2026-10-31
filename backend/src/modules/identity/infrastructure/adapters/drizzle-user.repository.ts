@@ -1,4 +1,5 @@
 import { eq, inArray } from 'drizzle-orm';
+import type { UserLocale } from '@contrack/contract';
 import type { DomainError } from '../../../../shared/domain/domain-error';
 import { type UserId, asUserId } from '../../../../shared/domain/ids';
 import { type Result, err, okVoid } from '../../../../shared/domain/result';
@@ -23,6 +24,8 @@ function toUser(row: UserRow): User {
         createdAt: row.createdAt,
         phone: row.phone === null ? null : Phone.rehydrate(row.phone),
         phoneVerifiedAt: row.phoneVerifiedAt,
+        // The check constraint keeps it 'th' | 'en'; anything else reads as the default.
+        locale: row.locale === 'en' ? 'en' : 'th',
     });
 }
 
@@ -65,6 +68,7 @@ export class DrizzleUserRepository extends UserRepository {
                 createdAt: user.createdAt,
                 phone: user.phone?.value ?? null,
                 phoneVerifiedAt: user.phoneVerifiedAt,
+                locale: user.locale,
             });
             return okVoid();
         } catch (error: unknown) {
@@ -77,5 +81,9 @@ export class DrizzleUserRepository extends UserRepository {
 
     async markPhoneVerified(id: UserId, phone: Phone, at: Date): Promise<void> {
         await this.ctx.executor.update(users).set({ phone: phone.value, phoneVerifiedAt: at }).where(eq(users.id, id));
+    }
+
+    async setLocale(id: UserId, locale: UserLocale): Promise<void> {
+        await this.ctx.executor.update(users).set({ locale }).where(eq(users.id, id));
     }
 }

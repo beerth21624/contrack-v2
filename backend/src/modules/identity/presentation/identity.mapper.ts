@@ -31,5 +31,6 @@ export function toMeResponse(me: Me): MeResponse {
     return {
         user: toUserDto(me.user),
         workspaces: me.workspaces.map(w => ({ id: w.workspaceId, name: w.name, kind: w.kind, role: w.role })),
+        locale: me.user.locale,
     };
 }

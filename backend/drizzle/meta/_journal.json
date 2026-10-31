@@ -43,6 +43,13 @@
       "when": 1793151416695,
       "tag": "0005_workforce_catch_up",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793458733658,
+      "tag": "0006_wp01_user_locale",
+      "breakpoints": true
     }
   ]
 }

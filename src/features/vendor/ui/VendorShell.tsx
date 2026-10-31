@@ -10,6 +10,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/features/cloud/api/routes';
 import { bootstrapSession, useSession } from '@/features/cloud/auth/session';
 import { usePlatformModuleEnabled } from '@/features/modules/modules';
+import { useAntdLocale } from '@/i18n/LocaleProvider';
 import { vendorApi, vk } from '../api';
 import { formatDateTime } from '../format';
 import { useNotifications, useVendorWorkspace } from '../hooks';
@@ -140,8 +141,9 @@ export function VendorShell({ children }: { children: ReactNode }) {
     const off = !platform.loading && !platform.enabled;
     // The guest link page shows no team switcher (it is about one invitation).
     const showSwitcher = !off && pathname.startsWith('/vendor') && !pathname.startsWith('/vendor/login');
+    const antdLocale = useAntdLocale();
     return (
-        <ConfigProvider theme={vendorTheme}>
+        <ConfigProvider theme={vendorTheme} locale={antdLocale}>
             <AntdApp message={{ maxCount: 1 }}>
                 <SessionStart />
                 <div className="min-h-dvh bg-page">

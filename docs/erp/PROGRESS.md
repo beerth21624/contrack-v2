@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-10-31 · branch: `epic/erp` · สถานะ: **ออกแบบครบ ยังไม่เริ่มเขียนโค้ด**
+อัปเดตล่าสุด: 2026-10-31 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -12,7 +12,7 @@
 
 | WP | Title | Model | Status | Commit | Notes |
 |---|---|---|---|---|---|
-| WP-01 | i18n foundation (locale, format, parity, lint) | opus | todo | | |
+| WP-01 | i18n foundation (locale, format, parity, lint) | opus | done | (see Handoff) | migration `0006_wp01_user_locale`; `amountInWords` เลื่อนไป WP-02 (D-52) |
 | WP-02 | ไลบรารีเงิน ภาษี วันที่ | opus | todo | | |
 | WP-03 | Module registry, flag 4 ชั้น, entitlement, ModuleAccess (backend + contract) | opus | todo | | |
 | WP-04 | หน้าโมดูลและทดลองใช้ (web) | sonnet | todo | | |
@@ -143,6 +143,11 @@
 | D-49 | 2026-10-31 | แผนเงินสดรวบรวมผ่าน registry `CashPlanSources` (แต่ละโมดูลคืนรายการของตัวเอง) | job-cost ห้าม query ตารางโมดูลอื่น และ payables ถูกสร้างหลัง job-cost |
 | D-50 | 2026-10-31 | หน้า `/workspace/modules` ไม่แสดงโมดูล ERP ที่เซิร์ฟเวอร์ไม่ได้เปิด (`available=false`) | release 1 ต้องไม่เผยโมดูลที่ยังไม่ขาย |
 | D-51 | 2026-10-31 | `quotations` dependsOn `boq-control` (เดิม `project-hub`) | ใบเสนอราคาสร้างจาก `boq_version_lines` ที่มีเฉพาะเมื่อ `boq-control` active |
+| D-52 | 2026-10-31 | (WP-01) `amountInWords(v, locale)` ยังไม่อยู่ใน `src/i18n/format.ts`; WP-02 เพิ่มหลังสร้าง `amountInWordsEn` (th = `bahtText` เดิม) | `src/domain/money/amount-in-words.ts` เป็นของ WP-02 ห้ามทำล่วงหน้า (README §2 ข้อ 1) |
+| D-53 | 2026-10-31 | (WP-01) `src/i18n/request.ts` import ข้อความ th/en แบบ static แทน dynamic import ตามภาษา (แบบใน 03 §2 ข้อ 2) | type-safe และไม่ต้องพึ่ง dynamic import ฝั่ง server; ขนาด bundle ฝั่ง client ไม่เปลี่ยน (ส่งเฉพาะภาษาปัจจุบันผ่าน `getMessages()`) |
+| D-54 | 2026-10-31 | (WP-01) `/me` คืน `locale` ระดับบนสุด (`meResponseSchema.locale` optional); `PATCH /me/preferences {locale}` คืน `UserPreferences` (`{locale}`); `USER_LOCALES`/`userLocaleSchema` อยู่ใน `src/shared/contract/auth.ts` | แผนเขียน "`GET /me` คืน `locale`" และ `CloudRuntime` อ่าน `me.locale`; optional เพื่อให้เว็บอ่านคำตอบของ server รุ่นเก่าได้ |
+| D-55 | 2026-10-31 | (WP-01) ผลข้างเคียงที่ยอมรับ: `<html lang>` เป็น `th` เมื่อไม่มี cookie (เดิม hard-code `en`); `VendorShell` ได้ antd locale ไทย (เดิมไม่ได้ตั้ง จึงเป็นอังกฤษของ antd เช่น `OK`/`No data`) | ตามขอบเขต WP-01 ที่ระบุให้ใส่ `useAntdLocale()` ใน vendor shell; ข้อความที่ผู้ใช้เห็นของหน้าจอเดิมไม่เปลี่ยน (ปุ่มยืนยันใน vendor ตั้ง `okText`/`cancelText` เองอยู่แล้ว) |
+| D-56 | 2026-10-31 | (WP-01) ปุ่มสลับภาษาใน vendor shell และหน้า login/register (03-i18n §2 ข้อ 8) ยังไม่ทำ — WP-01 ทำเฉพาะ AccountMenu ตามขอบเขต | ขอบเขตของ WP-01 ระบุแค่ AccountMenu; vendor/login เป็นหน้าจอเดิมที่ยังเป็นไทยทั้งหมด ให้ track I (I-01, I-14) เพิ่มพร้อมย้ายข้อความ ด้วย `useAppLocale().setLocale` |
 
 ### คำถามค้างถึงเจ้าของ
 1. ตาราง Factor F ทางการ (กรมบัญชีกลาง) ฉบับที่ต้องการใช้ (D-12)
@@ -162,4 +167,24 @@
 - ตรวจแล้ว: <คำสั่งที่รันและผล>
 ```
 
-(ยังไม่มีบันทึก)
+### WP-01 — i18n foundation (locale, format, parity, lint) (commit: ดูบรรทัดถัดไปใน ledger / `git log --grep 'WP-01'`)
+- สร้าง (web): `src/i18n/request.ts` (cookie `NEXT_LOCALE` → locale), `config.ts` (`resolveLocale`, `isLocale`, `LOCALE_COOKIE`), `locale-cookie.ts` (`readLocaleCookie`/`writeLocaleCookie`), `global.d.ts` (คีย์ข้อความ type-safe), `LocaleProvider.tsx` (`useAppLocale()` → `{locale, setLocale}` โดย `setLocale` คืน `Promise<boolean>` = บันทึกโปรไฟล์สำเร็จไหม; `useAntdLocale()`), `format.ts`, `useFormat.ts`, `document-translator.ts`, `src/features/cloud/api/error-message.ts` (`useErrorMessage()`, `errorMessage(t, e)`, `errorReason(details)`, type `ErrorsTranslator`)
+- namespace ใหม่: `errors` (`unknown`, `codes.*` ครบทุก `ERROR_CODES` + `network_error`/`invalid_response` — ไทยตรงกับ `thaiErrorMessage`, `reasons.*` 10 ตัวจาก 01 §1.5), `enums` `{}`, `shell`, `account` (สำเนาข้อความไทยเดิมของเมนูบัญชีแบบตรงตัว เตรียมให้ I-01 ใช้ + `account.language`, `account.languageSaveFailed`), `documents` `{}`; `app` เพิ่ม `metaTitle`/`metaDescription`/`vendorMetaTitle`/`vendorMetaDescription`
+- root layout: async, `<html lang={locale}>`, `NextIntlClientProvider` (server) ครอบ `LocaleProvider`, `generateMetadata`; `(vendor)/layout.tsx` ใช้ `generateMetadata`; `next.config.ts` ครอบ `createNextIntlPlugin`
+- `AppLayoutUI` และ `VendorShell` ใช้ `locale={useAntdLocale()}`; `dayjs.locale(...)` ถูกเรียกระหว่าง render ใน `useAntdLocale` (ไม่ใช่ระดับโมดูลแล้ว)
+- AccountMenu: กลุ่ม "ภาษา / Language" (`account.language`, รายการ `common.thai`/`common.english`) แสดงเมื่อ `NEXT_PUBLIC_LANGUAGE_SWITCH === '1'` เท่านั้น; หลังสลับ invalidate `qk.me` (กัน `CloudRuntime` ตั้ง cookie กลับเป็นค่าเก่า); บันทึกโปรไฟล์ไม่สำเร็จ → `message.warning`
+- `CloudRuntime`: เมื่อ `me.locale` ≠ cookie → เขียน cookie + `router.refresh()` (โปรไฟล์ชนะ)
+- backend: `users.locale` (`text not null default 'th'` + check `users_locale_check`), `User.locale`/`withLocale`, `UserRepository.setLocale` (drizzle + in-memory), `UpdatePreferencesUseCase` (+ spec), `PATCH /me/preferences` ใน `me.controller.ts`, `toMeResponse` ใส่ `locale`; e2e `test/e2e/auth.e2e-spec.ts` เพิ่ม 2 เคส
+- ESLint: block ห้ามอักษรไทย (`no-restricted-syntax` error, `[\u0E00-\u0E7F]` = `[฀-๿]`) ท้าย `eslint.config.mjs` ก่อน `globalIgnores` ตาม glob ในแผน (ลองแล้ว: ไฟล์ทดลองใต้ `src/features/erp/` error 3 จุด, ไฟล์เดิมนอก glob ไม่โดน)
+- parity: `node scripts/i18n/check-parity.mjs [dir]` (export `checkParity`, `compareMessages`, `leafKeys`, `loadMessages`); `src/i18n/__tests__/parity.test.ts` ตรวจทั้งไฟล์ JSON, `index.ts` ทั้งสองภาษา และ `errors.codes` ครบทุก `ERROR_CODES`; `src/i18n/__tests__/format.test.ts` ครอบเกณฑ์รับงานของ format
+- migration: `0006_wp01_user_locale` (ตรงตามที่คาด) → WP ถัดไปที่แก้ schema ได้ `0007_*`
+- เบี่ยงจากแผน: D-52 (`amountInWords` ไป WP-02), D-53, D-54, D-55, D-56
+- WP ถัดไปต้องรู้:
+  - **namespace ใหม่ต้องเพิ่มทั้ง `messages/th/index.ts` และ `messages/en/index.ts`** (parity test เทียบ index ด้วย); ไฟล์ JSON ว่าง `{}` ผ่าน parity ได้
+  - คีย์แบบ dynamic (เช่น `` te(`quotationStatus.${s}`) ``) ต้อง cast เป็นชนิดคีย์ ดูตัวอย่าง `ErrorKey` ใน `error-message.ts`; ใช้ `t.has(key)` ก่อนถ้าค่าอาจไม่มีคีย์
+  - เอกสารพิมพ์: `documentTranslator(doc.language)` (ตอนนี้ `documents` ว่าง → WP-06 เติม `documents.common.*`); วันที่บนเอกสาร `formatDocumentDate(date, doc.language, companyYearStyle)`
+  - `format.ts` คืน `''` สำหรับค่าที่ไม่ใช่ตัวเลข/วันที่ที่ถูกต้อง (`'2026-02-30'` → `''`); วันที่ `YYYY-MM-DD` ไม่แปลงโซน, ISO/Date แสดงเวลา Bangkok; ใช้ `formatToParts` จึงไม่ขึ้นกับรุ่น ICU (ไม่มี "พ.ศ." แทรก)
+  - WP-16 เพิ่มเงื่อนไข `project-hub` active ให้ `LANGUAGE_SWITCH` ใน `AccountMenu.tsx` (D-16)
+  - root layout อ่าน cookie จึงเรนเดอร์แบบ dynamic ทุกหน้า (ไม่มี static prerender แล้ว) — ยอมรับตามสถาปัตยกรรม 03 §2
+  - สภาพเครื่อง: `node_modules` ที่ root ไม่ตรง lockfile (zod 4.3.6, ไม่มี vitest) และ `backend/node_modules` ไม่มีเลย จึงรัน `npm ci` (root) และ `npm ci --ignore-scripts` (backend) จาก lockfile เดิม ไม่มีไฟล์ที่ track เปลี่ยน; `tsc -p tsconfig.json` ยังรายงาน error ใน `.next/types/validator.ts` / `.next/dev/types/validator.ts` (ไฟล์ generate เก่าที่ชี้หน้าที่ถูกลบไปแล้ว ไม่เกี่ยวกับโค้ด) — กรองด้วย `grep -v '^\.next/'` หรือลบโฟลเดอร์ `.next` ก่อนตรวจ
+- ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน (นอกจาก `.next/*` เก่า); eslint ไฟล์ที่แก้ทั้ง backend/web ผ่าน 0 error; `node scripts/i18n/check-parity.mjs` exit 0 (ลบคีย์ en หนึ่งตัวในสำเนา → exit 1); `npx vitest run src/i18n src/features/cloud/api` 16 ผ่าน; `cd backend && npx jest src/modules/identity` 188 ผ่าน; `npx jest --config test/jest-e2e.config.js test/e2e/auth.e2e-spec.ts` 21 ผ่าน; `next dev` ชั่วคราว: ไม่มี cookie → `<html lang="th">` + title/เมนู/footer ไทยเดิม; `NEXT_LOCALE=en` → `<html lang="en">`, title และเมนู `nav` อังกฤษ (ปิด server แล้ว)

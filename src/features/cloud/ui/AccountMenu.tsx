@@ -2,17 +2,24 @@
 
 // ─── Header: "เข้าสู่ระบบ" for guests; for signed-in users a menu (workspace, projects, members, sign out) ───
 import { useRouter } from 'next/navigation';
-import { Avatar, Button, Dropdown, type MenuProps } from 'antd';
+import { App, Avatar, Button, Dropdown, type MenuProps } from 'antd';
 import {
     AppstoreOutlined, CheckOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, ScheduleOutlined, TeamOutlined, ToolOutlined,
 } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
+import { isLocale } from '@/i18n/config';
+import { useAppLocale } from '@/i18n/LocaleProvider';
+import { qk } from '../query/keys';
 import { useWorkforceEnabled } from '../api/workforce';
 import { initials, useSession } from '../auth/session';
 import { signOut } from '../auth/actions';
 import { useCurrentWorkspace } from '../query/hooks';
 import { ROLE_LABEL, can } from '../permissions';
 import { usePlatformModules } from '@/features/modules/modules';
+
+/** The language switch stays hidden until the old screens are translated (docs/erp/PROGRESS.md D-16). */
+const LANGUAGE_SWITCH = process.env.NEXT_PUBLIC_LANGUAGE_SWITCH === '1';
 
 export function AccountMenu({ compact = false }: { compact?: boolean }) {
     const router = useRouter();
@@ -23,6 +30,10 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
     // Business modules: the switch page only when this server offers any and the user may switch them.
     const offersModules = (usePlatformModules().data?.length ?? 0) > 0 && can(workspace?.role, 'modules.manage');
     const workforceOn = useWorkforceEnabled();
+    const { message } = App.useApp();
+    const tCommon = useTranslations('common');
+    const tAccount = useTranslations('account');
+    const { locale, setLocale } = useAppLocale();
 
     if (status === 'unknown') return null;
 
@@ -69,12 +80,31 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
             { key: 'crews', icon: <ToolOutlined />, label: 'ทีมช่างและบุคลากร' },
             { key: 'board', icon: <ScheduleOutlined />, label: 'กระดานจัดคน' },
         ] : []),
+        ...(LANGUAGE_SWITCH ? [
+            { type: 'divider' as const },
+            {
+                type: 'group' as const, key: 'lang', label: tAccount('language'),
+                children: (['th', 'en'] as const).map(l => ({
+                    key: `lang:${l}`,
+                    icon: l === locale ? <CheckOutlined className="text-orange-500" /> : <span className="inline-block w-[14px]" />,
+                    label: l === 'th' ? tCommon('thai') : tCommon('english'),
+                })),
+            },
+        ] : []),
         { type: 'divider' },
         { key: 'logout', icon: <LogoutOutlined />, label: 'ออกจากระบบ', danger: true },
     ];
 
     const onClick: MenuProps['onClick'] = ({ key }) => {
-        if (key.startsWith('ws:')) {
+        if (key.startsWith('lang:')) {
+            const next = key.slice(5);
+            if (!isLocale(next) || next === locale) return;
+            void setLocale(next).then(saved => {
+                // The profile now holds the new language: refetch it so the runtime does not put the old one back.
+                void qc.invalidateQueries({ queryKey: qk.me });
+                if (!saved) void message.warning(tAccount('languageSaveFailed'));
+            });
+        } else if (key.startsWith('ws:')) {
             select(key.slice(3));
             router.push('/projects');
         } else if (key === 'projects') {

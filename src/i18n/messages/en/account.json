@@ -1,0 +1,14 @@
+{
+  "menu": "Account",
+  "signIn": "Sign in",
+  "signOut": "Sign out",
+  "workspace": "Workspace",
+  "personalWorkspace": "Personal",
+  "projects": "All projects",
+  "members": "Members",
+  "modules": "Add-on modules",
+  "crews": "Crews and staff",
+  "board": "Crew board",
+  "language": "ภาษา / Language",
+  "languageSaveFailed": "Could not save the language to your account. It applies to this browser only."
+}

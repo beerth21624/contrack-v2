@@ -21,6 +21,7 @@ import { LogoutUseCase } from '../application/use-cases/logout.use-case';
 import { RefreshSessionUseCase } from '../application/use-cases/refresh-session.use-case';
 import { RegisterUserUseCase } from '../application/use-cases/register-user.use-case';
 import { RequestOtpUseCase } from '../application/use-cases/request-otp.use-case';
+import { UpdatePreferencesUseCase } from '../application/use-cases/update-preferences.use-case';
 import { VerifyOtpUseCase } from '../application/use-cases/verify-otp.use-case';
 import { RefreshToken } from '../domain/entities/refresh-token.entity';
 import type { PlainPassword } from '../domain/value-objects/plain-password.value-object';
@@ -199,6 +200,7 @@ export function identityKit(options: IdentityKitOptions = {}) {
         refresh: new RefreshSessionUseCase(users, refreshTokens, sessions, settings, uow, clock),
         logout: new LogoutUseCase(refreshTokens, clock),
         getMe: new GetMeUseCase(users, memberships),
+        updatePreferences: new UpdatePreferencesUseCase(users),
     };
 }
 

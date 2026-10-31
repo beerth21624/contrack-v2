@@ -1,5 +1,9 @@
 {
   "title": "Contrack",
   "subtitle": "BOQ Estimation System",
-  "footer": "Contrack © 2025 — BOQ Estimation System"
+  "footer": "Contrack © 2025 — BOQ Estimation System",
+  "metaTitle": "Contrack — BOQ Estimation System",
+  "metaDescription": "Construction estimating and project management",
+  "vendorMetaTitle": "ConTrack for subcontractors",
+  "vendorMetaDescription": "Find work, submit bids and track subcontracts"
 }

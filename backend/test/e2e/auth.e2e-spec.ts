@@ -8,8 +8,8 @@ import {
     ACCESS_TOKEN_AUDIENCE, ACCESS_TOKEN_ISSUER,
 } from '../../src/modules/identity/infrastructure/adapters/jwt-access-token.service';
 import {
-    COOKIE_PATH, PASSWORD, type TestApp, bearer, expectError, expectStatus, refreshCookieOf, register, setCookies,
-    startApp, uniqueEmail,
+    COOKIE_PATH, PASSWORD, type TestApp, bearer, expectError, expectStatus, login, refreshCookieOf, register,
+    setCookies, startApp, uniqueEmail,
 } from '../support/e2e';
 
 const SOME_ID = '0f0f0f0f-0000-4000-8000-000000000001';
@@ -123,6 +123,27 @@ describe('auth (e2e)', () => {
                 expect.objectContaining({ id: alice.personalWorkspaceId, kind: 'personal', role: 'owner' }),
                 expect.objectContaining({ name: 'Acme', kind: 'company', role: 'owner' }),
             ]));
+            expect(me.locale).toBe('th');
+        });
+    });
+
+    describe('PATCH /me/preferences', () => {
+        it('stores the UI language on the account: a new sign-in (another device) gets it from /me', async () => {
+            const alice = await register(t, 'Alice');
+            const res = await t.http().patch('/me/preferences').set(bearer(alice.accessToken)).send({ locale: 'en' });
+            expectStatus(res, 200);
+            expect(res.body).toEqual({ locale: 'en' });
+
+            const other = await login(t, alice);
+            const me = meResponseSchema.parse((await t.http().get('/me').set(bearer(other.accessToken))).body);
+            expect(me.locale).toBe('en');
+        });
+
+        it('rejects an unknown locale and needs a signed-in user', async () => {
+            const alice = await register(t, 'Alice');
+            expectError(await t.http().patch('/me/preferences').set(bearer(alice.accessToken)).send({ locale: 'fr' }),
+                400, 'validation_failed');
+            expectError(await t.http().patch('/me/preferences').send({ locale: 'en' }), 401, 'unauthenticated');
         });
     });
 

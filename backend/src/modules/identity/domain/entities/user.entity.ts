@@ -1,4 +1,5 @@
 // ─── User: an account that signs in with e-mail + password, or with a phone + one-time code (phone-only users) ───
+import type { UserLocale } from '@contrack/contract';
 import type { UserId } from '../../../../shared/domain/ids';
 import type { DisplayName } from '../value-objects/display-name.value-object';
 import type { Email } from '../value-objects/email.value-object';
@@ -15,11 +16,14 @@ export interface UserProps {
     /** Verified E.164 phone (set by phone sign-in); null / absent for e-mail users. */
     phone?: Phone | null;
     phoneVerifiedAt?: Date | null;
+    /** UI language; absent = Thai (the default). */
+    locale?: UserLocale;
 }
 
 interface StoredUserProps extends UserProps {
     phone: Phone | null;
     phoneVerifiedAt: Date | null;
+    locale: UserLocale;
 }
 
 const copyDate = (d: Date | null | undefined): Date | null => (d === null || d === undefined ? null : new Date(d.getTime()));
@@ -42,6 +46,7 @@ export class User {
             createdAt: new Date(props.createdAt.getTime()),
             phone: props.phone ?? null,
             phoneVerifiedAt: copyDate(props.phoneVerifiedAt),
+            locale: props.locale ?? 'th',
         };
     }
 
@@ -73,6 +78,10 @@ export class User {
         return copyDate(this.props.phoneVerifiedAt);
     }
 
+    get locale(): UserLocale {
+        return this.props.locale;
+    }
+
     /** Created by phone sign-in: has only a placeholder e-mail and can never sign in with a password. */
     get isPhoneOnly(): boolean {
         return isPhonePlaceholderEmail(this.props.email.value);
@@ -81,6 +90,11 @@ export class User {
     /** The same user with `phone` verified at `at`. */
     withVerifiedPhone(phone: Phone, at: Date): User {
         return new User({ ...this.props, phone, phoneVerifiedAt: new Date(at.getTime()) });
+    }
+
+    /** The same user with another UI language. */
+    withLocale(locale: UserLocale): User {
+        return new User({ ...this.props, locale });
     }
 
     toProps(): UserProps {

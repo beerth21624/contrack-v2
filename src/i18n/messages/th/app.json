@@ -1,5 +1,9 @@
 {
   "title": "Contrack",
   "subtitle": "ระบบประมาณราคา BOQ",
-  "footer": "Contrack © 2025 — ระบบประมาณราคา BOQ"
+  "footer": "Contrack © 2025 — ระบบประมาณราคา BOQ",
+  "metaTitle": "Contrack — ระบบประมาณราคา BOQ",
+  "metaDescription": "ระบบประมาณราคาก่อสร้างและบริหารงานก่อสร้าง",
+  "vendorMetaTitle": "ConTrack ผู้รับเหมาช่วง",
+  "vendorMetaDescription": "รับงาน เสนอราคา และติดตามสัญญาจ้างช่วง"
 }

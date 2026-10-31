@@ -1,0 +1,38 @@
+{
+  "unknown": "Something went wrong. Try again.",
+  "codes": {
+    "validation_failed": "Some data is not valid. Check it and try again.",
+    "unauthenticated": "Please sign in again.",
+    "forbidden": "You do not have permission to do this.",
+    "not_found": "This item was not found (it may have been deleted, or you are not a member).",
+    "conflict": "This cannot be done because the data conflicts (for example a duplicate name or an archived project).",
+    "version_conflict": "Someone else changed this first.",
+    "email_taken": "An account with this e-mail already exists. Try signing in instead.",
+    "invalid_credentials": "The e-mail or password is wrong.",
+    "invalid_token": "Please sign in again.",
+    "invitation_invalid": "This invitation link can no longer be used (expired, cancelled or already used).",
+    "last_owner": "There must always be at least one owner.",
+    "personal_workspace": "This cannot be done in a personal workspace. Create a company workspace first.",
+    "unprocessable": "This data cannot be calculated, so it was not saved.",
+    "rate_limited": "Too many requests. Wait a moment and try again.",
+    "internal": "The server had a problem. Try again.",
+    "module_disabled": "This feature is switched off.",
+    "otp_invalid": "The code is wrong or has expired. Request a new code and try again.",
+    "ai_unavailable": "The AI assistant is not available right now. Try again later.",
+    "ai_quota": "The AI assistant has no credits left. Contact your administrator.",
+    "network_error": "Cannot reach the server. Check your internet connection and try again.",
+    "invalid_response": "The server sent an invalid answer."
+  },
+  "reasons": {
+    "baseline_locked": "The BOQ baseline is locked and cannot be changed.",
+    "already_issued": "This document has been issued and cannot be changed.",
+    "invalid_transition": "This status change is not allowed from the current status.",
+    "missing_dependencies": "Switch on the required modules first.",
+    "not_entitled": "This workspace is not entitled to this module yet.",
+    "has_dependents": "This cannot be deleted because other data refers to it.",
+    "over_budget": "The amount is over budget.",
+    "document_issued_exists": "This cannot be done because issued documents exist.",
+    "period_has_documents": "This period already has documents.",
+    "project_archived": "This project is archived."
+  }
+}

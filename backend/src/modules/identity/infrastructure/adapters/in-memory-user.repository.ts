@@ -1,3 +1,4 @@
+import type { UserLocale } from '@contrack/contract';
 import type { DomainError } from '../../../../shared/domain/domain-error';
 import type { UserId } from '../../../../shared/domain/ids';
 import { type Result, err, okVoid } from '../../../../shared/domain/result';
@@ -56,6 +57,12 @@ export class InMemoryUserRepository extends UserRepository {
     markPhoneVerified(id: UserId, phone: Phone, at: Date): Promise<void> {
         const user = this.byId.get(id);
         if (user !== undefined) this.byId.set(id, user.withVerifiedPhone(phone, at));
+        return Promise.resolve();
+    }
+
+    setLocale(id: UserId, locale: UserLocale): Promise<void> {
+        const user = this.byId.get(id);
+        if (user !== undefined) this.byId.set(id, user.withLocale(locale));
         return Promise.resolve();
     }
 
