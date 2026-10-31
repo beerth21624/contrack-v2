@@ -46,7 +46,7 @@
 | WP-32 | Billing เอกสารพิมพ์ + QR | sonnet | done | fa21ba1 | เอกสารพิมพ์ ใบแจ้งหนี้/ใบกำกับภาษี/ใบลดหนี้/ใบเสร็จ(รวม TI)/ใบรับรองงวดงาน + QR PromptPay + renderer ลิงก์ลูกค้า `invoice`; deps `qrcode@1.5.4`; D-248…D-250 |
 | WP-33 | VO backend | opus | done | 37a9830 | migration `0024_wp33_variations`; โมดูล `variations` (CRUD, lines, compute จาก sandbox, evidence, submit/approval, ลิงก์ลูกค้า, record-response, withdraw, cancel, ผลเมื่อ accepted), ports `QuotationPricingLookup` + `ProjectLifecycle.shiftPlannedFinish`; D-251…D-256 |
 | WP-34 | VO web + ราคาด้วยเครื่องคำนวณ (sandbox) | opus | done | 5371542 | ไม่มี migration; `src/features/erp/variations/*`, binding `sandbox` ใน project-store, routes `/p/[id]/variations[/[variationId]]` + `/print/variation/[id]`, แท็บ nav, renderer ลิงก์ `variation`; i18n `variations`; D-257…D-262 |
-| WP-35 | Portal backend + ค้นหา | opus | done | | ไม่มี migration; โมดูล `portal` (`GET …/portal`, `GET …/search?q=`), registries `PortalSources`/`SearchSources` (core), port `ModuleStatesLookup` (platform), contract `erp/portal.ts`; D-263…D-268 |
+| WP-35 | Portal backend + ค้นหา | opus | done | 0363f2f | ไม่มี migration; โมดูล `portal` (`GET …/portal`, `GET …/search?q=`), registries `PortalSources`/`SearchSources` (core), port `ModuleStatesLookup` (platform), contract `erp/portal.ts`; D-263…D-268 |
 | WP-36 | Portal web | sonnet | todo | | |
 | WP-37 | ทะเบียนผู้ขาย | opus | todo | | |
 | WP-38 | PR + RFQ backend | opus | todo | | |
@@ -861,7 +861,7 @@
 - WP ถัดไปต้องรู้: binding ใน store มี 3 แบบแล้ว (`guest` / `cloud` / `sandbox`) — โค้ดใหม่ที่ต้องการ "โครงการบนคลาวด์" ให้เช็ก `kind === 'cloud'` ตามเดิม, ที่ต้องการ "ไม่ใช่โครงการในเครื่อง" ให้เช็ก `kind !== 'guest'`; portal (WP-35/36) ลิงก์ VO ด้วย `variationHref(projectId, id)`
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้/สร้างผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/store src/i18n src/features/cloud/sync` 79 ผ่าน; **ยังไม่ได้ทดสอบมือใน browser** (เปิด sandbox → แก้เครื่องคำนวณ → บันทึก → เห็นบรรทัด calculator; network ไม่มี PUT docs; reload ระหว่าง sandbox; ลิงก์ลูกค้ารับ/ปฏิเสธ)
 
-### WP-35 — Portal backend + ค้นหา (hash ในคอลัมน์ ledger)
+### WP-35 — Portal backend + ค้นหา (0363f2f)
 - contract `src/shared/contract/erp/portal.ts`: `PortalDto` (`tasks`, `riskyProjects`, `cashOutlook`, `tiles`, `quickActions`, `generatedAt`), `PortalTask` (`kind`, `params`, `href`, `dueDate`, `amount`, `projectId`, `projectName`), `RiskyProject`, `ModuleTile`, `QuickAction`, `SearchHit` (`type`, `id`, `title`, `subtitle`, `href`, `docType`), `searchQuerySchema`, ค่าคงที่ `PORTAL_TASK_KINDS`, `QUICK_ACTION_IDS`, `RISK_REASONS`, `PORTAL_TASK_LIMIT`, `SEARCH_*`
 - core: `PortalSources`, `SearchSources` (+ types `PortalContext`, `PortalTaskItem`, `SearchContext`) ใน `ports.ts` และ `core.module.ts`; port `ModuleStatesLookup` (platform: `infrastructure/adapters/module-states-lookup.adapter.ts`)
 - โมดูลใหม่ `backend/src/modules/portal/` (`GetPortalUseCase`, `GlobalSearchUseCase`, controller `@RequiresModule('portal')`, `workspace.read`); ลงทะเบียนใน `app.module.ts`
