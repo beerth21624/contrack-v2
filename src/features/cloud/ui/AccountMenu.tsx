@@ -100,9 +100,10 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
             const next = key.slice(5);
             if (!isLocale(next) || next === locale) return;
             void setLocale(next).then(saved => {
+                // Not saved: nothing changed (the profile language would win again on the next load).
+                if (!saved) { void message.warning(tAccount('languageSaveFailed')); return; }
                 // The profile now holds the new language: refetch it so the runtime does not put the old one back.
                 void qc.invalidateQueries({ queryKey: qk.me });
-                if (!saved) void message.warning(tAccount('languageSaveFailed'));
             });
         } else if (key.startsWith('ws:')) {
             select(key.slice(3));

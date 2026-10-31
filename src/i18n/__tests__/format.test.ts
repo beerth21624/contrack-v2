@@ -13,6 +13,7 @@ describe('format', () => {
         expect(formatDocumentDate('2026-10-31', 'th', 'ce')).toBe('31 ตุลาคม 2026');
         expect(formatDocumentDate('2026-10-31', 'en', 'be')).toBe('31 October 2026');
         expect(formatDate('2026-02-30', 'th')).toBe('');
+        expect(formatDate('2026-09-30', 'en')).toBe('30 Sep 2026');
     });
 
     it('timestamps are shown in Bangkok time', () => {

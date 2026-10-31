@@ -21,8 +21,8 @@ type AntdLocale = NonNullable<ConfigProviderProps['locale']>;
 interface LocaleContextType {
   locale: Locale;
   /**
-   * Remembers the locale on this browser (cookie), saves it to the profile when signed in, and renders again.
-   * Resolves false when the profile could not be saved (the cookie still applies on this browser).
+   * Saves the locale to the profile when signed in, remembers it on this browser (cookie), and renders again.
+   * Resolves false when the profile could not be saved: then nothing changes (no cookie, no new render).
    */
   setLocale: (locale: Locale) => Promise<boolean>;
 }
@@ -52,17 +52,18 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const setLocale = useCallback(async (next: Locale): Promise<boolean> => {
-    writeLocaleCookie(next);
-    let saved = true;
+    // Signed in: the profile is saved first. It wins over the cookie on the next load (CloudRuntime), so a switch
+    // whose save failed would silently turn back; nothing changes then and the caller tells the user.
     if (useSession.getState().status === 'signed-in') {
       try {
         await api.mePreferences.update({ locale: next });
       } catch {
-        saved = false;
+        return false;
       }
     }
+    writeLocaleCookie(next);
     router.refresh();
-    return saved;
+    return true;
   }, [router]);
 
   const value = useMemo(() => ({ locale, setLocale }), [locale, setLocale]);

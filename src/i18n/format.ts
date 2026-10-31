@@ -103,7 +103,9 @@ function dayMonthYear(value: string | Date, intlLocale: string, month: 'short' |
     }
     const parts = format.formatToParts(instant.date);
     const part = (type: Intl.DateTimeFormatPartTypes) => parts.find(p => p.type === type)?.value ?? '';
-    return `${part('day')} ${part('month')} ${part('year')}`;
+    // en-GB says "Sept" since ICU 72 and "Sep" before: one spelling, so the server and every browser agree.
+    const monthText = part('month') === 'Sept' ? 'Sep' : part('month');
+    return `${part('day')} ${monthText} ${part('year')}`;
 }
 
 /** `31 ต.ค. 2026` / `31 Oct 2026` (Christian-era year). */
