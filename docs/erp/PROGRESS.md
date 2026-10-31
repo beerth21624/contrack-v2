@@ -24,7 +24,7 @@
 | WP-10 | การแจ้งเตือน: channel, ภาษาผู้รับ, sweep | opus | done | a984d6f | migration `0010_wp10_notifications`; template ERP 20 ตัว th/en; sweep `platform.trial-expiring`; D-108…D-113 |
 | WP-11 | บริการเลขเอกสาร + guard การลบ | opus | done | 4706b00 | migration `0011_wp11_numbering`; โมดูล `numbering`, port `DocumentNumbering`, `ProjectDeletionGuards`/`WorkspaceDeletionGuards`, หน้า `/workspace/numbering`; D-114…D-120 |
 | WP-12 | โปรไฟล์บริษัท + business profile + project type | sonnet | done | fa2dfb1 | migration `0012_wp12_company`; โมดูล `company`, port `CompanyProfiles`, `src/domain/erp/profiles.ts`, หน้า `/workspace/company`; D-121…D-125 |
-| WP-13 | ทะเบียนลูกค้า | sonnet | done | HASH | migration `0013_wp13_customers`; โมดูล `customers`, port `CustomerLookup`, หน้า `/customers`, `CustomerPicker`; D-126…D-130 |
+| WP-13 | ทะเบียนลูกค้า | sonnet | done | 02b2acf | migration `0013_wp13_customers`; โมดูล `customers`, port `CustomerLookup`, หน้า `/customers`, `CustomerPicker`; D-126…D-130 |
 | WP-14 | ลิงก์ลูกค้า (public) | opus | todo | | |
 | WP-15 | Project Hub backend | opus | todo | | |
 | WP-16 | Project Hub web + ต่อ nav เข้า AppLayoutUI | opus | todo | | |
@@ -443,7 +443,7 @@
   - หน้า company เป็นหน้าเดียวที่แก้โปรไฟล์ (PUT ทั้งก้อน); `useCompanyProfile(ws)` / `companyKeys.all(ws)` ใช้ซ้ำในหน้าอื่นได้ (เช่น ปุ่มสร้างโครงการอ่าน `effectiveProjectType`)
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (web + backend) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/domain/erp src/i18n` ผ่าน; `cd backend && npx jest …/upload` 17 ผ่าน; e2e ชั่วคราว (ลบแล้ว, memory): GET ค่าเริ่มต้น (ชื่อ = workspace, type `residential_new`), PUT tax id checksum ผิด → 400 `validation_failed`, PUT ถูก → `effectiveProjectType` `government`, `snapshot('en')` ไม่จด VAT → `vatRate 0`, แม่แบบงวดรวม ≠ 100% → 400; `npm run db:generate -- --name wp12_company` ได้ `0012` ไม่ถาม interactive; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์ / PostgreSQL จริง
 
-### WP-13 — ทะเบียนลูกค้า (HASH)
+### WP-13 — ทะเบียนลูกค้า (02b2acf)
 - สร้าง (contract): `src/shared/contract/erp/customers.ts` (`CUSTOMER_KINDS`, `CUSTOMER_KIND_WHT_RATE`, `customerDtoSchema`, `createCustomerRequestSchema` (ช่องที่เหลือมี default), `patchCustomerRequestSchema`, `customerListQuerySchema`); FILE_PURPOSE `customer_document`
 - schema: `customers` ใน `schema-erp-core.ts` (+ `erpCoreTables`); partial unique `(workspace_id, tax_id, branch_code) where tax_id <> '' and archived_at is null`; migration `0013_wp13_customers` → WP ถัดไปที่แก้ schema ได้ `0014_*`
 - port (`ports.ts`): `CustomerLookup` (`find`/`findMany`/`snapshot(ws, id, language)`), types `Customer`, `CustomerSnapshot`; โมดูล `backend/src/modules/customers/` (`@Global`, export `CustomerLookup`); `app.module.ts`; `backend/API.md`
