@@ -1,0 +1,66 @@
+{
+  "title": "หน้าแรก",
+  "subtitle": "สิ่งที่ต้องทำและภาพรวมของบริษัทตามบทบาทของคุณ",
+  "loadFailed": "โหลดหน้าแรกไม่สำเร็จ",
+  "retry": "ลองอีกครั้ง",
+  "tasks": {
+    "title": "งานที่ต้องทำ",
+    "empty": "ไม่มีงานค้าง",
+    "due": "ครบกำหนด",
+    "approval_pending": "รออนุมัติ: {title} ({subject})",
+    "invoice_overdue": "ใบแจ้งหนี้ {number} ของ {customer} เกินกำหนด {days} วัน",
+    "milestone_claimable": "{contract} งวดที่ {no} {label} เบิกงวดได้แล้ว",
+    "quotation_expiring": "ใบเสนอราคา {number} {title} ใกล้หมดอายุ",
+    "variation_awaiting_customer": "งานเพิ่ม-ลด {number} {title} รอลูกค้าตอบรับ"
+  },
+  "risky": {
+    "title": "โครงการที่ต้องจับตา",
+    "empty": "ยังไม่มีโครงการเสี่ยง",
+    "reasons": {
+      "cost_overrun": "ต้นทุนเกินงบ",
+      "behind_schedule": "งานล่าช้า",
+      "overdue_receivable": "ลูกหนี้เกินกำหนด",
+      "negative_cash": "เงินสดติดลบ"
+    }
+  },
+  "cash": {
+    "title": "แนวโน้มเงินสดรายสัปดาห์",
+    "inflow": "เงินเข้า",
+    "outflow": "เงินออก",
+    "balance": "ยอดคงเหลือ"
+  },
+  "tiles": {
+    "title": "โมดูล",
+    "manage": "จัดการโมดูล",
+    "active": "เปิดใช้งาน",
+    "trialDaysLeft": "ทดลองใช้ เหลือ {days} วัน",
+    "startTrial": "ทดลองใช้",
+    "trialAvailable": "ทดลองใช้ได้",
+    "locked": "ยังไม่เปิดใช้"
+  },
+  "quickActions": {
+    "title": "ทางลัด",
+    "new_project": "สร้างโครงการ",
+    "create_quotation": "สร้างใบเสนอราคา",
+    "create_claim": "สร้างใบเบิกงวด",
+    "record_receipt": "บันทึกรับเงิน",
+    "create_variation": "สร้างงานเพิ่ม-ลด",
+    "add_customer": "เพิ่มลูกค้า",
+    "open_approvals": "กล่องอนุมัติ",
+    "start_trial": "ทดลองใช้โมดูล"
+  },
+  "search": {
+    "open": "ค้นหา",
+    "openHint": "ค้นหา (Ctrl/⌘+K)",
+    "title": "ค้นหา",
+    "placeholder": "ค้นหาโครงการ ลูกค้า ผู้ขาย หรือเลขที่เอกสาร",
+    "hint": "พิมพ์เพื่อค้นหา",
+    "empty": "ไม่พบผลลัพธ์",
+    "types": {
+      "project": "โครงการ",
+      "customer": "ลูกค้า",
+      "supplier": "ผู้ขาย",
+      "document": "เอกสาร"
+    }
+  }
+}

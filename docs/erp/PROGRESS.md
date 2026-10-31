@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-35 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-36 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -47,7 +47,7 @@
 | WP-33 | VO backend | opus | done | 37a9830 | migration `0024_wp33_variations`; โมดูล `variations` (CRUD, lines, compute จาก sandbox, evidence, submit/approval, ลิงก์ลูกค้า, record-response, withdraw, cancel, ผลเมื่อ accepted), ports `QuotationPricingLookup` + `ProjectLifecycle.shiftPlannedFinish`; D-251…D-256 |
 | WP-34 | VO web + ราคาด้วยเครื่องคำนวณ (sandbox) | opus | done | 5371542 | ไม่มี migration; `src/features/erp/variations/*`, binding `sandbox` ใน project-store, routes `/p/[id]/variations[/[variationId]]` + `/print/variation/[id]`, แท็บ nav, renderer ลิงก์ `variation`; i18n `variations`; D-257…D-262 |
 | WP-35 | Portal backend + ค้นหา | opus | done | 0363f2f | ไม่มี migration; โมดูล `portal` (`GET …/portal`, `GET …/search?q=`), registries `PortalSources`/`SearchSources` (core), port `ModuleStatesLookup` (platform), contract `erp/portal.ts`; D-263…D-268 |
-| WP-36 | Portal web | sonnet | todo | | |
+| WP-36 | Portal web | sonnet | done | HASH | หน้า `/home`, ค้นหา Ctrl/⌘+K, slot `HEADER_EXTRAS` ใน nav registry; ไม่มี migration; D-269…D-271 |
 | WP-37 | ทะเบียนผู้ขาย | opus | todo | | |
 | WP-38 | PR + RFQ backend | opus | todo | | |
 | WP-39 | PO + รับของ + 3-way match backend | opus | todo | | |
@@ -365,6 +365,9 @@
 | D-266 | 2026-11-01 | (WP-35) `tiles` = ทุกโมดูล `kind = 'erp'` จาก port ใหม่ `ModuleStatesLookup.forWorkspace` (platform, อ่านสดไม่ใช้ cache เพื่อ `trialAvailable` ถูก) พร้อม `available`; `quickActions` ตายตัวใน portal (`new_project`, `create_quotation`, `create_claim`, `record_receipt`, `create_variation`, `add_customer`, `open_approvals`) แสดงเมื่อโมดูล active + role มีสิทธิ์ และ `start_trial` (`/workspace/modules`) เมื่อ `modules.manage` และมีโมดูลที่ทดลองได้; action ที่ต้องเลือกโครงการชี้ `/hub` | ไม่มีตัวกำหนดใน docs; เว็บ (WP-36) เปลี่ยน href ได้โดยไม่แตะ backend |
 | D-267 | 2026-11-01 | (WP-35) ค้นหา: `q` trim 1–100 ตัวอักษร, ≤10 ต่อ source, ≤30 รวม, เรียงตามชนิด project → customer → supplier → document; hit มี `docType` (null ถ้าไม่ใช่เอกสาร); hub ค้นชื่อ/รหัสโครงการที่ไม่ archived (`projects.read`), customers ค้นด้วย `CustomerRepository.list` (`customers.read`), numbering ค้น `issued_documents.number` แบบ ilike (repo ใหม่ `searchNumbers`, รวมเลขที่ void) แล้วตรวจโมดูล+สิทธิ์อ่านของเอกสารแต่ละใบ | ตามเกณฑ์ "ค้นเลข INV2026-0003 เจอใบนั้น" |
 | D-268 | 2026-11-01 | (WP-35) href ของเอกสารตาม `subject_type` (ใน `numbering/application/numbering-search.ts`): `project` → `/p/<pid>`, `quotation` → `/p/<pid>/quotations/<id>`, `main_contract` → `/p/<pid>/contract`, `ar_invoice` (INV/TI/CN) → `/print/invoice/<id>`, `ar_receipt` → `/print/receipt/<id>`, `variation` → `/p/<pid>/variations/<id>`; subject type อื่นไม่แสดงจนกว่า WP ของโมดูลนั้นเพิ่มลงตาราง | ยังไม่มีหน้ารายละเอียดใบแจ้งหนี้/ใบเสร็จในแอป ใช้หน้าพิมพ์ซึ่งแสดงเอกสารใบนั้นตรง ๆ |
+| D-269 | 2026-11-01 | (WP-36) `ModuleTiles` ซ่อนโมดูลที่ `available = false` (server ไม่เปิดให้) ที่เหลือแสดง 3 สถานะ: active (+ ป้าย "ทดลองใช้ เหลือ n วัน" จาก `expiresAt` เทียบ `generatedAt`), ทดลองได้ (ปุ่มเริ่มทดลองเมื่อมี `modules.manage` ไม่งั้นเป็นป้าย), ยังไม่เปิดใช้ | ไม่ให้หน้าแรกเต็มไปด้วยโมดูลที่ซื้อ/เปิดไม่ได้ |
+| D-270 | 2026-11-01 | (WP-36) slot header: `HEADER_EXTRAS` + `ErpHeaderExtras()` ใน `nav-registry.ts` (gate เหมือน `ErpNavGate`) และ `AppLayoutUI` เรนเดอร์ก่อนกระดิ่ง; ปุ่มค้นหาอยู่ใน `GlobalSearch` (modal, debounce 250ms, ↑↓ Enter, Ctrl/⌘+K สลับเปิด/ปิด) | ตามแผน WP-36 |
+| D-271 | 2026-11-01 | (WP-36) ข้อความ task แปลที่เว็บด้วย `portal.tasks.<kind>`; `approval_pending` แปล `subject` ด้วย `enums.approvalSubject`, `milestone_claimable` เลือก `labelTh/labelEn` ตามภาษา; `CashOutlookChart` แสดงเมื่อ `cashOutlook` ไม่ว่าง (ยังเป็น null จนกว่า WP-47) | D-263…D-266 |
 
 ## Handoff notes
 
@@ -870,3 +873,11 @@
 - เบี่ยงจากแผน: D-263 … D-268; ไม่เขียนเทสต์ใหม่ (คำสั่งเจ้าของ: ส่งของก่อน); ไม่มี migration
 - WP ถัดไปต้องรู้: WP-36 แปลข้อความด้วย `portal.tasks.<kind>` (params ดิบ: `number`, `title`, `customer`, `daysOverdue`, `contract`, `no`, `labelTh`/`labelEn`, `versionNo`, `subject`) และ `portal.quickActions.<id>`; โมดูล 5–9 เพิ่ม task kind ใน `PORTAL_TASK_KINDS` (append) + `PortalSources.register(module, permission, source)` ใน `onModuleInit`; supplier search (WP-37) ใช้ `SearchSources.register('procurement' หรือโมดูลของตน, 'suppliers.read', …)` type `supplier`; เอกสารเลขใหม่ (PO, GR, …) ต้องเพิ่ม subject type ในตาราง `ROUTES` ของ `numbering-search.ts`; `cashOutlook` ให้ WP-47 เติมใน `GetPortalUseCase` จาก `CashPlanSources`
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้/สร้างผ่าน; jest approvals + platform (32) และ e2e approvals/projects (26) ผ่าน; smoke e2e ชั่วคราว (ไม่ commit): portal 404 `module_disabled` ก่อนเปิด, owner เห็น task `billing.receive` แต่ estimator ไม่เห็น, ค้น `pj2026` ได้เลขเอกสาร + โครงการ
+
+### WP-36 — Portal web (HASH)
+- web `src/features/erp/portal/`: `api.ts`, `hooks.ts` (`portalKeys`, `usePortal`, `useGlobalSearch`), `refresh.ts`, `PortalPage.tsx`, `TasksList.tsx`, `RiskyProjects.tsx`, `CashOutlookChart.tsx` (SVG), `ModuleTiles.tsx`, `QuickActions.tsx`, `GlobalSearch.tsx`; route `src/app/(app)/home/page.tsx` (`ModuleGate portal`)
+- `nav-registry.ts`: `HEADER_EXTRAS` + `ErpHeaderExtras`; `AppLayoutUI.tsx` เรนเดอร์ก่อน `NotificationBell`
+- i18n (th+en): namespace `portal`
+- เบี่ยงจากแผน: D-269 … D-271; ไม่เขียนเทสต์ใหม่; ไม่มี migration
+- WP ถัดไปต้องรู้: task kind ใหม่ต้องเพิ่มข้อความ `portal.tasks.<kind>` (th+en) และ case ใน `taskText` (`TasksList.tsx`); ช่องค้นหาเพิ่ม type ใหม่ต้องมี `portal.search.types.<type>`; ตัวควบคุมใหม่บน header เพิ่มใน `HEADER_EXTRAS`
+- ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้/สร้างผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/features/erp/hub src/i18n` ผ่าน; **ยังไม่ได้ทดสอบมือใน browser** (โหลด `/home`, Ctrl+K, เริ่ม trial จาก tile; กราฟ cash ต้องรอ WP-47)

@@ -12,6 +12,7 @@ import { type ModuleId, type Permission, type Role, can } from '@/shared/contrac
 import { useActiveModules } from '@/features/modules/modules';
 import { usePlatformAdminStatus } from '../admin/hooks';
 import { ApprovalBadge } from '../approvals/ApprovalBadge';
+import { GlobalSearch } from '../portal/GlobalSearch';
 import { useErpWorkspace } from '../shared/useErpWorkspace';
 
 export type AntdMenuItem = NonNullable<MenuProps['items']>[number];
@@ -102,6 +103,26 @@ export const PROJECT_TABS: readonly ErpProjectTab[] = [
     { key: 'variations', labelKey: 'tabs.variations', href: id => `/p/${encodeURIComponent(id)}/variations`, module: 'variations', permission: 'variations.read', match: p => /^\/p\/[^/]+\/variations/.test(p) },
     { key: 'billing', labelKey: 'tabs.billing', href: id => `/p/${encodeURIComponent(id)}/billing`, module: 'billing', permission: 'billing.read', match: p => /^\/p\/[^/]+\/billing/.test(p) },
 ];
+
+/** Header slot: small controls next to the notification bell (global search, …); each shows when its gate passes. */
+export interface ErpHeaderExtra extends ErpNavGate {
+    key: string;
+    component: ComponentType;
+}
+
+export const HEADER_EXTRAS: readonly ErpHeaderExtra[] = [
+    { key: 'search', module: 'portal', component: GlobalSearch },
+];
+
+/** The header extras the workspace and role may see (AppLayoutUI renders this once, before the bell). */
+export function ErpHeaderExtras(): ReactNode {
+    const ws = useErpWorkspace();
+    const active = useNavModules(ws.workspaceId);
+    const { admin } = usePlatformAdminStatus();
+    const visible = HEADER_EXTRAS.filter(x => navItemVisible(x, active, ws.role, admin));
+    if (visible.length === 0) return null;
+    return createElement('div', { className: 'shrink-0 flex items-center' }, visible.map(x => createElement(x.component, { key: x.key })));
+}
 
 /** The entry passes its module / permission gate. */
 export function navItemVisible(item: ErpNavGate, active: ReadonlySet<ModuleId>, role: Role | undefined, isPlatformAdmin = false): boolean {

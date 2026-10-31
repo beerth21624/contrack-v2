@@ -24,6 +24,7 @@ import quotations from './quotations.json';
 import contracts from './contracts.json';
 import billing from './billing.json';
 import variations from './variations.json';
+import portal from './portal.json';
 
 const messages = {
   common,
@@ -52,6 +53,7 @@ const messages = {
   contracts,
   billing,
   variations,
+  portal,
 };
 
 export default messages;

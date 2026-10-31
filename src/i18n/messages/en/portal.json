@@ -1,0 +1,66 @@
+{
+  "title": "Home",
+  "subtitle": "What needs doing and the company overview for your role",
+  "loadFailed": "Could not load the home page",
+  "retry": "Try again",
+  "tasks": {
+    "title": "To do",
+    "empty": "Nothing waiting",
+    "due": "Due",
+    "approval_pending": "Awaiting approval: {title} ({subject})",
+    "invoice_overdue": "Invoice {number} of {customer} is {days} days overdue",
+    "milestone_claimable": "{contract} milestone {no} {label} can be claimed",
+    "quotation_expiring": "Quotation {number} {title} is about to expire",
+    "variation_awaiting_customer": "Variation {number} {title} is waiting for the customer"
+  },
+  "risky": {
+    "title": "Projects to watch",
+    "empty": "No risky projects",
+    "reasons": {
+      "cost_overrun": "Cost overrun",
+      "behind_schedule": "Behind schedule",
+      "overdue_receivable": "Overdue receivable",
+      "negative_cash": "Negative cash"
+    }
+  },
+  "cash": {
+    "title": "Weekly cash outlook",
+    "inflow": "Inflow",
+    "outflow": "Outflow",
+    "balance": "Balance"
+  },
+  "tiles": {
+    "title": "Modules",
+    "manage": "Manage modules",
+    "active": "Active",
+    "trialDaysLeft": "Trial, {days} days left",
+    "startTrial": "Start trial",
+    "trialAvailable": "Trial available",
+    "locked": "Not enabled"
+  },
+  "quickActions": {
+    "title": "Shortcuts",
+    "new_project": "New project",
+    "create_quotation": "Create quotation",
+    "create_claim": "Create claim",
+    "record_receipt": "Record receipt",
+    "create_variation": "Create variation",
+    "add_customer": "Add customer",
+    "open_approvals": "Approvals inbox",
+    "start_trial": "Try a module"
+  },
+  "search": {
+    "open": "Search",
+    "openHint": "Search (Ctrl/⌘+K)",
+    "title": "Search",
+    "placeholder": "Search projects, customers, suppliers or document numbers",
+    "hint": "Type to search",
+    "empty": "No results",
+    "types": {
+      "project": "Project",
+      "customer": "Customer",
+      "supplier": "Supplier",
+      "document": "Document"
+    }
+  }
+}

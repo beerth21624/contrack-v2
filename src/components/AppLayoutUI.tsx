@@ -20,7 +20,7 @@ import { useModuleEnabled } from '@/features/modules/modules';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 import { useHasVendorWorkspace } from '@/features/subcontracting/shared/useHasVendorWorkspace';
 import { useAntdLocale } from '@/i18n/LocaleProvider';
-import { type AntdMenuItem, activeWorkspaceNavKey, useWorkspaceNavMenu } from '@/features/erp/hub/nav-registry';
+import { type AntdMenuItem, ErpHeaderExtras, activeWorkspaceNavKey, useWorkspaceNavMenu } from '@/features/erp/hub/nav-registry';
 import { useErpWorkspace } from '@/features/erp/shared/useErpWorkspace';
 
 const { Header, Content, Footer } = Layout;
@@ -131,6 +131,8 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
                 <div className="min-w-0" style={{ display: 'flex', alignItems: 'center' }}>
                     <ProjectBadge />
                 </div>
+
+                <ErpHeaderExtras />
 
                 <div className="shrink-0"><NotificationBell /></div>
 
