@@ -3,14 +3,16 @@
 // issue through the approval `quotation.issue` (Approvals) and numbering (DocumentNumbering, docType `quotation`);
 // answers from customer links (CustomerLinkHandlers 'quotation') or recorded by the team; project status through
 // ProjectLifecycle (hub). Registers ApprovalHandlers, CustomerLinkHandlers, DailySweeps and ProjectDependents.
-// Provides QuotationLookup (accepted versions for main-contracts, WP-26).
+// Provides QuotationLookup (accepted versions for main-contracts, WP-26) and QuotationPricingLookup (VO prices, WP-33).
 // Deleting a project with an issued number is refused by numbering's guard, so no ProjectDeletionGuards entry here.
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
-import { ApprovalHandlers, CustomerLinkHandlers, DailySweeps, ProjectDependents, QuotationLookup } from '../../shared/application/ports';
+import {
+    ApprovalHandlers, CustomerLinkHandlers, DailySweeps, ProjectDependents, QuotationLookup, QuotationPricingLookup,
+} from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
 import { QuotationRepository } from './application/ports/quotation.repository';
 import { EXPIRE_SWEEP, QuotationHandlers } from './application/quotation-handlers';
-import { RepositoryQuotationLookup } from './application/quotation-lookup';
+import { RepositoryQuotationLookup, RepositoryQuotationPricingLookup } from './application/quotation-lookup';
 import { QuotationAccess, QuotationWorkflow } from './application/quotation.service';
 import {
     CancelQuotationVersionUseCase, CompareQuotationVersionsUseCase, CreateQuotationUseCase, GetQuotationUseCase, GetQuotationVersionUseCase,
@@ -42,8 +44,10 @@ import { QuotationsController } from './presentation/quotations.controller';
         RecordQuotationResponseUseCase,
         RepositoryQuotationLookup,
         { provide: QuotationLookup, useExisting: RepositoryQuotationLookup },
+        RepositoryQuotationPricingLookup,
+        { provide: QuotationPricingLookup, useExisting: RepositoryQuotationPricingLookup },
     ],
-    exports: [QuotationLookup],
+    exports: [QuotationLookup, QuotationPricingLookup],
 })
 export class QuotationsModule implements OnModuleInit {
     constructor(

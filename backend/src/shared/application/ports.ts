@@ -736,6 +736,11 @@ export abstract class ProjectLifecycle {
     abstract advance(workspaceId: WorkspaceId, projectId: ProjectId, to: HubProjectStatus, by: UserId | null): Promise<HubProjectStatus | undefined>;
     /** The hub columns of a project (customer, project type, settings); undefined when not a project of that workspace. */
     abstract hubFields(workspaceId: WorkspaceId, projectId: ProjectId): Promise<HubProjectFields | undefined>;
+    /**
+     * Moves `planned_finish` by `days` (an accepted variation's schedule impact) inside the caller's `uow.run`; nothing
+     * when days = 0 or no planned finish is set. Audited when it changes.
+     */
+    abstract shiftPlannedFinish(workspaceId: WorkspaceId, projectId: ProjectId, days: number, by: UserId | null): Promise<void>;
 }
 
 /**
@@ -1205,6 +1210,21 @@ export abstract class QuotationLookup {
     abstract accepted(workspaceId: WorkspaceId, quotationId: string): Promise<Result<AcceptedQuotation, DomainError>>;
     /** Priced lines (`boq` / `custom` of included sections) of a version, for allocateContractAmounts; [] when unknown. */
     abstract contractLines(workspaceId: WorkspaceId, versionId: string): Promise<CostCodeContractLine[]>;
+}
+
+/** Sell factor (no VAT) per BOQ section, and the one for sections the quotation does not list (WP-33). */
+export interface QuotationSellFactors {
+    bySection: Record<number, number>;
+    fallback: number;
+}
+
+/** Provided by quotations (WP-33). No module check (the caller checked its own); filters by workspace. */
+export abstract class QuotationPricingLookup {
+    /**
+     * Sell factors of a quotation version's sections (`qt_quotation_sections`): 1 + markup + overhead + profit; a
+     * government version uses its part's Factor F without VAT. Unknown / null version → the default rates.
+     */
+    abstract sellFactors(workspaceId: WorkspaceId, quotationVersionId: string | null): Promise<QuotationSellFactors>;
 }
 
 // ── Main contracts (WP-26, docs/erp/02-domain-model.md §3) ──

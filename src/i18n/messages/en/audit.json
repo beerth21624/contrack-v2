@@ -41,7 +41,11 @@
     "edit": "Edited",
     "create_claim": "Claim created",
     "create_invoice": "Invoice created",
-    "receive": "Payment received"
+    "receive": "Payment received",
+    "withdraw": "Withdrawn",
+    "compute": "Computed from the calculators",
+    "add_evidence": "Evidence added",
+    "remove_evidence": "Evidence removed"
   },
   "entities": {
     "approval_request": "Approval request",
@@ -57,6 +61,7 @@
     "contract_guarantee": "Contract guarantee",
     "ar_claim": "Progress claim",
     "ar_invoice": "Invoice",
-    "ar_receipt": "Receipt"
+    "ar_receipt": "Receipt",
+    "variation": "Variation order"
   }
 }

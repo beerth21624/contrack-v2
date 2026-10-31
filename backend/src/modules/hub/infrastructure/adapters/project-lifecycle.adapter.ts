@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { HubProjectFields, HubProjectStatus } from '@contrack/contract';
+import { addDays } from '@contrack/domain/dates/business-date';
 import { AuditLog, ProjectCatalog, ProjectLifecycle, UnitOfWork } from '../../../../shared/application/ports';
 import type { ProjectId, UserId, WorkspaceId } from '../../../../shared/domain/ids';
 import { HubProjectRepository } from '../../application/ports/hub-project.repository';
@@ -30,6 +31,21 @@ export class HubProjectLifecycle extends ProjectLifecycle {
                 data: { status: [before.status, next], automatic: true },
             });
             return next;
+        });
+    }
+
+    shiftPlannedFinish(workspaceId: WorkspaceId, projectId: ProjectId, days: number, by: UserId | null): Promise<void> {
+        if (days === 0 || !Number.isInteger(days)) return Promise.resolve();
+        return this.uow.run(async () => {
+            if ((await this.catalog.find(workspaceId, projectId)) === undefined) return;
+            const before = await this.repo.lockForUpdate(workspaceId, projectId);
+            if (before === undefined || before.plannedFinish === null) return;
+            const plannedFinish = addDays(before.plannedFinish, days);
+            await this.repo.save(workspaceId, projectId, { ...before, plannedFinish });
+            await this.audit.record({
+                workspaceId, projectId, actor: by, entityType: 'project', entityId: projectId, action: 'hub_update',
+                data: { plannedFinish: [before.plannedFinish, plannedFinish], automatic: true },
+            });
         });
     }
 

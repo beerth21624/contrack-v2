@@ -1,6 +1,10 @@
 // ─── QuotationLookup (port in shared/application/ports.ts): accepted quotations as main-contracts reads them (WP-26) ───
+// QuotationPricingLookup: sell factors per section for variation orders (WP-33).
 import { Injectable } from '@nestjs/common';
-import { type AcceptedQuotation, type CostCodeContractLine, QuotationLookup } from '../../../shared/application/ports';
+import { DEFAULT_QUOTATION_RATES, sellFactor } from '@contrack/domain/quotation';
+import {
+    type AcceptedQuotation, type CostCodeContractLine, QuotationLookup, QuotationPricingLookup, type QuotationSellFactors,
+} from '../../../shared/application/ports';
 import { DomainError } from '../../../shared/domain/domain-error';
 import { type WorkspaceId, isUuid } from '../../../shared/domain/ids';
 import { type Result, err, ok } from '../../../shared/domain/result';
@@ -35,5 +39,34 @@ export class RepositoryQuotationLookup extends QuotationLookup {
         return rows.lines
             .filter(l => (l.kind === 'boq' || l.kind === 'custom') && included.has(l.sectionNo))
             .map(l => ({ lineKey: l.lineKey, sectionNo: l.sectionNo, descTh: l.descTh, descEn: l.descEn, unit: l.unit, sellAmount: l.sellAmount }));
+    }
+}
+
+/** QuotationPricingLookup (port): sell factors of a version's sections for VO pricing (WP-33). */
+@Injectable()
+export class RepositoryQuotationPricingLookup extends QuotationPricingLookup {
+    constructor(private readonly repo: QuotationRepository) {
+        super();
+    }
+
+    async sellFactors(workspaceId: WorkspaceId, quotationVersionId: string | null): Promise<QuotationSellFactors> {
+        const defaults: QuotationSellFactors = { bySection: {}, fallback: sellFactor(DEFAULT_QUOTATION_RATES) };
+        if (quotationVersionId === null || !isUuid(quotationVersionId)) return defaults;
+        const v = await this.repo.findVersion(quotationVersionId.toLowerCase());
+        if (v?.workspaceId !== workspaceId) return defaults;
+        const rows = await this.repo.rows(workspaceId, v.id);
+        const bySection: Record<number, number> = {};
+        if (v.format === 'government') {
+            // Factor F includes VAT (D-40): the VO price is without VAT, like the contract value (vatBase).
+            const vat = 1 + (Number.isFinite(v.pricing.vatRate) ? v.pricing.vatRate : 0);
+            let fallback = 1 / vat;
+            for (const part of v.pricing.parts) {
+                for (const no of part.sectionNos) bySection[no] = part.factorF / vat;
+                fallback = part.factorF / vat;
+            }
+            return { bySection, fallback };
+        }
+        for (const s of rows.sections) bySection[s.sectionNo] = sellFactor(s);
+        return { bySection, fallback: sellFactor(v.pricing.defaults) };
     }
 }

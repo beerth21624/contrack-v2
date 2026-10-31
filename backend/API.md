@@ -343,3 +343,21 @@ Record / void receipts, tax invoices, credit notes `billing.receive`; the reads 
 | GET | `/customers/:customerId/statement?from&to` | → `CustomerStatementDto` | invoices (debit = payable + whtExpected) and issued receipts (credit = settled), running balance, open invoices |
 
 Customer link subject `invoice` (view only, `billing.read` to share): `InvoiceLinkPayload` (invoice, outstanding, PromptPay payload, bank accounts). Daily sweeps: `billing.invoice-due` (`invoice.due_soon` once from 3 days before the due date; `invoice.overdue` on days 1, 7, 30 after it) and `billing.retention-release-due` (`retention.release_due` once per release stage that is due), to members with `billing.read`. Hub roll-up: `billedToDate`, `receivedToDate`, `overdueReceivable`. Port `BillingTotals.totalsByProject` (billed, received, retentionHeld, advanceOutstanding).
+
+## Variation orders (module `variations`; WP-33)
+Schemas: `../src/shared/contract/erp/variations.ts`; pricing `../src/domain/variations/{pricing,sandbox}.ts`. Read `variations.read`, everything else `variations.manage`; cost fields (`costTotal`, line `costMatUnit` / `costLabUnit` / `costAmount`) only for `variations.manage`. A VO needs the project's signed main contract (409 `contract_not_signed`); `billing='next_claim'` on a milestone-billed contract → 422 `invalid_billing_option` (default: `next_claim` on progress, `spread` on milestone). Sell price of a line = cost × the sell factor of its BOQ section in the contract's quotation version (no quotation → default rates); VAT at the contract's rate. Amounts are signed and computed by the server. Accepting (customer link `variation` accept / reject, or recorded) needs `requestedByName`, `requestedDate` and the link answer or ≥ 1 evidence item (422 `evidence_required`), then in one transaction: contract `current_value += sellTotal`, `extension_days`, `finish_date`, milestones by `billing`; cost codes `vo_qty` / `vo_cost` / `budget_total` / `vo_contract_amount` (new items → `VO{seq}-{n}`); project `planned_finish` moved; notice `variation.accepted` / `variation.rejected`. Files: purpose `variation_evidence`.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/projects/:projectId/variations` | → `VariationOrderSummaryDto[]` | newest first |
+| POST | `/projects/:projectId/variations` | `CreateVariationOrderRequest` → `VariationOrderDto` (201) | draft; `seqNo` per contract |
+| GET | `/variations/:variationId` | → `VariationOrderDto` | lines, evidence, sandbox |
+| PATCH | `/variations/:variationId` | `PatchVariationOrderRequest` → `VariationOrderDto` | draft only (409 `approval_pending` / `already_issued`) |
+| PUT | `/variations/:variationId/lines` | `{lines}` → `VariationOrderDto` | draft; replaces the manual lines (calculator lines kept); unknown cost code → 404 |
+| POST | `/variations/:variationId/compute` | `{sandbox?}` → `VariationOrderDto` (200) | draft; sandbox over the baseline snapshot (409 `baseline_not_locked`) → calculator lines replaced (manual kept) |
+| POST | `/variations/:variationId/evidence` | `{kind, fileId?, note?, takenAt?}` → `VariationOrderDto` (201) | until answered; the file must be the caller's upload |
+| DELETE | `/variation-evidence/:evidenceId` | → 204 | until answered |
+| POST | `/variations/:variationId/submit` | → `VariationOrderDto` (200) | approval `variation.submit` → `submitted` (number `VO…`, customer snapshot) or `pending_approval` |
+| POST | `/variations/:variationId/record-response` | `{action: accept\|reject, name, note?, at?}` → `VariationOrderDto` (200) | submitted only |
+| POST | `/variations/:variationId/withdraw` | → `VariationOrderDto` (200) | submitted → withdrawn; pending_approval → draft |
+| POST | `/variations/:variationId/cancel` | → `VariationOrderDto` (200) | draft / pending_approval → cancelled |

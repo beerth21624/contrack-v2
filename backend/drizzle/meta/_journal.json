@@ -169,6 +169,13 @@
       "when": 1793480516126,
       "tag": "0023_wp30_receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793482369301,
+      "tag": "0024_wp33_variations",
+      "breakpoints": true
     }
   ]
 }

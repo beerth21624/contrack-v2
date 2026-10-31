@@ -27,6 +27,7 @@ import { PriceReferenceModule } from './modules/price-reference/price-reference.
 import { QuotationsModule } from './modules/quotations/quotations.module';
 import { MainContractsModule } from './modules/main-contracts/main-contracts.module';
 import { BillingModule } from './modules/billing/billing.module';
+import { VariationsModule } from './modules/variations/variations.module';
 
 @Module({})
 export class AppModule {
@@ -49,6 +50,7 @@ export class AppModule {
                 QuotationsModule,
                 MainContractsModule,
                 BillingModule,
+                VariationsModule,
             ],
             controllers: [HealthController],
             providers: [

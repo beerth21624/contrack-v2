@@ -41,7 +41,11 @@
     "edit": "แก้ไข",
     "create_claim": "สร้างงวดเบิก",
     "create_invoice": "สร้างใบแจ้งหนี้",
-    "receive": "รับเงิน"
+    "receive": "รับเงิน",
+    "withdraw": "ถอนเอกสาร",
+    "compute": "คำนวณจากเครื่องคำนวณ",
+    "add_evidence": "เพิ่มหลักฐาน",
+    "remove_evidence": "ลบหลักฐาน"
   },
   "entities": {
     "approval_request": "คำขออนุมัติ",
@@ -57,6 +61,7 @@
     "contract_guarantee": "หลักประกันสัญญา",
     "ar_claim": "งวดเบิก",
     "ar_invoice": "ใบแจ้งหนี้",
-    "ar_receipt": "ใบเสร็จรับเงิน"
+    "ar_receipt": "ใบเสร็จรับเงิน",
+    "variation": "งานเพิ่ม-ลด (VO)"
   }
 }

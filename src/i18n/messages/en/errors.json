@@ -117,6 +117,7 @@
     "credit_note_exceeds": "The credit is above what is left on the tax invoice.",
     "promptpay_not_set": "PromptPay is not set up in the company profile.",
     "promptpay_invalid": "The PromptPay number in the company profile is not valid.",
-    "invalid_range": "The start date must not be after the end date."
+    "invalid_range": "The start date must not be after the end date.",
+    "evidence_required": "The variation cannot be accepted without who asked for it, when, and the customer's link answer or at least one piece of evidence"
   }
 }
