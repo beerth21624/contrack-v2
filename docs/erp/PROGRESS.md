@@ -33,7 +33,7 @@
 | WP-19 | Baseline web: BOQ อ่านอย่างเดียวเมื่อล็อก + CostCodePicker | opus | done | 225f97b | ไม่มี migration; `BaselinePanel` บนหน้า versions, `CloudBinding.locked`, sync event `locked`, `BaselineLockedBanner`, `CostCodePicker`; D-164…D-169 |
 | WP-20 | Cost ledger + financial events | opus | done | 4867142 | migration `0018_wp20_ledger`; `cost_ledger_entries`/`fin_events`, ports `CostLedger`/`FinancialEvents`, module `ledger`, guards ลบโครงการ/ปลดล็อก baseline; D-170…D-176 |
 | WP-21 | ราคากลางภาครัฐ | sonnet | done | fef7f47 | migration `0019_wp21_price_reference`; `price_reference_books/items`, CLI `db:import-prices`, module `price-reference`, ปุ่ม "ราคากลาง" บน BOQ; D-177…D-179 |
-| WP-22 | Quotation: domain คำนวณ + overlay อังกฤษของ BOQ | opus | done | COMMIT | ไม่มี migration; `src/domain/quotation/*` (pricing/build/compare/government/costing), `template.v5.en.ts` + `units.ts`, contract `erp/quotations.ts` (ค่าคงที่); D-180…D-185 |
+| WP-22 | Quotation: domain คำนวณ + overlay อังกฤษของ BOQ | opus | done | 831e5a5 | ไม่มี migration; `src/domain/quotation/*` (pricing/build/compare/government/costing), `template.v5.en.ts` + `units.ts`, contract `erp/quotations.ts` (ค่าคงที่); D-180…D-185 |
 | WP-23 | Quotation backend | opus | todo | | |
 | WP-24 | Quotation web: รายการ ตัวแก้ไข เทียบฉบับ | sonnet | todo | | |
 | WP-25 | Quotation เอกสารพิมพ์ TH/EN + หน้าลูกค้า | sonnet | todo | | |
@@ -625,7 +625,7 @@
 - WP ถัดไปต้องรู้: ต้องรัน `db:migrate` แล้ว `db:import-prices` บนฐานที่จะ demo ก่อน ไม่งั้นค้นหาได้ว่าง; ใช้ `PriceReferencePicker` ซ้ำได้ (เช่นใบเสนอราคา/PR) โดยรับ `onPick(item)`
 - ตรวจแล้ว: tsc backend + web ผ่าน; eslint ไฟล์ที่แก้ผ่าน; i18n parity ผ่าน; `vitest run src/shared/contract src/i18n` ผ่าน; ยังไม่ได้ทดสอบบน PostgreSQL/เบราว์เซอร์จริง
 
-### WP-22 — Quotation: domain คำนวณ + overlay อังกฤษของ BOQ (COMMIT)
+### WP-22 — Quotation: domain คำนวณ + overlay อังกฤษของ BOQ (831e5a5)
 - สร้าง (pure, ไม่มี dependency นอก domain/contract): `src/domain/quotation/types.ts` (`QuotationPricing`, `QuotationSectionInput`/`QuotationSection`, `QuotationLineInput`/`QuotationLine`, `QuotationTotals` (+`roundingAdj`), `QuotationPart`/`QuotationPartTotal`, `QuotationPricingInput`, `PricedQuotation`, `QuotationPricingIssue`), `costing.ts` (`lineCostAmount`, `costedLine`, `spreadSell`, `costSections`), `pricing.ts` (`DEFAULT_QUOTATION_RATES`, `sellFactor`, `quotationPricingIssues`, `priceQuotation`, `QuotationPricingError`), `government.ts` (`governmentIssues`, `priceGovernment`, `defaultGovernmentParts`), `build.ts` (`buildQuotationDraft`, `quotationLinesFromBoq`, types `QuotationDraftSettings`/`QuotationDraft`), `compare.ts` (`compareQuotationVersions` → `{sections, lines, totals: {before, after, delta}, counts}`), `index.ts`
 - overlay: `src/domain/boq/template.v5.en.ts` (`BOQ_SECTION_TITLES_EN` 32 หมวด, `BOQ_LINES_EN` item 212 + heading 25, `boqLineEn(lineKey, descTh)`, `slotLineEn(lineKey, descTh)`), `src/domain/boq/units.ts` (`UNIT_EN` 14 หน่วย, `unitEn(unit)`)
 - contract: `src/shared/contract/erp/quotations.ts` (ค่าคงที่เท่านั้น; ยังไม่อยู่ใน `erp/index.ts`)
