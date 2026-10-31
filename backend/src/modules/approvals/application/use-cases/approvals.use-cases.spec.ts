@@ -9,7 +9,7 @@ import { err, okVoid } from '../../../../shared/domain/result';
 import { InMemoryUnitOfWork } from '../../../../shared/infrastructure/database/database';
 import { FixedClock, SequentialIdGenerator } from '../../../../shared/infrastructure/system';
 import {
-    FakeModuleFlags, FakeProjectStatuses, FakeRoles, FakeWorkspaceDirectory, RecordingAuditLog,
+    FakeModuleFlags, FakeProjectStatuses, FakeRoles, FakeWorkspaceDirectory, RecordingAuditLog, RecordingNotifier,
 } from '../../../../shared/testing/platform-fakes';
 import { asApprovalRequestId } from '../../domain/approvals-ids';
 import { InMemoryApprovalPolicyRepository } from '../../infrastructure/adapters/in-memory-approval-policy.repository';
@@ -71,7 +71,7 @@ describe('approvals use cases', () => {
         const clock = new FixedClock();
         const users = new NamedUsers();
         request = new RequestApprovalUseCase(policies, requests, dir, audit, uow, clock, new SequentialIdGenerator());
-        decide = new DecideApprovalUseCase(access, requests, policies, handlers, audit, users, uow, clock);
+        decide = new DecideApprovalUseCase(access, requests, policies, handlers, audit, users, uow, clock, new RecordingNotifier());
         cancel = new CancelApprovalUseCase(requests, audit, uow, clock);
         list = new ListApprovalsUseCase(access, requests, policies, users);
         putPolicy = new PutApprovalPolicyUseCase(access, policies, audit, uow, clock);

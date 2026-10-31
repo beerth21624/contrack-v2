@@ -1,3 +1,4 @@
+import type { UserLocale } from '@contrack/contract';
 import type { UserId, WorkspaceId } from '../../../../shared/domain/ids';
 import { type Recipient, RecipientDirectory } from '../../application/ports/recipient-directory.port';
 
@@ -5,20 +6,21 @@ import { type Recipient, RecipientDirectory } from '../../application/ports/reci
 export type WorkspaceMembersLookup = (workspaceId: WorkspaceId) => Promise<readonly UserId[]>;
 
 /**
- * In-memory recipients: every listed user id is a recipient (phone / LINE id only when registered with `addUser`);
+ * In-memory recipients: every listed user id is a recipient (phone / LINE id / locale only when registered with `addUser`,
+ * else no channel and Thai);
  * workspace members come from `addMember` and, when given, from `lookup`.
  * The app wires `lookup` to WorkspaceDirectory.memberIds (platform.module.ts), so `toWorkspaceIds` reach members.
  */
 export class InMemoryRecipientDirectory extends RecipientDirectory {
-    private readonly users = new Map<UserId, { phone: string | null; lineUserId: string | null }>();
+    private readonly users = new Map<UserId, { phone: string | null; lineUserId: string | null; locale: UserLocale }>();
     private readonly members = new Map<WorkspaceId, Set<UserId>>();
 
     constructor(private readonly lookup?: WorkspaceMembersLookup) {
         super();
     }
 
-    addUser(userId: UserId, contact: { phone?: string | null; lineUserId?: string | null } = {}): void {
-        this.users.set(userId, { phone: contact.phone ?? null, lineUserId: contact.lineUserId ?? null });
+    addUser(userId: UserId, contact: { phone?: string | null; lineUserId?: string | null; locale?: UserLocale } = {}): void {
+        this.users.set(userId, { phone: contact.phone ?? null, lineUserId: contact.lineUserId ?? null, locale: contact.locale ?? 'th' });
     }
 
     addMember(workspaceId: WorkspaceId, userId: UserId): void {
@@ -36,7 +38,12 @@ export class InMemoryRecipientDirectory extends RecipientDirectory {
         }
         return [...ids].map(userId => {
             const contact = this.users.get(userId);
-            return { userId, phone: contact?.phone ?? null, lineUserId: contact?.lineUserId ?? null };
+            return {
+                userId,
+                locale: contact?.locale ?? 'th',
+                phone: contact?.phone ?? null,
+                lineUserId: contact?.lineUserId ?? null,
+            };
         });
     }
 }

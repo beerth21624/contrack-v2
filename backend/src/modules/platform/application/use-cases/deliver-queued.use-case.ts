@@ -3,9 +3,8 @@ import { Clock } from '../../../../shared/application/ports';
 import type { DomainError } from '../../../../shared/domain/domain-error';
 import { type Result, ok } from '../../../../shared/domain/result';
 import type { NotificationDelivery } from '../../domain/entities/notification-delivery.entity';
-import { LineSender } from '../ports/line-sender.port';
+import { NotificationChannels } from '../ports/notification-channel.port';
 import { NotificationDeliveryRepository } from '../ports/notification-delivery.repository';
-import { SmsSender } from '../ports/sms-sender.port';
 
 export const DELIVERY_BATCH_SIZE = 50;
 
@@ -28,8 +27,7 @@ export class DeliverQueuedUseCase {
 
     constructor(
         private readonly deliveries: NotificationDeliveryRepository,
-        private readonly sms: SmsSender,
-        private readonly line: LineSender,
+        private readonly channels: NotificationChannels,
         private readonly clock: Clock,
     ) {}
 
@@ -43,17 +41,11 @@ export class DeliverQueuedUseCase {
 
     private async deliver(item: NotificationDelivery, outcome: DeliveryRunOutcome): Promise<void> {
         try {
-            switch (item.channel) {
-                case 'sms':
-                    await this.sms.send(item.toAddress, item.body);
-                    break;
-                case 'line':
-                    await this.line.push(item.toAddress, item.body);
-                    break;
-                case 'email':
-                    // TODO(e-mail): no e-mail channel yet, nothing queues these.
-                    throw new Error('e-mail delivery is not available');
-            }
+            const channel = this.channels.get(item.channel);
+            // TODO(e-mail): no e-mail channel yet, nothing queues these.
+            if (channel === undefined) throw new Error(`${item.channel} delivery is not available`);
+            const sent = await channel.send(item.toAddress, item.body);
+            if (!sent.ok) throw new Error(sent.error.message);
             item.markSent(this.clock.now());
             outcome.sent += 1;
         } catch (error: unknown) {

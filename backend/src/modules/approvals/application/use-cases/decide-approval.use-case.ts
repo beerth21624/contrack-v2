@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { ApprovalDecision } from '@contrack/contract';
 import { ModuleAccess } from '../../../../shared/application/module-access';
-import { ApprovalHandlers, AuditLog, Clock, UnitOfWork, UserDirectory } from '../../../../shared/application/ports';
+import { ApprovalHandlers, AuditLog, Clock, Notifier, UnitOfWork, UserDirectory } from '../../../../shared/application/ports';
 import { DomainError } from '../../../../shared/domain/domain-error';
 import type { UserId } from '../../../../shared/domain/ids';
 import { type Result, err, ok } from '../../../../shared/domain/result';
@@ -33,7 +33,7 @@ class DecisionRefused extends Error {
  * module_disabled; not an approver of the request (or its own requester while the policy forbids self-approval) →
  * forbidden; not pending → conflict `invalid_transition`. The owning module's handler runs in the same transaction; an
  * error from it rolls the decision back. Audited as `approval_request` / `approved` | `rejected`.
- * TODO(WP-10): notify `approval.decided` to the requester after the commit.
+ * After the commit the requester gets `approval.decided` (unless they decided it themselves).
  */
 @Injectable()
 export class DecideApprovalUseCase {
@@ -46,6 +46,7 @@ export class DecideApprovalUseCase {
         private readonly users: UserDirectory,
         private readonly uow: UnitOfWork,
         private readonly clock: Clock,
+        private readonly notifier: Notifier,
     ) {}
 
     async execute(input: DecideApprovalInput): Promise<Result<ApprovalRequestView, DomainError>> {
@@ -97,6 +98,19 @@ export class DecideApprovalUseCase {
         } catch (error) {
             if (error instanceof DecisionRefused) return err(error.error);
             throw error;
+        }
+
+        if (decided.requestedBy !== input.userId) {
+            const props = decided.toProps();
+            const decider = (await this.users.findMany([input.userId])).get(input.userId);
+            await this.notifier.notify({
+                template: 'approval.decided',
+                toUserIds: [decided.requestedBy],
+                payload: {
+                    subject: decided.subject, title: props.title, decision: input.decision, note,
+                    deciderName: decider?.displayName ?? '', href: '/approvals',
+                },
+            });
         }
 
         const [view] = await toApprovalViews(this.users, [decided], { userId: input.userId, role, selfApprove: () => selfApprove });

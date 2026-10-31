@@ -1,18 +1,19 @@
 // ─── Platform services: module flags (4 layers) and entitlements, uploaded files, notifications (platform work stream) ───
-// Provides ModuleFlags, FileService, Notifier, AppLinks (src/shared/application/ports.ts), ModuleAccess
+// Provides ModuleFlags, FileService, Notifier, AppLinks, SweepMarks (src/shared/application/ports.ts), ModuleAccess
 // (src/shared/application/module-access.ts, every ERP use case) and SmsSender (./application/ports/sms-sender.port.ts,
 // used by identity for OTP codes) to every module.
 // Needs WorkspaceAccess / WorkspaceDirectory (workspaces), ProjectStatusLookup (projects) and ModuleWorkRegistry (core,
-// filled by the business modules).
+// filled by the business modules) and DailySweeps (core; DailySweepsRunner runs them).
 import { Global, Module } from '@nestjs/common';
 import { ModuleAccess } from '../../shared/application/module-access';
-import { AppLinks, FileService, ModuleFlags, Notifier, WorkspaceDirectory } from '../../shared/application/ports';
+import { AppLinks, FileService, ModuleFlags, Notifier, SweepMarks, WorkspaceDirectory } from '../../shared/application/ports';
 import { AppConfig } from '../../shared/infrastructure/config/env';
 import { persistence } from '../../shared/infrastructure/core.module';
 import { FileLinkSigner } from './application/ports/file-link-signer.port';
 import { FileRepository } from './application/ports/file.repository';
 import { FileStorage } from './application/ports/file-storage.port';
 import { LineSender } from './application/ports/line-sender.port';
+import { NotificationChannels } from './application/ports/notification-channel.port';
 import { NotificationDeliveryRepository } from './application/ports/notification-delivery.repository';
 import { NotificationRepository } from './application/ports/notification.repository';
 import { PlatformSettings } from './application/ports/platform-settings.port';
@@ -23,6 +24,7 @@ import { WorkspaceModuleRepository } from './application/ports/workspace-module.
 import { PlatformAdminAccess } from './application/platform-admin-access';
 import { FileLinks } from './application/services/file-links';
 import { ModuleFlagCache } from './application/services/module-flag-cache';
+import { TrialExpiringSweep } from './application/services/trial-expiring.sweep';
 import { WorkspaceModuleStates } from './application/services/workspace-module-states';
 import { DeliverQueuedUseCase } from './application/use-cases/deliver-queued.use-case';
 import { GetPlatformAdminStatusUseCase } from './application/use-cases/get-platform-admin-status.use-case';
@@ -37,6 +39,7 @@ import { SetWorkspaceModuleUseCase } from './application/use-cases/set-workspace
 import { SetEntitlementUseCase } from './application/use-cases/set-entitlement.use-case';
 import { StartTrialUseCase } from './application/use-cases/start-trial.use-case';
 import { UploadFileUseCase } from './application/use-cases/upload-file.use-case';
+import { DailySweepsRunner } from './infrastructure/adapters/daily-sweeps.runner';
 import { DeliveryWorker } from './infrastructure/adapters/delivery-worker';
 import { DrizzleFileRepository } from './infrastructure/adapters/drizzle-file.repository';
 import { DrizzleNotificationDeliveryRepository } from './infrastructure/adapters/drizzle-notification-delivery.repository';
@@ -55,8 +58,10 @@ import { InMemoryWorkspaceEntitlementRepository } from './infrastructure/adapter
 import { InMemoryWorkspaceModuleRepository } from './infrastructure/adapters/in-memory-workspace-module.repository';
 import { LoggingLineSender } from './infrastructure/adapters/logging-line-sender.adapter';
 import { RepositoryModuleFlags } from './infrastructure/adapters/module-flags.adapter';
+import { SenderNotificationChannels } from './infrastructure/adapters/notification-channels.adapter';
 import { ConfigAppLinks, UseCaseNotifier } from './infrastructure/adapters/notifier.adapter';
 import { ConsoleSmsSender, ThaiBulkSmsSender } from './infrastructure/adapters/sms-sender.adapter';
+import { DrizzleSweepMarks, InMemorySweepMarks } from './infrastructure/adapters/sweep-marks.adapter';
 import { FilesController } from './presentation/files.controller';
 import { PlatformModulesController, WorkspaceModulesController } from './presentation/modules.controller';
 import { PlatformAdminController } from './presentation/platform-admin.controller';
@@ -96,9 +101,10 @@ function smsSender(config: AppConfig): SmsSender {
             () => new InMemoryNotificationDeliveryRepository(),
             ctx => new DrizzleNotificationDeliveryRepository(ctx),
         ),
-        // Memory mode has no tables to read: workspace members come from the workspaces module.
+        // Memory mode has no tables to read: workspace members come from the workspaces module (everyone reads Thai).
         persistence(RecipientDirectory, (dir: WorkspaceDirectory) => new InMemoryRecipientDirectory(ws => dir.memberIds(ws)),
             ctx => new DrizzleRecipientDirectory(ctx), [WorkspaceDirectory]),
+        persistence(SweepMarks, () => new InMemorySweepMarks(), ctx => new DrizzleSweepMarks(ctx)),
         {
             provide: FileStorage,
             inject: [AppConfig],
@@ -116,6 +122,11 @@ function smsSender(config: AppConfig): SmsSender {
             provide: LineSender,
             inject: [AppConfig],
             useFactory: (config: AppConfig): LineSender => new LoggingLineSender(config.env.LINE_CHANNEL_ACCESS_TOKEN),
+        },
+        {
+            provide: NotificationChannels,
+            inject: [SmsSender, LineSender],
+            useFactory: (sms: SmsSender, line: LineSender): NotificationChannels => new SenderNotificationChannels(sms, line),
         },
         ModuleFlagCache,
         WorkspaceModuleStates,
@@ -135,12 +146,14 @@ function smsSender(config: AppConfig): SmsSender {
         SendNotificationUseCase,
         DeliverQueuedUseCase,
         DeliveryWorker,
+        TrialExpiringSweep,
+        DailySweepsRunner,
         { provide: ModuleFlags, useClass: RepositoryModuleFlags },
         ModuleAccess,
         { provide: FileService, useClass: RepositoryFileService },
         { provide: Notifier, useClass: UseCaseNotifier },
         { provide: AppLinks, inject: [PlatformSettings], useFactory: (s: PlatformSettings): AppLinks => new ConfigAppLinks(s.publicAppUrl) },
     ],
-    exports: [ModuleFlags, ModuleAccess, FileService, Notifier, AppLinks, SmsSender],
+    exports: [ModuleFlags, ModuleAccess, FileService, Notifier, AppLinks, SmsSender, SweepMarks],
 })
 export class PlatformModule {}

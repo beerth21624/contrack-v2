@@ -21,7 +21,7 @@ const TITLE_MAX = 200;
 /**
  * `Approvals.request` (docs/erp/01-architecture.md §6.3): applies the auto-skip rules and stores the request (also an
  * automatic approval, for the audit trail). Joins the caller's transaction; the caller checked access already.
- * TODO(WP-10): notify `approval.requested` to the eligible approvers after the caller's commit.
+ * The caller sends `approval.requested` after its commit with `Approvals.notifyRequested(ticket.requestId)` when pending.
  */
 @Injectable()
 export class RequestApprovalUseCase {

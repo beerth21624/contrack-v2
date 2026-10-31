@@ -171,13 +171,27 @@ export abstract class FileService {
     abstract store(input: { name: string; contentType: string; bytes: Uint8Array; uploadedBy: UserId; purpose: FilePurpose }): Promise<FileDto>;
 }
 
-/** Message templates the platform can send (text lives in the notifications module, Thai). */
-export type NotificationTemplate =
+/** Subcontracting templates (Thai text; payload values arrive already formatted for Thai readers). */
+export type ScNotificationTemplate =
     | 'sc.invitation' | 'sc.addendum' | 'sc.question_answered' | 'sc.deadline_soon' | 'sc.outcome_won'
     | 'sc.outcome_lost' | 'sc.package_cancelled' | 'sc.contract_to_accept' | 'sc.inspection_result'
     | 'sc.claim_paid' | 'sc.retention_due' | 'sc.variation_proposed' | 'sc.message'
     | 'sc.bid_received' | 'sc.declined' | 'sc.question_asked' | 'sc.contract_accepted' | 'sc.change_requested'
     | 'sc.claim_requested' | 'sc.variation_answered';
+
+/**
+ * ERP templates (docs/erp/01-architecture.md §7): text in Thai and English, rendered in each recipient's language.
+ * Payloads carry raw values (`amount: number`, `date: 'YYYY-MM-DD'`, `docNumber`, `projectName`, …) formatted by the
+ * renderer; the keys per template are listed in src/modules/platform/application/services/notification-templates.erp.ts.
+ */
+export type ErpNotificationTemplate =
+    | 'approval.requested' | 'approval.decided' | 'quotation.viewed' | 'quotation.accepted' | 'quotation.change_requested'
+    | 'variation.accepted' | 'variation.rejected' | 'invoice.due_soon' | 'invoice.overdue' | 'retention.release_due'
+    | 'guarantee.expiring' | 'purchase_order.issued' | 'goods.short_delivery' | 'cost.overrun' | 'cash.negative_forecast'
+    | 'warranty.claim_opened' | 'warranty.expiring' | 'trial.expiring' | 'pay_period.ready' | 'supplier_bill.due_soon';
+
+/** Message templates the platform can send (text lives in the platform module). */
+export type NotificationTemplate = ScNotificationTemplate | ErpNotificationTemplate;
 
 export interface NotificationRequest {
     template: NotificationTemplate;
@@ -194,6 +208,37 @@ export interface NotificationRequest {
 /** Queues messages; delivery (in-app, LINE, SMS, e-mail) happens in the background. Call after the transaction committed. */
 export abstract class Notifier {
     abstract notify(request: NotificationRequest): Promise<void>;
+}
+
+// ─── Daily sweeps (docs/erp/01-architecture.md §7 item 7): run by the platform every 6 hours (first 60 s after start),
+// never under NODE_ENV=test (tests call DailySweepsRunner.runOnce). A module registers its sweep once, in onModuleInit,
+// checks itself that its module is released / active per workspace, and uses SweepMarks to notify once per key per day. ───
+
+export interface SweepContext {
+    now: Date;
+    /** Bangkok calendar date of `now` (YYYY-MM-DD). */
+    today: string;
+}
+
+export type DailySweep = (ctx: SweepContext) => Promise<void>;
+
+/** Provided by core: the registry of daily sweeps (name → function). */
+export class DailySweeps {
+    private readonly sweeps = new Map<string, DailySweep>();
+
+    register(name: string, sweep: DailySweep): void {
+        if (this.sweeps.has(name)) throw new Error(`A daily sweep named "${name}" is already registered`);
+        this.sweeps.set(name, sweep);
+    }
+
+    entries(): [string, DailySweep][] {
+        return [...this.sweeps.entries()];
+    }
+}
+
+/** Provided by platform (table `sweep_marks`): true the first time (sweep, key, date) is marked, false afterwards. */
+export abstract class SweepMarks {
+    abstract markOnce(sweep: string, key: string, date: string): Promise<boolean>;
 }
 
 /** Public base URL of the web app (for links in messages), e.g. https://app.contrack.co.th */
@@ -318,6 +363,11 @@ export abstract class Approvals {
     abstract request(input: ApprovalRequestInput): Promise<Result<ApprovalTicket, DomainError>>;
     /** Cancels the pending request of a document (e.g. the draft was withdrawn); nothing when none is pending. */
     abstract cancel(workspaceId: WorkspaceId, subject: ApprovalSubject, subjectId: string, by: UserId): Promise<void>;
+    /**
+     * Call after the caller's transaction committed, when `request` answered `pending`: sends `approval.requested` to
+     * the members who may decide it (the requester excluded). Nothing for an unknown or no longer pending request.
+     */
+    abstract notifyRequested(requestId: string): Promise<void>;
     /** Status of the latest request of a document; undefined when it was never sent. */
     abstract statusOf(workspaceId: WorkspaceId, subject: ApprovalSubject, subjectId: string): Promise<ApprovalStatus | undefined>;
 }

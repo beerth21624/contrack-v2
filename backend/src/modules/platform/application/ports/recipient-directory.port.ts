@@ -1,11 +1,14 @@
+import type { UserLocale } from '@contrack/contract';
 import type { UserId, WorkspaceId } from '../../../../shared/domain/ids';
 
-/** A user a notification reaches, with the outside channels they can be reached on. */
+/** A user a notification reaches, with their language and the outside channels they can be reached on. */
 export interface Recipient {
     userId: UserId;
+    /** `users.locale`: the language the notification is rendered in. */
+    locale: UserLocale;
     /** Verified phone (E.164) or null. */
     phone: string | null;
-    /** LINE user id once the user linked LINE (TODO: LINE account linking), else null. */
+    /** LINE user id from a verified `user_channel_links` row (LINE linking comes later), else null. */
     lineUserId: string | null;
 }
 

@@ -1,7 +1,11 @@
-// ─── Thai text of every notification template: in-app title/body and a short SMS / LINE text ───
-// Payload keys per template: docs/marketplace/API-module1.md "Notifications". Values arrive already formatted for Thai
-// readers (money `125,000 บาท`, dates `30 ต.ค. 69 17:00`); a missing key renders as an empty string.
-import type { NotificationTemplate } from '../../../../shared/application/ports';
+// ─── Text of every notification template: in-app title/body and a short SMS / LINE text, in the recipient's language ───
+// sc.*: Thai only (English readers get the Thai text in this phase). Payload keys per template:
+// docs/marketplace/API-module1.md "Notifications". Values arrive already formatted for Thai readers (money `125,000 บาท`,
+// dates `30 ต.ค. 69 17:00`); a missing key renders as an empty string.
+// ERP templates (Thai + English, raw payload values): ./notification-templates.erp.ts.
+import type { UserLocale } from '@contrack/contract';
+import type { NotificationTemplate, ScNotificationTemplate } from '../../../../shared/application/ports';
+import { ERP_NOTIFICATION_TEMPLATES, isErpTemplate, renderErpText } from './notification-templates.erp';
 
 export type NotificationPayload = Readonly<Record<string, string | number>>;
 
@@ -68,7 +72,7 @@ function answered(v: Values): string {
     return v.get('accepted');
 }
 
-const TEMPLATES: Record<NotificationTemplate, TemplateText> = {
+const TEMPLATES: Record<ScNotificationTemplate, TemplateText> = {
     'sc.invitation': {
         title: v => `เชิญเสนอราคา: ${v.get('title')}`,
         body: v => `${v.get('buyerName')} เชิญทีมของคุณเสนอราคางาน "${v.get('title')}" ปิดรับราคา ${v.get('deadline')}`,
@@ -201,8 +205,17 @@ export function fitSms(parts: readonly SmsPart[], url: string | undefined, max =
     return `${room > 0 && text.length > room ? shorten(text, room) : text}${tail}`;
 }
 
-/** Title, body and short text of a template. `url` (absolute) ends the short text when given. */
-export function renderNotification(template: NotificationTemplate, payload: NotificationPayload, url?: string): RenderedNotification {
+/**
+ * Title, body and short text of a template in `locale` (sc.* is Thai in both languages for now). `url` (absolute) ends
+ * the short text when given.
+ */
+export function renderNotification(
+    template: NotificationTemplate, payload: NotificationPayload, url?: string, locale: UserLocale = 'th',
+): RenderedNotification {
+    if (isErpTemplate(template)) {
+        const { title, body } = renderErpText(template, payload, locale);
+        return { title, body, short: fitSms([flex(title)], url) };
+    }
     const values = new Values(payload);
     const text = TEMPLATES[template];
     return {
@@ -212,4 +225,5 @@ export function renderNotification(template: NotificationTemplate, payload: Noti
     };
 }
 
-export const NOTIFICATION_TEMPLATES = Object.keys(TEMPLATES) as NotificationTemplate[];
+export const SC_NOTIFICATION_TEMPLATES = Object.keys(TEMPLATES) as ScNotificationTemplate[];
+export const NOTIFICATION_TEMPLATES: NotificationTemplate[] = [...SC_NOTIFICATION_TEMPLATES, ...ERP_NOTIFICATION_TEMPLATES];

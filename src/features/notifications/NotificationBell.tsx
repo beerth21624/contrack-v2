@@ -19,10 +19,12 @@ export function NotificationBell({ dark = true }: { dark?: boolean }) {
     const router = useRouter();
     const qc = useQueryClient();
     const signedIn = useSession(s => s.status === 'signed-in');
-    // Only where a business module is in use: the workspace switched it on, or the user runs a crew.
+    // Only where a business module is in use: the workspace switched it on (subcontracting, or the ERP hub), or the
+    // user runs a crew.
     const moduleOn = useModuleEnabled('subcontracting').enabled;
+    const hubOn = useModuleEnabled('project-hub').enabled;
     const isVendor = useHasVendorWorkspace();
-    const active = signedIn && (moduleOn || isVendor);
+    const active = signedIn && (moduleOn || hubOn || isVendor);
     const q = useQuery({
         queryKey: KEY,
         queryFn: () => apiClient.request('GET', '/notifications', { query: { limit: 20 }, schema: notificationListDtoSchema }),

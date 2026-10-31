@@ -6,6 +6,8 @@ import type { WorkspaceEntitlement } from '../../domain/entities/workspace-entit
 export abstract class WorkspaceEntitlementRepository {
     abstract find(workspaceId: WorkspaceId, module: ModuleId): Promise<WorkspaceEntitlement | undefined>;
     abstract listByWorkspace(workspaceId: WorkspaceId): Promise<WorkspaceEntitlement[]>;
+    /** Trial grants (any workspace) whose `expires_at` is in (`after`, `until`]: the daily trial-expiring sweep. */
+    abstract listTrialsExpiring(after: Date, until: Date): Promise<WorkspaceEntitlement[]>;
     /** Inserts or replaces the row of (workspace, module). */
     abstract save(entry: WorkspaceEntitlement): Promise<void>;
 }

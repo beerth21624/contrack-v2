@@ -71,6 +71,13 @@
       "when": 1793464964157,
       "tag": "0009_wp08_approvals_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793466662202,
+      "tag": "0010_wp10_notifications",
+      "breakpoints": true
     }
   ]
 }

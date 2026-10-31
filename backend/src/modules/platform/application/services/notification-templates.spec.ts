@@ -1,4 +1,4 @@
-import { NOTIFICATION_TEMPLATES, SMS_MAX_CHARS, SMS_WORTHY_TEMPLATES, fitSms, renderNotification } from './notification-templates';
+import { NOTIFICATION_TEMPLATES, SC_NOTIFICATION_TEMPLATES, SMS_MAX_CHARS, SMS_WORTHY_TEMPLATES, fitSms, renderNotification } from './notification-templates';
 
 const LONG = 'งานติดตั้งระบบไฟฟ้าและสุขาภิบาลอาคารสำนักงานสูงแปดชั้นพร้อมชั้นใต้ดินสองชั้น โครงการเดอะริเวอร์ไซด์';
 const URL = 'https://app.contrack.co.th/s/AbCdEfGhIjKlMnOpQrStUvWxYz0123456789abcdefg';
@@ -21,12 +21,15 @@ const FULL_PAYLOAD = {
 };
 
 describe('notification templates', () => {
-    it('covers 20 templates', () => {
-        expect(NOTIFICATION_TEMPLATES).toHaveLength(20);
+    it('covers 20 subcontracting templates (40 with the ERP ones)', () => {
+        expect(SC_NOTIFICATION_TEMPLATES).toHaveLength(20);
+        expect(NOTIFICATION_TEMPLATES).toHaveLength(40);
     });
 
-    it.each(NOTIFICATION_TEMPLATES)('%s renders Thai title, body and a short text within 2 SMS segments ending with the link', template => {
+    it.each(SC_NOTIFICATION_TEMPLATES)('%s renders Thai title, body and a short text within 2 SMS segments ending with the link', template => {
         const out = renderNotification(template, FULL_PAYLOAD, URL);
+        // English readers get the same Thai text in this phase.
+        expect(renderNotification(template, FULL_PAYLOAD, URL, 'en')).toEqual(out);
         expect(out.title).not.toBe('');
         expect(out.body).not.toBe('');
         for (const text of [out.title, out.body, out.short]) {

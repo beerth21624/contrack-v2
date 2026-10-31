@@ -1,6 +1,7 @@
 import { PlatformTestKit, RecordingLineSender, valueOf } from '../../testing/platform-test-kit';
 import { SMS_MAX_CHARS } from '../services/notification-templates';
 import { SendNotificationUseCase } from './send-notification.use-case';
+import { SenderNotificationChannels } from '../../infrastructure/adapters/notification-channels.adapter';
 
 describe('SendNotificationUseCase', () => {
     let kit: PlatformTestKit;
@@ -9,7 +10,7 @@ describe('SendNotificationUseCase', () => {
 
     function build(lineOn = false): void {
         line = new RecordingLineSender(lineOn);
-        useCase = new SendNotificationUseCase(kit.recipients, kit.notifications, kit.deliveries, line, kit.appLinks, kit.uow, kit.clock, kit.ids);
+        useCase = new SendNotificationUseCase(kit.recipients, kit.notifications, kit.deliveries, new SenderNotificationChannels(kit.sms, line), kit.appLinks, kit.uow, kit.clock, kit.ids);
     }
 
     beforeEach(() => {

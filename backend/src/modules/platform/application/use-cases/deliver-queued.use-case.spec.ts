@@ -3,6 +3,7 @@ import { MAX_DELIVERY_ATTEMPTS, NotificationDelivery } from '../../domain/entiti
 import { asDeliveryId } from '../../domain/platform-ids';
 import { PlatformTestKit, RecordingLineSender, valueOf } from '../../testing/platform-test-kit';
 import { DeliverQueuedUseCase } from './deliver-queued.use-case';
+import { SenderNotificationChannels } from '../../infrastructure/adapters/notification-channels.adapter';
 
 describe('DeliverQueuedUseCase', () => {
     let kit: PlatformTestKit;
@@ -17,7 +18,7 @@ describe('DeliverQueuedUseCase', () => {
         jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
         kit = new PlatformTestKit();
         line = new RecordingLineSender(true);
-        useCase = new DeliverQueuedUseCase(kit.deliveries, kit.sms, line, kit.clock);
+        useCase = new DeliverQueuedUseCase(kit.deliveries, new SenderNotificationChannels(kit.sms, line), kit.clock);
     });
 
     async function queue(channel: 'sms' | 'line' | 'email', to: string, body: string): Promise<void> {

@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, gt, lte } from 'drizzle-orm';
 import { MODULE_IDS, type ModuleId } from '@contrack/contract';
 import { type WorkspaceId, asUserId, asWorkspaceId } from '../../../../shared/domain/ids';
 import type { DatabaseContext } from '../../../../shared/infrastructure/database/database';
@@ -40,6 +40,15 @@ export class DrizzleWorkspaceEntitlementRepository extends WorkspaceEntitlementR
 
     async listByWorkspace(workspaceId: WorkspaceId): Promise<WorkspaceEntitlement[]> {
         const rows = await this.ctx.executor.select().from(workspaceEntitlements).where(eq(workspaceEntitlements.workspaceId, workspaceId));
+        return rows.map(toEntity).filter((e): e is WorkspaceEntitlement => e !== undefined);
+    }
+
+    async listTrialsExpiring(after: Date, until: Date): Promise<WorkspaceEntitlement[]> {
+        const rows = await this.ctx.executor.select().from(workspaceEntitlements).where(and(
+            eq(workspaceEntitlements.status, 'trial'),
+            gt(workspaceEntitlements.expiresAt, after),
+            lte(workspaceEntitlements.expiresAt, until),
+        ));
         return rows.map(toEntity).filter((e): e is WorkspaceEntitlement => e !== undefined);
     }
 

@@ -16,6 +16,12 @@ export class InMemoryWorkspaceEntitlementRepository extends WorkspaceEntitlement
         return Promise.resolve([...this.rows.values()].filter(r => r.workspaceId === workspaceId).map(r => WorkspaceEntitlement.rehydrate(r)));
     }
 
+    listTrialsExpiring(after: Date, until: Date): Promise<WorkspaceEntitlement[]> {
+        return Promise.resolve([...this.rows.values()]
+            .filter(r => r.status === 'trial' && r.expiresAt !== null && r.expiresAt > after && r.expiresAt <= until)
+            .map(r => WorkspaceEntitlement.rehydrate(r)));
+    }
+
     save(entry: WorkspaceEntitlement): Promise<void> {
         this.rows.set(`${entry.workspaceId}|${entry.module}`, entry.toProps());
         return Promise.resolve();

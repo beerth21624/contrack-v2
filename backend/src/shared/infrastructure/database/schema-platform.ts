@@ -3,7 +3,7 @@
 // always filter by them. Tables of business modules use a prefix (sc_ = subcontracting). Add every table to the export
 // object below; schema.ts merges it into the Drizzle schema and drizzle.config.ts lists this file for migrations.
 import { sql } from 'drizzle-orm';
-import { boolean, check, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, check, date, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users, workspaces } from './schema';
 import { updatedAt } from './schema-helpers';
 
@@ -87,4 +87,28 @@ export const workspaceEntitlements = pgTable('workspace_entitlements', {
     check('workspace_entitlements_status_check', sql`${t.status} in ('purchased', 'trial', 'beta', 'revoked')`),
 ]);
 
-export const platformTables = { workspaceModules, files, notifications, notificationDeliveries, workspaceEntitlements };
+/**
+ * Outside channels a user linked (docs/erp/02-domain-model.md §1.2). Only verified rows are used for delivery; the LINE
+ * linking flow (LINE Login) comes later, so nothing writes LINE rows yet.
+ */
+export const userChannelLinks = pgTable('user_channel_links', {
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    channel: text('channel', { enum: ['line', 'email'] }).notNull(),
+    address: text('address').notNull(),
+    verifiedAt: timestamp('verified_at', { withTimezone: true }),
+    createdAt: createdAt(),
+}, t => [
+    primaryKey({ columns: [t.userId, t.channel] }),
+    check('user_channel_links_channel_check', sql`${t.channel} in ('line', 'email')`),
+]);
+
+/** Once-per-day marks of the daily sweeps: a (sweep, key) notifies at most once per Bangkok date. */
+export const sweepMarks = pgTable('sweep_marks', {
+    sweep: text('sweep').notNull(),
+    key: text('key').notNull(),
+    markDate: date('mark_date', { mode: 'string' }).notNull(),
+}, t => [primaryKey({ columns: [t.sweep, t.key, t.markDate] })]);
+
+export const platformTables = {
+    workspaceModules, files, notifications, notificationDeliveries, workspaceEntitlements, userChannelLinks, sweepMarks,
+};

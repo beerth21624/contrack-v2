@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-10-31 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-08 done)**
+อัปเดตล่าสุด: 2026-10-31 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-10 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -21,7 +21,7 @@
 | WP-07 | Platform admin: ให้สิทธิ์โมดูล (backend + web) | sonnet | done | 45ee602 | ไม่มี migration; `PlatformAdminAccess`, `/platform/admin/{status,workspaces,…/entitlements/:module}`, `WorkspaceDirectory.search`; หน้า `/admin/entitlements` + namespace `admin`; D-89…D-93 |
 | WP-08 | Workflow อนุมัติ + audit log (backend) | opus | done | 765869e | migration `0009_wp08_approvals_audit`; โมดูล `approvals` + `audit`, `schema-erp-core.ts`, ports `Approvals`/`ApprovalHandlers`/`AuditLog`, `WorkspaceDirectory.members`; audit ของ `SetEntitlementUseCase`; D-94…D-103 |
 | WP-09 | หน้าอนุมัติ นโยบาย และ audit (web) | sonnet | done | cfdaad1 | ไม่มี migration; `src/features/erp/approvals/*`, `shared/AuditTimeline.tsx`, routes `/approvals`, `/workspace/approval-policies`, namespace `approvals`+`audit`, `enums.approval*`; D-105…D-107 |
-| WP-10 | การแจ้งเตือน: channel, ภาษาผู้รับ, sweep | opus | todo | | |
+| WP-10 | การแจ้งเตือน: channel, ภาษาผู้รับ, sweep | opus | done | COMMIT | migration `0010_wp10_notifications`; template ERP 20 ตัว th/en; sweep `platform.trial-expiring`; D-108…D-113 |
 | WP-11 | บริการเลขเอกสาร + guard การลบ | opus | todo | | |
 | WP-12 | โปรไฟล์บริษัท + business profile + project type | sonnet | todo | | |
 | WP-13 | ทะเบียนลูกค้า | sonnet | todo | | |
@@ -199,6 +199,12 @@
 | D-105 | 2026-11-01 | (WP-09) หน้า inbox มีแท็บ "รอฉัน" (`mine=true`) กับ "ทั้งหมด" (กรองสถานะได้) + ปุ่มโหลดเพิ่มด้วย `nextBefore`; ข้อความ solo แสดงเป็น Alert บนหน้าเสมอเมื่อ `isSolo`; ปุ่มอนุมัติ/ปฏิเสธขึ้นเมื่อ `status=pending && canDecide` | ตาม D-99 |
 | D-106 | 2026-11-01 | (WP-09) `AuditTimeline` อยู่ใน `shared/` แต่ import hook `useAuditEvents` จาก `approvals/hooks.ts` (api ของ audit รวมอยู่ใน `approvals/api.ts`); label ของ action/entity มาจาก `audit.actions.*` / `audit.entities.*` ถ้าไม่มีคีย์ → แสดงค่าดิบ (WP ใหม่เพิ่มคีย์เมื่อมี action ใหม่); รายการ data แสดง `field: ก่อน → หลัง` | ไม่มี namespace แยกต่อโมดูลสำหรับ audit |
 | D-107 | 2026-11-01 | (WP-09) เมนู: nav registry กลุ่ม settings เพิ่ม `approvals` (module `project-hub`) และ `approval-policies` (+ `company.manage`); `AccountMenu` เพิ่มลิงก์เดียวกัน (เฉพาะ `project-hub` active ของ workspace ที่เลือก); `ApprovalBadge` + `usePendingApprovalCount` สร้างไว้ให้ WP-16 ใช้ (ยังไม่ต่อเข้า AppLayoutUI) | ตามขอบเขต WP |
+| D-108 | 2026-11-01 | (WP-10) ไฟล์ runner ชื่อ `daily-sweeps.runner.ts` (ตาม 04) ไม่ใช่ `daily-sweeps.ts` (01 §7 ข้อ 7); registry `DailySweeps` อยู่ใน `ports.ts` (core) ลายเซ็น `register(name, (ctx: {now, today}) => Promise<void>)` ชื่อซ้ำ → throw; runner เริ่ม timer ใน `onApplicationBootstrap` (หลังทุกโมดูลลงทะเบียนใน `onModuleInit`) | 01 กับ 04 เขียนชื่อไฟล์ไม่ตรงกัน |
+| D-109 | 2026-11-01 | (WP-10) `SweepMarks` (`markOnce(sweep, key, date)`) เป็น abstract class ใน `ports.ts` provide/export จาก `PlatformModule` (global) ไม่ใช่ repo ภายใน platform | sweep ของโมดูลอื่น (invoice, retention, guarantee, warranty, cost) ต้องใช้กันส่งซ้ำ |
+| D-110 | 2026-11-01 | (WP-10) ข้อความ ERP: เงิน th `1,250,000.00 บาท` / en `THB 1,250,000.00`; วันที่ th `30 ต.ค. 2026` / en `30 Oct 2026` (ชื่อเดือนเขียนเองใน `notification-format.ts` ไม่พึ่ง ICU, ปี ค.ศ. ตาม §7); short text (SMS/LINE) ของ ERP = title; template ERP ไม่อยู่ใน `SMS_WORTHY_TEMPLATES` | §7 ข้อ 2, 5 |
+| D-111 | 2026-11-01 | (WP-10) `toPhone` (คนที่อาจยังไม่มีบัญชี) ได้ข้อความภาษาไทยเสมอ; ผู้รับอื่นได้ข้อความตาม `users.locale` (render ครั้งเดียวต่อภาษา); PERSISTENCE=memory ไม่รู้ภาษาผู้ใช้ → ไทย | ไม่แตะ `UserProfile` (เพิ่มฟิลด์แล้วจะเปลี่ยนรูปที่ adapter/spec ของ identity คืน) |
+| D-112 | 2026-11-01 | (WP-10) แจ้งเตือนอนุมัติ: `approval.decided` ส่งจาก `DecideApprovalUseCase` หลัง commit ถึง `requestedBy` (ยกเว้นตัดสินเอง); `approval.requested` ส่งผ่าน port ใหม่ `Approvals.notifyRequested(requestId)` ที่ **โมดูลผู้เรียกต้องเรียกหลัง commit เมื่อ ticket = pending** (อ่าน request ใหม่ ผู้รับ = สมาชิกที่บทบาทอยู่ใน `approverRoles` ของ step ยกเว้นผู้ขอ) | `request` ทำงานใน transaction ของผู้เรียก และ UnitOfWork ไม่มี after-commit hook |
+| D-113 | 2026-11-01 | (WP-10) `trial.expiring`: ทุก trial ที่ `expires_at` อยู่ใน (now, now+3 วัน] ของโมดูลที่ platform release ถึงสมาชิกที่มี `modules.manage`; key `${ws}:${module}` ต่อวัน Bangkok (จึงได้วันละครั้งตลอด 3 วัน); payload `date` = วันสุดท้ายที่ trial ยังใช้ได้ (`bangkokToday(expiresAt − 1 ms)`), `href` `/workspace/modules` | เกณฑ์ "ครั้งเดียวต่อวัน" |
 
 ### คำถามค้างถึงเจ้าของ
 1. ตาราง Factor F ทางการ (กรมบัญชีกลาง) ฉบับที่ต้องการใช้ (D-12)
@@ -366,3 +372,20 @@
   - WP-16: ครอบเมนูด้วย `<ApprovalBadge>` (นับ pending ที่ผู้เรียกตัดสินได้, โพลทุก 60 วินาที) และ `useMutation` ที่เกี่ยวข้องกับอนุมัติให้ invalidate `approvalKeys.all(workspaceId)`
   - เอกสารที่ส่งอนุมัติแล้ว subject ใหม่ต้องมีป้ายใน `enums.approvalSubject` อยู่แล้วครบ 9 ตัว
 - ตรวจแล้ว: tsc web ผ่าน, eslint ไฟล์ที่แก้ผ่าน, `node scripts/i18n/check-parity.mjs` ผ่าน, `npx vitest run src/features/erp src/i18n` ผ่าน; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์
+
+### WP-10 — การแจ้งเตือน: channel, ภาษาผู้รับ, sweep (COMMIT)
+- สร้าง (ports/core): `ScNotificationTemplate` (ชื่อใหม่ของ union เดิม), `ErpNotificationTemplate` ครบ 20 ตัวตาม §7 ข้อ 1, `NotificationTemplate` = union; `DailySweeps` + `SweepContext`/`DailySweep` (core provide/export); `SweepMarks` (platform provide/export); `Approvals.notifyRequested`
+- platform: `application/ports/notification-channel.port.ts` (`NotificationChannel`, `NotificationChannels`), adapter `notification-channels.adapter.ts` (`SenderNotificationChannels(sms, line)`; e-mail = undefined), `DeliverQueuedUseCase` ส่งผ่าน channels (constructor `(deliveries, channels, clock)`), `SendNotificationUseCase` (constructor แทน `LineSender` ด้วย `NotificationChannels`) render ต่อ `recipient.locale`; `Recipient.locale`; `DrizzleRecipientDirectory` อ่าน `users.locale` + LINE จาก `user_channel_links` (verified); `InMemoryRecipientDirectory.addUser(id, { locale })`
+- templates: `renderNotification(template, payload, url?, locale = 'th')`; `TEMPLATES` เดิม = `Record<ScNotificationTemplate, …>` (sc.* ภาษา en = ไทยเดิมตรงตัว); ใหม่ `notification-templates.erp.ts` (th+en ทุกตัว, รายการ payload key ต่อ template อยู่หัวไฟล์ — **WP ภายหลังส่ง key ตามนั้น**), `notification-format.ts`; export `SC_NOTIFICATION_TEMPLATES`, `ERP_NOTIFICATION_TEMPLATES`, `NOTIFICATION_TEMPLATES` (ทั้งหมด 40)
+- sweep: `infrastructure/adapters/daily-sweeps.runner.ts` (`DailySweepsRunner.runOnce()`), `infrastructure/adapters/sweep-marks.adapter.ts` (drizzle `on conflict do nothing` + in-memory), `application/services/trial-expiring.sweep.ts` (`platform.trial-expiring`)
+- entitlement repo: `listTrialsExpiring(after, until)` (drizzle + in-memory)
+- approvals: `DecideApprovalUseCase` (constructor เพิ่ม `Notifier` ตัวสุดท้าย) ส่ง `approval.decided`; `RepositoryApprovals.notifyRequested`; ลบ `TODO(WP-10)` ทั้งสองไฟล์
+- web: `NotificationBell` แสดงเมื่อ `project-hub` active ด้วย
+- migration: `0010_wp10_notifications` (`user_channel_links`, `sweep_marks`) → WP ถัดไปที่แก้ schema ได้ `0011_*`
+- เบี่ยงจากแผน: D-108 … D-113; ไม่เขียนเทสต์ใหม่ (ตามคำสั่งเฟส demo) — ปรับเฉพาะ spec เดิมตามลายเซ็นใหม่ (`notification-templates.spec.ts` ตรวจว่า sc.* ภาษา en = th ทุกตัว)
+- WP ถัดไปต้องรู้:
+  - ส่งแจ้งเตือน ERP: `await this.notifier.notify({ template: 'invoice.due_soon', toUserIds | toWorkspaceIds, payload: { docNumber, customerName, amount: 1250000, date: '2026-10-30', href: '/…' } })` หลัง commit — เงินเป็น number, วันที่ `YYYY-MM-DD` (ห้ามจัดรูปแบบเอง)
+  - หลัง `approvals.request(...)` ที่ได้ `status === 'pending'`: นอก `uow.run` เรียก `await this.approvals.notifyRequested(ticket.requestId)`
+  - sweep ใหม่: inject `DailySweeps` + `SweepMarks` แล้วใน `onModuleInit` `this.sweeps.register('<module>.<name>', async ({ now, today }) => { … if (await this.marks.markOnce('<module>.<name>', key, today)) notify … })` — ตรวจเองว่าโมดูล release/active (`flags.platformEnabled`, `flags.isEnabled(ws, m)`); เทสต์เรียก `DailySweepsRunner.runOnce()` หรือฟังก์ชัน sweep ตรง ๆ
+  - ผูก LINE จริงภายหลัง: เขียนแถว `user_channel_links (user_id, 'line', <LINE user id>, verified_at)` แล้ว `LoggingLineSender` ต้องเปลี่ยนเป็นตัวเรียก Messaging API
+- ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend + `NotificationBell.tsx`) ผ่าน; `cd backend && npx jest src/modules/platform src/modules/approvals src/modules/identity/infrastructure src/shared` 293 ผ่าน; `npx jest src/modules/subcontracting` 483 ผ่าน; e2e `approvals` + `subcontracting` 6 ผ่าน; spec ชั่วคราว (ลบแล้ว) ยืนยัน: notify เดียวกันได้ en "Invoice INV-1 to ACME for THB 1,250,000.00 is due on 30 Oct 2026" / th "ใบแจ้งหนี้ INV-1 ของ ACME ยอด 1,250,000.00 บาท ครบกำหนดชำระ 30 ต.ค. 2026", ทุก template ERP render ครบทั้งสองภาษา, trial หมดใน 2 วัน + `runOnce()` สองครั้ง → owner ได้ 1 แถว viewer 0; `npm run db:generate -- --name wp10_notifications` ได้ `0010` ไม่ถาม interactive; ยังไม่ได้ทดสอบบน PostgreSQL จริง/เบราว์เซอร์

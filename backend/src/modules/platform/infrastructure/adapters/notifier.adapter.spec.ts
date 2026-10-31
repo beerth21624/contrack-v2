@@ -6,6 +6,7 @@ import { PlatformTestKit, RecordingLineSender } from '../../testing/platform-tes
 import { DeliveryWorker } from './delivery-worker';
 import { LoggingLineSender } from './logging-line-sender.adapter';
 import { ConfigAppLinks, UseCaseNotifier } from './notifier.adapter';
+import { SenderNotificationChannels } from './notification-channels.adapter';
 
 describe('UseCaseNotifier + DeliveryWorker', () => {
     let kit: PlatformTestKit;
@@ -16,8 +17,8 @@ describe('UseCaseNotifier + DeliveryWorker', () => {
     beforeEach(() => {
         kit = new PlatformTestKit();
         const line = new RecordingLineSender(false);
-        send = new SendNotificationUseCase(kit.recipients, kit.notifications, kit.deliveries, line, kit.appLinks, kit.uow, kit.clock, kit.ids);
-        worker = new DeliveryWorker(new DeliverQueuedUseCase(kit.deliveries, kit.sms, line, kit.clock), new AppConfig(testEnv()));
+        send = new SendNotificationUseCase(kit.recipients, kit.notifications, kit.deliveries, new SenderNotificationChannels(kit.sms, line), kit.appLinks, kit.uow, kit.clock, kit.ids);
+        worker = new DeliveryWorker(new DeliverQueuedUseCase(kit.deliveries, new SenderNotificationChannels(kit.sms, line), kit.clock), new AppConfig(testEnv()));
         notifier = new UseCaseNotifier(send, worker);
     });
 
