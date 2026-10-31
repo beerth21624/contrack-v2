@@ -9,6 +9,10 @@ import type {
     CostCategory, CostCodeSource, CostCodeStatus, CostEntryKind, CustomerLinkAction, CustomerLinkSubject, DocLanguage, DocType, FileDto,
     FilePurpose, FinCounterpartyType, FinDirection, FinEventType, HubProjectFields, HubProjectStatus, ModuleId, Permission, ProjectRollup, ProjectType,
 } from '@contrack/contract';
+import type {
+    ContractMilestoneKind, ContractMilestoneSource, ContractMilestoneStatus, ContractMilestoneTrigger, ContractVariationBilling,
+    MainContractBillingMode, MainContractStatus, MainContractTerms, MilestoneTemplateItem,
+} from '@contrack/contract';
 import type { DomainError } from '../domain/domain-error';
 import type { ProjectId, RateCardId, RevisionId, UserId, WorkspaceId } from '../domain/ids';
 import type { Result } from '../domain/result';
@@ -1170,4 +1174,104 @@ export abstract class FinancialEvents {
     abstract list(workspaceId: WorkspaceId, filter: FinEventFilter): Promise<FinEvent[]>;
     /** Events of a source, oldest first (reversals included). */
     abstract bySource(workspaceId: WorkspaceId, sourceType: string, sourceId: string): Promise<FinEvent[]>;
+}
+
+// ── Quotations as other modules read them (WP-26) ──
+
+/** The accepted version of a quotation, as a contract is made from it. */
+export interface AcceptedQuotation {
+    quotationId: string;
+    versionId: string;
+    projectId: ProjectId;
+    customerId: string | null;
+    title: string;
+    /** Number of the accepted version. */
+    number: string | null;
+    language: DocLanguage;
+    boqVersionId: string | null;
+    /** Price without VAT (after discount / rounding; government: split out of the VAT-inclusive total, D-40). */
+    vatBase: number;
+    vat: number;
+    grandTotal: number;
+    marginPct: number;
+    paymentTerms: MilestoneTemplateItem[];
+}
+
+/** Provided by quotations. No module check (the caller checked its own); filters by workspace. */
+export abstract class QuotationLookup {
+    /** not_found (not a quotation of the workspace); conflict `quotation_not_accepted` when no version is accepted. */
+    abstract accepted(workspaceId: WorkspaceId, quotationId: string): Promise<Result<AcceptedQuotation, DomainError>>;
+    /** Priced lines (`boq` / `custom` of included sections) of a version, for allocateContractAmounts; [] when unknown. */
+    abstract contractLines(workspaceId: WorkspaceId, versionId: string): Promise<CostCodeContractLine[]>;
+}
+
+// ── Main contracts (WP-26, docs/erp/02-domain-model.md §3) ──
+
+export interface MainContractMilestone {
+    id: string;
+    contractId: string;
+    no: number;
+    labelTh: string;
+    labelEn: string;
+    kind: ContractMilestoneKind;
+    pct: number;
+    amount: number;
+    trigger: ContractMilestoneTrigger;
+    triggerProgress: number | null;
+    dueDate: string | null;
+    costCodeIds: string[];
+    /** As stored (`planned` may already be claimable by its trigger: see the contract DTO). */
+    status: ContractMilestoneStatus;
+    source: ContractMilestoneSource;
+    variationId: string | null;
+}
+
+/** A main contract as other modules see it (amounts without VAT). */
+export interface MainContractInfo {
+    id: string;
+    workspaceId: WorkspaceId;
+    projectId: ProjectId;
+    customerId: string;
+    quotationId: string | null;
+    quotationVersionId: string | null;
+    quotedMarginPct: number | null;
+    number: string | null;
+    status: MainContractStatus;
+    title: string;
+    language: DocLanguage;
+    signDate: string | null;
+    startDate: string | null;
+    finishDate: string | null;
+    billingMode: MainContractBillingMode;
+    originalValue: number;
+    currentValue: number;
+    vatRate: number;
+    extensionDays: number;
+    terms: MainContractTerms;
+    /** `no` order (the advance one, no 0, first). */
+    milestones: MainContractMilestone[];
+}
+
+/**
+ * Provided by main-contracts. No module check (the caller checked its own); filters by workspace. Writes join the
+ * caller's `uow.run`, lock the contract row and are audited; an `err` is returned before anything is written.
+ */
+export abstract class MainContracts {
+    abstract find(workspaceId: WorkspaceId, contractId: string): Promise<MainContractInfo | undefined>;
+    /** The project's effective contract (not cancelled / terminated; may still be a draft). */
+    abstract forProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<MainContractInfo | undefined>;
+    /**
+     * An accepted variation on a signed contract: `current_value += sellDelta`, `extension_days += extensionDays`,
+     * `finish_date` moved; milestones by `billing` (`separate_milestone` adds one `source='variation'`, `spread`
+     * re-allocates the unclaimed ones, `next_claim` leaves them). unprocessable `invalid_billing_option` for
+     * `next_claim` on a milestone-billed contract; conflict `invalid_transition` when not signed.
+     */
+    abstract applyVariation(
+        workspaceId: WorkspaceId, contractId: string,
+        input: { sellDelta: number; extensionDays: number; billing: ContractVariationBilling; variationId: string; label?: { th: string; en: string }; by: UserId | null },
+    ): Promise<Result<void, DomainError>>;
+    /** Sets a milestone's stored status (billing: claimed → invoiced → paid, and back when a claim / invoice is voided). */
+    abstract markMilestone(workspaceId: WorkspaceId, milestoneId: string, status: ContractMilestoneStatus): Promise<Result<void, DomainError>>;
+    /** signed → completed on `date` (handover accepted). conflict `invalid_transition` otherwise. */
+    abstract complete(workspaceId: WorkspaceId, contractId: string, date: string, by?: UserId | null): Promise<Result<void, DomainError>>;
 }

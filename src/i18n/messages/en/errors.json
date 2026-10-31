@@ -76,6 +76,15 @@
     "discount_invalid": "The discount is not valid.",
     "discount_exceeds_subtotal": "The discount is larger than the subtotal.",
     "line_without_section": "An item does not belong to any category.",
-    "duplicate_section": "Two categories have the same number."
+    "duplicate_section": "Two categories have the same number.",
+    "contract_exists": "This project already has a main contract. Cancel or terminate it first.",
+    "quotation_not_accepted": "The customer has not accepted this quotation yet.",
+    "customer_required": "The contract needs a customer.",
+    "milestones_required": "A milestone-billed contract needs at least one milestone.",
+    "milestone_pct_not_100": "Milestone shares must add up to 100%.",
+    "guarantees_active": "Some guarantees have not been returned yet. Return them all before closing the contract.",
+    "finish_before_start": "The finish date cannot be before the start date.",
+    "expiry_before_issue": "The expiry date cannot be before the issue date.",
+    "invalid_billing_option": "A milestone-billed contract cannot bill a variation in the next claim. Spread it over the milestones or add a milestone."
   }
 }

@@ -286,3 +286,22 @@ Schemas: `../src/shared/contract/erp/quotations.ts`; pricing `../src/domain/quot
 | POST | `/quotation-versions/:versionId/issue` | `IssueQuotationVersionRequest` → `QuotationVersionDto` (200) | approval `quotation.issue` (auto-skip → `issued` now, else `pending_approval`); first issue numbers `QT…` (docType `quotation`, subject = quotation id), later ones `${base}-R<n>`; earlier issued versions → `superseded`; project → `quoted` |
 | POST | `/quotation-versions/:versionId/cancel` | → `QuotationVersionDto` (200) | draft or pending approval (the request is cancelled) |
 | POST | `/quotation-versions/:versionId/record-response` | `RecordQuotationResponseRequest` → `QuotationVersionDto` (200) | issued only; accept → `accepted`, project `won`, other issued versions `superseded`; members notified |
+
+## Main contracts (module `contracts`; WP-26)
+Schemas: `../src/shared/contract/erp/main-contracts.ts`; template `../src/domain/erp/main-contract-template.ts`. Read `contracts.read`, everything else `contracts.manage`. One effective (not cancelled / terminated) contract per project. Amounts exclude VAT. `quotedMarginPct` is left out without `quotations.seeMargins`. Milestone `no` 0 = the advance payment (from `terms.advancePct`); work / final milestones 1…n with amounts `allocate(value, pct[])`; `status` `planned` reads as `claimable` once its trigger is met. Not a member → 404; module not active → 404 `module_disabled`; archived project → 409 `project_archived` on writes. Daily sweep `contracts.guarantee-expiring`: `guarantee.expiring` once per active guarantee within 30 days of its expiry.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/projects/:projectId/main-contract` | → `ProjectMainContractDto` | `{contract: effective or null, ended: [...]}` |
+| POST | `/projects/:projectId/main-contract` | `CreateMainContractRequest` → `MainContractDto` (201) | from `quotationId` (accepted only, else 409 `quotation_not_accepted`; value = `vatBase`, milestones from its payment terms) or empty (`customerId` + `originalValue`); terms from the project's settings; existing contract → 409 `contract_exists`; no customer → 422 `customer_required` |
+| GET | `/main-contracts/:contractId` | → `MainContractDto` | |
+| PATCH | `/main-contracts/:contractId` | `PatchMainContractRequest` → `MainContractDto` | draft only (signed → 409 `already_issued`); bodies sanitized; value / advance change re-plans the milestone amounts |
+| PUT | `/main-contracts/:contractId/milestones` | `PutContractMilestonesRequest` → `MainContractDto` | draft only; shares ≠ 100% → 400; unknown cost code → 404 |
+| POST | `/main-contracts/:contractId/sign` | `SignMainContractRequest` → `SignMainContractResponse` (200) | number `CT…`; baseline locked from the quotation's BOQ version when not locked yet (else kept); Σ cost code `contract_amount` = `originalValue`; project → `in_progress`; milestone contract without milestones → 422 `milestones_required` |
+| POST | `/main-contracts/:contractId/terminate` | `{reason, date?}` → `MainContractDto` (200) | signed only |
+| POST | `/main-contracts/:contractId/cancel` | → `MainContractDto` (200) | draft only |
+| POST | `/main-contracts/:contractId/close` | `{date?}` → `MainContractDto` (200) | completed only; an active guarantee → 409 `guarantees_active` |
+| POST | `/main-contracts/:contractId/signed-scan` | `{fileIds}` → `MainContractDto` (200) | files of purpose `main_contract_scan` uploaded by the caller |
+| GET | `/main-contracts/:contractId/guarantees` | → `ContractGuaranteeDto[]` | |
+| POST | `/main-contracts/:contractId/guarantees` | `CreateGuaranteeRequest` → `ContractGuaranteeDto` (201) | draft / signed / completed contract; files `guarantee_scan` |
+| PATCH | `/guarantees/:guaranteeId` | `PatchGuaranteeRequest` → `ContractGuaranteeDto` | return = `{status: 'returned'}` (`returnedAt` default today) |

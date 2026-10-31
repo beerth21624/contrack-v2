@@ -5,6 +5,7 @@ import { Pool } from 'pg';
 import { UnitOfWork } from '../../application/ports';
 import { schema as coreSchema } from './schema';
 import { boqControlTables } from './schema-boq-control';
+import { contractsBillingTables } from './schema-contracts-billing';
 import { erpCoreTables } from './schema-erp-core';
 import { identityPhoneTables } from './schema-identity-phone';
 import { ledgerTables } from './schema-ledger';
@@ -18,7 +19,7 @@ import { scSourcingTables } from './schema-sc-sourcing';
 /** Core tables (schema.ts) + one file per business work stream (no file imports another stream's file). */
 export const schema = {
     ...coreSchema, ...identityPhoneTables, ...platformTables, ...scSharedTables, ...scSourcingTables, ...scBiddingTables,
-    ...scContractsTables, ...erpCoreTables, ...boqControlTables, ...ledgerTables, ...quotationTables,
+    ...scContractsTables, ...erpCoreTables, ...boqControlTables, ...ledgerTables, ...quotationTables, ...contractsBillingTables,
 };
 
 export type Database = NodePgDatabase<typeof schema>;

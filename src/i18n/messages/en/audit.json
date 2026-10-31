@@ -23,7 +23,17 @@
     "revoke": "Link cancelled",
     "respond": "Customer answered",
     "status_change": "Project status changed",
-    "hub_update": "Project details edited"
+    "hub_update": "Project details edited",
+    "sign": "Signed",
+    "terminate": "Terminated",
+    "cancel": "Cancelled",
+    "close": "Closed",
+    "complete": "Completed",
+    "milestones": "Milestones changed",
+    "apply_variation": "Variation applied",
+    "milestone_status": "Milestone status changed",
+    "attach_scan": "Scan attached",
+    "return": "Guarantee returned"
   },
   "entities": {
     "approval_request": "Approval request",
@@ -34,6 +44,8 @@
     "company_profile": "Company profile",
     "customer": "Customer",
     "customer_link": "Customer link",
-    "project": "Project"
+    "project": "Project",
+    "main_contract": "Main contract",
+    "contract_guarantee": "Contract guarantee"
   }
 }

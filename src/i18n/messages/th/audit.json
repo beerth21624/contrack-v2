@@ -23,7 +23,17 @@
     "revoke": "ยกเลิกลิงก์",
     "respond": "ลูกค้าตอบกลับ",
     "status_change": "เปลี่ยนสถานะโครงการ",
-    "hub_update": "แก้ข้อมูลโครงการ"
+    "hub_update": "แก้ข้อมูลโครงการ",
+    "sign": "เซ็นสัญญา",
+    "terminate": "บอกเลิกสัญญา",
+    "cancel": "ยกเลิก",
+    "close": "ปิดสัญญา",
+    "complete": "งานแล้วเสร็จ",
+    "milestones": "แก้งวดงาน",
+    "apply_variation": "ปรับตามงานเพิ่ม-ลด",
+    "milestone_status": "เปลี่ยนสถานะงวด",
+    "attach_scan": "แนบสแกนสัญญา",
+    "return": "คืนหลักประกัน"
   },
   "entities": {
     "approval_request": "คำขออนุมัติ",
@@ -34,6 +44,8 @@
     "company_profile": "ข้อมูลบริษัท",
     "customer": "ลูกค้า",
     "customer_link": "ลิงก์ลูกค้า",
-    "project": "โครงการ"
+    "project": "โครงการ",
+    "main_contract": "สัญญาหลัก",
+    "contract_guarantee": "หลักประกันสัญญา"
   }
 }

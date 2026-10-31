@@ -11,3 +11,4 @@ export * from './boq-control';
 export * from './ledger';
 export * from './price-reference';
 export * from './quotations';
+export * from './main-contracts';

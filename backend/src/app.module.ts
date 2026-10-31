@@ -25,6 +25,7 @@ import { BoqControlModule } from './modules/boq-control/boq-control.module';
 import { LedgerModule } from './modules/ledger/ledger.module';
 import { PriceReferenceModule } from './modules/price-reference/price-reference.module';
 import { QuotationsModule } from './modules/quotations/quotations.module';
+import { MainContractsModule } from './modules/main-contracts/main-contracts.module';
 
 @Module({})
 export class AppModule {
@@ -45,6 +46,7 @@ export class AppModule {
                 LedgerModule,
                 PriceReferenceModule,
                 QuotationsModule,
+                MainContractsModule,
             ],
             controllers: [HealthController],
             providers: [

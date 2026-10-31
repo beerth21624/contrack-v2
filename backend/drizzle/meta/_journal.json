@@ -148,6 +148,13 @@
       "when": 1793475205428,
       "tag": "0020_wp23_quotations",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793477385303,
+      "tag": "0021_wp26_main_contracts",
+      "breakpoints": true
     }
   ]
 }

@@ -3,12 +3,14 @@
 // issue through the approval `quotation.issue` (Approvals) and numbering (DocumentNumbering, docType `quotation`);
 // answers from customer links (CustomerLinkHandlers 'quotation') or recorded by the team; project status through
 // ProjectLifecycle (hub). Registers ApprovalHandlers, CustomerLinkHandlers, DailySweeps and ProjectDependents.
+// Provides QuotationLookup (accepted versions for main-contracts, WP-26).
 // Deleting a project with an issued number is refused by numbering's guard, so no ProjectDeletionGuards entry here.
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
-import { ApprovalHandlers, CustomerLinkHandlers, DailySweeps, ProjectDependents } from '../../shared/application/ports';
+import { ApprovalHandlers, CustomerLinkHandlers, DailySweeps, ProjectDependents, QuotationLookup } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
 import { QuotationRepository } from './application/ports/quotation.repository';
 import { EXPIRE_SWEEP, QuotationHandlers } from './application/quotation-handlers';
+import { RepositoryQuotationLookup } from './application/quotation-lookup';
 import { QuotationAccess, QuotationWorkflow } from './application/quotation.service';
 import {
     CancelQuotationVersionUseCase, CompareQuotationVersionsUseCase, CreateQuotationUseCase, GetQuotationUseCase, GetQuotationVersionUseCase,
@@ -38,7 +40,10 @@ import { QuotationsController } from './presentation/quotations.controller';
         IssueQuotationVersionUseCase,
         CancelQuotationVersionUseCase,
         RecordQuotationResponseUseCase,
+        RepositoryQuotationLookup,
+        { provide: QuotationLookup, useExisting: RepositoryQuotationLookup },
     ],
+    exports: [QuotationLookup],
 })
 export class QuotationsModule implements OnModuleInit {
     constructor(
