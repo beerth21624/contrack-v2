@@ -11,7 +11,7 @@ import { FileAttachments } from '../shared/FileAttachments';
 import { MoneyInput } from '../shared/MoneyInput';
 import { MoneyText } from '../shared/MoneyText';
 import { useRecordReceipt, useVoidReceipt } from './hooks';
-import { round2 } from './status';
+import { receiptPrintHref, round2 } from './status';
 
 /** What is still due on an invoice (cash + WHT). */
 export const invoiceOutstanding = (inv: Pick<InvoiceDto, 'payable' | 'whtExpected' | 'paidAmount'>): number =>
@@ -80,6 +80,7 @@ export function ReceiveDialog({ invoice, workspaceId, onClose }: { invoice: Invo
                 footer={(
                     <div className="flex flex-wrap justify-end gap-2">
                         {done.canVoid && <Button danger loading={voiding} onClick={() => { void voidReceipt(done); }}>{t('receive.voidNow')}</Button>}
+                        <Button href={receiptPrintHref(done.id)} target="_blank" rel="noopener noreferrer">{t('print.receipt')}</Button>
                         <Button type="primary" onClick={onClose}>{t('receive.close')}</Button>
                     </div>
                 )}>

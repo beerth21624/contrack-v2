@@ -15,6 +15,8 @@ export const billingKeys = {
     claim: (claimId: string) => ['billing', 'claim', claimId] as const,
     invoices: (projectId: string) => ['billing', 'invoices', projectId] as const,
     invoice: (invoiceId: string) => ['billing', 'invoice', invoiceId] as const,
+    receipt: (receiptId: string) => ['billing', 'receipt', receiptId] as const,
+    promptpay: (invoiceId: string) => ['billing', 'promptpay', invoiceId] as const,
     advance: (contractId: string) => ['billing', 'advance', contractId] as const,
     retention: (contractId: string) => ['billing', 'retention', contractId] as const,
     aging: (workspaceId: string) => ['billing', 'aging', workspaceId] as const,
@@ -52,6 +54,28 @@ export function useProjectInvoices(projectId: string | undefined) {
         queryFn: () => billingApi.invoices(projectId ?? ''),
         enabled: signedIn && projectId !== undefined,
         staleTime: 0,
+    });
+}
+
+export function useReceipt(receiptId: string | undefined) {
+    const signedIn = useSignedIn();
+    return useQuery({
+        queryKey: billingKeys.receipt(receiptId ?? ''),
+        queryFn: () => billingApi.receipt(receiptId ?? ''),
+        enabled: signedIn && receiptId !== undefined,
+        staleTime: 0,
+    });
+}
+
+/** The PromptPay payload of the cash still to pay; fails (no QR) when the company has no PromptPay id or nothing is left. */
+export function useInvoicePromptPay(invoiceId: string | undefined, enabled: boolean) {
+    const signedIn = useSignedIn();
+    return useQuery({
+        queryKey: billingKeys.promptpay(invoiceId ?? ''),
+        queryFn: () => billingApi.promptpay(invoiceId ?? ''),
+        enabled: signedIn && enabled && invoiceId !== undefined,
+        staleTime: 0,
+        retry: false,
     });
 }
 

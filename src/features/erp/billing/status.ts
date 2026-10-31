@@ -26,3 +26,7 @@ export const billingHref = (projectId: string): string => `/p/${encodeURICompone
 export const claimHref = (projectId: string, claimId: string): string => `${billingHref(projectId)}/claims/${encodeURIComponent(claimId)}`;
 
 export const round2 = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 100;
+
+export const invoicePrintHref = (invoiceId: string): string => `/print/invoice/${encodeURIComponent(invoiceId)}`;
+export const receiptPrintHref = (receiptId: string): string => `/print/receipt/${encodeURIComponent(receiptId)}`;
+export const claimPrintHref = (claimId: string): string => `/print/claim/${encodeURIComponent(claimId)}`;

@@ -17,7 +17,7 @@ import { StatusTag } from '../shared/StatusTag';
 import { ReasonDialog } from './ReasonDialog';
 import { ReceiveDialog } from './ReceiveDialog';
 import { useCreateCreditNote, useIssueInvoice, useIssueTaxInvoice, useProjectInvoices, useVoidInvoice } from './hooks';
-import { INVOICE_STATUS_TONES, isReceivableKind } from './status';
+import { INVOICE_STATUS_TONES, invoicePrintHref, isReceivableKind } from './status';
 
 type Dialog = { kind: 'receive' | 'void' | 'credit'; invoice: InvoiceDto } | null;
 
@@ -53,6 +53,7 @@ export function InvoicesTable({ projectId, workspaceId, role }: { projectId: str
                 const open = i.status === 'issued' || i.status === 'partially_paid';
                 return (
                     <div className="flex flex-wrap gap-1">
+                        <Button size="small" href={invoicePrintHref(i.id)} target="_blank" rel="noopener noreferrer">{t('print.print')}</Button>
                         {canManage && i.status === 'draft' && (
                             <ConfirmAction size="small" type="primary" title={t('invoices.issueConfirm')}
                                 onConfirm={async () => { await issue.mutateAsync({ id: i.id, body: {} }); void message.success(t('invoices.issued')); }}>

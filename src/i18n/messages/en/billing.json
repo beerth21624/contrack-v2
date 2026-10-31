@@ -211,5 +211,10 @@
     "to": "To",
     "rangeOrder": "The end date must not be before the start",
     "empty": "No entries"
+  },
+  "print": {
+    "print": "Print",
+    "receipt": "Print receipt",
+    "claim": "Print claim certificate"
   }
 }

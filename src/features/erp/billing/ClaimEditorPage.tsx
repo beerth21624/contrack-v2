@@ -18,7 +18,7 @@ import { useErpWorkspace } from '../shared/useErpWorkspace';
 import { ClaimLinesTable, type LineEdits } from './ClaimLinesTable';
 import { DeductionsPanel, deductionsOf, type Deductions } from './DeductionsPanel';
 import { useCancelClaim, useCertifyClaim, useClaim, useInvoiceClaim, usePatchClaim, useSubmitClaim } from './hooks';
-import { CLAIM_STATUS_TONES, billingHref } from './status';
+import { CLAIM_STATUS_TONES, billingHref, claimPrintHref } from './status';
 
 export function ClaimEditorPage({ projectId, claimId }: { projectId: string; claimId: string }) {
     const t = useTranslations('billing');
@@ -111,7 +111,10 @@ function ClaimEditor({ claim, projectId }: { claim: ArClaimDto; projectId: strin
             title={<span className="flex flex-wrap items-center gap-2">{t('claims.claimNo', { no: claim.claimNo })}<StatusTag enumName="claimStatus" value={claim.status} tones={CLAIM_STATUS_TONES} /></span>}
             subtitle={claim.certifiedAt !== null ? <span>{t('editor.certifiedBy', { name: claim.certifiedByName })} · <DateText value={claim.certifiedAt} /></span> : undefined}
             breadcrumb={[{ label: t('title'), href: billingHref(projectId) }, { label: t('claims.claimNo', { no: claim.claimNo }) }]}
-            extra={canManage ? (
+            extra={(
+                <>
+                    <Button href={claimPrintHref(claim.id)} target="_blank" rel="noopener noreferrer">{t('print.claim')}</Button>
+                    {canManage && (
                 <>
                     {editable && (
                         <Button disabled={!dirty || missingNote} loading={patch.isPending}
@@ -129,7 +132,9 @@ function ClaimEditor({ claim, projectId }: { claim: ArClaimDto; projectId: strin
                         </ConfirmAction>
                     )}
                 </>
-            ) : undefined}
+                    )}
+                </>
+            )}
         >
             {claim.status === 'pending_approval' && (
                 <Alert type="info" showIcon title={t('editor.pendingApproval')} action={<Button size="small" onClick={() => router.push('/approvals')}>{t('editor.openApprovals')}</Button>} />

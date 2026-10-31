@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-31 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-32 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -43,7 +43,7 @@
 | WP-29 | งวดเบิก + ใบแจ้งหนี้ backend | opus | done | 00979b7 | migration `0022_wp29_billing`; โมดูล `billing` (claims, invoices, retention/advance ledgers), contract `erp/billing.ts`, port `MainContracts.locate` + `completedAt`; D-227…D-235 |
 | WP-30 | รับเงิน ใบกำกับภาษี ลูกหนี้ เตือน PromptPay backend | opus | done | 315cd6f | migration `0023_wp30_receipts`; receipts/TI/CN/aging/statement/PromptPay ในโมดูล `billing`, sweeps `billing.invoice-due`/`billing.retention-release-due`, ลิงก์ลูกค้า `invoice`, port `BillingTotals` + `CustomerLookup.locate`; D-236…D-243 |
 | WP-31 | Billing web | sonnet | done | 63c59b8 | หน้า `/p/<id>/billing` (งวดเบิก เงินล่วงหน้า เงินประกัน ใบแจ้งหนี้ รับเงิน), `/p/<id>/billing/claims/<id>`, `/receivables`, statement ในหน้าลูกค้า; i18n `billing` + enums; D-244…D-247 |
-| WP-32 | Billing เอกสารพิมพ์ + QR | sonnet | todo | | |
+| WP-32 | Billing เอกสารพิมพ์ + QR | sonnet | done | HASH | เอกสารพิมพ์ ใบแจ้งหนี้/ใบกำกับภาษี/ใบลดหนี้/ใบเสร็จ(รวม TI)/ใบรับรองงวดงาน + QR PromptPay + renderer ลิงก์ลูกค้า `invoice`; deps `qrcode@1.5.4`; D-248…D-250 |
 | WP-33 | VO backend | opus | todo | | |
 | WP-34 | VO web + ราคาด้วยเครื่องคำนวณ (sandbox) | opus | todo | | |
 | WP-35 | Portal backend + ค้นหา | opus | todo | | |
@@ -344,6 +344,9 @@
 | D-245 | 2026-11-01 | (WP-31) บันทึกรับเงินทำต่อใบแจ้งหนี้ครั้งละใบ (ReceiveDialog) จากหน้า billing และหน้า receivables; ค่าเริ่มต้น wht = ยอดค้าง × whtExpected/(payable+whtExpected); หลังบันทึกแสดงเลข RC/TI และปุ่มยกเลิกใบเสร็จ (ถ้า `canVoid`) เพราะไม่มี endpoint list ใบเสร็จ | ตาม handoff WP-30 |
 | D-246 | 2026-11-01 | (WP-31) งวดเบิกแบบ milestone: ตารางบรรทัดดูอย่างเดียว (D-228: ไม่กระทบ W); แก้ cum % ได้เฉพาะ mode progress; ยอดสรุปคำนวณใหม่โดยเซิร์ฟเวอร์เมื่อกดบันทึก (ไม่คำนวณฝั่งเว็บ) และหน้าแก้ remount ด้วย `updatedAt` | อย่าเชื่อยอดจาก client |
 | D-247 | 2026-11-01 | (WP-31) ลิงก์ "ไปหาใบ" จาก aging = `/p/<projectId>/billing` (ยังไม่มีหน้ารายใบ/พิมพ์ — WP-32); statement แสดงในหน้า `/customers/<id>` เมื่อเปิดโมดูล billing และมี `billing.read`; เมนู `receivables` อยู่กลุ่ม sales (สิทธิ์ `billing.read`) | ตาม scope |
+| D-248 | 2026-11-01 | (WP-32) component พิมพ์ใช้ `InvoicePrintDocument` (invoice/advance/retention) และ `TaxInvoicePrintDocument` (tax_invoice/credit_note) ร่วมโมเดล `InvoicePrintModel`; หน้าโหลดข้อมูลรวมใน `PrintPages.tsx` (ไม่แยกไฟล์ตาม route), ส่วนประกอบร่วมใน `DocParts.tsx`; ใบลดหนี้แสดงจำนวนเป็นค่าบวก (ตรงกับที่เก็บ D-240) | ส่งของก่อน; พฤติกรรมครบตาม acceptance |
+| D-249 | 2026-11-01 | (WP-32) ใบรับรองงวดงาน (claim) ใช้ snapshot บริษัท/ลูกค้าและภาษาของ**สัญญา** (claim ไม่มี snapshot ของตัวเอง); QR พร้อมเพย์แสดงเฉพาะใบ invoice/advance_invoice ที่ issued/partially_paid และบริษัทตั้ง PromptPay ไว้ (endpoint error = ไม่แสดง QR); บรรทัด "หักอื่น ๆ" ในใบแจ้งหนี้คำนวณเป็นส่วนต่างที่เหลือ | invoice ไม่มีฟิลด์ otherDeduction |
+| D-250 | 2026-11-01 | (WP-32) ปุ่มพิมพ์: คอลัมน์ action ใน `InvoicesTable` (ทุกใบ), ปุ่ม "พิมพ์ใบเสร็จ" ใน `ReceiveDialog` หลังบันทึก, ปุ่ม "พิมพ์ใบรับรองงวดงาน" ในหน้า claim; เพิ่ม `useReceipt`/`useInvoicePromptPay` + `billingApi.promptpay`; i18n `documents.invoice|taxInvoice|receipt|claim`, `billing.print` | ใบเสร็จไม่มีหน้ารายการ |
 
 ## Handoff notes
 
@@ -805,3 +808,11 @@
 - เบี่ยงจากแผน: D-244 … D-247; ไม่เขียนเทสต์ใหม่ (คำสั่งเจ้าของ: ส่งของก่อน); ไม่มี migration
 - WP-32 ต้องรู้: ยังไม่มีปุ่มพิมพ์/QR ใน `InvoicesTable` (เพิ่มคอลัมน์ action ลิงก์ `/print/invoice/<id>`, `/print/receipt/<id>`, `/print/claim/<id>`); ใบเสร็จไม่มีหน้ารายการ (ดูได้เฉพาะตอนบันทึก); ฟอร์มวันที่ใช้ `<Input type="date">` เว้นว่าง = ค่าเริ่มต้นฝั่งเซิร์ฟเวอร์
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/features/erp/billing`, routes, `CustomerDetailPage`, `nav-registry` ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n` ผ่าน; ยังไม่ได้ลองกดใน browser
+
+### WP-32 — Billing เอกสารพิมพ์ + QR (HASH)
+- สร้าง `src/features/erp/billing/`: `print-model.ts` (pure: `buildInvoicePrintModel|buildReceiptPrintModel|buildClaimPrintModel`), `DocParts.tsx`, `InvoicePrintDocument`, `TaxInvoicePrintDocument`, `ReceiptPrintDocument` (รวม "ใบเสร็จรับเงิน/ใบกำกับภาษี" เมื่อ `taxInvoiceIds.length === 1`; หลายใบ → ตารางแสดงเลข TI ต่อใบแจ้งหนี้ + รายการเลข TI), `ClaimCertificateDocument`, `PromptPayQr` (`qrcode` → data URL), `PrintPages.tsx`, `InvoiceCustomerView.tsx` (ลงทะเบียน renderer `invoice`; import ใน `(public)/c/[token]/page.tsx`); routes `(print)/print/invoice|receipt|claim/[id]`
+- dependency: `qrcode@1.5.4`, `@types/qrcode@1.5.5` (root package.json + lock)
+- i18n (th+en): `documents.invoice|taxInvoice|receipt|claim`, `billing.print`
+- เบี่ยงจากแผน: D-248 … D-250; ไม่เขียนเทสต์ใหม่; ไม่มี migration
+- WP ถัดไปต้องรู้: `buildInvoicePrintModel` ใช้กับใบแจ้งหนี้ที่ WP อื่นต้องพิมพ์ได้; `PrintCompany.bankAccounts` ของ renderer ลิงก์มาจาก payload
+- ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/features/erp/billing` + routes ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n` ผ่าน; **ยังไม่ได้ทดสอบมือ**: สแกน QR ด้วยแอปธนาคารให้ยอดตรง (ยอด = `GET /invoices/:id/promptpay` amount = ยอดค้างส่วนเงินสด) และยังไม่ได้ลองเปิดหน้าพิมพ์ใน browser

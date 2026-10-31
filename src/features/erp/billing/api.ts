@@ -1,10 +1,10 @@
 import {
     type ArAgingDto, type ArClaimDto, type ArClaimSummaryDto, type CertifyArClaimRequest, type ContractAdvanceDto, type ContractRetentionDto,
     type CreateAdvanceInvoiceRequest, type CreateArClaimRequest, type CreateCreditNoteRequest, type CreateReceiptRequest,
-    type CreateRetentionReleaseInvoiceRequest, type CustomerStatementDto, type InvoiceArClaimRequest, type InvoiceDto,
+    type CreateRetentionReleaseInvoiceRequest, type CustomerStatementDto, type InvoiceArClaimRequest, type InvoiceDto, type InvoicePromptPayDto,
     type IssueInvoiceRequest, type IssueTaxInvoiceRequest, type PatchArClaimRequest, type ReceiptDto, type VoidInvoiceRequest,
     type VoidReceiptRequest, arAgingDtoSchema, arClaimDtoSchema, arClaimListDtoSchema, contractAdvanceDtoSchema, contractRetentionDtoSchema,
-    customerStatementDtoSchema, invoiceDtoSchema, invoiceListDtoSchema, receiptDtoSchema,
+    customerStatementDtoSchema, invoiceDtoSchema, invoiceListDtoSchema, invoicePromptPayDtoSchema, receiptDtoSchema,
 } from '@/shared/contract';
 import { apiClient } from '@/features/cloud/api/client';
 import { apiPath, projectPath, workspacePath } from '../shared/apiPaths';
@@ -31,6 +31,8 @@ export const billingApi = {
         apiClient.request('GET', projectPath(projectId, 'invoices'), { schema: invoiceListDtoSchema }),
     invoice: (invoiceId: string): Promise<InvoiceDto> =>
         apiClient.request('GET', apiPath('invoices', invoiceId), { schema: invoiceDtoSchema }),
+    promptpay: (invoiceId: string): Promise<InvoicePromptPayDto> =>
+        apiClient.request('GET', apiPath('invoices', invoiceId, 'promptpay'), { schema: invoicePromptPayDtoSchema }),
     advanceInvoice: (contractId: string, body: CreateAdvanceInvoiceRequest): Promise<InvoiceDto> =>
         apiClient.request('POST', apiPath('main-contracts', contractId, 'advance-invoice'), { body, schema: invoiceDtoSchema }),
     retentionInvoice: (contractId: string, body: CreateRetentionReleaseInvoiceRequest): Promise<InvoiceDto> =>
