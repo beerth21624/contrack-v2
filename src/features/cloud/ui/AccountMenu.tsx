@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import { App, Avatar, Button, Dropdown, type MenuProps } from 'antd';
 import {
-    AppstoreOutlined, AuditOutlined, CheckOutlined, SafetyCertificateOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, NumberOutlined, ScheduleOutlined, TeamOutlined, ToolOutlined,
+    AppstoreOutlined, AuditOutlined, BankOutlined, CheckOutlined, SafetyCertificateOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, NumberOutlined, ScheduleOutlined, TeamOutlined, ToolOutlined,
 } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
@@ -82,6 +82,7 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
         { key: 'projects', icon: <FolderOpenOutlined />, label: 'โครงการทั้งหมด' },
         { key: 'members', icon: <TeamOutlined />, label: 'สมาชิก' },
         ...(offersModules ? [{ key: 'modules', icon: <AppstoreOutlined />, label: 'โมดูลเสริม' }] : []),
+        ...(hubOn && can(workspace?.role, 'company.read') ? [{ key: 'company', icon: <BankOutlined />, label: tNav('company') }] : []),
         ...(hubOn ? [{ key: 'approvals', icon: <AuditOutlined />, label: tNav('approvals') }] : []),
         ...(hubOn && can(workspace?.role, 'company.manage') ? [{ key: 'approval-policies', icon: <AuditOutlined />, label: tNav('approvalPolicies') }] : []),
         ...(hubOn && can(workspace?.role, 'company.read') ? [{ key: 'numbering', icon: <NumberOutlined />, label: tNav('numbering') }] : []),
@@ -125,6 +126,8 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
             router.push('/workspace/members');
         } else if (key === 'modules') {
             router.push('/workspace/modules');
+        } else if (key === 'company') {
+            router.push('/workspace/company');
         } else if (key === 'approvals') {
             router.push('/approvals');
         } else if (key === 'approval-policies') {

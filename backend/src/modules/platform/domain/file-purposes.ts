@@ -9,4 +9,7 @@ export const FILE_PURPOSE_MODULE: Readonly<Record<FilePurpose, ModuleId>> = {
     portfolio_photo: 'subcontracting',
     contract_scan: 'subcontracting',
     contract_pdf: 'subcontracting',
+    company_logo: 'project-hub',
+    company_stamp: 'project-hub',
+    company_signature: 'project-hub',
 };

@@ -21,6 +21,7 @@
     "approval_policy": "Approval policy",
     "entitlement": "Module entitlement",
     "numbering_series": "Numbering series",
-    "issued_document": "Document number"
+    "issued_document": "Document number",
+    "company_profile": "Company profile"
   }
 }

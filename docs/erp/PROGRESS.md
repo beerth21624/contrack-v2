@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-11 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-12 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -23,7 +23,7 @@
 | WP-09 | หน้าอนุมัติ นโยบาย และ audit (web) | sonnet | done | cfdaad1 | ไม่มี migration; `src/features/erp/approvals/*`, `shared/AuditTimeline.tsx`, routes `/approvals`, `/workspace/approval-policies`, namespace `approvals`+`audit`, `enums.approval*`; D-105…D-107 |
 | WP-10 | การแจ้งเตือน: channel, ภาษาผู้รับ, sweep | opus | done | a984d6f | migration `0010_wp10_notifications`; template ERP 20 ตัว th/en; sweep `platform.trial-expiring`; D-108…D-113 |
 | WP-11 | บริการเลขเอกสาร + guard การลบ | opus | done | 4706b00 | migration `0011_wp11_numbering`; โมดูล `numbering`, port `DocumentNumbering`, `ProjectDeletionGuards`/`WorkspaceDeletionGuards`, หน้า `/workspace/numbering`; D-114…D-120 |
-| WP-12 | โปรไฟล์บริษัท + business profile + project type | sonnet | todo | | |
+| WP-12 | โปรไฟล์บริษัท + business profile + project type | sonnet | done | HASH | migration `0012_wp12_company`; โมดูล `company`, port `CompanyProfiles`, `src/domain/erp/profiles.ts`, หน้า `/workspace/company`; D-121…D-125 |
 | WP-13 | ทะเบียนลูกค้า | sonnet | todo | | |
 | WP-14 | ลิงก์ลูกค้า (public) | opus | todo | | |
 | WP-15 | Project Hub backend | opus | todo | | |
@@ -212,6 +212,11 @@
 | D-118 | 2026-11-01 | (WP-11) guard การลบของ numbering นับ `issued_documents` (issued + voided, ยกเว้น `project`) **ไม่ว่าโมดูล ERP จะ active หรือไม่** — ต่างจากกติกา handler ทั่วไปใน 01 §11 | เอกสารภาษีที่ออกแล้วต้องเก็บไว้ แม้ปิดโมดูลภายหลัง; release 1 ไม่มีแถวจึงไม่เปลี่ยนพฤติกรรม |
 | D-119 | 2026-11-01 | (WP-11) 409 ของการลบ: `details = { reason: <blocker แรก>, blockers: [{reason, count}] }`; `DeleteProjectUseCase`/`DeleteWorkspaceUseCase` รับ guard registry เป็นพารามิเตอร์ตัวสุดท้ายแบบมีค่าเริ่มต้น (`new …Guards()`) เพื่อไม่ต้องแก้ test kit เดิม; ถามหลัง `lockForUpdate` ใน transaction เดียวกับการลบ | |
 | D-120 | 2026-11-01 | (WP-11) GET `/numbering` ใช้ `company.read` (แบบ approval-policies); เมนู nav registry + `AccountMenu` แสดงเมื่อ `project-hub` active และมี `company.read`; void ไม่มี HTTP (ผ่าน port เท่านั้น) | ตาม D-107 |
+| D-121 | 2026-11-01 | (WP-12) ค่าคงที่/zod ของ business profile, project type และ settings อยู่ที่ contract `erp/company.ts` (เจ้าของ); `src/domain/erp/profiles.ts` import จาก contract แล้ว re-export `BUSINESS_PROFILES`/`PROJECT_TYPES` + ค่า `PROJECT_TYPE_DEFAULTS`/`resolveSettings`/`defaultProjectTypeFor` | contract ห้ามพึ่ง domain ส่วน domain พึ่ง contract ได้ (แพตเทิร์นเดิมของ workforce) |
+| D-122 | 2026-11-01 | (WP-12) `MilestoneTemplateItem` เพิ่มช่อง optional `progressAt` (0–1) เป็นเกณฑ์ความคืบหน้าของงวด `progress` (เช่น 0.125) เพราะ 00-vision §4 กำหนดเปอร์เซ็นต์ความคืบหน้าแต่ interface ใน 02 ไม่มีช่องรองรับ; แม่แบบที่ไม่ว่างต้องรวม pct = 1 (±0.0001) ตรวจที่ zod | WP-26+ ที่สร้างงวดจากแม่แบบใช้ `progressAt` เป็นเกณฑ์ |
+| D-123 | 2026-11-01 | (WP-12) `CompanyProfiles.get` คืน `legalNameTh` = ค่าที่บันทึก หรือชื่อ workspace ถ้าว่าง (รวมกรณียังไม่มีแถว); `legalNameEn` คืนตามที่บันทึก (ว่างได้) และ `snapshot(ws,'en')` ใช้ชื่อ/ที่อยู่/สาขา/ท้ายเอกสารภาษาไทยแทนช่องอังกฤษที่ว่าง; `snapshot` เก็บ id รูป (`logoFileId` ฯลฯ) ไม่ใช่ลิงก์เซ็นชื่อ (หมดอายุ) — ตอน render ให้ `FileService.describe` | เอกสารต้องไม่พิมพ์ผู้ขายว่าง; snapshot ถูกเก็บลงเอกสาร |
+| D-124 | 2026-11-01 | (WP-12) PUT `/company` แทนที่ทั้งโปรไฟล์ (ทุกช่องบังคับ); tax id ตรวจ checksum ใน use case → 400 `validation_failed` `details.reason='invalid_tax_id'` (ข้อความ `errors.reasons.invalid_tax_id`); `vat_rate` เก็บตามที่ส่ง แต่ `snapshot` คืน 0 เมื่อไม่จด VAT; รูปที่แนบใหม่ตรวจ `assertUploadedBy`; audit `company_profile`/`set` เก็บรายชื่อช่องที่เปลี่ยน (`data.changed`) ไม่เก็บค่า | ตาม acceptance; ข้อมูลธนาคาร/ภาษีไม่ควรอยู่ใน audit |
+| D-125 | 2026-11-01 | (WP-12) `advancePct` ภาครัฐ "ปรับได้ 0–0.15" ยังไม่ถูกบังคับเพดานในระบบ (ช่องรับ 0–100% เหมือนช่องอื่น); เมนู `company` อยู่กลุ่ม settings (`project-hub`, `company.read`) + ลิงก์ใน `AccountMenu`; หน้า company ไม่รวม onboarding wizard (มีแต่ `BusinessProfileStep` ในหน้า) | เจ้าของยังไม่ส่งกฎเพดาน; ตาม out-of-scope ของ WP |
 
 ### คำถามค้างถึงเจ้าของ
 1. ตาราง Factor F ทางการ (กรมบัญชีกลาง) ฉบับที่ต้องการใช้ (D-12)
@@ -417,3 +422,18 @@
   - guard การลบอื่น: inject `ProjectDeletionGuards`/`WorkspaceDeletionGuards` แล้ว `register(async (ws, projectId) => [{ reason, count }])` ใน `onModuleInit` — ต้องเพิ่มข้อความ `errors.reasons.<reason>` เอง
   - WP-15 (รหัสโครงการ): `docType: 'project'`, `subjectType: 'project'`, `subjectId` = project id — ไม่บล็อกการลบโครงการ/workspace
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend + web) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `cd backend && npx jest src/modules/workspaces src/modules/projects src/shared src/modules/approvals` 1763 ผ่าน; e2e `projects` + `workspaces` + `approvals` 43 ผ่าน; `npx vitest run src/features/erp src/i18n` ผ่าน; spec ชั่วคราว (ลบแล้ว) ยืนยัน: memory — `Promise.all` 20 ครั้งได้ seq 1–20, `tax_invoice` ย้อนวัน → 422 `date_before_last_issued`, guard ของโครงการที่มีแค่ `project` = ว่าง; e2e — GET 17 ชุด + preview `QT2026-0001`, PUT ขณะมีเลขในรอบ → 409 `period_has_documents`, pattern ผิด → 422 `invalid_pattern`, DELETE โครงการที่มีใบเสนอราคา → 409 `document_issued_exists`, โครงการที่มีแค่รหัสลบได้ 204, ลบ workspace → 409; **PostgreSQL จริง** (DB ชั่วคราว `wp11_scratch_test` ลบแล้ว, migration 0000…0011 รันครบ) — 20 ครั้งพร้อมกันได้ 1–20, transaction ที่ throw หลัง issue → ครั้งถัดไปได้ `QT2026-0021` เลขเดิม, date order 422, preview ไม่จอง; `npm run db:generate -- --name wp11_numbering` ได้ `0011` ไม่ถาม interactive; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์
+
+### WP-12 — โปรไฟล์บริษัท + business profile + project type (HASH)
+- สร้าง (contract): `src/shared/contract/erp/company.ts` (`BUSINESS_PROFILES`, `PROJECT_TYPES`, `projectCommercialSettingsSchema`/`ProjectSettingsOverride`/`CompanyDefaults`, `milestoneTemplateSchema`, `bankAccountSchema`, `companyProfileDtoSchema`, `putCompanyProfileRequestSchema`); FILE_PURPOSES `company_logo|company_stamp|company_signature` → `project-hub` (`FILE_PURPOSE_MODULE`)
+- pure: `src/domain/erp/profiles.ts` (`PROJECT_TYPE_DEFAULTS` ครบตาม 00-vision §4 รวม `milestoneTemplate`/`billingMode`, `resolveSettings(type, companyDefaults, projectOverride)` → คืนสำเนา (แก้ผลลัพธ์ได้ไม่กระทบค่าเริ่มต้น), `defaultProjectTypeFor(businessProfiles)`: residential→`residential_new`, government, commercial ตามลำดับ, ว่าง→`residential_new`) + เทสต์สั้น `__tests__/profiles.test.ts`
+- schema: `company_profiles` ใน `schema-erp-core.ts` (+ `erpCoreTables`)
+- port (`ports.ts`): `CompanyProfiles` (`get(ws)`, `snapshot(ws, language)`), types `CompanyProfile`, `CompanySnapshot`; โมดูล `backend/src/modules/company/` (`@Global`, export `CompanyProfiles`; repo port + drizzle/in-memory; `GetCompanyUseCase`/`PutCompanyUseCase`; `CompanyController`), `app.module.ts`, `backend/API.md`
+- web: `src/features/erp/company/{api.ts,hooks.ts,CompanyProfilePage.tsx,BusinessProfileStep.tsx,ProjectDefaultsEditor.tsx}`, route `src/app/(app)/workspace/company/page.tsx` (`ModuleGate project-hub`), nav registry settings (`company`), ลิงก์ใน `AccountMenu`
+- i18n (th+en): namespace `company`, `enums.projectType|businessProfile|billingMode|milestoneTrigger|priceSource|quotationFormat|detailLevel`, `nav.company`, `audit.entities.company_profile`, `errors.reasons.invalid_tax_id`
+- migration: `0012_wp12_company` (ตรงตามคาด) → WP ถัดไปที่แก้ schema ได้ `0013_*`
+- เบี่ยงจากแผน: D-121 … D-125; ไม่เขียนเทสต์ใหม่นอกจากเทสต์สั้นของ `profiles.ts`
+- WP ถัดไปต้องรู้:
+  - ใช้ค่าเริ่มต้นโครงการ: `const c = await companyProfiles.get(ws); resolveSettings(project.type ?? c.defaultProjectType ?? defaultProjectTypeFor(c.businessProfiles), c.defaults, project.settings)` (import จาก `@contrack/domain/erp/profiles`); ฝั่งเว็บ `@/domain/erp/profiles`
+  - เอกสารที่ออกให้เก็บ `await companyProfiles.snapshot(ws, doc.language)` ลง jsonb ของเอกสาร (บริษัทไม่จด VAT → `vatRate` = 0, `vatRegistered=false` ใช้ห้ามออก `tax_invoice`); รูปเป็น id ให้ `FileService.describe` ตอนแสดง
+  - หน้า company เป็นหน้าเดียวที่แก้โปรไฟล์ (PUT ทั้งก้อน); `useCompanyProfile(ws)` / `companyKeys.all(ws)` ใช้ซ้ำในหน้าอื่นได้ (เช่น ปุ่มสร้างโครงการอ่าน `effectiveProjectType`)
+- ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (web + backend) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/domain/erp src/i18n` ผ่าน; `cd backend && npx jest …/upload` 17 ผ่าน; e2e ชั่วคราว (ลบแล้ว, memory): GET ค่าเริ่มต้น (ชื่อ = workspace, type `residential_new`), PUT tax id checksum ผิด → 400 `validation_failed`, PUT ถูก → `effectiveProjectType` `government`, `snapshot('en')` ไม่จด VAT → `vatRate 0`, แม่แบบงวดรวม ≠ 100% → 400; `npm run db:generate -- --name wp12_company` ได้ `0012` ไม่ถาม interactive; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์ / PostgreSQL จริง

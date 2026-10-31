@@ -41,6 +41,7 @@
     "approval_pending": "This document is waiting for approval",
     "date_before_last_issued": "The document date cannot be before the latest number of the same series.",
     "invalid_pattern": "The number pattern is not valid.",
-    "already_voided": "This number is already voided."
+    "already_voided": "This number is already voided.",
+    "invalid_tax_id": "The tax id is not valid. Check the 13 digits again."
   }
 }

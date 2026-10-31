@@ -4,9 +4,9 @@
 // drizzle.config.ts lists this file for migrations.
 import { sql } from 'drizzle-orm';
 import { bigserial, boolean, check, foreignKey, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import type { Role } from '@contrack/contract';
+import type { BankAccount, BusinessProfile, CompanyDefaults, Role } from '@contrack/contract';
 import { workspaces } from './schema';
-import { businessDate, createdAt, money, projectTenantFk, updatedAt } from './schema-helpers';
+import { businessDate, createdAt, money, projectTenantFk, rate, updatedAt } from './schema-helpers';
 
 // ── approvals (WP-08, docs/erp/01-architecture.md §6) ──
 
@@ -145,4 +145,47 @@ export const issuedDocuments = pgTable('issued_documents', {
     check('issued_documents_status_check', sql`${t.status} in ('issued', 'voided')`),
 ]);
 
-export const erpCoreTables = { approvalPolicies, approvalRequests, approvalSteps, auditEvents, docNumberSeries, docNumberCounters, issuedDocuments };
+// ── company profile (WP-12, 02-domain-model.md §1.3) ──
+
+/** One row per workspace (no row = defaults: the legal name is the workspace name). Image columns hold file ids. */
+export const companyProfiles = pgTable('company_profiles', {
+    workspaceId: uuid('workspace_id').primaryKey().references(() => workspaces.id, { onDelete: 'cascade' }),
+    legalNameTh: text('legal_name_th').notNull().default(''),
+    legalNameEn: text('legal_name_en').notNull().default(''),
+    taxId: text('tax_id').notNull().default(''),
+    branchCode: text('branch_code').notNull().default('00000'),
+    branchNameTh: text('branch_name_th').notNull().default(''),
+    branchNameEn: text('branch_name_en').notNull().default(''),
+    addressTh: text('address_th').notNull().default(''),
+    addressEn: text('address_en').notNull().default(''),
+    phone: text('phone').notNull().default(''),
+    email: text('email').notNull().default(''),
+    website: text('website').notNull().default(''),
+    logoFileId: uuid('logo_file_id'),
+    stampFileId: uuid('stamp_file_id'),
+    signatureFileId: uuid('signature_file_id'),
+    vatRegistered: boolean('vat_registered').notNull().default(false),
+    vatRate: rate('vat_rate').notNull().default(0.07),
+    businessProfiles: jsonb('business_profiles').$type<BusinessProfile[]>().notNull().default([]),
+    defaultProjectType: text('default_project_type'),
+    defaultDocLanguage: text('default_doc_language', { enum: ['th', 'en'] }).notNull().default('th'),
+    documentYearStyle: text('document_year_style', { enum: ['ce', 'be'] }).notNull().default('ce'),
+    bankAccounts: jsonb('bank_accounts').$type<BankAccount[]>().notNull().default([]),
+    promptpayId: text('promptpay_id').notNull().default(''),
+    defaults: jsonb('defaults').$type<CompanyDefaults>().notNull().default({}),
+    brandColor: text('brand_color').notNull().default('#F97316'),
+    documentFooterTh: text('document_footer_th').notNull().default(''),
+    documentFooterEn: text('document_footer_en').notNull().default(''),
+    /** Plain uuid: the user may be gone. */
+    updatedBy: uuid('updated_by'),
+    updatedAt: updatedAt(),
+}, t => [
+    check('company_profiles_default_project_type_check',
+        sql`${t.defaultProjectType} is null or ${t.defaultProjectType} in ('residential_new', 'residential_renovation', 'government', 'commercial')`),
+    check('company_profiles_default_doc_language_check', sql`${t.defaultDocLanguage} in ('th', 'en')`),
+    check('company_profiles_document_year_style_check', sql`${t.documentYearStyle} in ('ce', 'be')`),
+]);
+
+export const erpCoreTables = {
+    approvalPolicies, approvalRequests, approvalSteps, auditEvents, docNumberSeries, docNumberCounters, issuedDocuments, companyProfiles,
+};

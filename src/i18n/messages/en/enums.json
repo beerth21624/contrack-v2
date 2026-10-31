@@ -41,5 +41,40 @@
     "wht_certificate": "WHT certificate (50 Tawi)",
     "handover": "Handover",
     "warranty_claim": "Warranty claim"
+  },
+  "projectType": {
+    "residential_new": "New home",
+    "residential_renovation": "Renovation",
+    "government": "Government",
+    "commercial": "Commercial / B2B"
+  },
+  "businessProfile": {
+    "residential": "Residential",
+    "government": "Government",
+    "commercial": "Commercial"
+  },
+  "billingMode": {
+    "milestone": "By milestone",
+    "progress": "By progress (monthly)"
+  },
+  "milestoneTrigger": {
+    "signing": "On signing",
+    "progress": "On progress",
+    "handover": "On handover",
+    "manual": "Manual"
+  },
+  "priceSource": {
+    "market": "Market prices",
+    "government": "Government reference prices"
+  },
+  "quotationFormat": {
+    "lump_sum_by_category": "Lump sum by category",
+    "detailed": "Detailed BOQ (material / labour)",
+    "government": "Government format (Por.4 / Por.5 / Por.6)"
+  },
+  "detailLevel": {
+    "full": "Every line",
+    "per_category": "Per category",
+    "lump_sum": "Lump sum"
   }
 }

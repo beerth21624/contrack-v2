@@ -4,7 +4,10 @@
 import type {
     AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDeletedEvent, ProjectDocDto, ProjectUpdatedEvent, Role,
 } from '@contrack/contract';
-import type { ApprovalDecision, ApprovalStatus, ApprovalSubject, DocType, FileDto, FilePurpose, ModuleId } from '@contrack/contract';
+import type {
+    ApprovalDecision, ApprovalStatus, ApprovalSubject, BankAccount, BusinessProfile, CompanyDefaults, DocLanguage, DocType, FileDto,
+    FilePurpose, ModuleId, ProjectType,
+} from '@contrack/contract';
 import type { DomainError } from '../domain/domain-error';
 import type { ProjectId, RateCardId, UserId, WorkspaceId } from '../domain/ids';
 import type { Result } from '../domain/result';
@@ -464,6 +467,81 @@ export abstract class DocumentNumbering {
     abstract void(input: VoidNumberInput): Promise<Result<void, DomainError>>;
     /** Number the next document dated `issueDate` would get; reserves nothing. */
     abstract preview(workspaceId: WorkspaceId, docType: DocType, issueDate: string): Promise<string>;
+}
+
+/**
+ * A workspace's company profile (stored row, or the defaults while nothing is saved). Images are file ids; the legal Thai
+ * name falls back to the workspace name, the English one stays as saved (empty = not set).
+ */
+export interface CompanyProfile {
+    workspaceId: WorkspaceId;
+    /** Nothing saved yet. */
+    isDefault: boolean;
+    /** `workspaces.name`. */
+    workspaceName: string;
+    legalNameTh: string;
+    legalNameEn: string;
+    taxId: string;
+    branchCode: string;
+    branchNameTh: string;
+    branchNameEn: string;
+    addressTh: string;
+    addressEn: string;
+    phone: string;
+    email: string;
+    website: string;
+    logoFileId: string | null;
+    stampFileId: string | null;
+    signatureFileId: string | null;
+    vatRegistered: boolean;
+    vatRate: number;
+    businessProfiles: BusinessProfile[];
+    defaultProjectType: ProjectType | null;
+    defaultDocLanguage: DocLanguage;
+    documentYearStyle: 'ce' | 'be';
+    bankAccounts: BankAccount[];
+    promptpayId: string;
+    defaults: CompanyDefaults;
+    brandColor: string;
+    documentFooterTh: string;
+    documentFooterEn: string;
+    updatedBy: UserId | null;
+    updatedAt: Date | null;
+}
+
+/**
+ * The seller block copied onto an issued document, in the document's language (names, address, branch, footer
+ * resolved; English falls back to Thai). Images are file ids (describe them with FileService when rendering: links expire).
+ * `vatRate` is 0 when the company is not VAT registered.
+ */
+export interface CompanySnapshot {
+    language: DocLanguage;
+    legalName: string;
+    taxId: string;
+    branchCode: string;
+    branchName: string;
+    address: string;
+    phone: string;
+    email: string;
+    website: string;
+    logoFileId: string | null;
+    stampFileId: string | null;
+    signatureFileId: string | null;
+    vatRegistered: boolean;
+    vatRate: number;
+    bankAccounts: BankAccount[];
+    promptpayId: string;
+    brandColor: string;
+    footer: string;
+    yearStyle: 'ce' | 'be';
+}
+
+/** Provided by company. No module check: the calling module checked its own. */
+export abstract class CompanyProfiles {
+    /** The saved profile, or the defaults (legal Thai name = the workspace name). */
+    abstract get(workspaceId: WorkspaceId): Promise<CompanyProfile>;
+    /** Seller block for a document in `language`. */
+    abstract snapshot(workspaceId: WorkspaceId, language: DocLanguage): Promise<CompanySnapshot>;
 }
 
 /** Why a delete is refused, e.g. `{ reason: 'document_issued_exists', count: 3 }`. */

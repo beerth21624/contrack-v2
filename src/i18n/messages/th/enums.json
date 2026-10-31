@@ -41,5 +41,40 @@
     "wht_certificate": "หนังสือรับรองหัก ณ ที่จ่าย (50 ทวิ)",
     "handover": "ส่งมอบงาน",
     "warranty_claim": "เคลมประกัน"
+  },
+  "projectType": {
+    "residential_new": "บ้านสร้างใหม่",
+    "residential_renovation": "รีโนเวท/ต่อเติม",
+    "government": "งานราชการ",
+    "commercial": "พาณิชย์/B2B"
+  },
+  "businessProfile": {
+    "residential": "บ้านพักอาศัย",
+    "government": "งานราชการ",
+    "commercial": "พาณิชย์/ธุรกิจ"
+  },
+  "billingMode": {
+    "milestone": "ตามงวดงาน",
+    "progress": "ตามความคืบหน้า (รายเดือน)"
+  },
+  "milestoneTrigger": {
+    "signing": "เมื่อเซ็นสัญญา",
+    "progress": "ตามความคืบหน้า",
+    "handover": "เมื่อส่งมอบ",
+    "manual": "กำหนดเอง"
+  },
+  "priceSource": {
+    "market": "ราคาตลาด",
+    "government": "ราคากลางภาครัฐ"
+  },
+  "quotationFormat": {
+    "lump_sum_by_category": "เหมารวมรายหมวด",
+    "detailed": "BOQ แยกวัสดุ/ค่าแรง",
+    "government": "แบบราชการ (ปร.4/ปร.5/ปร.6)"
+  },
+  "detailLevel": {
+    "full": "ทุกรายการ",
+    "per_category": "รายหมวด",
+    "lump_sum": "เหมารวม"
   }
 }

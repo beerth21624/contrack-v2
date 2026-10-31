@@ -202,3 +202,11 @@ member of the workspace (any role) and the module on for the platform **and** th
 Model errors: `ai_unavailable` 503 (no `JEV_API_KEY`, key rejected, unreachable / timeout after one retry, or an answer that
 fails validation), `ai_quota` 402 (no credits), `rate_limited` 429, `unprocessable` 422 (request rejected or too large for the model).
 `NODE_ENV=test` wires a scripted `FakeDecisionAdapter` (`src/modules/ai-assist/testing`), reachable in e2e through `app.get(DecisionPort)`.
+
+## company profile (ERP foundation, gated by `project-hub`; WP-12)
+Schemas: `../src/shared/contract/erp/company.ts`. Port `CompanyProfiles` (`get`, `snapshot(ws, language)`) for other modules.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/workspaces/:workspaceId/company` | → `CompanyProfileDto` (`isDefault` = nothing saved; Thai legal name = workspace name then; images as `FileDto` with signed links) | `company.read` |
+| PUT | `/workspaces/:workspaceId/company` | `PutCompanyProfileRequest` (the whole profile) → `CompanyProfileDto` | `company.manage`; tax id with a wrong check digit → 400 `validation_failed` (`reason: 'invalid_tax_id'`); newly attached images must be uploaded by the caller (purposes `company_logo` / `company_stamp` / `company_signature`); audited `company_profile` / `set` |

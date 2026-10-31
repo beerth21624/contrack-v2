@@ -5,7 +5,8 @@
 import { z } from 'zod';
 import { isoDateTimeSchema, uuidSchema } from './common';
 
-export const FILE_PURPOSES = ['package_attachment', 'bid_photo', 'claim_photo', 'portfolio_photo', 'contract_scan', 'contract_pdf'] as const;
+export const FILE_PURPOSES = ['package_attachment', 'bid_photo', 'claim_photo', 'portfolio_photo', 'contract_scan', 'contract_pdf',
+    'company_logo', 'company_stamp', 'company_signature'] as const;
 export const filePurposeSchema = z.enum(FILE_PURPOSES);
 export type FilePurpose = z.infer<typeof filePurposeSchema>;
 
