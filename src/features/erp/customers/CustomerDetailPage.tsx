@@ -6,6 +6,8 @@ import { App, Button, Result, Skeleton, Tag } from 'antd';
 import { useTranslations } from 'next-intl';
 import { can } from '@/shared/contract';
 import { useErrorMessage } from '@/features/cloud/api/error-message';
+import { useModuleEnabled } from '@/features/modules/modules';
+import { CustomerStatement } from '../billing/CustomerStatement';
 import { AuditTimeline } from '../shared/AuditTimeline';
 import { ConfirmAction } from '../shared/ConfirmAction';
 import { ErpPage } from '../shared/ErpPage';
@@ -21,6 +23,8 @@ export function CustomerDetailPage({ customerId }: { customerId: string }) {
     const q = useCustomer(customerId);
     const ws = useErpWorkspace(q.data?.workspaceId);
     const mayManage = can(ws.role, 'customers.manage');
+    const billing = useModuleEnabled('billing', q.data?.workspaceId);
+    const showStatement = billing.enabled && can(ws.role, 'billing.read');
     const patch = usePatchCustomer(customerId);
     const setArchived = useSetCustomerArchived(customerId);
     const [dirty, setDirty] = useState(false);
@@ -75,6 +79,7 @@ export function CustomerDetailPage({ customerId }: { customerId: string }) {
                     void message.success(t('saved'));
                 }}
             />
+            {showStatement && <CustomerStatement customerId={c.id} />}
             <AuditTimeline workspaceId={c.workspaceId} entityType="customer" entityId={c.id} />
         </ErpPage>
     );

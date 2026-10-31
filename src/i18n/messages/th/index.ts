@@ -22,6 +22,7 @@ import boqControl from './boqControl.json';
 import priceReference from './priceReference.json';
 import quotations from './quotations.json';
 import contracts from './contracts.json';
+import billing from './billing.json';
 
 const messages = {
   common,
@@ -48,6 +49,7 @@ const messages = {
   priceReference,
   quotations,
   contracts,
+  billing,
 };
 
 export default messages;

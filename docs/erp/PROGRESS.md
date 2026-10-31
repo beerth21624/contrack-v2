@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-30 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-31 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -42,7 +42,7 @@
 | WP-28 | Billing domain คำนวณ | opus | done | e60a390 | `src/domain/billing/*` (claim, advance, retention, penalty, escalation, tax-invoice, aging), `src/domain/payments/promptpay.ts`; D-222…D-226 |
 | WP-29 | งวดเบิก + ใบแจ้งหนี้ backend | opus | done | 00979b7 | migration `0022_wp29_billing`; โมดูล `billing` (claims, invoices, retention/advance ledgers), contract `erp/billing.ts`, port `MainContracts.locate` + `completedAt`; D-227…D-235 |
 | WP-30 | รับเงิน ใบกำกับภาษี ลูกหนี้ เตือน PromptPay backend | opus | done | 315cd6f | migration `0023_wp30_receipts`; receipts/TI/CN/aging/statement/PromptPay ในโมดูล `billing`, sweeps `billing.invoice-due`/`billing.retention-release-due`, ลิงก์ลูกค้า `invoice`, port `BillingTotals` + `CustomerLookup.locate`; D-236…D-243 |
-| WP-31 | Billing web | sonnet | todo | | |
+| WP-31 | Billing web | sonnet | done | pending | หน้า `/p/<id>/billing` (งวดเบิก เงินล่วงหน้า เงินประกัน ใบแจ้งหนี้ รับเงิน), `/p/<id>/billing/claims/<id>`, `/receivables`, statement ในหน้าลูกค้า; i18n `billing` + enums; D-244…D-247 |
 | WP-32 | Billing เอกสารพิมพ์ + QR | sonnet | todo | | |
 | WP-33 | VO backend | opus | todo | | |
 | WP-34 | VO web + ราคาด้วยเครื่องคำนวณ (sandbox) | opus | todo | | |
@@ -340,6 +340,10 @@
 | D-241 | 2026-11-01 | (WP-30) port `CustomerLookup.locate(customerId)` → workspace (route `/customers/:id/statement` มีแค่ id); statement: debit = payable + whtExpected ของใบที่ไม่ใช่ draft/voided, credit = Σ settled ของใบเสร็จที่ไม่ void, ยอดยกมา = ก่อน `from` | ตามแพตเทิร์น `MainContracts.locate` (D-234) |
 | D-242 | 2026-11-01 | (WP-30) sweep `billing.invoice-due`: `invoice.due_soon` ตั้งแต่ 3 วันก่อนครบกำหนด ครั้งเดียวต่อใบ (mark date = due date), `invoice.overdue` วันที่ 1/7/30 หลังครบกำหนด (key ต่อวัน); sweep `billing.retention-release-due`: ครั้งเดียวต่อ stage ที่ถึงกำหนด (mark date = dueAt); ผู้รับ = สมาชิกที่มี `billing.read`; `href` = `/p/<projectId>/billing` (route ของ WP-31) หรือ `/receivables` | 02 §4.5 |
 | D-243 | 2026-11-01 | (WP-30) `BillingModule` เป็น `@Global` export `BillingTotals` (`RepositoryBillingTotals`); rollup `receivedToDate` = Σ `paid_amount` ของใบ kind invoice/advance_invoice ที่ออกแล้ว (รวมใบคืนเงินประกัน), `overdueReceivable` = Σ ยอดค้างของใบที่เลยกำหนด (ก่อนวันนี้); PromptPay ยอด = ยอดค้าง × payable/due (ส่วนเงินสด ไม่รวม WHT ที่ลูกค้าหัก); ลิงก์ลูกค้า `invoice` แสดงเฉพาะใบ issued/partially_paid/paid ที่มีโครงการ | WP-55 ต้อง inject port ข้ามโมดูล |
+| D-244 | 2026-11-01 | (WP-31) ไม่เขียน component ตาม scope ทุกไฟล์แบบตรงชื่อ: การ์ดรวมในไฟล์เดียวกับหน้า (`NewClaimDialog`/`ClaimsSection` ใน `BillingPage.tsx`, `CertifyDialog`/`InvoiceDialog` ใน `ClaimEditorPage.tsx`), `DeductionsPanel` รวมสรุปยอดที่เซิร์ฟเวอร์คำนวณ, เพิ่ม `ReasonDialog.tsx`, `status.ts` | ส่งของก่อน; พฤติกรรมครบตาม acceptance |
+| D-245 | 2026-11-01 | (WP-31) บันทึกรับเงินทำต่อใบแจ้งหนี้ครั้งละใบ (ReceiveDialog) จากหน้า billing และหน้า receivables; ค่าเริ่มต้น wht = ยอดค้าง × whtExpected/(payable+whtExpected); หลังบันทึกแสดงเลข RC/TI และปุ่มยกเลิกใบเสร็จ (ถ้า `canVoid`) เพราะไม่มี endpoint list ใบเสร็จ | ตาม handoff WP-30 |
+| D-246 | 2026-11-01 | (WP-31) งวดเบิกแบบ milestone: ตารางบรรทัดดูอย่างเดียว (D-228: ไม่กระทบ W); แก้ cum % ได้เฉพาะ mode progress; ยอดสรุปคำนวณใหม่โดยเซิร์ฟเวอร์เมื่อกดบันทึก (ไม่คำนวณฝั่งเว็บ) และหน้าแก้ remount ด้วย `updatedAt` | อย่าเชื่อยอดจาก client |
+| D-247 | 2026-11-01 | (WP-31) ลิงก์ "ไปหาใบ" จาก aging = `/p/<projectId>/billing` (ยังไม่มีหน้ารายใบ/พิมพ์ — WP-32); statement แสดงในหน้า `/customers/<id>` เมื่อเปิดโมดูล billing และมี `billing.read`; เมนู `receivables` อยู่กลุ่ม sales (สิทธิ์ `billing.read`) | ตาม scope |
 
 ## Handoff notes
 
@@ -794,3 +798,10 @@
   - WP-55 (closeout): inject `BillingTotals` (`totalsByProject(ws, projectId)`)
   - ใบลดหนี้ไม่ลดยอดลูกหนี้ของใบแจ้งหนี้ (D-240) — ถ้าต้องหักกลบ/คืนเงินให้เพิ่มทีหลัง
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/modules/billing` + ไฟล์ backend ที่แก้ + `src/shared/contract/erp/billing.ts`, `files.ts` ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `cd backend && npx jest src/modules/platform src/modules/customers src/modules/billing src/shared` 237 ผ่าน; `npx vitest run src/shared/contract` 613 ผ่าน; smoke e2e ชั่วคราว (memory, FixedClock 2026-03-01, ลบแล้ว): ลูกค้า juristic ไม่มีเลขภาษี → 422 `customer_tax_id_required`; รับเกิน → 422 `overpayment`; รับ 2 ครั้ง (50,000+1,500 / 54,000+1,500) → TI2026-0001 48,130.84 + 3,369.16, TI2026-0002 51,869.16 + 3,630.84 รวม 107,000 = ใบแจ้งหนี้, ใบ `paid`; รับซ้ำใบ paid → 409; aging current 107,000; PromptPay amount 104,000; CN 1,000 → VAT 70; void ใบเสร็จที่ TI มี CN → 409, void อีกใบ → ใบกลับ partially_paid 51,500 + events กลับรายการ; statement closing ถูก; TI ล่วงหน้า → 201 แล้วซ้ำ → 409; บริษัทไม่จด VAT: TI endpoint → 422 `not_vat_registered`, รับเงินไม่มี TI, `issueTaxInvoice:true` → 422; `DailySweepsRunner.runOnce()` สองครั้ง → `invoice.overdue` (วันที่ 1) 1 ครั้ง + `invoice.due_soon` 1 ครั้ง; ยังไม่ได้ทดสอบบน PostgreSQL จริง / flow เงินล่วงหน้า+งวด paid ผ่าน HTTP
+
+### WP-31 — Billing web (pending)
+- สร้าง `src/features/erp/billing/`: `api.ts`, `hooks.ts` (`billingKeys` ขึ้นต้น `['billing', …]`; ทุก mutation invalidate `['billing']` + สัญญา + hub + approvals), `status.ts`, `BillingPage`, `AdvanceCard`, `RetentionCard`, `InvoicesTable`, `ReceiveDialog`, `ReasonDialog`, `ClaimEditorPage`, `ClaimLinesTable` (กรองหมวด, การ์ดบนมือถือ), `DeductionsPanel`, `ReceivablesPage`, `AgingTable`, `CustomerStatement`; routes `(app)/p/[projectId]/billing`, `…/billing/claims/[claimId]`, `(app)/receivables`; nav: แท็บ `billing` + เมนู `receivables` (sales); `CustomerDetailPage` แสดง statement
+- i18n (th+en): namespace `billing`, `enums.claimStatus|invoiceKind|invoiceStatus|paymentMethod|agingBucket`, `nav.receivables`, `nav.tabs.billing`
+- เบี่ยงจากแผน: D-244 … D-247; ไม่เขียนเทสต์ใหม่ (คำสั่งเจ้าของ: ส่งของก่อน); ไม่มี migration
+- WP-32 ต้องรู้: ยังไม่มีปุ่มพิมพ์/QR ใน `InvoicesTable` (เพิ่มคอลัมน์ action ลิงก์ `/print/invoice/<id>`, `/print/receipt/<id>`, `/print/claim/<id>`); ใบเสร็จไม่มีหน้ารายการ (ดูได้เฉพาะตอนบันทึก); ฟอร์มวันที่ใช้ `<Input type="date">` เว้นว่าง = ค่าเริ่มต้นฝั่งเซิร์ฟเวอร์
+- ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/features/erp/billing`, routes, `CustomerDetailPage`, `nav-registry` ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n` ผ่าน; ยังไม่ได้ลองกดใน browser

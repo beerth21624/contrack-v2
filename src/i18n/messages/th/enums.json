@@ -161,5 +161,40 @@
   "penaltyBase": {
     "contract_value": "มูลค่าสัญญา",
     "remaining_work": "มูลค่างานที่เหลือ"
+  },
+  "claimStatus": {
+    "draft": "ฉบับร่าง",
+    "pending_approval": "รออนุมัติ",
+    "submitted": "ส่งแล้ว รอตรวจรับ",
+    "certified": "ตรวจรับแล้ว",
+    "invoiced": "ออกใบแจ้งหนี้แล้ว",
+    "cancelled": "ยกเลิก"
+  },
+  "invoiceKind": {
+    "advance_invoice": "ใบแจ้งหนี้เงินล่วงหน้า",
+    "invoice": "ใบแจ้งหนี้",
+    "tax_invoice": "ใบกำกับภาษี",
+    "credit_note": "ใบลดหนี้"
+  },
+  "invoiceStatus": {
+    "draft": "ฉบับร่าง",
+    "issued": "ออกแล้ว",
+    "partially_paid": "รับบางส่วน",
+    "paid": "รับครบแล้ว",
+    "voided": "ยกเลิก"
+  },
+  "paymentMethod": {
+    "transfer": "โอนเงิน",
+    "cash": "เงินสด",
+    "cheque": "เช็ค",
+    "promptpay": "พร้อมเพย์",
+    "other": "อื่น ๆ"
+  },
+  "agingBucket": {
+    "current": "ยังไม่ครบกำหนด",
+    "1_30": "เกิน 1-30 วัน",
+    "31_60": "เกิน 31-60 วัน",
+    "61_90": "เกิน 61-90 วัน",
+    "over_90": "เกิน 90 วัน"
   }
 }

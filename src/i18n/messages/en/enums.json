@@ -161,5 +161,40 @@
   "penaltyBase": {
     "contract_value": "Contract value",
     "remaining_work": "Value of the remaining work"
+  },
+  "claimStatus": {
+    "draft": "Draft",
+    "pending_approval": "Pending approval",
+    "submitted": "Submitted",
+    "certified": "Certified",
+    "invoiced": "Invoiced",
+    "cancelled": "Cancelled"
+  },
+  "invoiceKind": {
+    "advance_invoice": "Advance invoice",
+    "invoice": "Invoice",
+    "tax_invoice": "Tax invoice",
+    "credit_note": "Credit note"
+  },
+  "invoiceStatus": {
+    "draft": "Draft",
+    "issued": "Issued",
+    "partially_paid": "Partially paid",
+    "paid": "Paid",
+    "voided": "Voided"
+  },
+  "paymentMethod": {
+    "transfer": "Bank transfer",
+    "cash": "Cash",
+    "cheque": "Cheque",
+    "promptpay": "PromptPay",
+    "other": "Other"
+  },
+  "agingBucket": {
+    "current": "Not yet due",
+    "1_30": "1-30 days overdue",
+    "31_60": "31-60 days overdue",
+    "61_90": "61-90 days overdue",
+    "over_90": "Over 90 days overdue"
   }
 }

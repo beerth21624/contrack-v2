@@ -26,6 +26,8 @@
     "boq": "BOQ",
     "versions": "BOQ history",
     "quotations": "Quotations",
-    "contract": "Contract"
-  }
+    "contract": "Contract",
+    "billing": "Billing"
+  },
+  "receivables": "Receivables"
 }

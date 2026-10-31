@@ -26,6 +26,8 @@
     "boq": "BOQ",
     "versions": "ประวัติ BOQ",
     "quotations": "ใบเสนอราคา",
-    "contract": "สัญญา"
-  }
+    "contract": "สัญญา",
+    "billing": "วางบิล"
+  },
+  "receivables": "ลูกหนี้"
 }
