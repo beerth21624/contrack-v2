@@ -6,6 +6,8 @@
   "cashflow": "แผนการเงิน",
   "subcontracting": "จ้างช่วง",
   "entitlements": "สิทธิ์ใช้งานโมดูล",
+  "approvals": "กล่องอนุมัติ",
+  "approvalPolicies": "นโยบายการอนุมัติ",
   "groups": {
     "sales": "การขาย",
     "purchasing": "จัดซื้อ",

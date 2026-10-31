@@ -6,6 +6,8 @@
   "cashflow": "Cash Flow",
   "subcontracting": "Subcontracting",
   "entitlements": "Module entitlements",
+  "approvals": "Approvals",
+  "approvalPolicies": "Approval policies",
   "groups": {
     "sales": "Sales",
     "purchasing": "Purchasing",

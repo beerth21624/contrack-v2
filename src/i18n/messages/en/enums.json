@@ -1,1 +1,26 @@
-{}
+{
+  "approvalStatus": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "cancelled": "Cancelled"
+  },
+  "approvalAutoReason": {
+    "policy_off": "Auto-approved: policy is off",
+    "below_threshold": "Auto-approved: below the threshold",
+    "self_approve": "Auto-approved: self-approval allowed",
+    "solo": "Auto-approved: working alone",
+    "no_approver": "Auto-approved: no approver"
+  },
+  "approvalSubject": {
+    "quotation.issue": "Issue quotation",
+    "claim.submit": "Submit progress claim",
+    "variation.submit": "Submit variation order",
+    "purchase_request.approve": "Purchase request",
+    "purchase_order.issue": "Issue purchase order",
+    "supplier_bill.approve": "Supplier bill",
+    "payment_run.approve": "Payment run",
+    "timesheet.approve": "Timesheet",
+    "pay_period.approve": "Pay period"
+  }
+}

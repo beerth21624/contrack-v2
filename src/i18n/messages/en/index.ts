@@ -11,6 +11,8 @@ import modules from './modules.json';
 import roles from './roles.json';
 import erp from './erp.json';
 import admin from './admin.json';
+import approvals from './approvals.json';
+import audit from './audit.json';
 
 const messages = {
   common,
@@ -26,6 +28,8 @@ const messages = {
   roles,
   erp,
   admin,
+  approvals,
+  audit,
 };
 
 export default messages;

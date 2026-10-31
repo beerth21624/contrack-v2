@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import { App, Avatar, Button, Dropdown, type MenuProps } from 'antd';
 import {
-    AppstoreOutlined, CheckOutlined, SafetyCertificateOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, ScheduleOutlined, TeamOutlined, ToolOutlined,
+    AppstoreOutlined, AuditOutlined, CheckOutlined, SafetyCertificateOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, ScheduleOutlined, TeamOutlined, ToolOutlined,
 } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
@@ -16,7 +16,7 @@ import { initials, useSession } from '../auth/session';
 import { signOut } from '../auth/actions';
 import { useCurrentWorkspace } from '../query/hooks';
 import { ROLE_LABEL, can } from '../permissions';
-import { usePlatformModules } from '@/features/modules/modules';
+import { useModuleEnabled, usePlatformModules } from '@/features/modules/modules';
 import { usePlatformAdminStatus } from '@/features/erp/admin/hooks';
 
 /** The language switch stays hidden until the old screens are translated (docs/erp/PROGRESS.md D-16). */
@@ -35,6 +35,9 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
     const tCommon = useTranslations('common');
     const tAccount = useTranslations('account');
     const tAdmin = useTranslations('admin');
+    const tNav = useTranslations('nav');
+    // Approvals (project-hub): inbox for everybody, policies for those who manage the company.
+    const hubOn = useModuleEnabled('project-hub', workspace?.id).enabled;
     // Platform admins (PLATFORM_ADMIN_EMAILS) get the entitlements page; nobody else sees the entry.
     const platformAdmin = usePlatformAdminStatus().admin;
     const { locale, setLocale } = useAppLocale();
@@ -79,6 +82,8 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
         { key: 'projects', icon: <FolderOpenOutlined />, label: 'โครงการทั้งหมด' },
         { key: 'members', icon: <TeamOutlined />, label: 'สมาชิก' },
         ...(offersModules ? [{ key: 'modules', icon: <AppstoreOutlined />, label: 'โมดูลเสริม' }] : []),
+        ...(hubOn ? [{ key: 'approvals', icon: <AuditOutlined />, label: tNav('approvals') }] : []),
+        ...(hubOn && can(workspace?.role, 'company.manage') ? [{ key: 'approval-policies', icon: <AuditOutlined />, label: tNav('approvalPolicies') }] : []),
         ...(platformAdmin ? [{ key: 'admin-entitlements', icon: <SafetyCertificateOutlined />, label: tAdmin('menuLink') }] : []),
         // Business module: the entry exists only while the platform offers it.
         ...(workforceOn ? [
@@ -119,6 +124,10 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
             router.push('/workspace/members');
         } else if (key === 'modules') {
             router.push('/workspace/modules');
+        } else if (key === 'approvals') {
+            router.push('/approvals');
+        } else if (key === 'approval-policies') {
+            router.push('/workspace/approval-policies');
         } else if (key === 'admin-entitlements') {
             router.push('/admin/entitlements');
         } else if (key === 'crews') {

@@ -1,0 +1,22 @@
+{
+  "title": "History",
+  "empty": "No history yet",
+  "loadFailed": "Could not load the history",
+  "retry": "Try again",
+  "loadOlder": "Show older",
+  "system": "System",
+  "arrow": "→",
+  "actions": {
+    "requested": "Approval requested",
+    "auto_approved": "Approved automatically",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "cancelled": "Request cancelled",
+    "set": "Changed"
+  },
+  "entities": {
+    "approval_request": "Approval request",
+    "approval_policy": "Approval policy",
+    "entitlement": "Module entitlement"
+  }
+}

@@ -20,7 +20,7 @@
 | WP-06 | ERP web foundation: UI kit, nav registry, กรอบพิมพ์ | opus | done | 0e7571f | ไม่มี migration; UI kit `src/features/erp/shared/` + README, `nav-registry.ts` (ว่าง), `(print)` layout + `PrintFrame`; namespace `erp`, `documents.common.*`; POST `/files` รับ `workspaceId` (D-82…D-87) |
 | WP-07 | Platform admin: ให้สิทธิ์โมดูล (backend + web) | sonnet | done | 45ee602 | ไม่มี migration; `PlatformAdminAccess`, `/platform/admin/{status,workspaces,…/entitlements/:module}`, `WorkspaceDirectory.search`; หน้า `/admin/entitlements` + namespace `admin`; D-89…D-93 |
 | WP-08 | Workflow อนุมัติ + audit log (backend) | opus | done | 765869e | migration `0009_wp08_approvals_audit`; โมดูล `approvals` + `audit`, `schema-erp-core.ts`, ports `Approvals`/`ApprovalHandlers`/`AuditLog`, `WorkspaceDirectory.members`; audit ของ `SetEntitlementUseCase`; D-94…D-103 |
-| WP-09 | หน้าอนุมัติ นโยบาย และ audit (web) | sonnet | todo | | |
+| WP-09 | หน้าอนุมัติ นโยบาย และ audit (web) | sonnet | done | HASH | ไม่มี migration; `src/features/erp/approvals/*`, `shared/AuditTimeline.tsx`, routes `/approvals`, `/workspace/approval-policies`, namespace `approvals`+`audit`, `enums.approval*`; D-105…D-107 |
 | WP-10 | การแจ้งเตือน: channel, ภาษาผู้รับ, sweep | opus | todo | | |
 | WP-11 | บริการเลขเอกสาร + guard การลบ | opus | todo | | |
 | WP-12 | โปรไฟล์บริษัท + business profile + project type | sonnet | todo | | |
@@ -196,6 +196,9 @@
 | D-102 | 2026-10-31 | (WP-08) schema เพิ่มจาก 02 §1.4: `approval_requests.created_at`, unique `approval_requests_id_workspace_key (id, workspace_id)` เพื่อให้ `approval_steps` มี FK `(request_id, workspace_id)` → `approval_requests` (`approval_steps_request_fk`, cascade) แบบ tenant-safe, index `approval_requests_subject_idx (workspace_id, subject, subject_id)` สำหรับ `statusOf`/`latestOf`; `approval_requests.project_id` ใช้ `projectTenantFk` (ลบโครงการ → ลบ request ด้วย) ส่วน `audit_events.project_id` ไม่มี FK | §14 ข้อ 1–2 |
 | D-103 | 2026-10-31 | (WP-08) "cancel" มีแค่ทาง port (`Approvals.cancel`, `CancelApprovalUseCase`) ไม่มี endpoint — โมดูลเจ้าของเอกสารเรียกเมื่อถอนเอกสาร; pending → `cancelled`, step → `skipped`; ไม่มี pending = ไม่ทำอะไร | รายการ endpoint ใน WP-08 ไม่มี cancel; ผู้ขอถอนเอกสารผ่านหน้าจอของโมดูลนั้น |
 | D-104 | 2026-11-01 | (WP-08 review) cursor ที่เกินช่วงที่ PostgreSQL อ่านได้ → 400 `validation_failed` (ไม่ใช่ 500): audit `before` > 9223372036854775807 (contract ยอม 19 หลัก), approvals `before` ที่ปีไม่อยู่ใน 1–9999 (`toISOString()` ได้ `+275760-…`) | cursor มาจาก query string ผู้ใช้แก้ได้ |
+| D-105 | 2026-11-01 | (WP-09) หน้า inbox มีแท็บ "รอฉัน" (`mine=true`) กับ "ทั้งหมด" (กรองสถานะได้) + ปุ่มโหลดเพิ่มด้วย `nextBefore`; ข้อความ solo แสดงเป็น Alert บนหน้าเสมอเมื่อ `isSolo`; ปุ่มอนุมัติ/ปฏิเสธขึ้นเมื่อ `status=pending && canDecide` | ตาม D-99 |
+| D-106 | 2026-11-01 | (WP-09) `AuditTimeline` อยู่ใน `shared/` แต่ import hook `useAuditEvents` จาก `approvals/hooks.ts` (api ของ audit รวมอยู่ใน `approvals/api.ts`); label ของ action/entity มาจาก `audit.actions.*` / `audit.entities.*` ถ้าไม่มีคีย์ → แสดงค่าดิบ (WP ใหม่เพิ่มคีย์เมื่อมี action ใหม่); รายการ data แสดง `field: ก่อน → หลัง` | ไม่มี namespace แยกต่อโมดูลสำหรับ audit |
+| D-107 | 2026-11-01 | (WP-09) เมนู: nav registry กลุ่ม settings เพิ่ม `approvals` (module `project-hub`) และ `approval-policies` (+ `company.manage`); `AccountMenu` เพิ่มลิงก์เดียวกัน (เฉพาะ `project-hub` active ของ workspace ที่เลือก); `ApprovalBadge` + `usePendingApprovalCount` สร้างไว้ให้ WP-16 ใช้ (ยังไม่ต่อเข้า AppLayoutUI) | ตามขอบเขต WP |
 
 ### คำถามค้างถึงเจ้าของ
 1. ตาราง Factor F ทางการ (กรมบัญชีกลาง) ฉบับที่ต้องการใช้ (D-12)
@@ -352,3 +355,14 @@
   - WP-10: เพิ่มแจ้งเตือน `approval.requested` (ผู้รับ = `autoSkip(...).notify` ตอนนี้ไม่ถูกคืนออกจาก port — ต้องคิดผู้รับใหม่จาก `WorkspaceDirectory.members` + `approverRoles` ของ request หรือขยาย `ApprovalTicket`) และ `approval.decided` (ถึง `requestedBy`) หลัง commit; ดู `TODO(WP-10)`
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend + contract) ผ่าน; `cd backend && npx jest src/modules/platform src/shared src/modules/approvals src/modules/audit src/modules/workspaces/infrastructure` 234 ผ่าน; `npx jest --config test/jest-e2e.config.js test/e2e/approvals.e2e-spec.ts test/e2e/workspaces.e2e-spec.ts test/e2e/rate-cards.e2e-spec.ts test/e2e/workforce.e2e-spec.ts` 88 ผ่าน; `npx vitest run src/shared/contract` 613 ผ่าน; integration บน PostgreSQL ในเครื่อง (สร้าง DB ชั่วคราว `wp08_scratch_test` แล้วลบทิ้ง): `approvals.int-spec.ts` 4 ผ่าน (migration 0000…0009 รันครบ) และ `app-postgres.int-spec.ts` 2 ผ่าน; `npm run db:generate -- --name wp08_approvals_audit` ได้ `0009` ไม่ถาม interactive
 - review (fix(erp): WP-08 review fixes): ตรวจ diff ทั้งหมด (schema/migration 0009 + snapshot chain, ports, auto-skip, state machine, decide/rollback, list/visibility, policies, audit, entitlement audit, wiring) ตรงเกณฑ์รับงาน; แก้ cursor ที่ทำให้ 500 (D-104) ใน `list-audit-events.use-case.ts`, `list-approvals.use-case.ts` + 2 assertion ใน `approvals.e2e-spec.ts` — ตรวจ: tsc backend/web ผ่าน, eslint ไฟล์ที่แก้ผ่าน, `npx jest src/modules/approvals src/modules/audit …/platform-admin.use-cases.spec.ts` 22 ผ่าน, e2e approvals 3 ผ่าน
+
+### WP-09 — หน้าอนุมัติ นโยบาย และ audit (web) (HASH)
+- สร้าง: `src/features/erp/approvals/{api.ts,hooks.ts,ApprovalsInboxPage.tsx,ApprovalPoliciesPage.tsx,ApprovalBadge.tsx}`, `src/features/erp/shared/AuditTimeline.tsx`, routes `src/app/(app)/approvals/page.tsx` และ `src/app/(app)/workspace/approval-policies/page.tsx` (ครอบ `ModuleGate module="project-hub"`)
+- i18n (th+en): namespace ใหม่ `approvals`, `audit`; `enums.approvalStatus|approvalSubject|approvalAutoReason`; `nav.approvals|approvalPolicies`; `errors.reasons.approval_pending`
+- nav: `nav-registry.ts` กลุ่ม settings + ลิงก์ใน `AccountMenu.tsx`
+- migration: ไม่มี
+- WP ถัดไปต้องรู้:
+  - ใช้ `<AuditTimeline entityType="quotation" entityId={id} />` ในหน้าเอกสาร (ซ่อนเองเมื่อไม่มี `audit.read`); เพิ่มข้อความ action/entity ใหม่ใน `audit.actions.*` / `audit.entities.*` (th+en)
+  - WP-16: ครอบเมนูด้วย `<ApprovalBadge>` (นับ pending ที่ผู้เรียกตัดสินได้, โพลทุก 60 วินาที) และ `useMutation` ที่เกี่ยวข้องกับอนุมัติให้ invalidate `approvalKeys.all(workspaceId)`
+  - เอกสารที่ส่งอนุมัติแล้ว subject ใหม่ต้องมีป้ายใน `enums.approvalSubject` อยู่แล้วครบ 9 ตัว
+- ตรวจแล้ว: tsc web ผ่าน, eslint ไฟล์ที่แก้ผ่าน, `node scripts/i18n/check-parity.mjs` ผ่าน, `npx vitest run src/features/erp src/i18n` ผ่าน; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์

@@ -1,1 +1,26 @@
-{}
+{
+  "approvalStatus": {
+    "pending": "รออนุมัติ",
+    "approved": "อนุมัติแล้ว",
+    "rejected": "ปฏิเสธ",
+    "cancelled": "ยกเลิก"
+  },
+  "approvalAutoReason": {
+    "policy_off": "อนุมัติอัตโนมัติ: ไม่ได้เปิดนโยบาย",
+    "below_threshold": "อนุมัติอัตโนมัติ: ยอดต่ำกว่าเกณฑ์",
+    "self_approve": "อนุมัติอัตโนมัติ: อนุมัติเองได้",
+    "solo": "อนุมัติอัตโนมัติ: ทำงานคนเดียว",
+    "no_approver": "อนุมัติอัตโนมัติ: ไม่มีผู้อนุมัติ"
+  },
+  "approvalSubject": {
+    "quotation.issue": "ออกใบเสนอราคา",
+    "claim.submit": "ส่งใบเบิกงวด",
+    "variation.submit": "ส่งงานเพิ่ม-ลด (VO)",
+    "purchase_request.approve": "ใบขอซื้อ (PR)",
+    "purchase_order.issue": "ออกใบสั่งซื้อ (PO)",
+    "supplier_bill.approve": "บิลผู้ขาย",
+    "payment_run.approve": "รอบจ่ายเงิน",
+    "timesheet.approve": "ใบลงเวลา",
+    "pay_period.approve": "งวดค่าแรง"
+  }
+}

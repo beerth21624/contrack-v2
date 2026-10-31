@@ -1,0 +1,56 @@
+{
+  "inbox": {
+    "title": "Approvals",
+    "subtitle": "Documents waiting for approval and the approval history of this workspace",
+    "solo": "You work alone, so approvals are granted automatically",
+    "tabs": {
+      "mine": "Waiting for me",
+      "all": "All"
+    },
+    "emptyMine": "Nothing is waiting for your approval",
+    "emptyAll": "No approval requests yet",
+    "history": "Approval history"
+  },
+  "columns": {
+    "request": "Item",
+    "amount": "Amount",
+    "requestedBy": "Requested by",
+    "status": "Status",
+    "decision": "Decision"
+  },
+  "actions": {
+    "approve": "Approve",
+    "reject": "Reject"
+  },
+  "dialog": {
+    "approveTitle": "Approve this item",
+    "rejectTitle": "Reject this item",
+    "note": "Note",
+    "notePlaceholder": "Add a reason or note (optional)"
+  },
+  "messages": {
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "policySaved": "Policy saved"
+  },
+  "waitingFor": "Waiting for {roles}",
+  "filterAll": "All statuses",
+  "loadMore": "Load more",
+  "retry": "Try again",
+  "loadFailed": "Could not load the data",
+  "policies": {
+    "title": "Approval policies",
+    "subtitle": "Choose which documents need approval, from which amount, and which roles may approve",
+    "readOnly": "You can view the policies only; people who manage the company can change them",
+    "isDefault": "Default",
+    "enabled": "Approval required",
+    "selfApprove": "Approvers may approve their own requests",
+    "minAmount": "Approval needed from amount (THB)",
+    "minAmountPlaceholder": "Every amount",
+    "minAmountHint": "Amounts below this need no approval. Leave empty to require approval for every amount.",
+    "approverRoles": "Roles that may approve (the owner always can)",
+    "save": "Save",
+    "updatedAt": "Last changed",
+    "history": "Policy change history"
+  }
+}

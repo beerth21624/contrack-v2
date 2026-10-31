@@ -1,0 +1,22 @@
+{
+  "title": "ประวัติการเปลี่ยนแปลง",
+  "empty": "ยังไม่มีประวัติ",
+  "loadFailed": "โหลดประวัติไม่สำเร็จ",
+  "retry": "ลองอีกครั้ง",
+  "loadOlder": "ดูรายการเก่ากว่า",
+  "system": "ระบบ",
+  "arrow": "→",
+  "actions": {
+    "requested": "ขออนุมัติ",
+    "auto_approved": "อนุมัติอัตโนมัติ",
+    "approved": "อนุมัติ",
+    "rejected": "ปฏิเสธ",
+    "cancelled": "ยกเลิกคำขอ",
+    "set": "ตั้งค่า"
+  },
+  "entities": {
+    "approval_request": "คำขออนุมัติ",
+    "approval_policy": "นโยบายอนุมัติ",
+    "entitlement": "สิทธิ์ใช้โมดูล"
+  }
+}
