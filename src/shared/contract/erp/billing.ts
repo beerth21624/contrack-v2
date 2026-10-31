@@ -2,10 +2,11 @@
 // A claim (`ar_claims`) of a signed main contract: `draft → (pending_approval →) submitted → certified → invoiced`,
 // `draft | pending_approval | submitted | certified → cancelled`; one open (draft / pending_approval / submitted) per
 // contract. Every amount is computed by the server (src/domain/billing/claim.ts); amounts exclude VAT unless named so.
-// Receipts, tax invoices and credit notes come with WP-30.
+// Receipts, tax invoices and credit notes: WP-30 (below).
 import { z } from 'zod';
 import { isoDateTimeSchema, uuidSchema } from '../common';
 import { amountSchema, businessDateSchema, docLanguageSchema, rateSchema } from './common';
+import { bankAccountSchema } from './company';
 import { mainContractBillingModeSchema } from './main-contracts';
 import { quotationCompanySnapshotSchema, quotationCustomerSnapshotSchema } from './quotations';
 
@@ -294,3 +295,203 @@ export type IssueInvoiceRequest = z.infer<typeof issueInvoiceRequestSchema>;
 /** POST /invoices/:invoiceId/void — not paid in any part (409 `invoice_has_receipts`). */
 export const voidInvoiceRequestSchema = z.object({ reason: z.string().trim().min(1).max(500) }).strict();
 export type VoidInvoiceRequest = z.infer<typeof voidInvoiceRequestSchema>;
+
+// ── Receipts, tax invoices, credit notes, receivables (WP-30, docs/erp/02-domain-model.md §4.2, §4.3, §4.5) ──
+// A receipt (`ar_receipts`, number `RC`) settles one or more invoices of one customer: per invoice cash + the WHT the
+// customer withheld. A tax invoice (`kind='tax_invoice'`, `source='receipt'`, number `TI`) is issued per invoice for the
+// share settled when the company is VAT registered (or ahead of payment for what is left). A credit note
+// (`kind='credit_note'`, number `CN`) reduces a tax invoice. Permission to record any of them: `billing.receive`.
+
+export const RECEIPT_METHODS = ['transfer', 'cash', 'cheque', 'promptpay', 'other'] as const;
+export const receiptMethodSchema = z.enum(RECEIPT_METHODS);
+export type ReceiptMethod = z.infer<typeof receiptMethodSchema>;
+export const RECEIPT_STATUSES = ['issued', 'voided'] as const;
+export const receiptStatusSchema = z.enum(RECEIPT_STATUSES);
+export type ReceiptStatus = z.infer<typeof receiptStatusSchema>;
+
+export const receiptAllocationDtoSchema = z.object({
+    invoiceId: uuidSchema,
+    invoiceNumber: z.string().nullable(),
+    projectId: uuidSchema.nullable(),
+    cash: z.number(),
+    wht: z.number(),
+    /** cash + wht. */
+    settled: z.number(),
+    /** The tax invoice issued for this allocation (null = none). */
+    taxInvoiceId: uuidSchema.nullable(),
+});
+export type ReceiptAllocationDto = z.infer<typeof receiptAllocationDtoSchema>;
+
+export const receiptDtoSchema = z.object({
+    id: uuidSchema,
+    customerId: uuidSchema,
+    /** Set when every allocated invoice is of one project. */
+    projectId: uuidSchema.nullable(),
+    number: z.string(),
+    receiptDate: businessDateSchema,
+    method: receiptMethodSchema,
+    bankRef: z.string(),
+    cashAmount: z.number(),
+    whtAmount: z.number(),
+    whtCertificateNo: z.string(),
+    whtCertificateFileId: uuidSchema.nullable(),
+    taxInvoiceIds: z.array(uuidSchema),
+    status: receiptStatusSchema,
+    /** Payment slips (purpose `payment_slip`). */
+    fileIds: z.array(uuidSchema),
+    language: docLanguageSchema,
+    customerSnapshot: quotationCustomerSnapshotSchema.nullable(),
+    companySnapshot: quotationCompanySnapshotSchema.nullable(),
+    note: z.string(),
+    voidReason: z.string(),
+    voidedAt: isoDateTimeSchema.nullable(),
+    allocations: z.array(receiptAllocationDtoSchema),
+    /** The tax invoices of the receipt (also readable with GET /invoices/:id). */
+    taxInvoices: z.array(invoiceDtoSchema),
+    /** It may still be voided (same Bangkok day it was recorded, `billing.receive`). */
+    canVoid: z.boolean(),
+    createdBy: uuidSchema,
+    createdAt: isoDateTimeSchema,
+});
+export type ReceiptDto = z.infer<typeof receiptDtoSchema>;
+
+const moneyIn = amountSchema;
+
+export const receiptAllocationInputSchema = z.object({
+    invoiceId: uuidSchema,
+    /** Cash (or transfer) received for this invoice. */
+    cash: moneyIn,
+    /** WHT the customer withheld on this invoice (0 when none). */
+    wht: moneyIn.default(0),
+}).strict();
+export type ReceiptAllocationInput = z.infer<typeof receiptAllocationInputSchema>;
+
+/**
+ * POST /workspaces/:workspaceId/receipts — numbered at once (`RC`). Every invoice must be of one customer (422
+ * `customer_mismatch`) and issued / partially paid; above what is due → 422 `overpayment`. `issueTaxInvoice` defaults to
+ * the company's VAT registration; true while not registered → 422 `not_vat_registered`; a juristic customer without a
+ * tax id → 422 `customer_tax_id_required`.
+ */
+export const createReceiptRequestSchema = z.object({
+    customerId: uuidSchema.optional(),
+    receiptDate: businessDateSchema.optional(),
+    method: receiptMethodSchema,
+    bankRef: z.string().trim().max(200).optional(),
+    allocations: z.array(receiptAllocationInputSchema).min(1).max(100),
+    whtCertificateNo: z.string().trim().max(100).optional(),
+    whtCertificateFileId: uuidSchema.nullable().optional(),
+    fileIds: z.array(uuidSchema).max(20).optional(),
+    issueTaxInvoice: z.boolean().optional(),
+    language: docLanguageSchema.optional(),
+    note: noteField.optional(),
+}).strict();
+export type CreateReceiptRequest = z.infer<typeof createReceiptRequestSchema>;
+
+/** POST /receipts/:receiptId/void — only on the Bangkok day it was recorded (409 `receipt_void_window`). */
+export const voidReceiptRequestSchema = z.object({ reason: z.string().trim().min(1).max(500) }).strict();
+export type VoidReceiptRequest = z.infer<typeof voidReceiptRequestSchema>;
+
+/** POST /invoices/:invoiceId/tax-invoice — a tax invoice ahead of payment for everything not on one yet. */
+export const issueTaxInvoiceRequestSchema = z.object({
+    issueDate: businessDateSchema.optional(),
+    language: docLanguageSchema.optional(),
+    note: noteField.optional(),
+}).strict();
+export type IssueTaxInvoiceRequest = z.infer<typeof issueTaxInvoiceRequestSchema>;
+
+/** POST /invoices/:invoiceId/credit-note — on an issued tax invoice; `amount` without VAT, at most what is not credited yet. */
+export const createCreditNoteRequestSchema = z.object({
+    amount: amountSchema.gt(0),
+    reason: z.string().trim().min(1).max(500),
+    issueDate: businessDateSchema.optional(),
+    language: docLanguageSchema.optional(),
+}).strict();
+export type CreateCreditNoteRequest = z.infer<typeof createCreditNoteRequestSchema>;
+
+export const AR_AGING_BUCKETS = ['current', '1_30', '31_60', '61_90', 'over_90'] as const;
+export const arAgingBucketSchema = z.enum(AR_AGING_BUCKETS);
+export type ArAgingBucket = z.infer<typeof arAgingBucketSchema>;
+const agingBucketsSchema = z.object({ current: z.number(), '1_30': z.number(), '31_60': z.number(), '61_90': z.number(), over_90: z.number() });
+
+/** GET /workspaces/:workspaceId/receivables/aging — open invoices (issued / partially paid) by days past due. */
+export const arAgingDtoSchema = z.object({
+    asOf: businessDateSchema,
+    buckets: agingBucketsSchema,
+    total: z.number(),
+    overdue: z.number(),
+    customers: z.array(z.object({
+        customerId: uuidSchema,
+        customerName: z.string(),
+        buckets: agingBucketsSchema,
+        total: z.number(),
+        overdue: z.number(),
+    })),
+    invoices: z.array(z.object({
+        invoiceId: uuidSchema,
+        number: z.string().nullable(),
+        kind: invoiceKindSchema,
+        projectId: uuidSchema.nullable(),
+        customerId: uuidSchema,
+        customerName: z.string(),
+        issueDate: businessDateSchema,
+        dueDate: businessDateSchema,
+        /** payable + whtExpected. */
+        due: z.number(),
+        paidAmount: z.number(),
+        outstanding: z.number(),
+        daysOverdue: z.number().int(),
+        bucket: arAgingBucketSchema,
+    })),
+});
+export type ArAgingDto = z.infer<typeof arAgingDtoSchema>;
+
+export const customerStatementQuerySchema = z.object({
+    from: businessDateSchema.optional(),
+    to: businessDateSchema.optional(),
+});
+export type CustomerStatementQuery = z.infer<typeof customerStatementQuerySchema>;
+
+/** GET /customers/:customerId/statement — invoices (debit = payable + whtExpected) and receipts (credit = settled). */
+export const customerStatementDtoSchema = z.object({
+    customerId: uuidSchema,
+    customerName: z.string(),
+    from: businessDateSchema.nullable(),
+    to: businessDateSchema,
+    openingBalance: z.number(),
+    entries: z.array(z.object({
+        date: businessDateSchema,
+        type: z.enum(['invoice', 'receipt']),
+        documentId: uuidSchema,
+        number: z.string().nullable(),
+        kind: invoiceKindSchema.nullable(),
+        projectId: uuidSchema.nullable(),
+        debit: z.number(),
+        credit: z.number(),
+        balance: z.number(),
+    })),
+    closingBalance: z.number(),
+    /** Open invoices now (independent of the dates). */
+    openInvoices: z.array(invoiceDtoSchema),
+});
+export type CustomerStatementDto = z.infer<typeof customerStatementDtoSchema>;
+
+/** GET /invoices/:invoiceId/promptpay — EMVCo payload of the cash still to pay (render it as a QR on the web). */
+export const invoicePromptPayDtoSchema = z.object({
+    invoiceId: uuidSchema,
+    promptpayId: z.string(),
+    /** Cash still to pay (WHT share left out). */
+    amount: z.number(),
+    payload: z.string(),
+});
+export type InvoicePromptPayDto = z.infer<typeof invoicePromptPayDtoSchema>;
+
+/** `payload` of a customer link of subject `invoice` (view only: no costs, no other documents). */
+export const invoiceLinkPayloadSchema = z.object({
+    invoice: invoiceDtoSchema,
+    projectName: z.string(),
+    outstanding: z.number(),
+    /** null when the company has no PromptPay id or nothing is left to pay. */
+    promptpay: invoicePromptPayDtoSchema.nullable(),
+    bankAccounts: z.array(bankAccountSchema),
+});
+export type InvoiceLinkPayload = z.infer<typeof invoiceLinkPayloadSchema>;

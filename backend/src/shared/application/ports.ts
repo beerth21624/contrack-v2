@@ -609,6 +609,8 @@ export abstract class CustomerLookup {
     abstract find(workspaceId: WorkspaceId, customerId: string): Promise<Customer | undefined>;
     abstract findMany(workspaceId: WorkspaceId, customerIds: readonly string[]): Promise<Customer[]>;
     abstract snapshot(workspaceId: WorkspaceId, customerId: string, language: DocLanguage): Promise<CustomerSnapshot | undefined>;
+    /** Workspace of a customer by id alone (the caller authorizes on that workspace next); undefined when unknown. */
+    abstract locate(customerId: string): Promise<WorkspaceId | undefined>;
 }
 
 /** Why a delete is refused, e.g. `{ reason: 'document_issued_exists', count: 3 }`. */
@@ -1278,4 +1280,22 @@ export abstract class MainContracts {
     abstract markMilestone(workspaceId: WorkspaceId, milestoneId: string, status: ContractMilestoneStatus): Promise<Result<void, DomainError>>;
     /** signed → completed on `date` (handover accepted). conflict `invalid_transition` otherwise. */
     abstract complete(workspaceId: WorkspaceId, contractId: string, date: string, by?: UserId | null): Promise<Result<void, DomainError>>;
+}
+
+// ── Billing totals (WP-30): what other modules (closeout WP-55) read of a project's receivables ──
+
+export interface ProjectBillingTotals {
+    /** Σ net of issued (not voided) claim and advance invoices. */
+    billed: number;
+    /** Σ settled (cash + customer WHT) on the project's invoices. */
+    received: number;
+    /** Customer retention still held (withheld − released − forfeited). */
+    retentionHeld: number;
+    /** Advance received and not recovered yet. */
+    advanceOutstanding: number;
+}
+
+/** Provided by billing. No module check (the caller checked its own); filters by workspace. */
+export abstract class BillingTotals {
+    abstract totalsByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<ProjectBillingTotals>;
 }

@@ -16,4 +16,6 @@ export const FILE_PURPOSE_MODULE: Readonly<Record<FilePurpose, ModuleId>> = {
     quotation_attachment: 'quotations',
     main_contract_scan: 'contracts',
     guarantee_scan: 'contracts',
+    payment_slip: 'billing',
+    customer_wht_certificate: 'billing',
 };

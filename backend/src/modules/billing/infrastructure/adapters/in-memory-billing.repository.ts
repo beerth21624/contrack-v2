@@ -1,7 +1,12 @@
 import type { ProjectId, WorkspaceId } from '../../../../shared/domain/ids';
 import {
-    type AdvanceEntryRecord, BillingRepository, type ClaimLineRecord, type ClaimRecord, type InvoiceRecord, type RetentionEntryRecord,
+    type AdvanceEntryRecord, BillingRepository, type ClaimLineRecord, type ClaimRecord, type InvoiceRecord, type ReceiptAllocationRecord,
+    type ReceiptRecord, type RetentionEntryRecord,
 } from '../../application/ports/billing.repository';
+
+const RECEIVABLE = (i: InvoiceRecord): boolean =>
+    (i.kind === 'invoice' || i.kind === 'advance_invoice') && (i.status === 'issued' || i.status === 'partially_paid');
+const byIssue = (a: InvoiceRecord, b: InvoiceRecord): number => a.issueDate.localeCompare(b.issueDate) || a.createdAt.getTime() - b.createdAt.getTime();
 
 const clone = <T>(v: T): T => structuredClone(v);
 const OPEN = new Set(['draft', 'pending_approval', 'submitted']);
@@ -14,6 +19,8 @@ export class InMemoryBillingRepository extends BillingRepository {
     private readonly invoices = new Map<string, InvoiceRecord>();
     private readonly retention = new Map<string, RetentionEntryRecord>();
     private readonly advance = new Map<string, AdvanceEntryRecord>();
+    private readonly receipts = new Map<string, ReceiptRecord>();
+    private readonly allocations: ReceiptAllocationRecord[] = [];
 
     findClaim(claimId: string): Promise<ClaimRecord | undefined> {
         const c = this.claims.get(claimId);
@@ -103,6 +110,71 @@ export class InMemoryBillingRepository extends BillingRepository {
         return Promise.resolve();
     }
 
+    relatedInvoices(workspaceId: WorkspaceId, invoiceId: string): Promise<InvoiceRecord[]> {
+        return Promise.resolve([...this.invoices.values()]
+            .filter(i => i.workspaceId === workspaceId && i.relatedInvoiceId === invoiceId).sort(byCreated).map(clone));
+    }
+
+    invoicesOfCustomer(workspaceId: WorkspaceId, customerId: string): Promise<InvoiceRecord[]> {
+        return Promise.resolve([...this.invoices.values()]
+            .filter(i => i.workspaceId === workspaceId && i.customerId === customerId).sort(byIssue).map(clone));
+    }
+
+    openInvoices(workspaceId: WorkspaceId): Promise<InvoiceRecord[]> {
+        return Promise.resolve([...this.invoices.values()]
+            .filter(i => i.workspaceId === workspaceId && RECEIVABLE(i))
+            .sort((a, b) => a.dueDate.localeCompare(b.dueDate) || byCreated(a, b)).map(clone));
+    }
+
+    openInvoicesDueBetween(from: string, to: string, limit: number): Promise<InvoiceRecord[]> {
+        return Promise.resolve([...this.invoices.values()]
+            .filter(i => RECEIVABLE(i) && i.dueDate >= from && i.dueDate <= to)
+            .sort((a, b) => a.dueDate.localeCompare(b.dueDate)).slice(0, limit).map(clone));
+    }
+
+    findReceipt(receiptId: string): Promise<ReceiptRecord | undefined> {
+        const r = this.receipts.get(receiptId);
+        return Promise.resolve(r === undefined ? undefined : clone(r));
+    }
+
+    lockReceipt(workspaceId: WorkspaceId, receiptId: string): Promise<ReceiptRecord | undefined> {
+        const r = this.receipts.get(receiptId);
+        return Promise.resolve(r?.workspaceId === workspaceId ? clone(r) : undefined);
+    }
+
+    insertReceipt(r: ReceiptRecord): Promise<void> {
+        const clash = [...this.receipts.values()].some(o => o.id === r.id || (o.workspaceId === r.workspaceId && o.number === r.number));
+        if (clash) return Promise.reject(new Error(`duplicate receipt ${r.id}`));
+        this.receipts.set(r.id, clone(r));
+        return Promise.resolve();
+    }
+
+    saveReceipt(r: ReceiptRecord): Promise<void> {
+        if (this.receipts.get(r.id)?.workspaceId === r.workspaceId) this.receipts.set(r.id, clone(r));
+        return Promise.resolve();
+    }
+
+    receiptsOfCustomer(workspaceId: WorkspaceId, customerId: string): Promise<ReceiptRecord[]> {
+        return Promise.resolve([...this.receipts.values()]
+            .filter(r => r.workspaceId === workspaceId && r.customerId === customerId)
+            .sort((a, b) => a.receiptDate.localeCompare(b.receiptDate) || byCreated(a, b)).map(clone));
+    }
+
+    insertAllocations(rows: readonly ReceiptAllocationRecord[]): Promise<void> {
+        for (const r of rows) {
+            if (this.allocations.some(o => o.receiptId === r.receiptId && o.invoiceId === r.invoiceId)) {
+                return Promise.reject(new Error(`duplicate allocation ${r.receiptId}/${r.invoiceId}`));
+            }
+        }
+        this.allocations.push(...rows.map(clone));
+        return Promise.resolve();
+    }
+
+    allocationsOf(workspaceId: WorkspaceId, receiptIds: readonly string[]): Promise<ReceiptAllocationRecord[]> {
+        const ids = new Set(receiptIds);
+        return Promise.resolve(this.allocations.filter(a => a.workspaceId === workspaceId && ids.has(a.receiptId)).map(clone));
+    }
+
     retentionEntries(workspaceId: WorkspaceId, contractId: string): Promise<RetentionEntryRecord[]> {
         return Promise.resolve([...this.retention.values()]
             .filter(e => e.workspaceId === workspaceId && e.contractId === contractId)
@@ -141,12 +213,41 @@ export class InMemoryBillingRepository extends BillingRepository {
         return Promise.resolve();
     }
 
+    deleteAdvanceEntriesOfReceipt(workspaceId: WorkspaceId, receiptId: string): Promise<void> {
+        for (const [id, e] of [...this.advance.entries()]) if (e.workspaceId === workspaceId && e.receiptId === receiptId) this.advance.delete(id);
+        return Promise.resolve();
+    }
+
+    retentionEntriesOfProjects(workspaceId: WorkspaceId, projectIds: readonly ProjectId[]): Promise<RetentionEntryRecord[]> {
+        const ids = new Set<string>(projectIds);
+        return Promise.resolve([...this.retention.values()].filter(e => e.workspaceId === workspaceId && ids.has(e.projectId)).map(clone));
+    }
+
+    advanceEntriesOfProjects(workspaceId: WorkspaceId, projectIds: readonly ProjectId[]): Promise<AdvanceEntryRecord[]> {
+        const ids = new Set<string>(projectIds);
+        return Promise.resolve([...this.advance.values()].filter(e => e.workspaceId === workspaceId && ids.has(e.projectId)).map(clone));
+    }
+
+    contractsWithRetention(limit: number): Promise<{ workspaceId: WorkspaceId; contractId: string }[]> {
+        const seen = new Map<string, { workspaceId: WorkspaceId; contractId: string }>();
+        for (const e of this.retention.values()) if (e.kind === 'withheld') seen.set(e.contractId, { workspaceId: e.workspaceId, contractId: e.contractId });
+        return Promise.resolve([...seen.values()].slice(0, limit));
+    }
+
     deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void> {
         for (const c of [...this.claims.values()]) {
             if (c.workspaceId === workspaceId && c.projectId === projectId) {
                 this.claims.delete(c.id);
                 this.lines.delete(c.id);
             }
+        }
+        for (const r of [...this.receipts.values()]) {
+            if (r.workspaceId === workspaceId && r.projectId === projectId) this.receipts.delete(r.id);
+        }
+        const invoiceIds = new Set([...this.invoices.values()].filter(i => i.workspaceId === workspaceId && i.projectId === projectId).map(i => i.id));
+        for (let k = this.allocations.length - 1; k >= 0; k--) {
+            const a = this.allocations[k];
+            if (a !== undefined && (invoiceIds.has(a.invoiceId) || !this.receipts.has(a.receiptId))) this.allocations.splice(k, 1);
         }
         for (const map of [this.invoices, this.retention, this.advance] as Map<string, { workspaceId: WorkspaceId; projectId: ProjectId | null }>[]) {
             for (const [id, row] of [...map.entries()]) if (row.workspaceId === workspaceId && row.projectId === projectId) map.delete(id);

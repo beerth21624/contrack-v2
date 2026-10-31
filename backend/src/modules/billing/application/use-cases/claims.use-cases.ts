@@ -430,7 +430,7 @@ export class InvoiceClaimUseCase {
             if (c.advanceRecovery > 0) {
                 await this.repo.insertAdvanceEntry({
                     id: this.ids.newId(), workspaceId: ws, contractId: contract.id, projectId: c.projectId, kind: 'recovered',
-                    amount: c.advanceRecovery, invoiceId: inv.id, claimId: c.id, entryDate: issueDate, createdBy: userId, createdAt: now,
+                    amount: c.advanceRecovery, invoiceId: inv.id, claimId: c.id, receiptId: null, entryDate: issueDate, createdBy: userId, createdAt: now,
                 });
             }
             const lines = await this.repo.linesOf(ws, [c.id]);

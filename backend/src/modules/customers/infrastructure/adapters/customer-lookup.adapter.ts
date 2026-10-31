@@ -23,6 +23,11 @@ export class RepositoryCustomerLookup extends CustomerLookup {
         return this.repo.findMany(workspaceId, customerIds.filter(isUuid));
     }
 
+    async locate(customerId: string): Promise<WorkspaceId | undefined> {
+        if (!isUuid(customerId)) return undefined;
+        return (await this.repo.findById(customerId.toLowerCase()))?.workspaceId;
+    }
+
     async snapshot(workspaceId: WorkspaceId, customerId: string, language: DocLanguage): Promise<CustomerSnapshot | undefined> {
         const c = await this.find(workspaceId, customerId);
         return c === undefined ? undefined : customerSnapshot(c, language);

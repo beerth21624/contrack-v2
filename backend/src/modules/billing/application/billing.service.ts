@@ -1,9 +1,10 @@
 // ─── Shared parts of billing: access, claim computation, issuing invoices, what the module plugs into core registries ───
 import { Injectable } from '@nestjs/common';
 import type { FinEventType, ProjectRollup } from '@contrack/contract';
-import { advanceTotals, computeClaim, claimLineIssues, type ClaimLineInput } from '@contrack/domain/billing';
+import { advanceTotals, computeClaim, claimLineIssues, invoiceOutstanding, type ClaimLineInput } from '@contrack/domain/billing';
+import { bangkokToday } from '@contrack/domain/dates/business-date';
 import { round2, sumMoney } from '@contrack/domain/money';
-import { type ProjectGrant, ModuleAccess } from '../../../shared/application/module-access';
+import { type ProjectGrant, type WorkspaceGrant, ModuleAccess } from '../../../shared/application/module-access';
 import {
     type ApprovalDecidedEvent, AuditLog, Clock, CompanyProfiles, CustomerLookup, DocumentNumbering, FinancialEvents,
     type MainContractInfo, MainContracts, ModuleFlags, UnitOfWork,
@@ -12,12 +13,18 @@ import { DomainError } from '../../../shared/domain/domain-error';
 import { type ProjectId, type UserId, type WorkspaceId, isUuid } from '../../../shared/domain/ids';
 import type { Permission } from '../../../shared/domain/permissions';
 import { type Result, err, ok, okVoid } from '../../../shared/domain/result';
-import { BillingRepository, type ClaimLineRecord, type ClaimRecord, type InvoiceRecord } from './ports/billing.repository';
+import {
+    BillingRepository, type ClaimLineRecord, type ClaimRecord, type InvoiceRecord, type ReceiptRecord,
+} from './ports/billing.repository';
 
 export const MODULE = 'billing';
 /** Kinds / sources that count as billed (a retention release only pays back money billed before). */
 const BILLED_SOURCES = new Set(['claim', 'advance']);
 const LIVE_INVOICE = (i: InvoiceRecord): boolean => i.status !== 'draft' && i.status !== 'voided';
+/** Invoices the customer owes money on (tax invoices and credit notes are not receivables). */
+export const RECEIVABLE_KIND = (i: InvoiceRecord): boolean => i.kind === 'invoice' || i.kind === 'advance_invoice';
+/** A receivable that still waits for money. */
+export const OPEN_RECEIVABLE = (i: InvoiceRecord): boolean => RECEIVABLE_KIND(i) && (i.status === 'issued' || i.status === 'partially_paid');
 
 /** Thrown inside a transaction so an `err` rolls it back (the UnitOfWork commits on a normal return). */
 class Rollback extends Error {
@@ -84,6 +91,19 @@ export class BillingAccess {
 
     async project(userId: UserId, projectId: ProjectId, permissions: Permission[]): Promise<Result<ProjectGrant, DomainError>> {
         return this.access.toProject(userId, projectId, MODULE, { permissions, write: false });
+    }
+
+    async workspace(userId: UserId, workspaceId: WorkspaceId, permissions: Permission[]): Promise<Result<WorkspaceGrant, DomainError>> {
+        return this.access.inWorkspace(userId, workspaceId, MODULE, ...permissions);
+    }
+
+    async receipt(userId: UserId, receiptId: string, permissions: Permission[]): Promise<Result<{ grant: WorkspaceGrant; receipt: ReceiptRecord }, DomainError>> {
+        if (!isUuid(receiptId)) return err(DomainError.notFound('Receipt'));
+        const receipt = await this.repo.findReceipt(receiptId.toLowerCase());
+        if (receipt === undefined) return err(DomainError.notFound('Receipt'));
+        const grant = await this.access.inWorkspace(userId, receipt.workspaceId, MODULE, ...permissions);
+        if (!grant.ok) return grant.error.code === 'not_found' ? err(DomainError.notFound('Receipt')) : grant;
+        return ok({ grant: grant.value, receipt });
     }
 }
 
@@ -153,6 +173,11 @@ export class ClaimCalculator {
     }
 }
 
+/** Numbering / fin_events document type of each invoice kind. */
+const DOC_TYPE_OF_KIND: Readonly<Record<InvoiceRecord['kind'], string>> = {
+    advance_invoice: 'invoice', invoice: 'invoice', tax_invoice: 'tax_invoice', credit_note: 'credit_note',
+};
+
 /** Numbers an invoice and copies the seller / buyer blocks onto it; posts its money events (source `ar_invoice`). */
 @Injectable()
 export class InvoiceIssuer {
@@ -189,7 +214,7 @@ export class InvoiceIssuer {
         const r = await this.events.post(inv.workspaceId, {
             projectId: inv.projectId, eventDate: inv.issueDate, eventType: type, direction: 'none', counterpartyType: 'customer',
             counterpartyId: inv.customerId, counterpartyName: inv.customerSnapshot?.name ?? '', counterpartyTaxId: inv.customerSnapshot?.taxId ?? '',
-            counterpartyBranch: inv.customerSnapshot?.branchCode ?? '', docType: 'invoice', docNumber: inv.number, docDate: inv.issueDate,
+            counterpartyBranch: inv.customerSnapshot?.branchCode ?? '', docType: DOC_TYPE_OF_KIND[inv.kind], docNumber: inv.number, docDate: inv.issueDate,
             sourceType: 'ar_invoice', sourceId: inv.id, net: amounts.net, vat: amounts.vat ?? 0, wht: amounts.wht ?? 0,
             retention: amounts.retention ?? 0, cash: 0, data: { contractId: inv.contractId, claimId: inv.claimId, ...data }, by,
         });
@@ -198,11 +223,16 @@ export class InvoiceIssuer {
 
     /** Reverses every event of an invoice that is not reversed yet (void). */
     async reverseAll(inv: InvoiceRecord, by: UserId, date: string): Promise<Result<void, DomainError>> {
-        const events = await this.events.bySource(inv.workspaceId, 'ar_invoice', inv.id);
+        return this.reverseSource(inv.workspaceId, 'ar_invoice', inv.id, by, date);
+    }
+
+    /** Reverses every event of a source (`ar_invoice`, `ar_receipt`) that is not reversed yet. */
+    async reverseSource(workspaceId: WorkspaceId, sourceType: string, sourceId: string, by: UserId, date: string): Promise<Result<void, DomainError>> {
+        const events = await this.events.bySource(workspaceId, sourceType, sourceId);
         const reversed = new Set(events.flatMap(e => (e.reversesId === null ? [] : [e.reversesId])));
         for (const e of events) {
             if (e.reversesId !== null || reversed.has(e.id)) continue;
-            const r = await this.events.reverse(inv.workspaceId, e.id, { by, date, note: 'void' });
+            const r = await this.events.reverse(workspaceId, e.id, { by, date, note: 'void' });
             if (!r.ok) return r;
         }
         return okVoid();
@@ -220,16 +250,26 @@ export class BillingHandlers {
         private readonly clock: Clock,
     ) {}
 
-    /** billedToDate = Σ net of the issued (not voided) claim and advance invoices. */
+    /**
+     * billedToDate = Σ net of the issued (not voided) claim and advance invoices; receivedToDate = Σ settled (cash + WHT)
+     * on receivable invoices; overdueReceivable = Σ outstanding of open invoices past their due date (Bangkok today).
+     */
     async rollup(workspaceId: WorkspaceId, projectIds: readonly ProjectId[]): Promise<Map<ProjectId, Partial<ProjectRollup>>> {
         const out = new Map<ProjectId, Partial<ProjectRollup>>();
         if (!(await this.flags.isEnabled(workspaceId, MODULE))) return out;
-        const totals = new Map<ProjectId, number[]>();
+        const today = bangkokToday(this.clock.now());
+        const totals = new Map<ProjectId, { billed: number[]; received: number[]; overdue: number[] }>();
         for (const i of await this.repo.invoicesOfProjects(workspaceId, projectIds)) {
-            if (i.projectId === null || !LIVE_INVOICE(i) || !BILLED_SOURCES.has(i.source)) continue;
-            totals.set(i.projectId, [...(totals.get(i.projectId) ?? []), i.net]);
+            if (i.projectId === null || !LIVE_INVOICE(i) || !RECEIVABLE_KIND(i)) continue;
+            const t = totals.get(i.projectId) ?? { billed: [], received: [], overdue: [] };
+            if (BILLED_SOURCES.has(i.source)) t.billed.push(i.net);
+            t.received.push(i.paidAmount);
+            if (OPEN_RECEIVABLE(i) && i.dueDate < today) t.overdue.push(invoiceOutstanding(i, i.paidAmount));
+            totals.set(i.projectId, t);
         }
-        for (const [projectId, nets] of totals) out.set(projectId, { billedToDate: sumMoney(nets) });
+        for (const [projectId, t] of totals) {
+            out.set(projectId, { billedToDate: sumMoney(t.billed), receivedToDate: sumMoney(t.received), overdueReceivable: sumMoney(t.overdue) });
+        }
         return out;
     }
 

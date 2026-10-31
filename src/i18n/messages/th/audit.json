@@ -40,7 +40,8 @@
     "invoice": "ออกใบแจ้งหนี้",
     "edit": "แก้ไข",
     "create_claim": "สร้างงวดเบิก",
-    "create_invoice": "สร้างใบแจ้งหนี้"
+    "create_invoice": "สร้างใบแจ้งหนี้",
+    "receive": "รับเงิน"
   },
   "entities": {
     "approval_request": "คำขออนุมัติ",
@@ -55,6 +56,7 @@
     "main_contract": "สัญญาหลัก",
     "contract_guarantee": "หลักประกันสัญญา",
     "ar_claim": "งวดเบิก",
-    "ar_invoice": "ใบแจ้งหนี้"
+    "ar_invoice": "ใบแจ้งหนี้",
+    "ar_receipt": "ใบเสร็จรับเงิน"
   }
 }

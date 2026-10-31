@@ -306,7 +306,7 @@ Schemas: `../src/shared/contract/erp/main-contracts.ts`; template `../src/domain
 | POST | `/main-contracts/:contractId/guarantees` | `CreateGuaranteeRequest` → `ContractGuaranteeDto` (201) | draft / signed / completed contract; files `guarantee_scan` |
 | PATCH | `/guarantees/:guaranteeId` | `PatchGuaranteeRequest` → `ContractGuaranteeDto` | return = `{status: 'returned'}` (`returnedAt` default today) |
 
-## Billing (module `billing`; WP-29)
+## Billing (module `billing`; WP-29, WP-30)
 Schemas: `../src/shared/contract/erp/billing.ts`; formulas `../src/domain/billing/*`. Read `billing.read`, everything else `billing.manage`. Every amount is computed by the server (never sent by the client). Claim states `draft → (pending_approval →) submitted → certified → invoiced`, `draft | pending_approval | submitted → cancelled`; one open (draft / pending_approval / submitted) claim per contract (409 `claim_open`). Claims need a signed (or completed) contract (409 `contract_not_signed`). Not a member → 404; module not active → 404 `module_disabled`; archived project → 409 `project_archived` on writes. Money events (`fin_events`, source `ar_invoice`): claim invoice → `ar.invoiced` (+ `ar.retention_withheld`, `ar.advance_recovered`, `ar.penalty` with the amount in `net`), advance → `ar.advance_invoiced`, retention release → `ar.retention_released`; void reverses them.
 
 | Method | Path | Body → Response | Notes |
@@ -327,3 +327,19 @@ Schemas: `../src/shared/contract/erp/billing.ts`; formulas `../src/domain/billin
 | POST | `/invoices/:invoiceId/void` | `{reason}` → `InvoiceDto` (200) | draft / issued with nothing received (else 409 `invoice_has_receipts`); number voided, events reversed, its ledger rows removed; claim back to `certified` |
 | GET | `/main-contracts/:contractId/retention` | → `ContractRetentionDto` | totals, cap, release plan (`retentionRelease`), entries |
 | GET | `/main-contracts/:contractId/advance` | → `ContractAdvanceDto` | totals, the advance invoice, `canCreateInvoice` |
+
+### Receipts, tax invoices, credit notes, receivables (WP-30)
+Record / void receipts, tax invoices, credit notes `billing.receive`; the reads `billing.read`. A receipt (`RC…`) settles invoices (`invoice` / `advance_invoice`, issued or partially paid) of one customer (422 `customer_mismatch`); per invoice `settled = cash + wht` (the customer's WHT); above what is due (`payable + whtExpected − paidAmount`) → 422 `overpayment` (`details.invoiceId`, `outstanding`). When the company is VAT registered (default of `issueTaxInvoice`) each claim / advance invoice gets a tax invoice (`TI…`, `kind='tax_invoice'`, `source='receipt'`, `relatedInvoiceId`) for its share (`src/domain/billing/tax-invoice.ts`; the receipt that pays it takes the rest, so Σ TI = the invoice); `issueTaxInvoice: true` while not registered → 422 `not_vat_registered`; a juristic customer without tax id → 422 `customer_tax_id_required`. Advance invoice received → `ar_advance_entries` `received` (its net share); paid → milestone `paid`. Events (source `ar_receipt`): `ar.receipt` per invoice (`net` = settled, `cash`, `wht`, direction `in`), `ar.wht_withheld_by_customer` (`net` = wht); tax invoices `ar.tax_invoiced` (source `ar_invoice`), credit notes `ar.credit_noted`. Files: purposes `payment_slip`, `customer_wht_certificate`.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| POST | `/workspaces/:workspaceId/receipts` | `CreateReceiptRequest` → `ReceiptDto` (201) | 400 `duplicate_invoice`, `receipt_amount_not_positive`; 422 `date_before_last_issued` (RC / TI dated before the latest) |
+| GET | `/receipts/:receiptId` | → `ReceiptDto` | allocations, tax invoices, `canVoid` |
+| POST | `/receipts/:receiptId/void` | `{reason}` → `ReceiptDto` (200) | same Bangkok day it was recorded only (409 `receipt_void_window`); its tax invoices voided (409 `has_credit_notes`), events reversed, invoices / advance ledger / milestone back |
+| POST | `/invoices/:invoiceId/tax-invoice` | `{issueDate?, language?, note?}` → `InvoiceDto` (201) | ahead of payment, for everything not on a TI yet; 422 `not_vat_registered`, `customer_tax_id_required`, `tax_invoice_not_applicable` (retention release, TI, CN); 409 `tax_invoice_complete` |
+| POST | `/invoices/:invoiceId/credit-note` | `{amount, reason, issueDate?, language?}` → `InvoiceDto` (201) | on an issued tax invoice (422 `credit_note_needs_tax_invoice`); `amount` without VAT ≤ what is not credited (422 `credit_note_exceeds`, `details.available`); `CN…`; does not change what the customer owes on the invoice |
+| GET | `/invoices/:invoiceId/promptpay` | → `InvoicePromptPayDto` | open invoice; `amount` = cash still to pay (WHT share left out); 422 `promptpay_not_set` / `promptpay_invalid` |
+| GET | `/workspaces/:workspaceId/receivables/aging` | → `ArAgingDto` | open invoices by days past due (Bangkok today): `current`, `1_30`, `31_60`, `61_90`, `over_90`; per customer |
+| GET | `/customers/:customerId/statement?from&to` | → `CustomerStatementDto` | invoices (debit = payable + whtExpected) and issued receipts (credit = settled), running balance, open invoices |
+
+Customer link subject `invoice` (view only, `billing.read` to share): `InvoiceLinkPayload` (invoice, outstanding, PromptPay payload, bank accounts). Daily sweeps: `billing.invoice-due` (`invoice.due_soon` once from 3 days before the due date; `invoice.overdue` on days 1, 7, 30 after it) and `billing.retention-release-due` (`retention.release_due` once per release stage that is due), to members with `billing.read`. Hub roll-up: `billedToDate`, `receivedToDate`, `overdueReceivable`. Port `BillingTotals.totalsByProject` (billed, received, retentionHeld, advanceOutstanding).

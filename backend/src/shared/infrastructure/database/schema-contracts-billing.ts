@@ -262,6 +262,8 @@ export const arAdvanceEntries = pgTable('ar_advance_entries', {
     invoiceId: uuid('invoice_id'),
     claimId: uuid('claim_id'),
     entryDate: businessDate('entry_date').notNull(),
+    /** The receipt that recorded a `received` row (WP-30; voiding the receipt removes it). */
+    receiptId: uuid('receipt_id'),
     createdBy: uuid('created_by').notNull(),
     createdAt: createdAt(),
 }, t => [
@@ -270,6 +272,57 @@ export const arAdvanceEntries = pgTable('ar_advance_entries', {
     check('ar_advance_entries_kind_check', sql`${t.kind} in ('received', 'recovered')`),
 ]);
 
+/** Money received from a customer (WP-30): numbered `RC` when recorded; settles invoices of that customer. */
+export const arReceipts = pgTable('ar_receipts', {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    customerId: uuid('customer_id').notNull(),
+    /** Set when every allocated invoice is of one project. */
+    projectId: uuid('project_id'),
+    number: text('number').notNull(),
+    receiptDate: businessDate('receipt_date').notNull(),
+    method: text('method').notNull(),
+    bankRef: text('bank_ref').notNull().default(''),
+    cashAmount: money('cash_amount').notNull().default(0),
+    whtAmount: money('wht_amount').notNull().default(0),
+    whtCertificateNo: text('wht_certificate_no').notNull().default(''),
+    whtCertificateFileId: uuid('wht_certificate_file_id'),
+    taxInvoiceIds: jsonb('tax_invoice_ids').$type<string[]>().notNull().default([]),
+    status: text('status').notNull().default('issued'),
+    fileIds: jsonb('file_ids').$type<string[]>().notNull().default([]),
+    language: text('language').$type<DocLanguage>().notNull().default('th'),
+    customerSnapshot: jsonb('customer_snapshot').$type<QuotationCustomerSnapshot>(),
+    companySnapshot: jsonb('company_snapshot').$type<QuotationCompanySnapshot>(),
+    note: text('note').notNull().default(''),
+    voidReason: text('void_reason').notNull().default(''),
+    voidedAt: timestamp('voided_at', { withTimezone: true }),
+    voidedBy: uuid('voided_by'),
+    createdBy: uuid('created_by').notNull(),
+    createdAt: createdAt(),
+}, t => [
+    projectTenantFk('ar_receipts', t),
+    unique('ar_receipts_workspace_number_key').on(t.workspaceId, t.number),
+    index('ar_receipts_workspace_customer_idx').on(t.workspaceId, t.customerId),
+    check('ar_receipts_method_check', sql`${t.method} in ('transfer', 'cash', 'cheque', 'promptpay', 'other')`),
+    check('ar_receipts_status_check', sql`${t.status} in ('issued', 'voided')`),
+    check('ar_receipts_language_check', sql`${t.language} in ('th', 'en')`),
+]);
+
+/** How a receipt settles each invoice (`settled` = cash + WHT of that invoice). */
+export const arReceiptAllocations = pgTable('ar_receipt_allocations', {
+    receiptId: uuid('receipt_id').notNull().references(() => arReceipts.id, { onDelete: 'cascade' }),
+    invoiceId: uuid('invoice_id').notNull().references(() => arInvoices.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    cash: money('cash').notNull().default(0),
+    wht: money('wht').notNull().default(0),
+    settled: money('settled').notNull(),
+    taxInvoiceId: uuid('tax_invoice_id'),
+}, t => [
+    primaryKey({ name: 'ar_receipt_allocations_pkey', columns: [t.receiptId, t.invoiceId] }),
+    index('ar_receipt_allocations_invoice_idx').on(t.invoiceId),
+]);
+
 export const contractsBillingTables = {
-    mcContracts, mcMilestones, mcGuarantees, arClaims, arClaimLines, arInvoices, arRetentionEntries, arAdvanceEntries,
+    mcContracts, mcMilestones, mcGuarantees, arClaims, arClaimLines, arInvoices, arRetentionEntries, arAdvanceEntries, arReceipts,
+    arReceiptAllocations,
 };

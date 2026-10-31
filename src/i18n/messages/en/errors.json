@@ -102,6 +102,21 @@
     "advance_invoice_exists": "This contract already has an advance invoice.",
     "retention_release_exceeds_balance": "The amount is more than the retention still held.",
     "invoice_has_receipts": "Money was received on this invoice. Void the receipt first.",
-    "claims_exist": "Not possible: this project has progress claims."
+    "claims_exist": "Not possible: this project has progress claims.",
+    "duplicate_invoice": "The same invoice appears twice in the receipt.",
+    "receipt_amount_not_positive": "The amount received for each invoice must be above zero.",
+    "customer_mismatch": "A receipt can only settle invoices of one customer.",
+    "overpayment": "The amount is above what is still due on the invoice.",
+    "not_vat_registered": "The company is not VAT registered, so it cannot issue tax invoices or credit notes.",
+    "customer_tax_id_required": "A juristic customer needs a tax ID before a tax invoice can be issued.",
+    "receipt_void_window": "A receipt can only be voided on the day it was recorded.",
+    "has_credit_notes": "A credit note was issued on this receipt's tax invoice, so it cannot be voided.",
+    "tax_invoice_not_applicable": "This document does not take a tax invoice.",
+    "tax_invoice_complete": "Tax invoices already cover this invoice in full.",
+    "credit_note_needs_tax_invoice": "A credit note must refer to a tax invoice.",
+    "credit_note_exceeds": "The credit is above what is left on the tax invoice.",
+    "promptpay_not_set": "PromptPay is not set up in the company profile.",
+    "promptpay_invalid": "The PromptPay number in the company profile is not valid.",
+    "invalid_range": "The start date must not be after the end date."
   }
 }

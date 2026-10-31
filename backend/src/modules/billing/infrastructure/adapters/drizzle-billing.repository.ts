@@ -1,21 +1,28 @@
 import type {
     ArAdvanceEntryKind, ArRetentionEntryKind, ArClaimStatus, InvoiceKind, InvoiceSource, InvoiceStatus, MainContractBillingMode,
+    ReceiptMethod, ReceiptStatus,
 } from '@contrack/contract';
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 import { type ProjectId, type WorkspaceId, asProjectId, asUserId, asWorkspaceId } from '../../../../shared/domain/ids';
 import type { DatabaseContext } from '../../../../shared/infrastructure/database/database';
 import {
-    arAdvanceEntries, arClaimLines, arClaims, arInvoices, arRetentionEntries,
+    arAdvanceEntries, arClaimLines, arClaims, arInvoices, arReceiptAllocations, arReceipts, arRetentionEntries,
 } from '../../../../shared/infrastructure/database/schema-contracts-billing';
 import {
-    type AdvanceEntryRecord, BillingRepository, type ClaimLineRecord, type ClaimRecord, type InvoiceRecord, type RetentionEntryRecord,
+    type AdvanceEntryRecord, BillingRepository, type ClaimLineRecord, type ClaimRecord, type InvoiceRecord, type ReceiptAllocationRecord,
+    type ReceiptRecord, type RetentionEntryRecord,
 } from '../../application/ports/billing.repository';
+
+const RECEIVABLE_KINDS = ['invoice', 'advance_invoice'];
+const OPEN_STATUSES = ['issued', 'partially_paid'];
 
 type ClaimRow = typeof arClaims.$inferSelect;
 type LineRow = typeof arClaimLines.$inferSelect;
 type InvoiceRow = typeof arInvoices.$inferSelect;
 type RetentionRow = typeof arRetentionEntries.$inferSelect;
 type AdvanceRow = typeof arAdvanceEntries.$inferSelect;
+type ReceiptRow = typeof arReceipts.$inferSelect;
+type AllocationRow = typeof arReceiptAllocations.$inferSelect;
 
 const toClaim = (r: ClaimRow): ClaimRecord => ({
     ...r,
@@ -54,6 +61,18 @@ const toAdvance = (r: AdvanceRow): AdvanceEntryRecord => ({
     kind: r.kind as ArAdvanceEntryKind,
     createdBy: asUserId(r.createdBy),
 });
+
+const toReceipt = (r: ReceiptRow): ReceiptRecord => ({
+    ...r,
+    workspaceId: asWorkspaceId(r.workspaceId),
+    projectId: r.projectId === null ? null : asProjectId(r.projectId),
+    method: r.method as ReceiptMethod,
+    status: r.status as ReceiptStatus,
+    voidedBy: r.voidedBy === null ? null : asUserId(r.voidedBy),
+    createdBy: asUserId(r.createdBy),
+});
+
+const toAllocation = (r: AllocationRow): ReceiptAllocationRecord => ({ ...r, workspaceId: asWorkspaceId(r.workspaceId) });
 
 /** Postgres adapter; `ctx.executor` joins the UnitOfWork transaction. */
 export class DrizzleBillingRepository extends BillingRepository {
@@ -151,6 +170,76 @@ export class DrizzleBillingRepository extends BillingRepository {
         await this.ctx.executor.update(arInvoices).set(rest).where(and(eq(arInvoices.workspaceId, workspaceId), eq(arInvoices.id, id)));
     }
 
+    async relatedInvoices(workspaceId: WorkspaceId, invoiceId: string): Promise<InvoiceRecord[]> {
+        const rows = await this.ctx.executor.select().from(arInvoices)
+            .where(and(eq(arInvoices.workspaceId, workspaceId), eq(arInvoices.relatedInvoiceId, invoiceId)))
+            .orderBy(asc(arInvoices.createdAt));
+        return rows.map(toInvoice);
+    }
+
+    async invoicesOfCustomer(workspaceId: WorkspaceId, customerId: string): Promise<InvoiceRecord[]> {
+        const rows = await this.ctx.executor.select().from(arInvoices)
+            .where(and(eq(arInvoices.workspaceId, workspaceId), eq(arInvoices.customerId, customerId)))
+            .orderBy(asc(arInvoices.issueDate), asc(arInvoices.createdAt));
+        return rows.map(toInvoice);
+    }
+
+    async openInvoices(workspaceId: WorkspaceId): Promise<InvoiceRecord[]> {
+        const rows = await this.ctx.executor.select().from(arInvoices)
+            .where(and(eq(arInvoices.workspaceId, workspaceId), inArray(arInvoices.kind, RECEIVABLE_KINDS), inArray(arInvoices.status, OPEN_STATUSES)))
+            .orderBy(asc(arInvoices.dueDate), asc(arInvoices.createdAt));
+        return rows.map(toInvoice);
+    }
+
+    async openInvoicesDueBetween(from: string, to: string, limit: number): Promise<InvoiceRecord[]> {
+        const rows = await this.ctx.executor.select().from(arInvoices)
+            .where(and(
+                inArray(arInvoices.kind, RECEIVABLE_KINDS), inArray(arInvoices.status, OPEN_STATUSES),
+                gte(arInvoices.dueDate, from), lte(arInvoices.dueDate, to),
+            ))
+            .orderBy(asc(arInvoices.dueDate)).limit(limit);
+        return rows.map(toInvoice);
+    }
+
+    async findReceipt(receiptId: string): Promise<ReceiptRecord | undefined> {
+        const [row] = await this.ctx.executor.select().from(arReceipts).where(eq(arReceipts.id, receiptId)).limit(1);
+        return row === undefined ? undefined : toReceipt(row);
+    }
+
+    async lockReceipt(workspaceId: WorkspaceId, receiptId: string): Promise<ReceiptRecord | undefined> {
+        const [row] = await this.ctx.executor.select().from(arReceipts)
+            .where(and(eq(arReceipts.workspaceId, workspaceId), eq(arReceipts.id, receiptId))).limit(1).for('update');
+        return row === undefined ? undefined : toReceipt(row);
+    }
+
+    async insertReceipt(r: ReceiptRecord): Promise<void> {
+        await this.ctx.executor.insert(arReceipts).values({ ...r });
+    }
+
+    async saveReceipt(r: ReceiptRecord): Promise<void> {
+        const { id, workspaceId, ...rest } = r;
+        await this.ctx.executor.update(arReceipts).set(rest).where(and(eq(arReceipts.workspaceId, workspaceId), eq(arReceipts.id, id)));
+    }
+
+    async receiptsOfCustomer(workspaceId: WorkspaceId, customerId: string): Promise<ReceiptRecord[]> {
+        const rows = await this.ctx.executor.select().from(arReceipts)
+            .where(and(eq(arReceipts.workspaceId, workspaceId), eq(arReceipts.customerId, customerId)))
+            .orderBy(asc(arReceipts.receiptDate), asc(arReceipts.createdAt));
+        return rows.map(toReceipt);
+    }
+
+    async insertAllocations(rows: readonly ReceiptAllocationRecord[]): Promise<void> {
+        if (rows.length === 0) return;
+        await this.ctx.executor.insert(arReceiptAllocations).values(rows.map(r => ({ ...r })));
+    }
+
+    async allocationsOf(workspaceId: WorkspaceId, receiptIds: readonly string[]): Promise<ReceiptAllocationRecord[]> {
+        if (receiptIds.length === 0) return [];
+        const rows = await this.ctx.executor.select().from(arReceiptAllocations)
+            .where(and(eq(arReceiptAllocations.workspaceId, workspaceId), inArray(arReceiptAllocations.receiptId, [...receiptIds])));
+        return rows.map(toAllocation);
+    }
+
     async retentionEntries(workspaceId: WorkspaceId, contractId: string): Promise<RetentionEntryRecord[]> {
         const rows = await this.ctx.executor.select().from(arRetentionEntries)
             .where(and(eq(arRetentionEntries.workspaceId, workspaceId), eq(arRetentionEntries.contractId, contractId)))
@@ -181,6 +270,32 @@ export class DrizzleBillingRepository extends BillingRepository {
     async deleteAdvanceEntriesOfInvoice(workspaceId: WorkspaceId, invoiceId: string): Promise<void> {
         await this.ctx.executor.delete(arAdvanceEntries)
             .where(and(eq(arAdvanceEntries.workspaceId, workspaceId), eq(arAdvanceEntries.invoiceId, invoiceId)));
+    }
+
+    async deleteAdvanceEntriesOfReceipt(workspaceId: WorkspaceId, receiptId: string): Promise<void> {
+        await this.ctx.executor.delete(arAdvanceEntries)
+            .where(and(eq(arAdvanceEntries.workspaceId, workspaceId), eq(arAdvanceEntries.receiptId, receiptId)));
+    }
+
+    async retentionEntriesOfProjects(workspaceId: WorkspaceId, projectIds: readonly ProjectId[]): Promise<RetentionEntryRecord[]> {
+        if (projectIds.length === 0) return [];
+        const rows = await this.ctx.executor.select().from(arRetentionEntries)
+            .where(and(eq(arRetentionEntries.workspaceId, workspaceId), inArray(arRetentionEntries.projectId, [...projectIds])));
+        return rows.map(toRetention);
+    }
+
+    async advanceEntriesOfProjects(workspaceId: WorkspaceId, projectIds: readonly ProjectId[]): Promise<AdvanceEntryRecord[]> {
+        if (projectIds.length === 0) return [];
+        const rows = await this.ctx.executor.select().from(arAdvanceEntries)
+            .where(and(eq(arAdvanceEntries.workspaceId, workspaceId), inArray(arAdvanceEntries.projectId, [...projectIds])));
+        return rows.map(toAdvance);
+    }
+
+    async contractsWithRetention(limit: number): Promise<{ workspaceId: WorkspaceId; contractId: string }[]> {
+        const rows = await this.ctx.executor.select({ workspaceId: arRetentionEntries.workspaceId, contractId: arRetentionEntries.contractId })
+            .from(arRetentionEntries).where(eq(arRetentionEntries.kind, 'withheld'))
+            .groupBy(arRetentionEntries.workspaceId, arRetentionEntries.contractId).limit(limit);
+        return rows.map(r => ({ workspaceId: asWorkspaceId(r.workspaceId), contractId: r.contractId }));
     }
 
     async deleteByProject(): Promise<void> {

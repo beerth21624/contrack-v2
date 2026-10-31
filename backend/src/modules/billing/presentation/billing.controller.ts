@@ -1,13 +1,16 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import {
     type CertifyArClaimRequest, type ArClaimDto, type ArClaimSummaryDto, type ContractAdvanceDto, type ContractRetentionDto,
     type CreateAdvanceInvoiceRequest, type CreateArClaimRequest, type CreateRetentionReleaseInvoiceRequest, type InvoiceArClaimRequest,
     type InvoiceDto, type IssueInvoiceRequest, type PatchArClaimRequest, type VoidInvoiceRequest, certifyArClaimRequestSchema,
     createAdvanceInvoiceRequestSchema, createArClaimRequestSchema, createRetentionReleaseInvoiceRequestSchema, invoiceArClaimRequestSchema,
     issueInvoiceRequestSchema, patchArClaimRequestSchema, voidInvoiceRequestSchema,
+    type ArAgingDto, type CreateCreditNoteRequest, type CreateReceiptRequest, type CustomerStatementDto, type CustomerStatementQuery,
+    type InvoicePromptPayDto, type IssueTaxInvoiceRequest, type ReceiptDto, type VoidReceiptRequest, createCreditNoteRequestSchema,
+    createReceiptRequestSchema, customerStatementQuerySchema, issueTaxInvoiceRequestSchema, voidReceiptRequestSchema,
 } from '@contrack/contract';
 import type { AuthenticatedUser } from '../../../shared/application/ports';
-import { type ProjectId, parseId } from '../../../shared/domain';
+import { type ProjectId, type WorkspaceId, parseId } from '../../../shared/domain';
 import { CurrentUser } from '../../../shared/presentation/auth';
 import { ZodPipe, unwrap } from '../../../shared/presentation/http';
 import { RequiresModule } from '../../../shared/presentation/modules';
@@ -19,8 +22,13 @@ import {
     CreateAdvanceInvoiceUseCase, CreateRetentionReleaseInvoiceUseCase, GetContractAdvanceUseCase, GetContractRetentionUseCase,
     GetInvoiceUseCase, IssueInvoiceUseCase, ListProjectInvoicesUseCase, VoidInvoiceUseCase,
 } from '../application/use-cases/invoices.use-cases';
+import {
+    CreateCreditNoteUseCase, CustomerStatementUseCase, GetReceiptUseCase, InvoicePromptPayUseCase, IssueTaxInvoiceUseCase, ReceivablesAgingUseCase,
+    RecordReceiptUseCase, VoidReceiptUseCase,
+} from '../application/use-cases/receipts.use-cases';
 
 const projectIdParam = (raw: string): ProjectId => unwrap(parseId<'ProjectId'>(raw, 'Project'));
+const workspaceIdParam = (raw: string): WorkspaceId => unwrap(parseId<'WorkspaceId'>(raw, 'Workspace'));
 
 @Controller()
 @RequiresModule('billing')
@@ -42,6 +50,14 @@ export class BillingController {
         private readonly voidInvoice: VoidInvoiceUseCase,
         private readonly retention: GetContractRetentionUseCase,
         private readonly advance: GetContractAdvanceUseCase,
+        private readonly recordReceipt: RecordReceiptUseCase,
+        private readonly getReceipt: GetReceiptUseCase,
+        private readonly voidReceipt: VoidReceiptUseCase,
+        private readonly taxInvoice: IssueTaxInvoiceUseCase,
+        private readonly creditNote: CreateCreditNoteUseCase,
+        private readonly aging: ReceivablesAgingUseCase,
+        private readonly statement: CustomerStatementUseCase,
+        private readonly promptPay: InvoicePromptPayUseCase,
     ) {}
 
     // ── claims ──
@@ -166,5 +182,68 @@ export class BillingController {
     @Get('main-contracts/:contractId/advance')
     async contractAdvance(@CurrentUser() user: AuthenticatedUser, @Param('contractId') contractId: string): Promise<ContractAdvanceDto> {
         return unwrap(await this.advance.execute(user.userId, contractId));
+    }
+
+    // ── receipts, tax invoices, credit notes, receivables (WP-30) ──
+
+    @Post('workspaces/:workspaceId/receipts')
+    async addReceipt(
+        @CurrentUser() user: AuthenticatedUser,
+        @Param('workspaceId') workspaceId: string,
+        @Body(new ZodPipe(createReceiptRequestSchema)) body: CreateReceiptRequest,
+    ): Promise<ReceiptDto> {
+        return unwrap(await this.recordReceipt.execute({ userId: user.userId, workspaceId: workspaceIdParam(workspaceId), body }));
+    }
+
+    @Get('receipts/:receiptId')
+    async receipt(@CurrentUser() user: AuthenticatedUser, @Param('receiptId') receiptId: string): Promise<ReceiptDto> {
+        return unwrap(await this.getReceipt.execute(user.userId, receiptId));
+    }
+
+    @Post('receipts/:receiptId/void')
+    @HttpCode(200)
+    async cancelReceipt(
+        @CurrentUser() user: AuthenticatedUser,
+        @Param('receiptId') receiptId: string,
+        @Body(new ZodPipe(voidReceiptRequestSchema)) body: VoidReceiptRequest,
+    ): Promise<ReceiptDto> {
+        return unwrap(await this.voidReceipt.execute({ userId: user.userId, receiptId, body }));
+    }
+
+    @Post('invoices/:invoiceId/tax-invoice')
+    async addTaxInvoice(
+        @CurrentUser() user: AuthenticatedUser,
+        @Param('invoiceId') invoiceId: string,
+        @Body(new ZodPipe(issueTaxInvoiceRequestSchema)) body: IssueTaxInvoiceRequest,
+    ): Promise<InvoiceDto> {
+        return unwrap(await this.taxInvoice.execute({ userId: user.userId, invoiceId, body }));
+    }
+
+    @Post('invoices/:invoiceId/credit-note')
+    async addCreditNote(
+        @CurrentUser() user: AuthenticatedUser,
+        @Param('invoiceId') invoiceId: string,
+        @Body(new ZodPipe(createCreditNoteRequestSchema)) body: CreateCreditNoteRequest,
+    ): Promise<InvoiceDto> {
+        return unwrap(await this.creditNote.execute({ userId: user.userId, invoiceId, body }));
+    }
+
+    @Get('invoices/:invoiceId/promptpay')
+    async invoicePromptPay(@CurrentUser() user: AuthenticatedUser, @Param('invoiceId') invoiceId: string): Promise<InvoicePromptPayDto> {
+        return unwrap(await this.promptPay.execute(user.userId, invoiceId));
+    }
+
+    @Get('workspaces/:workspaceId/receivables/aging')
+    async receivablesAging(@CurrentUser() user: AuthenticatedUser, @Param('workspaceId') workspaceId: string): Promise<ArAgingDto> {
+        return unwrap(await this.aging.execute(user.userId, workspaceIdParam(workspaceId)));
+    }
+
+    @Get('customers/:customerId/statement')
+    async customerStatement(
+        @CurrentUser() user: AuthenticatedUser,
+        @Param('customerId') customerId: string,
+        @Query(new ZodPipe(customerStatementQuerySchema)) query: CustomerStatementQuery,
+    ): Promise<CustomerStatementDto> {
+        return unwrap(await this.statement.execute(user.userId, customerId, query));
     }
 }

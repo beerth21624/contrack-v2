@@ -162,6 +162,13 @@
       "when": 1793479302962,
       "tag": "0022_wp29_billing",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793480516126,
+      "tag": "0023_wp30_receipts",
+      "breakpoints": true
     }
   ]
 }

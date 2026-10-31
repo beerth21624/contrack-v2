@@ -10,6 +10,18 @@ export const INVOICE_TEXT = {
     retentionRelease: { th: 'คืนเงินประกันผลงาน', en: 'Retention release' },
 } as const;
 
+/** Line of a tax invoice issued for an invoice (receipt or ahead of payment). */
+export const taxInvoiceText = (invoiceNumber: string | null): { th: string; en: string } => ({
+    th: `ค่างานตามใบแจ้งหนี้เลขที่ ${invoiceNumber ?? '-'}`,
+    en: `Per invoice no. ${invoiceNumber ?? '-'}`,
+});
+
+/** Line of a credit note reducing a tax invoice. */
+export const creditNoteText = (taxInvoiceNumber: string | null, reason: string): { th: string; en: string } => ({
+    th: `ลดหนี้ตามใบกำกับภาษีเลขที่ ${taxInvoiceNumber ?? '-'}: ${reason}`,
+    en: `Credit on tax invoice no. ${taxInvoiceNumber ?? '-'}: ${reason}`,
+});
+
 export const claimText = (claimNo: number): { th: string; en: string } => ({
     th: `ค่างานงวดที่ ${claimNo}`,
     en: `Progress claim no. ${claimNo}`,
