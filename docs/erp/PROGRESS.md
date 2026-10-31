@@ -52,7 +52,7 @@
 | WP-38 | PR + RFQ backend | opus | done | 09b3448 | migration `0026_wp38_pr_rfq`; โมดูล `backend/src/modules/procurement/` (PR/RFQ); D-278…D-283 |
 | WP-39 | PO + รับของ + 3-way match backend | opus | done | dd27f4f | migration `0027_wp39_po_gr`; PO/GR ในโมดูล procurement; port `PurchaseOrders`; D-284…D-291 |
 | WP-40 | PR/RFQ web | sonnet | done | 5f88435 | ไม่มี migration; `src/features/erp/procurement/*`, routes `/p/[id]/procurement`, `…/procurement/rfqs/[rfqId]`, แท็บ nav `procurement`; i18n `procurement` + enums; D-292…D-295 |
-| WP-41 | PO/รับของ web + พิมพ์ PO/RFQ | sonnet | done | HASH41 | ไม่มี migration; `PurchaseOrderPage`, `GoodsReceiptDialog`, `PurchasingPage`, พิมพ์ PO/RFQ, ประวัติราคาผู้ขาย; routes `…/procurement/orders/[orderId]`, `/purchasing`, `/print/purchase-order/[id]`, `/print/rfq/[id]`; D-296…D-299 |
+| WP-41 | PO/รับของ web + พิมพ์ PO/RFQ | sonnet | done | 4b1b0be | ไม่มี migration; `PurchaseOrderPage`, `GoodsReceiptDialog`, `PurchasingPage`, พิมพ์ PO/RFQ, ประวัติราคาผู้ขาย; routes `…/procurement/orders/[orderId]`, `/purchasing`, `/print/purchase-order/[id]`, `/print/rfq/[id]`; D-296…D-299 |
 | WP-42 | รายงานประจำวัน backend | opus | todo | | |
 | WP-43 | รายงานประจำวัน web | sonnet | todo | | |
 | WP-44 | ใบลงเวลา งวดค่าแรง 15 วัน เบิกล่วงหน้า backend | opus | todo | | |
@@ -963,7 +963,7 @@
 - WP-41 ต้องรู้: ลิงก์ `orderHref(projectId, orderId)` (`/p/<id>/procurement/orders/<id>`) ใน `status.ts` ถูกใช้ในแท็บ PO แล้ว แต่หน้ายังไม่มีจนกว่า WP-41 สร้าง route; หลัง award เว็บพาไป `procurementHref(projectId,'orders')` — เปลี่ยนเป็น `orderHref` ได้เมื่อมีหน้า PO (`useAwardRfq` คืน `orderId` ใน `RfqAwardDto`); แท็บ "รับของ" ยังไม่มี; ใช้ `BudgetWarnings` ซ้ำกับ `issue` (422 `override_reason_required`); เพิ่ม subject `purchase_order`/`goods_receipt` ใน `ROUTES` ของ `numbering-search.ts`; ปุ่มพิมพ์ RFQ (`/print/rfq/<id>`) ยังไม่มีใน `RfqEditorPage`
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` และ `-p backend/tsconfig.json` ผ่าน; eslint `src/features/erp/procurement`, routes, `nav-registry.ts`, `numbering-search.ts` ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n` ผ่าน
 
-### WP-41 — PO/รับของ web + พิมพ์ PO/RFQ (HASH41)
+### WP-41 — PO/รับของ web + พิมพ์ PO/RFQ (4b1b0be)
 - สร้าง `src/features/erp/procurement/`: `PurchaseOrderPage` (แก้ draft / ออก / ยกเลิก / ปิด / พิมพ์ / ประวัติรับของ), `OrderLinesTable` (`OrderLinesEditor`, `OrderLinesTable`), `GoodsReceiptDialog`, `PurchasingPage`, `SupplierPriceHistory`, `print-model.ts`, `PurchaseOrderPrintDocument/Page`, `RfqPrintDocument/Page`; ขยาย `api.ts`/`hooks.ts` (PO, GR, price history, workspace PO list); routes `(app)/p/[projectId]/procurement/orders/[orderId]`, `(app)/purchasing`, `(print)/print/purchase-order/[orderId]`, `(print)/print/rfq/[rfqId]`; เมนู `purchasing` ใน `nav-registry.ts`; `RfqEditorPage` มีปุ่มพิมพ์ RFQ (ทั้งใบ / ต่อผู้ขาย) และ award ไปหน้า PO draft; `ProcurementPage` แท็บ PO มีปุ่มสร้าง
 - i18n (th+en): `procurement.order|receipt|purchasing|newOrder|priceHistory` (+ `orders.create`, `rfq.print`, `rfq.suppliers.print`), `enums.receiptCondition|goodsReceiptStatus`, `documents.purchaseOrder|rfq`, `nav.purchasing`; backend `numbering-search.ts` เพิ่ม subject `purchase_order`
 - เบี่ยงจากแผน: D-296 … D-299; ไม่เขียนเทสต์ใหม่ (คำสั่งเจ้าของ: ส่งของก่อน); ไม่มี migration; ยังไม่ได้ลองกดใน browser
