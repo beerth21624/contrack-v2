@@ -31,7 +31,7 @@
 | WP-17 | ประวัติ BOQ (versions, เทียบฉบับ) | opus | done | 874d2b5 | migration `0016_wp17_boq_versions`; โมดูล `boq-control` (versions), registry `RevisionHooks` (core), ports `RevisionWriter`/`RevisionLookup` (projects), route `/p/[projectId]/versions`; D-150…D-156 |
 | WP-18 | Baseline + cost codes (backend) | opus | done | cba4d4e | migration `0017_wp18_baseline`; `project_baselines`/`project_cost_codes`, registries `BoqEditLocks`/`BaselineUnlockGuards` (core), ports `CostCodeLookup`/`BaselineControl` (boq-control); D-157…D-163 |
 | WP-19 | Baseline web: BOQ อ่านอย่างเดียวเมื่อล็อก + CostCodePicker | opus | done | 225f97b | ไม่มี migration; `BaselinePanel` บนหน้า versions, `CloudBinding.locked`, sync event `locked`, `BaselineLockedBanner`, `CostCodePicker`; D-164…D-169 |
-| WP-20 | Cost ledger + financial events | opus | done | HASH | migration `0018_wp20_ledger`; `cost_ledger_entries`/`fin_events`, ports `CostLedger`/`FinancialEvents`, module `ledger`, guards ลบโครงการ/ปลดล็อก baseline; D-170…D-176 |
+| WP-20 | Cost ledger + financial events | opus | done | 4867142 | migration `0018_wp20_ledger`; `cost_ledger_entries`/`fin_events`, ports `CostLedger`/`FinancialEvents`, module `ledger`, guards ลบโครงการ/ปลดล็อก baseline; D-170…D-176 |
 | WP-21 | ราคากลางภาครัฐ | sonnet | todo | | |
 | WP-22 | Quotation: domain คำนวณ + overlay อังกฤษของ BOQ | opus | todo | | |
 | WP-23 | Quotation backend | opus | todo | | |
@@ -594,7 +594,7 @@
   - หน้า BOQ ไม่ได้ disable input เมื่อ `locked` (เหมือน viewer เดิม: แก้แล้วได้ notice และค่าไม่เปลี่ยน) — ถ้าต้อง disable ให้อ่าน `isBaselineLocked(binding)`
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ทั้งหมดผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/store src/features/cloud/sync src/i18n` 79 ผ่าน; ไม่มีการแก้ backend; ยังไม่ได้เปิดหน้าในเบราว์เซอร์ (ไม่มี backend ที่เปิดโมดูลไว้) — มือถือ 375 px ตรวจจากโค้ด (Select เต็มความกว้าง, popup ≤ `100vw − 32px`, ข้อความตัดบรรทัด)
 
-### WP-20 — Cost ledger + financial events (HASH)
+### WP-20 — Cost ledger + financial events (4867142)
 - สร้าง: `backend/src/shared/infrastructure/database/schema-ledger.ts` (`cost_ledger_entries`, `fin_events`; `ledgerTables`) + `database.ts` + `drizzle.config.ts`; migration `0018_wp20_ledger` (ตรงตามคาด ไม่ถาม interactive) → WP ถัดไปที่แก้ schema ได้ `0019_*`
 - contract `src/shared/contract/erp/ledger.ts`: `COST_ENTRY_KINDS`, `COST_CATEGORIES`, `COST_SOURCE_TYPES`, `FIN_EVENT_TYPES`, `FIN_DIRECTIONS`, `FIN_COUNTERPARTY_TYPES` (+ schemas/types), `costLedgerEntryDtoSchema`, `costLedgerTotalsDtoSchema`, `costLedgerCodeTotalsDtoSchema`, `costLedgerQuerySchema`, `costLedgerDtoSchema`, `finEventDtoSchema`, `finEventListQuerySchema` (`type` คั่นด้วย comma), `finEventListDtoSchema`
 - `ports.ts`: `CostLedger`, `FinancialEvents`, types `CostLedgerEntryInput`, `CostLedgerEntry`, `CostLedgerTotals`, `CostLedgerCodeTotals`, `CostLedgerReverseInput`, `FinEventInput`, `FinEvent`, `FinEventFilter`
