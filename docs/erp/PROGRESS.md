@@ -48,7 +48,7 @@
 | WP-34 | VO web + ราคาด้วยเครื่องคำนวณ (sandbox) | opus | done | 5371542 | ไม่มี migration; `src/features/erp/variations/*`, binding `sandbox` ใน project-store, routes `/p/[id]/variations[/[variationId]]` + `/print/variation/[id]`, แท็บ nav, renderer ลิงก์ `variation`; i18n `variations`; D-257…D-262 |
 | WP-35 | Portal backend + ค้นหา | opus | done | 0363f2f | ไม่มี migration; โมดูล `portal` (`GET …/portal`, `GET …/search?q=`), registries `PortalSources`/`SearchSources` (core), port `ModuleStatesLookup` (platform), contract `erp/portal.ts`; D-263…D-268 |
 | WP-36 | Portal web | sonnet | done | 0ac39c3 | หน้า `/home`, ค้นหา Ctrl/⌘+K, slot `HEADER_EXTRAS` ใน nav registry; ไม่มี migration; D-269…D-271 |
-| WP-37 | ทะเบียนผู้ขาย | opus | done | (hash) | migration `0025_wp37_suppliers`; โมดูล `suppliers` (gate `procurement`), ports `ScVendorDirectory` (subcontracting) / `SupplierLookup`, หน้า `/suppliers`, `SupplierPicker`; D-272…D-277 |
+| WP-37 | ทะเบียนผู้ขาย | opus | done | daad2d4 | migration `0025_wp37_suppliers`; โมดูล `suppliers` (gate `procurement`), ports `ScVendorDirectory` (subcontracting) / `SupplierLookup`, หน้า `/suppliers`, `SupplierPicker`; D-272…D-277 |
 | WP-38 | PR + RFQ backend | opus | todo | | |
 | WP-39 | PO + รับของ + 3-way match backend | opus | todo | | |
 | WP-40 | PR/RFQ web | sonnet | todo | | |
@@ -888,7 +888,7 @@
 - WP ถัดไปต้องรู้: task kind ใหม่ต้องเพิ่มข้อความ `portal.tasks.<kind>` (th+en) และ case ใน `taskText` (`TasksList.tsx`); ช่องค้นหาเพิ่ม type ใหม่ต้องมี `portal.search.types.<type>`; ตัวควบคุมใหม่บน header เพิ่มใน `HEADER_EXTRAS`
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้/สร้างผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/features/erp/hub src/i18n` ผ่าน; **ยังไม่ได้ทดสอบมือใน browser** (โหลด `/home`, Ctrl+K, เริ่ม trial จาก tile; กราฟ cash ต้องรอ WP-47)
 
-### WP-37 — ทะเบียนผู้ขาย ((hash))
+### WP-37 — ทะเบียนผู้ขาย (daad2d4)
 - สร้าง (contract): `src/shared/contract/erp/suppliers.ts` (`SUPPLIER_KINDS`, `SUPPLIER_WHT_PRESETS`, `SUPPLIER_WHT_PRESET_RATE`, `SUPPLIER_BANK_ACCOUNTS_MAX`, `supplierDtoSchema`, `createSupplierRequestSchema`, `patchSupplierRequestSchema`, `supplierListQuerySchema`, `SUPPLIER_RATING_SOURCES`, `createSupplierRatingRequestSchema`, `supplierRatingDtoSchema`, `supplierRatedDtoSchema`, `importScSuppliersDtoSchema`, `supplierSnapshotSchema`/`SupplierSnapshot`)
 - schema: ไฟล์ใหม่ `schema-procurement.ts` (`sup_suppliers`, `sup_ratings`; `procurementTables`) + `database.ts` + `drizzle.config.ts`; partial unique `(workspace_id, tax_id, branch_code) where tax_id <> '' and archived_at is null` และ `(workspace_id, sc_vendor_list_entry_id) where not null`; migration `0025_wp37_suppliers` (ตรงตามคาด ไม่ถาม interactive) → WP ถัดไปที่แก้ schema ได้ `0026_*` — **ตาราง `pc_*` ของ WP-38…41 ใส่ไฟล์เดียวกันนี้และ `procurementTables`** (FK ไป `sup_suppliers` ได้)
 - ports (`ports.ts`): `ScVendorDirectory` + `ScVendorDirectoryEntry` (provide โดย subcontracting: `SourcingScVendorDirectory` ใน `sourcing.parts.ts`, export แล้ว), `SupplierLookup` (`find`/`findMany`/`snapshot(ws, id, language)`/`locate`) + `Supplier`
