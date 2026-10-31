@@ -60,6 +60,20 @@ describe('CreateInvitationUseCase', () => {
             expect(outcome(await useCase.execute({ actorId: s.byRole[inviter], workspaceId: s.workspaceId, email: 'n@example.com', role }))).toBe('ok');
         });
 
+        it.each(['pm', 'purchasing', 'accounting', 'foreman'] as const)('an admin may invite as %s (ERP role)', async role => {
+            const s = await kit.seedCompany();
+            const { invitation } = valueOf(await useCase.execute({ actorId: s.admin, workspaceId: s.workspaceId, email: 'n@example.com', role }));
+            expect(invitation.role).toBe(role);
+        });
+
+        it('an accounting member cannot invite', async () => {
+            const s = await kit.seedCompany();
+            const accountant = kit.addUser('Ann Accounting');
+            await kit.addMember(s.workspaceId, accountant, 'accounting');
+            const r = await useCase.execute({ actorId: accountant, workspaceId: s.workspaceId, email: 'n@example.com', role: 'viewer' });
+            expect(outcome(r)).toBe('forbidden');
+        });
+
         it.each(['estimator', 'viewer'] as const)('a %s is forbidden', async inviter => {
             const s = await kit.seedCompany();
             const r = await useCase.execute({ actorId: s.byRole[inviter], workspaceId: s.workspaceId, email: 'n@example.com', role: 'viewer' });

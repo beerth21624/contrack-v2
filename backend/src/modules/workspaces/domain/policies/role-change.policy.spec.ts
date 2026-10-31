@@ -17,35 +17,34 @@ const change = (actorRole: Role, targetRole: Role, newRole: Role, ownerCount: nu
     ownerCount,
 }));
 
+const F = 'forbidden' as const;
+/** Every new role allowed / refused. */
+const ALL: Record<Role, Outcome> = { owner: 'ok', admin: 'ok', estimator: 'ok', viewer: 'ok', pm: 'ok', purchasing: 'ok', accounting: 'ok', foreman: 'ok' };
+const NONE: Record<Role, Outcome> = { owner: F, admin: F, estimator: F, viewer: F, pm: F, purchasing: F, accounting: F, foreman: F };
+/** An admin may grant every role except owner. */
+const BUT_OWNER: Record<Role, Outcome> = { ...ALL, owner: F };
+const NOBODY: Record<Role, Record<Role, Outcome>> = {
+    owner: NONE, admin: NONE, estimator: NONE, viewer: NONE, pm: NONE, purchasing: NONE, accounting: NONE, foreman: NONE,
+};
+
 /**
  * Expected outcome of [actor][target][newRole] in a company workspace with two owners (no last-owner effect).
- * Written out by hand so the matrix is reviewed, not derived from the implementation.
+ * Written out by hand so the matrix is reviewed, not derived from the implementation. The ERP roles (pm, purchasing,
+ * accounting, foreman) are rank 1 without members.changeRole, like the estimator.
  */
 const MATRIX: Record<Role, Record<Role, Record<Role, Outcome>>> = {
-    owner: {
-        owner: { owner: 'ok', admin: 'ok', estimator: 'ok', viewer: 'ok' },
-        admin: { owner: 'ok', admin: 'ok', estimator: 'ok', viewer: 'ok' },
-        estimator: { owner: 'ok', admin: 'ok', estimator: 'ok', viewer: 'ok' },
-        viewer: { owner: 'ok', admin: 'ok', estimator: 'ok', viewer: 'ok' },
-    },
+    owner: { owner: ALL, admin: ALL, estimator: ALL, viewer: ALL, pm: ALL, purchasing: ALL, accounting: ALL, foreman: ALL },
     admin: {
-        owner: { owner: 'forbidden', admin: 'forbidden', estimator: 'forbidden', viewer: 'forbidden' },
-        admin: { owner: 'forbidden', admin: 'ok', estimator: 'ok', viewer: 'ok' },
-        estimator: { owner: 'forbidden', admin: 'ok', estimator: 'ok', viewer: 'ok' },
-        viewer: { owner: 'forbidden', admin: 'ok', estimator: 'ok', viewer: 'ok' },
+        owner: NONE,
+        admin: BUT_OWNER, estimator: BUT_OWNER, viewer: BUT_OWNER,
+        pm: BUT_OWNER, purchasing: BUT_OWNER, accounting: BUT_OWNER, foreman: BUT_OWNER,
     },
-    estimator: {
-        owner: { owner: 'forbidden', admin: 'forbidden', estimator: 'forbidden', viewer: 'forbidden' },
-        admin: { owner: 'forbidden', admin: 'forbidden', estimator: 'forbidden', viewer: 'forbidden' },
-        estimator: { owner: 'forbidden', admin: 'forbidden', estimator: 'forbidden', viewer: 'forbidden' },
-        viewer: { owner: 'forbidden', admin: 'forbidden', estimator: 'forbidden', viewer: 'forbidden' },
-    },
-    viewer: {
-        owner: { owner: 'forbidden', admin: 'forbidden', estimator: 'forbidden', viewer: 'forbidden' },
-        admin: { owner: 'forbidden', admin: 'forbidden', estimator: 'forbidden', viewer: 'forbidden' },
-        estimator: { owner: 'forbidden', admin: 'forbidden', estimator: 'forbidden', viewer: 'forbidden' },
-        viewer: { owner: 'forbidden', admin: 'forbidden', estimator: 'forbidden', viewer: 'forbidden' },
-    },
+    estimator: NOBODY,
+    viewer: NOBODY,
+    pm: NOBODY,
+    purchasing: NOBODY,
+    accounting: NOBODY,
+    foreman: NOBODY,
 };
 
 const cases = ROLES.flatMap(actor => ROLES.flatMap(target => ROLES.map(newRole => [actor, target, newRole] as const)));

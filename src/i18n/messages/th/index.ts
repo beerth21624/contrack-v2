@@ -8,6 +8,7 @@ import shell from './shell.json';
 import account from './account.json';
 import documents from './documents.json';
 import modules from './modules.json';
+import roles from './roles.json';
 
 const messages = {
   common,
@@ -20,6 +21,7 @@ const messages = {
   account,
   documents,
   modules,
+  roles,
 };
 
 export default messages;

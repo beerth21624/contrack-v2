@@ -7,7 +7,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import {
-    rateCardConflictDetailsSchema, rateCardDtoSchema, type CreateRateCardRequest, type RateCardConflictDetails,
+    can, rateCardConflictDetailsSchema, rateCardDtoSchema, type CreateRateCardRequest, type RateCardConflictDetails,
     type RateCardDto, type Role, type UpdateRateCardRequest,
 } from '@/shared/contract';
 import { useSession } from '../auth/session';
@@ -40,8 +40,12 @@ export const rateCardsKey = (workspaceId: string) => ['workspaces', workspaceId,
 
 /** What a role may do with the library (mirrors the server's matrix; the server always decides). */
 export function rateCardAbilities(role: Role | undefined): { read: boolean; create: boolean; edit: boolean; archive: boolean } {
-    const manage = role === 'owner' || role === 'admin';
-    return { read: role !== undefined, create: manage || role === 'estimator', edit: manage, archive: manage };
+    return {
+        read: can(role, 'rateCards.read'),
+        create: can(role, 'rateCards.create'),
+        edit: can(role, 'rateCards.edit'),
+        archive: can(role, 'rateCards.archive'),
+    };
 }
 
 /**

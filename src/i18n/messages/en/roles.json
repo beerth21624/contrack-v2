@@ -1,0 +1,10 @@
+{
+  "owner": { "label": "Owner", "hint": "Can do everything, including deleting the workspace" },
+  "admin": { "label": "Assistant", "hint": "Invites and removes members, assigns work, deletes projects" },
+  "estimator": { "label": "Estimator", "hint": "Creates and fills in projects, saves revisions" },
+  "viewer": { "label": "Viewer", "hint": "Views and exports the BOQ, cannot edit" },
+  "pm": { "label": "Project manager", "hint": "Runs projects, budgets, purchasing and site work, approves subcontractor claims" },
+  "purchasing": { "label": "Purchasing", "hint": "Requests, orders and receives materials, manages suppliers" },
+  "accounting": { "label": "Accounting", "hint": "Bills customers, records receipts and payments, taxes and financial reports" },
+  "foreman": { "label": "Foreman", "hint": "Daily site reports, labour records and receiving goods on site" }
+}

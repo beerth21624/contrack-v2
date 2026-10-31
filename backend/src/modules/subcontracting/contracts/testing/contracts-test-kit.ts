@@ -60,9 +60,12 @@ export const PROJECT = asProjectId(uid(0x400));
 
 export const BUYER: Record<Role, UserId> = {
     owner: asUserId(uid(0x11)), admin: asUserId(uid(0x12)), estimator: asUserId(uid(0x13)), viewer: asUserId(uid(0x14)),
+    // ERP working roles: ids only, not seeded as members
+    pm: asUserId(uid(0x15)), purchasing: asUserId(uid(0x16)), accounting: asUserId(uid(0x17)), foreman: asUserId(uid(0x18)),
 };
 export const VENDOR: Record<Role, UserId> = {
     owner: asUserId(uid(0x21)), admin: asUserId(uid(0x22)), estimator: asUserId(uid(0x23)), viewer: asUserId(uid(0x24)),
+    pm: asUserId(uid(0x25)), purchasing: asUserId(uid(0x26)), accounting: asUserId(uid(0x27)), foreman: asUserId(uid(0x28)),
 };
 export const OUTSIDER = asUserId(uid(0x99));
 export const ROLES: Role[] = ['owner', 'admin', 'estimator', 'viewer'];

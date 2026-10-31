@@ -1,6 +1,5 @@
-import type { Role } from '@contrack/contract';
 import { asWorkspaceId } from '../../../../shared/domain/ids';
-import { ROLES_UNDER_TEST, WorkspacesTestKit, outcome } from '../../testing/workspaces-test-kit';
+import { ROLES_UNDER_TEST, WorkspacesTestKit, outcome, type SeededRole } from '../../testing/workspaces-test-kit';
 import { RemoveMemberUseCase } from './remove-member.use-case';
 
 const build = (kit: WorkspacesTestKit): RemoveMemberUseCase =>
@@ -16,7 +15,7 @@ describe('RemoveMemberUseCase', () => {
     });
 
     describe('removing someone else', () => {
-        const table: [Role, Role, string][] = [
+        const table: [SeededRole, SeededRole, string][] = [
             ['owner', 'admin', 'ok'],
             ['owner', 'estimator', 'ok'],
             ['owner', 'viewer', 'ok'],

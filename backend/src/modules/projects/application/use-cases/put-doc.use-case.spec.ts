@@ -234,7 +234,10 @@ describe('PutDocUseCase', () => {
     });
 
     describe('authorization', () => {
-        it.each<[Role, boolean]>([['owner', true], ['admin', true], ['estimator', true], ['viewer', false]])(
+        it.each<[Role, boolean]>([
+            ['owner', true], ['admin', true], ['estimator', true], ['viewer', false],
+            ['pm', true], ['purchasing', false], ['accounting', false], ['foreman', false],
+        ])(
             '%s may edit: %s',
             async (role, allowed) => {
                 const kit = projectsKit();

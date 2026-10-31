@@ -57,6 +57,13 @@
       "when": 1793460839407,
       "tag": "0007_wp03_entitlements",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793461876486,
+      "tag": "0008_wp05_roles",
+      "breakpoints": true
     }
   ]
 }

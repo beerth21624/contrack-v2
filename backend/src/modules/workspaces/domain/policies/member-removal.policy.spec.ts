@@ -23,12 +23,19 @@ const leave = (role: Role, ownerCount: number, kind: 'company' | 'personal' = 'c
     ownerCount,
 }));
 
-/** [actor][target] with two owners, written out by hand. */
+const F = 'forbidden' as const;
+const NONE: Record<Role, Outcome> = { owner: F, admin: F, estimator: F, viewer: F, pm: F, purchasing: F, accounting: F, foreman: F };
+
+/** [actor][target] with two owners, written out by hand (the ERP roles are rank 1 without members.remove). */
 const MATRIX: Record<Role, Record<Role, Outcome>> = {
-    owner: { owner: 'ok', admin: 'ok', estimator: 'ok', viewer: 'ok' },
-    admin: { owner: 'forbidden', admin: 'ok', estimator: 'ok', viewer: 'ok' },
-    estimator: { owner: 'forbidden', admin: 'forbidden', estimator: 'forbidden', viewer: 'forbidden' },
-    viewer: { owner: 'forbidden', admin: 'forbidden', estimator: 'forbidden', viewer: 'forbidden' },
+    owner: { owner: 'ok', admin: 'ok', estimator: 'ok', viewer: 'ok', pm: 'ok', purchasing: 'ok', accounting: 'ok', foreman: 'ok' },
+    admin: { owner: F, admin: 'ok', estimator: 'ok', viewer: 'ok', pm: 'ok', purchasing: 'ok', accounting: 'ok', foreman: 'ok' },
+    estimator: NONE,
+    viewer: NONE,
+    pm: NONE,
+    purchasing: NONE,
+    accounting: NONE,
+    foreman: NONE,
 };
 
 const pairs = ROLES.flatMap(actor => ROLES.map(target => [actor, target] as const));

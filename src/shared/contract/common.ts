@@ -5,13 +5,17 @@ import { z } from 'zod';
 export const uuidSchema = z.string().uuid();
 export const isoDateTimeSchema = z.string().datetime({ offset: true });
 
-/** Workspace roles, strongest first. */
-export const ROLES = ['owner', 'admin', 'estimator', 'viewer'] as const;
+/**
+ * Workspace roles: the four of release 1 (strongest first), then the ERP working roles appended (docs/erp/01 §5.1).
+ * Strength is `roleRank` in `./permissions`, not the order here. `admin` is shown as "assistant" in ERP screens.
+ */
+export const ROLES = ['owner', 'admin', 'estimator', 'viewer', 'pm', 'purchasing', 'accounting', 'foreman'] as const;
 export const roleSchema = z.enum(ROLES);
 export type Role = z.infer<typeof roleSchema>;
 
 /** Roles that can be given through an invitation or a role change (ownership is never handed out this way). */
-export const assignableRoleSchema = z.enum(['admin', 'estimator', 'viewer']);
+export const ASSIGNABLE_ROLES = ['admin', 'estimator', 'viewer', 'pm', 'purchasing', 'accounting', 'foreman'] as const;
+export const assignableRoleSchema = z.enum(ASSIGNABLE_ROLES);
 export type AssignableRole = z.infer<typeof assignableRoleSchema>;
 
 export const workspaceKindSchema = z.enum(['personal', 'company']);

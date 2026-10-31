@@ -1,7 +1,8 @@
 'use client';
 
 // ─── /workspace/members: members and roles, invitations (copyable link), workspace settings ───
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Alert, App, Avatar, Button, Form, Input, Modal, Popconfirm, Select, Table, Tag, Tooltip, Typography } from 'antd';
 import {
@@ -11,7 +12,8 @@ import type { AssignableRole, InvitationDto, MemberDto, Role, WorkspaceDto } fro
 import { thaiErrorMessage } from '../api/errors';
 import { RULES } from '../auth/form-rules';
 import { initials, useSession } from '../auth/session';
-import { can, canManage, grantableRoles, ROLE_HINT, ROLE_LABEL } from '../permissions';
+import { useModuleEnabled } from '@/features/modules/modules';
+import { can, canManage, grantableRoles } from '../permissions';
 import {
     useChangeRole, useCreateInvitation, useCreateWorkspace, useCurrentWorkspace, useDeleteWorkspace, useInvitations, useMembers,
     useRemoveMember, useRenameWorkspace, useRevokeInvitation,
@@ -25,12 +27,26 @@ export function inviteLink(token: string): string {
     return `${origin}/invite/${encodeURIComponent(token)}`;
 }
 
+interface RoleText {
+    label: (r: Role) => string;
+    hint: (r: Role) => string;
+}
+
+/** Role names and what each may do, from the `roles` messages (Thai text = the labels release 1 always showed). */
+function useRoleText(): RoleText {
+    const t = useTranslations('roles');
+    return useMemo(() => ({ label: (r: Role) => t(`${r}.label`), hint: (r: Role) => t(`${r}.hint`) }), [t]);
+}
+
 /** A role option in a dropdown: the role, and under it what that role may do. */
-const roleOption = (r: Role) => ({
+const roleOption = (text: RoleText, r: Role) => ({
     value: r,
-    label: ROLE_LABEL[r],
-    hint: ROLE_HINT[r],
+    label: text.label(r),
+    hint: text.hint(r),
 });
+
+/** The roles to offer; a member who already has a role outside them (an ERP role while the ERP is off) keeps it listed. */
+const withCurrent = (roles: Role[], current: Role): Role[] => (roles.includes(current) ? roles : [...roles, current]);
 const renderRoleOption = (o: { data: { label?: unknown; hint?: unknown } }) => (
     <div className="py-0.5">
         <div>{typeof o.data.label === 'string' ? o.data.label : ''}</div>
@@ -83,10 +99,13 @@ function WorkspaceSection({ workspace, onCreate }: { workspace: WorkspaceDto; on
     const removeMember = useRemoveMember(workspace.id);
     const deleteWorkspace = useDeleteWorkspace();
     const [renameOpen, setRenameOpen] = useState(false);
+    const roleText = useRoleText();
+    // The ERP working roles (pm, purchasing, accounting, foreman) are offered only while the ERP is active here.
+    const erpRoles = useModuleEnabled('project-hub', workspace.id).enabled;
 
     const onRole = (m: MemberDto, role: Role) => {
         changeRole.mutate({ userId: m.userId, role }, {
-            onSuccess: () => { void message.success(`เปลี่ยน ${m.displayName} เป็น ${ROLE_LABEL[role]} แล้ว`); },
+            onSuccess: () => { void message.success(`เปลี่ยน ${m.displayName} เป็น ${roleText.label(role)} แล้ว`); },
             onError: (e) => { void message.error(thaiErrorMessage(e)); },
         });
     };
@@ -131,11 +150,11 @@ function WorkspaceSection({ workspace, onCreate }: { workspace: WorkspaceDto; on
                 ? (
                     <Select value={m.role} style={{ width: 210 }} onChange={(r: Role) => onRole(m, r)} loading={changeRole.isPending}
                         popupMatchSelectWidth={260} optionRender={renderRoleOption}
-                        options={grantableRoles(myRole, true).map(roleOption)} />
+                        options={withCurrent(grantableRoles(myRole, true, erpRoles), m.role).map(r => roleOption(roleText, r))} />
                 )
                 : (
-                    <Tooltip title={ROLE_HINT[m.role]}>
-                        <Tag color={m.role === 'owner' ? 'orange' : m.role === 'viewer' ? 'default' : 'blue'}>{ROLE_LABEL[m.role]}</Tag>
+                    <Tooltip title={roleText.hint(m.role)}>
+                        <Tag color={m.role === 'owner' ? 'orange' : m.role === 'viewer' ? 'default' : 'blue'}>{roleText.label(m.role)}</Tag>
                     </Tooltip>
                 )),
         },
@@ -169,7 +188,7 @@ function WorkspaceSection({ workspace, onCreate }: { workspace: WorkspaceDto; on
                     <TeamOutlined className="text-orange-500 text-[18px]" />
                     <span className="font-semibold text-[16px]">{isCompany ? workspace.name : 'พื้นที่ส่วนตัว'}</span>
                     <Tag>{isCompany ? 'บริษัท/ทีม' : 'ส่วนตัว'}</Tag>
-                    <Text type="secondary" className="text-[12px]">บทบาทของคุณ: {ROLE_LABEL[myRole]}</Text>
+                    <Text type="secondary" className="text-[12px]">บทบาทของคุณ: {roleText.label(myRole)}</Text>
                     <span className="ml-auto flex gap-2">
                         {isCompany && can(myRole, 'workspace.rename') && (
                             <Button size="small" icon={<EditOutlined />} onClick={() => setRenameOpen(true)}>เปลี่ยนชื่อ</Button>
@@ -203,7 +222,9 @@ function InvitationsSection({ workspace }: { workspace: WorkspaceDto }) {
     const [link, setLink] = useState<{ email: string; url: string } | null>(null);
     // "คัดลอกแล้ว" after a successful copy, until the dialog closes.
     const [copied, setCopied] = useState(false);
-    const roles = grantableRoles(workspace.role, false) as AssignableRole[];
+    const roleText = useRoleText();
+    const erpRoles = useModuleEnabled('project-hub', workspace.id).enabled;
+    const roles = grantableRoles(workspace.role, false, erpRoles) as AssignableRole[];
     const closeLink = () => { setLink(null); setCopied(false); };
     const copyLink = async () => {
         if (!link) return;
@@ -230,7 +251,7 @@ function InvitationsSection({ workspace }: { workspace: WorkspaceDto }) {
         { title: 'อีเมล', dataIndex: 'email', key: 'email' },
         {
             title: 'บทบาท', key: 'role',
-            render: (_: unknown, i: InvitationDto) => <Tooltip title={ROLE_HINT[i.role]}><Tag>{ROLE_LABEL[i.role]}</Tag></Tooltip>,
+            render: (_: unknown, i: InvitationDto) => <Tooltip title={roleText.hint(i.role)}><Tag>{roleText.label(i.role)}</Tag></Tooltip>,
         },
         { title: 'หมดอายุ', key: 'exp', responsive: ['sm' as const], render: (_: unknown, i: InvitationDto) => formatDateTime(i.expiresAt) },
         {
@@ -257,7 +278,7 @@ function InvitationsSection({ workspace }: { workspace: WorkspaceDto }) {
                 </Form.Item>
                 <Form.Item name="role">
                     <Select style={{ width: 210 }} popupMatchSelectWidth={260} optionRender={renderRoleOption}
-                        options={roles.map(roleOption)} />
+                        options={roles.map(r => roleOption(roleText, r))} />
                 </Form.Item>
                 <Button type="primary" htmlType="submit" icon={<UserAddOutlined />} loading={create.isPending}>สร้างลิงก์เชิญ</Button>
             </Form>

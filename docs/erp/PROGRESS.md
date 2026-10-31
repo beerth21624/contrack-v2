@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-10-31 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01, WP-02, WP-03, WP-04 done)**
+อัปเดตล่าสุด: 2026-10-31 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-05 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -16,7 +16,7 @@
 | WP-02 | ไลบรารีเงิน ภาษี วันที่ | opus | done | cad77d2 | ไม่มี migration; `round2` ย้ายไป `src/domain/money/money.ts`; `amountInWords(v, locale)` ใน `src/i18n/format.ts` (D-52) |
 | WP-03 | Module registry, flag 4 ชั้น, entitlement, ModuleAccess (backend + contract) | opus | done | 267e14d | migration `0007_wp03_entitlements`; `ModuleUsage` → `ModuleWorkRegistry` (core); D-63…D-72 |
 | WP-04 | หน้าโมดูลและทดลองใช้ (web) | sonnet | done | 402deac | namespace `modules` (th+en), `useModuleEnabled` อ่าน `active`, `useActiveModules`/`useStartTrial`/`useModuleState`; ModulesPage แยกกลุ่ม + ทดลอง + dialog cascade (D-74…D-76) |
-| WP-05 | บทบาทและสิทธิ์ ERP | opus | todo | | |
+| WP-05 | บทบาทและสิทธิ์ ERP | opus | done | COMMIT_HASH | migration `0008_wp05_roles`; matrix ย้ายไป `src/shared/contract/permissions.ts` (backend + เว็บ re-export); namespace `roles`; D-77…D-81 |
 | WP-06 | ERP web foundation: UI kit, nav registry, กรอบพิมพ์ | opus | todo | | |
 | WP-07 | Platform admin: ให้สิทธิ์โมดูล (backend + web) | sonnet | todo | | |
 | WP-08 | Workflow อนุมัติ + audit log (backend) | opus | todo | | |
@@ -168,6 +168,11 @@
 | D-74 | 2026-10-31 | (WP-04) `ModuleGate` ใช้ `useModuleState` (แถวของโมดูลทั้งแถว) แทน `useModuleEnabled`; ข้อความรองเลือกตามสถานะ: dependency ไม่ครบ → `gate.missingDependencies`, ERP ที่ไม่มีสิทธิ์ → `gate.notEntitled`, อื่น ๆ → ข้อความไทยเดิม; ปุ่ม trial แสดงเมื่อ `trialAvailable` และมี `modules.manage` | ให้ข้อความไทยเดิมของ release 1 คงเดิมตัวอักษร (Robot ใช้ regex `ปิดใช้งานอยู่`) |
 | D-75 | 2026-10-31 | (WP-04) `ModulesPage`: ปิดสวิตช์ (ไม่ใช่ปุ่มทดลอง) เมื่อโมดูลปิดอยู่และ entitlement เป็น `none`/`expired`/`revoked`; เวลา "ตั้งแต่ …" ใช้ `useFormat().dateTime` (เดิม `fmtDateTime` ย่อปี พ.ศ.) ตามกติกา UI ใช้ ค.ศ. ผ่าน `format.ts`; หัวกลุ่ม "โมดูลเดิม"/"ERP" แสดงเฉพาะเมื่อมี ERP ที่ available อย่างน้อย 1 ตัว (ตาราง 2 ตารางแยกกลุ่ม) | release 1 ไม่มีหัวกลุ่ม; รูปแบบวันที่เป็นเรื่องเดียวที่ต่างจากเดิมเล็กน้อย (ไม่มี Robot ตรวจ) |
 | D-76 | 2026-10-31 | (WP-04) ชื่อ counter ของงานค้างใน dialog cascade แปลจาก `modules.work.<counter>` (ตอนนี้มี `activeSubcontracts`); counter ที่ไม่รู้จักแสดง `ชื่อ: จำนวน` — โมดูลที่ลงทะเบียน `ModuleWorkRegistry` เพิ่มต้องเพิ่มคีย์ th+en ที่นี่ | WP-03 Handoff ให้ WP-04 แปลชื่อ counter |
+| D-77 | 2026-10-31 | (WP-05) matrix สิทธิ์ย้ายไป `src/shared/contract/permissions.ts` ที่เดียว (`PERMISSIONS` as const, `Permission`, `can(role: Role \| undefined, p)`, `roleRank`) — `backend/src/shared/domain/permissions.ts` และ `src/features/cloud/permissions.ts` re-export (เว็บคง `ROLE_LABEL`, `ROLE_HINT`, `grantableRoles`, `canManage`); `rateCardAbilities`/`workforceAbilities` ฝั่งเว็บคำนวณจาก `can()` แทนเช็คชื่อบทบาท | ทางที่แผนแนะนำ: ผลเท่ากันโดยโครงสร้าง; เว็บเดิมขาด `rateCards.*`/`workforce.*` (ผลของบทบาทเดิมไม่เปลี่ยน — เทสต์เทียบ matrix เดิมทุกตัว) |
+| D-78 | 2026-10-31 | (WP-05) `ROLES` เติมต่อท้าย `pm, purchasing, accounting, foreman` (ลำดับใน array ไม่ใช่ลำดับความแรงแล้ว — ใช้ `roleRank`); `ASSIGNABLE_ROLES` export ใหม่; backend รับบทบาทใหม่ทุก workspace เสมอ (เชิญ/เปลี่ยนบทบาทผ่าน API ได้แม้ `project-hub` ปิด) — เว็บเท่านั้นที่ซ่อนตัวเลือกเมื่อ `project-hub` ไม่ active | บทบาทเป็นข้อมูลสมาชิก ไม่ใช่หน้าจอของโมดูล; ถ้า backend ปฏิเสธตาม flag สมาชิกที่ได้บทบาทแล้วจะเปลี่ยนกลับไม่ได้เมื่อโมดูลถูกปิด; release 1 ไม่มีผู้ใดส่งค่าใหม่ (เดิมได้ 400) |
+| D-79 | 2026-10-31 | (WP-05) ป้ายบทบาท: namespace `roles.<role>.label/hint` — ไทยของ 4 บทบาทเดิมใช้ข้อความเดิมของ `ROLE_LABEL`/`ROLE_HINT` ตรงตัว (`admin` = "ผู้ดูแล" ไม่ใช่ "ผู้ช่วยเจ้าของ" ตาม 01 §5.1) ส่วนอังกฤษ `admin` = "Assistant"; `MembersPage` ใช้ namespace ทุกบทบาท; หน้าอื่น (AccountMenu, ProjectsPage, AcceptInvitationPage) ยังใช้ `ROLE_LABEL` (เพิ่มไทยของบทบาทใหม่แล้ว) จนกว่า track I ย้าย | ห้ามเปลี่ยนข้อความไทยเดิม (Robot ใช้เป็น locator); เจ้าของเปลี่ยนเป็น "ผู้ช่วยเจ้าของ" ได้ที่ `roles.json` + `ROLE_LABEL` |
+| D-80 | 2026-10-31 | (WP-05) หน้าสมาชิก: `grantableRoles(actor, includeOwner, includeErp = false)` เรียงบทบาทใหม่ระหว่าง estimator กับ viewer; `includeErp = useModuleEnabled('project-hub', ws).enabled`; สมาชิกที่มีบทบาท ERP อยู่แล้วขณะ ERP ปิด — ตัวเลือกใน dropdown เพิ่มบทบาทปัจจุบันของเขาต่อท้าย (ไม่แสดงเป็น id ดิบ) | เกณฑ์ "ป้ายบทบาทของสมาชิกที่มีบทบาทใหม่แสดงเสมอ"; หน้าสมาชิกยิง GET `/workspaces/:id/modules` เพิ่ม 1 ครั้ง (cache ร่วมกับ hook เดิม) |
+| D-81 | 2026-10-31 | (WP-05) test kit: projects/rate-cards/workforce seed สมาชิก 4 บทบาทใหม่ใน workspace A (`PM`, `PURCHASING`, `ACCOUNTING`, `FOREMAN`); kit ของ subcontracting มีแค่ id (ไม่ seed); `workspaces-test-kit` และ `platform-test-kit` คง `ROLES_UNDER_TEST` 4 บทบาท (เทสต์นับจำนวนสมาชิก/การแจ้งเตือน) — workspaces export `SeededRole`; e2e `workforce.e2e-spec.ts` ใช้ `Record<'owner'\|'admin'\|'estimator'\|'viewer', boolean>` | แผนให้เพิ่มบทบาทใหม่ใน `ROLES_UNDER_TEST` "ถ้าเทสต์ยังผ่าน" — platform ไม่ผ่าน (นับ notification 8 แทน 4); เทสต์ใหม่ของบทบาทใหม่เพิ่มแยกด้วย `addMember` |
 
 ### คำถามค้างถึงเจ้าของ
 1. ตาราง Factor F ทางการ (กรมบัญชีกลาง) ฉบับที่ต้องการใช้ (D-12)
@@ -255,3 +260,19 @@
   - ModulesPage ยังอยู่ที่เดิม (`src/features/subcontracting/buyer/`) ไม่ได้ย้ายที่ เพื่อไม่แตะ route
   - โมดูลที่ลงทะเบียน counter ใน `ModuleWorkRegistry` ต้องเพิ่มคีย์ `modules.work.<counter>` (th+en)
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/shared/contract` 16 ผ่าน; ยังไม่ได้ทดสอบในเบราว์เซอร์/Robot
+
+### WP-05 — บทบาทและสิทธิ์ ERP (COMMIT_HASH)
+- สร้าง (contract): `src/shared/contract/permissions.ts` (`PERMISSIONS` ครบ §5.2, matrix §5.3 + สิทธิ์เดิมของบทบาทใหม่, `can`, `roleRank`) export จาก `index.ts`; `common.ts`: `ROLES` 8 ตัว, `ASSIGNABLE_ROLES` + `assignableRoleSchema` 7 ตัว
+- backend: `shared/domain/permissions.ts` = re-export (D-77); `schema.ts` enum + check `memberships_role_check`/`invitations_role_check`; policy ของ workspaces ไม่ต้องแก้ (ใช้ `roleRank` อยู่แล้ว บทบาทใหม่ rank 1 = เหมือน estimator); `backend/API.md` บรรทัดเชิญ
+- web: `src/features/cloud/permissions.ts` re-export + `ROLE_LABEL`/`ROLE_HINT` ไทยของบทบาทใหม่ + `ERP_ROLES` + `grantableRoles(actor, includeOwner, includeErp)`; `rate-cards.ts`/`workforce.ts` abilities ผ่าน `can()`; `project-store.ts` `isReadOnly` = cloud && `!can(role,'projects.edit')`; `MembersPage.tsx` ใช้ namespace `roles` + ตัวเลือก ERP เมื่อ `project-hub` active (D-80)
+- i18n: `src/i18n/messages/{th,en}/roles.json` ลงทะเบียนใน `index.ts` ทั้งสองภาษา
+- เทสต์: `src/shared/contract/__tests__/permissions.test.ts` (ทุก role × permission เทียบตาราง §5.3 ที่เขียนมือ + matrix เดิมของ 4 บทบาท, เว็บ = contract, ตรวจว่า backend re-export, acceptance, rank, `grantableRoles`); เคสใหม่ใน workspaces policy specs (8×8×8), `create-invitation`/`change-member-role` (admin เชิญ/เปลี่ยนเป็นบทบาท ERP, accounting เชิญ/เปลี่ยนไม่ได้), `put-doc` (pm แก้ได้, purchasing/accounting/foreman 403), `project-store.edge.test.ts` (`'editor'` ปลอม → `estimator`, บทบาท ERP read-only)
+- migration: `0008_wp05_roles` (ตรงตามคาด) → WP ถัดไปที่แก้ schema ได้ `0009_*`
+- เบี่ยงจากแผน: D-77 … D-81
+- WP ถัดไปต้องรู้:
+  - permission ERP ประกาศครบแล้ว — use case ใช้ `this.access.inWorkspace(userId, ws, '<module>', 'customers.manage')` ได้เลย; เพิ่ม permission ใหม่ = เพิ่มใน `PERMISSIONS` + matrix + แถวใน `ERP_TABLE` ของ `permissions.test.ts`
+  - เว็บ: `can(role, p)` import ได้ทั้งจาก `@/shared/contract` และ `@/features/cloud/permissions`; ป้ายบทบาทบนหน้าจอใหม่ใช้ `useTranslations('roles')` → `` t(`${role}.label`) `` ไม่ใช่ `ROLE_LABEL`
+  - `ROLES` ไม่เรียงตามความแรงแล้ว — เรียงด้วย `roleRank` ถ้าต้องการ
+  - "เห็นกำไร/ต้นทุน" = `cost.read` / `quotations.seeMargins` (viewer และ foreman ไม่มี)
+  - workforce/rate-cards/subcontracting backend ใช้ matrix อยู่แล้ว บทบาทใหม่ได้สิทธิ์เดิมตาม §5.3 ทันที; `ScAccess` widening (`estimatorCanAward` ฯลฯ) ยังใช้กับ `estimator`/`viewer` เท่านั้น (pm มี `sc.award`/`sc.claims.approve` ในตัว)
+- ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend 21, web 12) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `cd backend && npx jest src/modules/workspaces src/shared src/modules/projects src/modules/rate-cards src/modules/platform` 1989 ผ่าน; `npx jest src/modules/platform src/modules/workforce src/modules/subcontracting` 755 ผ่าน; `npx vitest run src/i18n src/shared/contract src/store src/features/cloud src/features/subcontracting src/features/workforce` ผ่านทั้งหมด; `npm run db:generate -- --name wp05_roles` ได้ `0008` ไม่ถาม interactive; ยังไม่ได้รัน e2e/Robot/เบราว์เซอร์

@@ -7,7 +7,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import {
-    crewAssignmentDtoSchema, crewDtoSchema, personDtoSchema, projectSupervisorsDtoSchema,
+    can, crewAssignmentDtoSchema, crewDtoSchema, personDtoSchema, projectSupervisorsDtoSchema,
     projectTaskLagsDtoSchema, workspaceTaskLagsDtoSchema, type ProjectTaskLagsDto, type TaskLag,
     workforceConflictDetailsSchema,
     type CreateCrewAssignmentRequest, type CreateCrewRequest, type CreatePersonRequest, type CrewAssignmentDto,
@@ -83,13 +83,12 @@ export const supervisorsKey = (projectId: string) => ['projects', projectId, 'su
 export function workforceAbilities(role: Role | undefined): {
     read: boolean; manage: boolean; assign: boolean; seeWages: boolean; seeCrewCost: boolean;
 } {
-    const manage = role === 'owner' || role === 'admin';
     return {
-        read: role !== undefined,
-        manage,
-        assign: manage || role === 'estimator',
-        seeWages: manage,
-        seeCrewCost: manage || role === 'estimator',
+        read: can(role, 'workforce.read'),
+        manage: can(role, 'workforce.manage'),
+        assign: can(role, 'workforce.assign'),
+        seeWages: can(role, 'workforce.seeWages'),
+        seeCrewCost: can(role, 'workforce.seeCrewCost'),
     };
 }
 

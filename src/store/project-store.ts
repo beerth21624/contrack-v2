@@ -6,7 +6,7 @@ import type { BoqLineKey, BoqLineOverride } from '@/domain/boq/types';
 import type { PlanningInput } from '@/domain/planning';
 import { createProject, PROJECT_SCHEMA_VERSION, type Project, type ProjectMeta, type ProjectStart } from '@/domain/project';
 import type { LevelMark } from '@/domain/journey/progress';
-import type { Role } from '@/shared/contract';
+import { can, type Role } from '@/shared/contract';
 import { emitNotice } from './notices';
 
 /** Field of a BOQ line the user can edit on the BOQ (Home) page. */
@@ -66,8 +66,9 @@ interface ProjectState {
     setCloudRole: (role: Role) => void;
 }
 
+/** A cloud project opens read-only for a role that may not edit it (viewer, and the ERP purchasing/accounting/foreman). */
 export function isReadOnly(binding: ProjectBinding): boolean {
-    return binding.kind === 'cloud' && binding.role === 'viewer';
+    return binding.kind === 'cloud' && !can(binding.role, 'projects.edit');
 }
 
 /** Stable fallback (selectors must not return a new object on every call). */

@@ -6,7 +6,10 @@ const outcome = (role: Role, kind: 'company' | 'personal'): string => {
     return r.ok ? 'ok' : r.error.code;
 };
 
-const COMPANY: Record<Role, string> = { owner: 'ok', admin: 'forbidden', estimator: 'forbidden', viewer: 'forbidden' };
+const COMPANY: Record<Role, string> = {
+    owner: 'ok', admin: 'forbidden', estimator: 'forbidden', viewer: 'forbidden',
+    pm: 'forbidden', purchasing: 'forbidden', accounting: 'forbidden', foreman: 'forbidden',
+};
 
 describe('checkWorkspaceDeletion', () => {
     it.each(ROLES)('company: %s', role => {

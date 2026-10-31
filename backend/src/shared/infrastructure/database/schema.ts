@@ -55,19 +55,19 @@ export const workspaces = pgTable('workspaces', {
 export const memberships = pgTable('memberships', {
     workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
     userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-    role: text('role', { enum: ['owner', 'admin', 'estimator', 'viewer'] }).notNull(),
+    role: text('role', { enum: ['owner', 'admin', 'estimator', 'viewer', 'pm', 'purchasing', 'accounting', 'foreman'] }).notNull(),
     joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
 }, t => [
     primaryKey({ columns: [t.workspaceId, t.userId] }),
     index('memberships_user_idx').on(t.userId),
-    check('memberships_role_check', sql`${t.role} in ('owner', 'admin', 'estimator', 'viewer')`),
+    check('memberships_role_check', sql`${t.role} in ('owner', 'admin', 'estimator', 'viewer', 'pm', 'purchasing', 'accounting', 'foreman')`),
 ]);
 
 export const invitations = pgTable('invitations', {
     id: uuid('id').primaryKey(),
     workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
     email: text('email').notNull(),
-    role: text('role', { enum: ['admin', 'estimator', 'viewer'] }).notNull(),
+    role: text('role', { enum: ['admin', 'estimator', 'viewer', 'pm', 'purchasing', 'accounting', 'foreman'] }).notNull(),
     tokenHash: text('token_hash').notNull(),
     invitedBy: uuid('invited_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
     createdAt: createdAt(),
@@ -78,7 +78,7 @@ export const invitations = pgTable('invitations', {
 }, t => [
     uniqueIndex('invitations_token_key').on(t.tokenHash),
     index('invitations_workspace_idx').on(t.workspaceId),
-    check('invitations_role_check', sql`${t.role} in ('admin', 'estimator', 'viewer')`),
+    check('invitations_role_check', sql`${t.role} in ('admin', 'estimator', 'viewer', 'pm', 'purchasing', 'accounting', 'foreman')`),
 ]);
 
 // ── projects ──

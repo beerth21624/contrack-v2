@@ -46,10 +46,13 @@ export const WS_VC = asWorkspaceId(uid(0x202));
 
 export const BUYER: Record<Role, UserId> = {
     owner: asUserId(uid(1)), admin: asUserId(uid(2)), estimator: asUserId(uid(3)), viewer: asUserId(uid(4)),
+    // ERP working roles: ids only, not seeded as members
+    pm: asUserId(uid(5)), purchasing: asUserId(uid(6)), accounting: asUserId(uid(7)), foreman: asUserId(uid(8)),
 };
 /** Members of vendor A's crew workspace, by role. */
 export const VENDOR_A: Record<Role, UserId> = {
     owner: asUserId(uid(11)), admin: asUserId(uid(12)), estimator: asUserId(uid(13)), viewer: asUserId(uid(14)),
+    pm: asUserId(uid(16)), purchasing: asUserId(uid(17)), accounting: asUserId(uid(18)), foreman: asUserId(uid(19)),
 };
 export const VENDOR_A2 = asUserId(uid(15));
 export const VENDOR_B = asUserId(uid(21));

@@ -285,16 +285,22 @@ describe('journey marks (done / skipped / undo)', () => {
 });
 
 describe('cloud binding: viewer is read-only, others can edit', () => {
-    const openAs = (role: 'viewer' | 'editor' | 'owner' | 'admin') => {
+    // 'editor' = the estimator, a role that may edit the BOQ (projects.edit)
+    const openAs = (role: 'viewer' | 'estimator' | 'owner' | 'admin') => {
         const cloud = { ...createProject('blank'), meta: { ...createProject('blank').meta, projectName: 'cloud' } };
         state().openCloudProject({ ...ID, role: role as never }, cloud);
     };
 
-    it('isReadOnly is true only for a cloud viewer', () => {
+    it('isReadOnly is true for a cloud role without projects.edit', () => {
         expect(mod.isReadOnly({ kind: 'guest' })).toBe(false);
-        expect(mod.isReadOnly({ kind: 'cloud', ...ID, role: 'viewer' as never })).toBe(true);
-        expect(mod.isReadOnly({ kind: 'cloud', ...ID, role: 'editor' as never })).toBe(false);
-        expect(mod.isReadOnly({ kind: 'cloud', ...ID, role: 'owner' as never })).toBe(false);
+        expect(mod.isReadOnly({ kind: 'cloud', ...ID, role: 'viewer' })).toBe(true);
+        expect(mod.isReadOnly({ kind: 'cloud', ...ID, role: 'estimator' })).toBe(false);
+        expect(mod.isReadOnly({ kind: 'cloud', ...ID, role: 'owner' })).toBe(false);
+        expect(mod.isReadOnly({ kind: 'cloud', ...ID, role: 'pm' })).toBe(false);
+        // ERP roles that do not edit the BOQ open it read-only (no PUT that would come back 403)
+        for (const role of ['purchasing', 'accounting', 'foreman'] as const) {
+            expect(mod.isReadOnly({ kind: 'cloud', ...ID, role })).toBe(true);
+        }
     });
 
     it('every edit action is blocked for a viewer, the project stays identical, one warning per attempt', () => {
@@ -313,7 +319,7 @@ describe('cloud binding: viewer is read-only, others can edit', () => {
 
     it('an editor can edit the cloud copy; nothing leaks to the guest key', () => {
         const guestBefore = storage.getItem(KEY);
-        openAs('editor');
+        openAs('estimator');
         state().setMeta({ projectName: 'edited in cloud' });
         state().setBoqOverride('R9', 'qty', 2);
         expect(state().project.meta.projectName).toBe('edited in cloud');
@@ -325,7 +331,7 @@ describe('cloud binding: viewer is read-only, others can edit', () => {
         openAs('viewer');
         state().setMeta({ projectName: 'no' });
         expect(state().project.meta.projectName).toBe('cloud');
-        state().setCloudRole('editor' as never);
+        state().setCloudRole('estimator');
         state().setMeta({ projectName: 'yes' });
         expect(state().project.meta.projectName).toBe('yes');
         state().setCloudRole('viewer' as never);
@@ -376,7 +382,7 @@ describe('cloud binding: viewer is read-only, others can edit', () => {
     it('selectGuestProject gives the working copy in guest mode and the set-aside one in cloud mode', () => {
         state().setMeta({ projectName: 'guest' });
         expect(mod.selectGuestProject(state()).meta.projectName).toBe('guest');
-        openAs('editor');
+        openAs('estimator');
         expect(mod.selectGuestProject(state()).meta.projectName).toBe('guest');
         expect(state().project.meta.projectName).toBe('cloud');
     });

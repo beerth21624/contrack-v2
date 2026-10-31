@@ -146,7 +146,7 @@ describe('workforce (e2e)', () => {
 
         it('a daily wage is shown to owner/admin only', async () => {
             const p = await newPerson({ dailyWage: 950 });
-            const shown: Record<Role, boolean> = { owner: true, admin: true, estimator: false, viewer: false };
+            const shown: Record<'owner' | 'admin' | 'estimator' | 'viewer', boolean> = { owner: true, admin: true, estimator: false, viewer: false };
             for (const role of ['owner', 'admin', 'estimator', 'viewer'] as const) {
                 const dto = (await listPeople(as[role])).find(x => x.id === p.id);
                 expect(dto?.dailyWage).toBe(shown[role] ? 950 : null);
@@ -207,7 +207,7 @@ describe('workforce (e2e)', () => {
             const leader = await newPerson();
             const crew = await newCrew({ name: 'ทีมก่อฉาบช่างแดง', trade: 'masonry', leaderId: leader.id, rateCardId: cardId, skilledCount: 3, labourerCount: 2 });
             expect(crew).toMatchObject({ trade: 'masonry', leaderId: leader.id, rateCardId: cardId, dailyCost: 3400, wagesHidden: false });
-            const shown: Record<Role, boolean> = { owner: true, admin: true, estimator: true, viewer: false };
+            const shown: Record<'owner' | 'admin' | 'estimator' | 'viewer', boolean> = { owner: true, admin: true, estimator: true, viewer: false };
             for (const role of ['owner', 'admin', 'estimator', 'viewer'] as const) {
                 const dto = (await listCrews(as[role])).find(c => c.id === crew.id);
                 expect(dto?.dailyCost).toBe(shown[role] ? 3400 : null);

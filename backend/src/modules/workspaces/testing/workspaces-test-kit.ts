@@ -14,7 +14,9 @@ import { InMemoryInvitationRepository } from '../infrastructure/adapters/in-memo
 import { InMemoryMembershipRepository } from '../infrastructure/adapters/in-memory-membership.repository';
 import { InMemoryWorkspaceRepository } from '../infrastructure/adapters/in-memory-workspace.repository';
 
-export const ROLES_UNDER_TEST: readonly Role[] = ['owner', 'admin', 'estimator', 'viewer'];
+/** The four roles `seedCompany` seeds (one member each); the ERP working roles are added per test with `addMember`. */
+export type SeededRole = Extract<Role, 'owner' | 'admin' | 'estimator' | 'viewer'>;
+export const ROLES_UNDER_TEST: readonly SeededRole[] = ['owner', 'admin', 'estimator', 'viewer'];
 export const INVITATION_TTL_DAYS = 7;
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -56,7 +58,7 @@ export interface CompanyScenario {
     viewer: UserId;
     outsider: UserId;
     /** The member with each role (outsider excluded). */
-    byRole: Record<Role, UserId>;
+    byRole: Record<SeededRole, UserId>;
 }
 
 const nextTurn = (): Promise<void> => new Promise(resolve => setImmediate(resolve));

@@ -60,6 +60,8 @@ export const PROJECT_ID = asProjectId(id('c000', 1));
 export const OTHER_PROJECT_ID = asProjectId(id('c000', 2));
 export const USERS: Record<Role, UserId> = {
     owner: asUserId(id('a000', 1)), admin: asUserId(id('a000', 2)), estimator: asUserId(id('a000', 3)), viewer: asUserId(id('a000', 4)),
+    // ERP working roles: ids only, not seeded as members
+    pm: asUserId(id('a000', 5)), purchasing: asUserId(id('a000', 6)), accounting: asUserId(id('a000', 7)), foreman: asUserId(id('a000', 8)),
 };
 export const OUTSIDER = asUserId(id('a000', 9));
 export const VENDOR_OWNER = asUserId(id('a000', 10));

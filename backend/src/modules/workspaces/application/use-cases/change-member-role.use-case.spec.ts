@@ -1,6 +1,5 @@
-import type { Role } from '@contrack/contract';
 import { asWorkspaceId } from '../../../../shared/domain/ids';
-import { WorkspacesTestKit, outcome, valueOf } from '../../testing/workspaces-test-kit';
+import { WorkspacesTestKit, outcome, valueOf, type SeededRole } from '../../testing/workspaces-test-kit';
 import { ChangeMemberRoleUseCase } from './change-member-role.use-case';
 
 const build = (kit: WorkspacesTestKit): ChangeMemberRoleUseCase =>
@@ -45,7 +44,7 @@ describe('ChangeMemberRoleUseCase', () => {
     });
 
     describe('authorization per role', () => {
-        const table: [Role, Role, Role, string][] = [
+        const table: [SeededRole, SeededRole, SeededRole, string][] = [
             ['owner', 'admin', 'viewer', 'ok'],
             ['owner', 'estimator', 'admin', 'ok'],
             ['admin', 'estimator', 'admin', 'ok'],
@@ -65,6 +64,23 @@ describe('ChangeMemberRoleUseCase', () => {
             });
             expect(outcome(r)).toBe(expected);
             expect(await kit.roleOf(s.workspaceId, s.byRole[targetRole])).toBe(expected === 'ok' ? newRole : targetRole);
+        });
+
+        it.each(['pm', 'purchasing', 'accounting', 'foreman'] as const)('an admin may make the viewer a %s, and back', async role => {
+            const s = await kit.seedCompany();
+            valueOf(await useCase.execute({ actorId: s.admin, workspaceId: s.workspaceId, targetUserId: s.viewer, role }));
+            expect(await kit.roleOf(s.workspaceId, s.viewer)).toBe(role);
+            valueOf(await useCase.execute({ actorId: s.admin, workspaceId: s.workspaceId, targetUserId: s.viewer, role: 'viewer' }));
+            expect(await kit.roleOf(s.workspaceId, s.viewer)).toBe('viewer');
+        });
+
+        it('an accounting member cannot change roles', async () => {
+            const s = await kit.seedCompany();
+            const accountant = kit.addUser('Ann Accounting');
+            await kit.addMember(s.workspaceId, accountant, 'accounting');
+            const r = await useCase.execute({ actorId: accountant, workspaceId: s.workspaceId, targetUserId: s.viewer, role: 'estimator' });
+            expect(outcome(r)).toBe('forbidden');
+            expect(await kit.roleOf(s.workspaceId, s.viewer)).toBe('viewer');
         });
 
         it('an admin may change another admin', async () => {

@@ -83,7 +83,15 @@ export const ESTIMATOR = asUserId('10000000-0000-4000-8000-000000000003');
 export const VIEWER = asUserId('10000000-0000-4000-8000-000000000004');
 export const OUTSIDER = asUserId('10000000-0000-4000-8000-000000000005');
 export const OWNER_B = asUserId('20000000-0000-4000-8000-000000000001');
-export const ROLE_USERS: Record<Role, UserId> = { owner: OWNER, admin: ADMIN, estimator: ESTIMATOR, viewer: VIEWER };
+/** The ERP working roles (docs/erp/01 §5.1), also members of workspace A. */
+export const PM = asUserId('10000000-0000-4000-8000-000000000006');
+export const PURCHASING = asUserId('10000000-0000-4000-8000-000000000007');
+export const ACCOUNTING = asUserId('10000000-0000-4000-8000-000000000008');
+export const FOREMAN = asUserId('10000000-0000-4000-8000-000000000009');
+export const ROLE_USERS: Record<Role, UserId> = {
+    owner: OWNER, admin: ADMIN, estimator: ESTIMATOR, viewer: VIEWER,
+    pm: PM, purchasing: PURCHASING, accounting: ACCOUNTING, foreman: FOREMAN,
+};
 
 /** Projects: P_A in workspace A, P_ARCHIVED archived in A, P_B in workspace B. */
 export const P_A = asProjectId('30000000-0000-4000-8000-00000000000a');
@@ -122,6 +130,10 @@ export function workforceKit() {
     workspaces.set(ADMIN, WS_A, 'admin');
     workspaces.set(ESTIMATOR, WS_A, 'estimator');
     workspaces.set(VIEWER, WS_A, 'viewer');
+    workspaces.set(PM, WS_A, 'pm');
+    workspaces.set(PURCHASING, WS_A, 'purchasing');
+    workspaces.set(ACCOUNTING, WS_A, 'accounting');
+    workspaces.set(FOREMAN, WS_A, 'foreman');
     workspaces.set(OWNER_B, WS_B, 'owner');
     projects.rows.set(P_A, { workspaceId: WS_A, archived: false });
     projects.rows.set(P_A2, { workspaceId: WS_A, archived: false });
