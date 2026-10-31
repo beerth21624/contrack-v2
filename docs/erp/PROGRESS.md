@@ -22,7 +22,7 @@
 | WP-08 | Workflow อนุมัติ + audit log (backend) | opus | done | 765869e | migration `0009_wp08_approvals_audit`; โมดูล `approvals` + `audit`, `schema-erp-core.ts`, ports `Approvals`/`ApprovalHandlers`/`AuditLog`, `WorkspaceDirectory.members`; audit ของ `SetEntitlementUseCase`; D-94…D-103 |
 | WP-09 | หน้าอนุมัติ นโยบาย และ audit (web) | sonnet | done | cfdaad1 | ไม่มี migration; `src/features/erp/approvals/*`, `shared/AuditTimeline.tsx`, routes `/approvals`, `/workspace/approval-policies`, namespace `approvals`+`audit`, `enums.approval*`; D-105…D-107 |
 | WP-10 | การแจ้งเตือน: channel, ภาษาผู้รับ, sweep | opus | done | a984d6f | migration `0010_wp10_notifications`; template ERP 20 ตัว th/en; sweep `platform.trial-expiring`; D-108…D-113 |
-| WP-11 | บริการเลขเอกสาร + guard การลบ | opus | done | HASH | migration `0011_wp11_numbering`; โมดูล `numbering`, port `DocumentNumbering`, `ProjectDeletionGuards`/`WorkspaceDeletionGuards`, หน้า `/workspace/numbering`; D-114…D-120 |
+| WP-11 | บริการเลขเอกสาร + guard การลบ | opus | done | 4706b00 | migration `0011_wp11_numbering`; โมดูล `numbering`, port `DocumentNumbering`, `ProjectDeletionGuards`/`WorkspaceDeletionGuards`, หน้า `/workspace/numbering`; D-114…D-120 |
 | WP-12 | โปรไฟล์บริษัท + business profile + project type | sonnet | todo | | |
 | WP-13 | ทะเบียนลูกค้า | sonnet | todo | | |
 | WP-14 | ลิงก์ลูกค้า (public) | opus | todo | | |
@@ -397,7 +397,7 @@
   - ผูก LINE จริงภายหลัง: เขียนแถว `user_channel_links (user_id, 'line', <LINE user id>, verified_at)` แล้ว `LoggingLineSender` ต้องเปลี่ยนเป็นตัวเรียก Messaging API
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend + `NotificationBell.tsx`) ผ่าน; `cd backend && npx jest src/modules/platform src/modules/approvals src/modules/identity/infrastructure src/shared` 293 ผ่าน; `npx jest src/modules/subcontracting` 483 ผ่าน; e2e `approvals` + `subcontracting` 6 ผ่าน; spec ชั่วคราว (ลบแล้ว) ยืนยัน: notify เดียวกันได้ en "Invoice INV-1 to ACME for THB 1,250,000.00 is due on 30 Oct 2026" / th "ใบแจ้งหนี้ INV-1 ของ ACME ยอด 1,250,000.00 บาท ครบกำหนดชำระ 30 ต.ค. 2026", ทุก template ERP render ครบทั้งสองภาษา, trial หมดใน 2 วัน + `runOnce()` สองครั้ง → owner ได้ 1 แถว viewer 0; `npm run db:generate -- --name wp10_notifications` ได้ `0010` ไม่ถาม interactive; ยังไม่ได้ทดสอบบน PostgreSQL จริง/เบราว์เซอร์
 
-### WP-11 — บริการเลขเอกสาร + guard การลบ (HASH)
+### WP-11 — บริการเลขเอกสาร + guard การลบ (4706b00)
 - สร้าง (contract): `src/shared/contract/erp/numbering.ts` (`DOC_TYPES` 17 ตัว + `docTypeSchema`, `DOC_TYPE_DEFAULTS` `{prefix, reset}`, `NUMBER_RESETS`, `YEAR_STYLES`, `NUMBER_PATTERN_TOKENS`, `DEFAULT_NUMBER_PATTERN`/`DEFAULT_MONTHLY_NUMBER_PATTERN`, `DATE_ORDERED_DOC_TYPES`, `DELETION_EXEMPT_DOC_TYPES`, `ISSUED_DOCUMENT_STATUSES`, `numberingSeriesDtoSchema`/`numberingSeriesListDtoSchema`, `putNumberingSeriesRequestSchema`) export ใน `erp/index.ts`
 - pure: `src/domain/erp/numbering.ts` (`formatDocNumber`, `periodKeyOf`, `validatePattern(pattern, reset)` → `PatternProblem[]`, types `NumberReset`/`YearStyle`); backend import `@contrack/domain/erp/numbering`
 - schema: `doc_number_series`, `doc_number_counters`, `issued_documents` ใน `schema-erp-core.ts` (+ `erpCoreTables`); FK workspace cascade, ไม่มี FK project
