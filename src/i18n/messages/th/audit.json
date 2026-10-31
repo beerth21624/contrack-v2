@@ -33,7 +33,14 @@
     "apply_variation": "ปรับตามงานเพิ่ม-ลด",
     "milestone_status": "เปลี่ยนสถานะงวด",
     "attach_scan": "แนบสแกนสัญญา",
-    "return": "คืนหลักประกัน"
+    "return": "คืนหลักประกัน",
+    "submit": "ส่งเอกสาร",
+    "approval_rejected": "ไม่อนุมัติ",
+    "certify": "ลูกค้ารับรองงวดงาน",
+    "invoice": "ออกใบแจ้งหนี้",
+    "edit": "แก้ไข",
+    "create_claim": "สร้างงวดเบิก",
+    "create_invoice": "สร้างใบแจ้งหนี้"
   },
   "entities": {
     "approval_request": "คำขออนุมัติ",
@@ -46,6 +53,8 @@
     "customer_link": "ลิงก์ลูกค้า",
     "project": "โครงการ",
     "main_contract": "สัญญาหลัก",
-    "contract_guarantee": "หลักประกันสัญญา"
+    "contract_guarantee": "หลักประกันสัญญา",
+    "ar_claim": "งวดเบิก",
+    "ar_invoice": "ใบแจ้งหนี้"
   }
 }

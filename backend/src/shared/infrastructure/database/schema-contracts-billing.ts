@@ -3,12 +3,14 @@
 // `contractsBillingTables`; database.ts merges it and drizzle.config.ts lists this file for migrations.
 // customer_id / quotation ids / cost code ids point at other modules' tables: no FK (checked through ports, D-19).
 import type {
-    DocLanguage, MainContractTerms, QuotationCompanySnapshot, QuotationCustomerSnapshot,
+    DocLanguage, InvoiceLine, MainContractTerms, QuotationCompanySnapshot, QuotationCustomerSnapshot,
 } from '@contrack/contract';
 import { sql } from 'drizzle-orm';
-import { check, index, integer, jsonb, pgTable, text, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+    boolean, check, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid,
+} from 'drizzle-orm/pg-core';
 import { workspaces } from './schema';
-import { businessDate, createdAt, money, projectTenantFk, rate, updatedAt } from './schema-helpers';
+import { businessDate, createdAt, money, projectTenantFk, quantity, rate, updatedAt } from './schema-helpers';
 
 /** One contract with the project owner; one effective (not cancelled / terminated) per project. */
 export const mcContracts = pgTable('mc_contracts', {
@@ -115,4 +117,159 @@ export const mcGuarantees = pgTable('mc_guarantees', {
     check('mc_guarantees_status_check', sql`${t.status} in ('active', 'returned', 'claimed', 'expired')`),
 ]);
 
-export const contractsBillingTables = { mcContracts, mcMilestones, mcGuarantees };
+// ── Billing (module `billing`, WP-29; docs/erp/02-domain-model.md §4) ──
+
+/** Progress claims (งวดเบิก) of a main contract; one open (draft / pending_approval / submitted) per contract. */
+export const arClaims = pgTable('ar_claims', {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id').notNull(),
+    contractId: uuid('contract_id').notNull().references(() => mcContracts.id, { onDelete: 'cascade' }),
+    milestoneId: uuid('milestone_id'),
+    mode: text('mode').notNull(),
+    claimNo: integer('claim_no').notNull(),
+    periodFrom: businessDate('period_from'),
+    periodTo: businessDate('period_to'),
+    status: text('status').notNull().default('draft'),
+    workValue: money('work_value').notNull().default(0),
+    cumulativeValue: money('cumulative_value').notNull().default(0),
+    previousValue: money('previous_value').notNull().default(0),
+    isFinal: boolean('is_final').notNull().default(false),
+    advanceRecovery: money('advance_recovery').notNull().default(0),
+    retention: money('retention').notNull().default(0),
+    penalty: money('penalty').notNull().default(0),
+    penaltyDays: integer('penalty_days').notNull().default(0),
+    penaltyOverride: money('penalty_override'),
+    penaltyMax: money('penalty_max').notNull().default(0),
+    escalation: money('escalation').notNull().default(0),
+    escalationK: quantity('escalation_k'),
+    escalationIndices: jsonb('escalation_indices').$type<Record<string, number>>().notNull().default({}),
+    otherDeduction: money('other_deduction').notNull().default(0),
+    otherDeductionNote: text('other_deduction_note').notNull().default(''),
+    vatBase: money('vat_base').notNull().default(0),
+    vat: money('vat').notNull().default(0),
+    wht: money('wht').notNull().default(0),
+    payable: money('payable').notNull().default(0),
+    certifiedByName: text('certified_by_name').notNull().default(''),
+    certifiedAt: businessDate('certified_at'),
+    certifiedNote: text('certified_note').notNull().default(''),
+    invoiceId: uuid('invoice_id'),
+    createdBy: uuid('created_by').notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+}, t => [
+    projectTenantFk('ar_claims', t),
+    unique('ar_claims_contract_no_key').on(t.contractId, t.claimNo),
+    uniqueIndex('ar_claims_one_open_idx').on(t.contractId).where(sql`${t.status} in ('draft', 'pending_approval', 'submitted')`),
+    index('ar_claims_workspace_project_idx').on(t.workspaceId, t.projectId),
+    check('ar_claims_status_check', sql`${t.status} in ('draft', 'pending_approval', 'submitted', 'certified', 'invoiced', 'cancelled')`),
+    check('ar_claims_mode_check', sql`${t.mode} in ('milestone', 'progress')`),
+]);
+
+/** One line per cost code of a claim (cumulative progress → amounts). */
+export const arClaimLines = pgTable('ar_claim_lines', {
+    claimId: uuid('claim_id').notNull().references(() => arClaims.id, { onDelete: 'cascade' }),
+    costCodeId: uuid('cost_code_id').notNull(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    contractAmount: money('contract_amount').notNull(),
+    prevProgress: rate('prev_progress').notNull().default(0),
+    cumProgress: rate('cum_progress').notNull().default(0),
+    prevAmount: money('prev_amount').notNull().default(0),
+    cumAmount: money('cum_amount').notNull().default(0),
+    thisAmount: money('this_amount').notNull().default(0),
+    note: text('note').notNull().default(''),
+}, t => [
+    primaryKey({ name: 'ar_claim_lines_pkey', columns: [t.claimId, t.costCodeId] }),
+]);
+
+/** Invoices to the customer (claim / advance / retention release; tax invoices and credit notes in WP-30). */
+export const arInvoices = pgTable('ar_invoices', {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id'),
+    contractId: uuid('contract_id').references(() => mcContracts.id, { onDelete: 'cascade' }),
+    claimId: uuid('claim_id'),
+    milestoneId: uuid('milestone_id'),
+    customerId: uuid('customer_id').notNull(),
+    kind: text('kind').notNull(),
+    source: text('source').notNull(),
+    number: text('number'),
+    status: text('status').notNull().default('draft'),
+    issueDate: businessDate('issue_date').notNull(),
+    dueDate: businessDate('due_date').notNull(),
+    language: text('language').$type<DocLanguage>().notNull().default('th'),
+    customerSnapshot: jsonb('customer_snapshot').$type<QuotationCustomerSnapshot>(),
+    companySnapshot: jsonb('company_snapshot').$type<QuotationCompanySnapshot>(),
+    lines: jsonb('lines').$type<InvoiceLine[]>().notNull().default([]),
+    net: money('net').notNull().default(0),
+    vat: money('vat').notNull().default(0),
+    total: money('total').notNull().default(0),
+    retention: money('retention').notNull().default(0),
+    advanceRecovery: money('advance_recovery').notNull().default(0),
+    penalty: money('penalty').notNull().default(0),
+    whtExpected: money('wht_expected').notNull().default(0),
+    payable: money('payable').notNull().default(0),
+    paidAmount: money('paid_amount').notNull().default(0),
+    relatedInvoiceId: uuid('related_invoice_id'),
+    note: text('note').notNull().default(''),
+    voidReason: text('void_reason').notNull().default(''),
+    issuedBy: uuid('issued_by'),
+    issuedAt: timestamp('issued_at', { withTimezone: true }),
+    createdBy: uuid('created_by').notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+}, t => [
+    projectTenantFk('ar_invoices', t),
+    unique('ar_invoices_workspace_number_key').on(t.workspaceId, t.number),
+    index('ar_invoices_workspace_project_idx').on(t.workspaceId, t.projectId),
+    index('ar_invoices_contract_idx').on(t.contractId),
+    index('ar_invoices_workspace_status_due_idx').on(t.workspaceId, t.status, t.dueDate),
+    check('ar_invoices_kind_check', sql`${t.kind} in ('advance_invoice', 'invoice', 'tax_invoice', 'credit_note')`),
+    check('ar_invoices_source_check', sql`${t.source} in ('claim', 'advance', 'retention_release', 'receipt')`),
+    check('ar_invoices_status_check', sql`${t.status} in ('draft', 'issued', 'partially_paid', 'paid', 'voided')`),
+    check('ar_invoices_language_check', sql`${t.language} in ('th', 'en')`),
+]);
+
+/** Customer retention ledger of a contract (balance always derived from it). */
+export const arRetentionEntries = pgTable('ar_retention_entries', {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    contractId: uuid('contract_id').notNull().references(() => mcContracts.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id').notNull(),
+    kind: text('kind').notNull(),
+    amount: money('amount').notNull(),
+    claimId: uuid('claim_id'),
+    invoiceId: uuid('invoice_id'),
+    entryDate: businessDate('entry_date').notNull(),
+    note: text('note').notNull().default(''),
+    createdBy: uuid('created_by').notNull(),
+    createdAt: createdAt(),
+}, t => [
+    projectTenantFk('ar_retention_entries', t),
+    index('ar_retention_entries_contract_idx').on(t.contractId),
+    uniqueIndex('ar_retention_entries_claim_withheld_idx').on(t.claimId).where(sql`${t.kind} = 'withheld'`),
+    check('ar_retention_entries_kind_check', sql`${t.kind} in ('withheld', 'released', 'forfeited')`),
+]);
+
+/** Customer advance payment ledger of a contract (received by receipts, WP-30; recovered by claims). */
+export const arAdvanceEntries = pgTable('ar_advance_entries', {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    contractId: uuid('contract_id').notNull().references(() => mcContracts.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id').notNull(),
+    kind: text('kind').notNull(),
+    amount: money('amount').notNull(),
+    invoiceId: uuid('invoice_id'),
+    claimId: uuid('claim_id'),
+    entryDate: businessDate('entry_date').notNull(),
+    createdBy: uuid('created_by').notNull(),
+    createdAt: createdAt(),
+}, t => [
+    projectTenantFk('ar_advance_entries', t),
+    index('ar_advance_entries_contract_idx').on(t.contractId),
+    check('ar_advance_entries_kind_check', sql`${t.kind} in ('received', 'recovered')`),
+]);
+
+export const contractsBillingTables = {
+    mcContracts, mcMilestones, mcGuarantees, arClaims, arClaimLines, arInvoices, arRetentionEntries, arAdvanceEntries,
+};

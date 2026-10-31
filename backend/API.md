@@ -305,3 +305,25 @@ Schemas: `../src/shared/contract/erp/main-contracts.ts`; template `../src/domain
 | GET | `/main-contracts/:contractId/guarantees` | → `ContractGuaranteeDto[]` | |
 | POST | `/main-contracts/:contractId/guarantees` | `CreateGuaranteeRequest` → `ContractGuaranteeDto` (201) | draft / signed / completed contract; files `guarantee_scan` |
 | PATCH | `/guarantees/:guaranteeId` | `PatchGuaranteeRequest` → `ContractGuaranteeDto` | return = `{status: 'returned'}` (`returnedAt` default today) |
+
+## Billing (module `billing`; WP-29)
+Schemas: `../src/shared/contract/erp/billing.ts`; formulas `../src/domain/billing/*`. Read `billing.read`, everything else `billing.manage`. Every amount is computed by the server (never sent by the client). Claim states `draft → (pending_approval →) submitted → certified → invoiced`, `draft | pending_approval | submitted → cancelled`; one open (draft / pending_approval / submitted) claim per contract (409 `claim_open`). Claims need a signed (or completed) contract (409 `contract_not_signed`). Not a member → 404; module not active → 404 `module_disabled`; archived project → 409 `project_archived` on writes. Money events (`fin_events`, source `ar_invoice`): claim invoice → `ar.invoiced` (+ `ar.retention_withheld`, `ar.advance_recovered`, `ar.penalty` with the amount in `net`), advance → `ar.advance_invoiced`, retention release → `ar.retention_released`; void reverses them.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/main-contracts/:contractId/claims` | → `ArClaimSummaryDto[]` | by claim no |
+| POST | `/main-contracts/:contractId/claims` | `CreateArClaimRequest` → `ArClaimDto` (201) | progress: a line per active cost code with `contract_amount + vo_contract_amount ≠ 0`, cum % = max(reported, previous); milestone: `milestoneId` of a claimable work / final milestone (409 `milestone_not_claimable`; `manual` ones count as claimable), milestone → `claimed` |
+| GET | `/claims/:claimId` | → `ArClaimDto` | with lines (cost code text, reported progress) |
+| PATCH | `/claims/:claimId` | `PatchArClaimRequest` → `ArClaimDto` | draft / submitted; lines merged by cost code (400 `unknown_cost_code`, `progress_out_of_range`, `progress_below_previous` without note); penalty above the cap left → 422 `penalty_cap_exceeded` (`details.max`) |
+| POST | `/claims/:claimId/submit` | → `ArClaimDto` (200) | draft → approval `claim.submit` (auto → submitted, else pending_approval); amount ≤ 0 → 422 `claim_amount_not_positive` |
+| POST | `/claims/:claimId/certify` | `CertifyArClaimRequest` → `ArClaimDto` (200) | submitted → certified; `lines` may still be adjusted |
+| POST | `/claims/:claimId/invoice` | `InvoiceArClaimRequest` → `InvoiceDto` (200) | certified → invoiced: invoice issued (`INV…`), retention withheld / advance recovered ledger rows, certified progress on cost codes, milestone → `invoiced` |
+| POST | `/claims/:claimId/cancel` | → `ArClaimDto` (200) | milestone back to `claimable` |
+| GET | `/projects/:projectId/invoices` | → `InvoiceDto[]` | newest first |
+| GET | `/invoices/:invoiceId` | → `InvoiceDto` | |
+| POST | `/main-contracts/:contractId/advance-invoice` | `CreateAdvanceInvoiceRequest` → `InvoiceDto` (201) | draft; signed contract, `advancePct > 0` (else 422 `no_advance`), none yet (409 `advance_invoice_exists`); VAT + WHT on the advance |
+| POST | `/main-contracts/:contractId/retention-release-invoice` | `{amount, issueDate?, dueDate?, language?, note?}` → `InvoiceDto` (201) | draft, no VAT / WHT; amount ≤ held − other drafts (422 `retention_release_exceeds_balance`) |
+| POST | `/invoices/:invoiceId/issue` | `{issueDate?, dueDate?}` → `InvoiceDto` (200) | draft → issued (`INV…`, snapshots); advance: milestone 0 → invoiced; retention release: ledger `released` |
+| POST | `/invoices/:invoiceId/void` | `{reason}` → `InvoiceDto` (200) | draft / issued with nothing received (else 409 `invoice_has_receipts`); number voided, events reversed, its ledger rows removed; claim back to `certified` |
+| GET | `/main-contracts/:contractId/retention` | → `ContractRetentionDto` | totals, cap, release plan (`retentionRelease`), entries |
+| GET | `/main-contracts/:contractId/advance` | → `ContractAdvanceDto` | totals, the advance invoice, `canCreateInvoice` |

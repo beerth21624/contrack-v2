@@ -1248,6 +1248,8 @@ export interface MainContractInfo {
     vatRate: number;
     extensionDays: number;
     terms: MainContractTerms;
+    /** Business date the work was handed over (signed → completed); null before. */
+    completedAt: string | null;
     /** `no` order (the advance one, no 0, first). */
     milestones: MainContractMilestone[];
 }
@@ -1258,6 +1260,8 @@ export interface MainContractInfo {
  */
 export abstract class MainContracts {
     abstract find(workspaceId: WorkspaceId, contractId: string): Promise<MainContractInfo | undefined>;
+    /** Workspace and project of a contract by id alone (any workspace: the caller authorizes on the project next). */
+    abstract locate(contractId: string): Promise<{ workspaceId: WorkspaceId; projectId: ProjectId } | undefined>;
     /** The project's effective contract (not cancelled / terminated; may still be a draft). */
     abstract forProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<MainContractInfo | undefined>;
     /**

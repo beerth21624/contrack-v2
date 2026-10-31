@@ -26,6 +26,7 @@ import { LedgerModule } from './modules/ledger/ledger.module';
 import { PriceReferenceModule } from './modules/price-reference/price-reference.module';
 import { QuotationsModule } from './modules/quotations/quotations.module';
 import { MainContractsModule } from './modules/main-contracts/main-contracts.module';
+import { BillingModule } from './modules/billing/billing.module';
 
 @Module({})
 export class AppModule {
@@ -47,6 +48,7 @@ export class AppModule {
                 PriceReferenceModule,
                 QuotationsModule,
                 MainContractsModule,
+                BillingModule,
             ],
             controllers: [HealthController],
             providers: [

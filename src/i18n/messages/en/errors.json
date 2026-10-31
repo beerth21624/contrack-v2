@@ -85,6 +85,23 @@
     "guarantees_active": "Some guarantees have not been returned yet. Return them all before closing the contract.",
     "finish_before_start": "The finish date cannot be before the start date.",
     "expiry_before_issue": "The expiry date cannot be before the issue date.",
-    "invalid_billing_option": "A milestone-billed contract cannot bill a variation in the next claim. Spread it over the milestones or add a milestone."
+    "invalid_billing_option": "A milestone-billed contract cannot bill a variation in the next claim. Spread it over the milestones or add a milestone.",
+    "contract_not_signed": "The contract is not signed or has ended, so it cannot be billed.",
+    "claim_open": "Another claim is still open. Certify or cancel it first.",
+    "milestone_required": "A milestone-billed contract needs the milestone to claim.",
+    "milestone_not_allowed": "A progress-billed contract does not claim milestones.",
+    "advance_milestone": "The advance payment is billed with the advance invoice, not a claim.",
+    "milestone_not_claimable": "This milestone cannot be claimed yet, or it was claimed already.",
+    "penalty_cap_exceeded": "The penalty is above the contract's cumulative penalty cap.",
+    "claim_amount_not_positive": "The claim amount must be above zero.",
+    "unknown_cost_code": "This item is not on the claim.",
+    "progress_out_of_range": "Cumulative progress must be between 0 and 100%.",
+    "progress_below_previous": "Cumulative progress is below the previous claim. Give a reason on that line.",
+    "due_before_issue": "The due date cannot be before the issue date.",
+    "no_advance": "This contract has no advance payment.",
+    "advance_invoice_exists": "This contract already has an advance invoice.",
+    "retention_release_exceeds_balance": "The amount is more than the retention still held.",
+    "invoice_has_receipts": "Money was received on this invoice. Void the receipt first.",
+    "claims_exist": "Not possible: this project has progress claims."
   }
 }

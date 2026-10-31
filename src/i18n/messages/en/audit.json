@@ -33,7 +33,14 @@
     "apply_variation": "Variation applied",
     "milestone_status": "Milestone status changed",
     "attach_scan": "Scan attached",
-    "return": "Guarantee returned"
+    "return": "Guarantee returned",
+    "submit": "Submitted",
+    "approval_rejected": "Approval rejected",
+    "certify": "Claim certified",
+    "invoice": "Invoiced",
+    "edit": "Edited",
+    "create_claim": "Claim created",
+    "create_invoice": "Invoice created"
   },
   "entities": {
     "approval_request": "Approval request",
@@ -46,6 +53,8 @@
     "customer_link": "Customer link",
     "project": "Project",
     "main_contract": "Main contract",
-    "contract_guarantee": "Contract guarantee"
+    "contract_guarantee": "Contract guarantee",
+    "ar_claim": "Progress claim",
+    "ar_invoice": "Invoice"
   }
 }

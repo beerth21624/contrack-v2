@@ -79,7 +79,7 @@ const info = (c: MainContractRecord, milestones: readonly MilestoneRecord[]): Ma
     quotationVersionId: c.quotationVersionId, quotedMarginPct: c.quotedMarginPct, number: c.number, status: c.status, title: c.title,
     language: c.language, signDate: c.signDate, startDate: c.startDate, finishDate: c.finishDate, billingMode: c.billingMode,
     originalValue: c.originalValue, currentValue: c.currentValue, vatRate: c.vatRate, extensionDays: c.extensionDays,
-    terms: structuredClone(c.terms),
+    terms: structuredClone(c.terms), completedAt: c.completedAt,
     milestones: milestones.map(({ workspaceId: _w, projectId: _p, createdAt: _c, updatedAt: _u, ...m }) => ({ ...m, costCodeIds: [...m.costCodeIds] })),
 });
 
@@ -100,6 +100,12 @@ export class MainContractsService extends MainContracts {
         const c = await this.repo.findContract(contractId.toLowerCase());
         if (c?.workspaceId !== workspaceId) return undefined;
         return info(c, await this.repo.milestonesOf(workspaceId, [c.id]));
+    }
+
+    async locate(contractId: string): Promise<{ workspaceId: WorkspaceId; projectId: ProjectId } | undefined> {
+        if (!isUuid(contractId)) return undefined;
+        const c = await this.repo.findContract(contractId.toLowerCase());
+        return c === undefined ? undefined : { workspaceId: c.workspaceId, projectId: c.projectId };
     }
 
     async forProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<MainContractInfo | undefined> {
