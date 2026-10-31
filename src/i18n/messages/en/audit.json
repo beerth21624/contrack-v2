@@ -49,7 +49,11 @@
     "create_supplier": "Supplier created",
     "update_supplier": "Supplier edited",
     "rate": "Rated",
-    "import_sc": "Imported from subcontractor list"
+    "import_sc": "Imported from subcontractor list",
+    "send": "Sent",
+    "invite": "Invited suppliers",
+    "quote": "Recorded a quote",
+    "award": "Awarded"
   },
   "entities": {
     "approval_request": "Approval request",
@@ -67,6 +71,8 @@
     "ar_invoice": "Invoice",
     "ar_receipt": "Receipt",
     "variation": "Variation order",
-    "supplier": "Supplier"
+    "supplier": "Supplier",
+    "purchase_request": "Purchase request",
+    "rfq": "Request for quotation"
   }
 }

@@ -19,4 +19,5 @@ export const FILE_PURPOSE_MODULE: Readonly<Record<FilePurpose, ModuleId>> = {
     payment_slip: 'billing',
     customer_wht_certificate: 'billing',
     variation_evidence: 'variations',
+    supplier_quote: 'procurement',
 };

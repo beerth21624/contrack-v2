@@ -375,3 +375,22 @@ Schemas: `../src/shared/contract/erp/suppliers.ts`. Port `SupplierLookup` (`find
 | POST | `/suppliers/:supplierId/archive` · `/restore` | → `SupplierDto` (200) | `suppliers.manage`; idempotent; restore onto a taken tax id + branch → 409 `duplicate_supplier` |
 | GET | `/suppliers/:supplierId/ratings` | → `SupplierRatingDto[]` | `suppliers.read`; newest first (100) |
 | POST | `/suppliers/:supplierId/ratings` | `{score 1–5, note?, projectId?, sourceType?, sourceId?}` → `SupplierRatedDto` (201) | `suppliers.manage`; `rating` (average, 2 decimals) / `ratingCount` recomputed from every score; audited `supplier` / `create_supplier\|update_supplier\|archive\|restore\|rate\|import_sc` |
+
+## Purchase requests + RFQs (module `procurement`; WP-38)
+Schemas: `../src/shared/contract/erp/procurement.ts`. Pure: `src/domain/procurement/budget-check.ts` (`budgetWarnings`, `materialBudgetOf`), `compare.ts` (`compareQuotes`, `quoteTotals`). Read `procurement.read`; PR writes `procurement.request`; RFQ writes `procurement.manage`. Approval `purchase_request.approve` (handler in procurement); portal task `purchase_request_to_order` (approved / partially ordered PRs, `procurement.manage`). Audited `purchase_request` (`create|update|submit|approved|approval_rejected|cancel`) and `rfq` (`create|update|invite|send|cancel|quote|award`).
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/projects/:projectId/purchase-requests` | → `PurchaseRequestSummaryDto[]` | newest first |
+| POST | `/projects/:projectId/purchase-requests` | `CreatePurchaseRequestRequest` → `PurchaseRequestDto` (201) | `source:'boq'` + `costCodeIds`: one line per code at `baseline_qty + vo_qty − requested by other live PRs` (≥ 0); typed `lines` after; unknown cost code → 404; `budgetWarnings` computed on every save |
+| GET · PATCH | `/purchase-requests/:requestId` | `PatchPurchaseRequestRequest` → `PurchaseRequestDto` | PATCH draft only (`lines` replaces all); pending → 409 `approval_pending` |
+| POST | `/purchase-requests/:requestId/submit` | `{overrideReason?}` → `PurchaseRequestDto` (200) | no lines → 422 `no_lines`; qty ≤ 0 → 422 `quantity_not_positive`; warnings without reason → 422 `override_reason_required` (`details.warnings`); number `PR…`, then approval: auto → `approved`, else `pending_approval` |
+| POST | `/purchase-requests/:requestId/cancel` | → `PurchaseRequestDto` (200) | draft / pending_approval (approval cancelled) / approved not on an open RFQ (409 `request_in_rfq`) |
+| GET | `/projects/:projectId/rfqs` | → `RfqSummaryDto[]` | with line / supplier / quote counts |
+| POST | `/projects/:projectId/rfqs` | `CreateRfqRequest` → `RfqDto` (201) | lines of approved PRs of the project (409 `request_not_approved`), qty = `qty − ordered_qty` (≤ 0 → 422 `nothing_remaining`); `budgetUnitPrice` = PR estimate; suppliers of the workspace (404) not archived (409 `supplier_archived`) |
+| GET · PATCH | `/rfqs/:rfqId` | `PatchRfqRequest` → `RfqDto` | PATCH draft only |
+| PUT | `/rfqs/:rfqId/suppliers` | `{supplierIds}` → `RfqDto` | draft / sent; removing one who quoted → 409 `supplier_quoted` |
+| POST | `/rfqs/:rfqId/send` · `/cancel` | → `RfqDto` (200) | send: draft, ≥ 1 line (`no_lines`) and supplier (`no_suppliers`), number `RFQ…`; cancel: draft / sent |
+| PUT | `/rfqs/:rfqId/quotes/:supplierId` | `PutRfqQuoteRequest` → `RfqDto` | RFQ sent, supplier invited; amount = qty × unit price; VAT 7 % only for a VAT-registered supplier (split when `pricesIncludeVat`); unknown line → 422 `unknown_rfq_line`; `declined: true` drops the quote; files purpose `supplier_quote` |
+| GET | `/rfqs/:rfqId/compare` | → `RfqCompareDto` | without VAT; lowest unit price per line; `normalizedTotal` counts lines not offered at qty × `budgetUnitPrice`; suppliers sorted by it |
+| POST | `/rfqs/:rfqId/award` | `{supplierId}` → `{awardedSupplierId}` (200) | RFQ sent, supplier quoted (409 `supplier_not_quoted`) → `awarded`; the PO draft is WP-39 |

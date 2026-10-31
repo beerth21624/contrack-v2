@@ -16,3 +16,4 @@ export * from './billing';
 export * from './variations';
 export * from './portal';
 export * from './suppliers';
+export * from './procurement';

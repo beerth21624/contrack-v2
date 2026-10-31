@@ -28,6 +28,8 @@ function taskText(task: PortalTask, t: TaskTranslator, tEnums: ReturnType<typeof
             return t('tasks.quotation_expiring', { number: s('number'), title: s('title') });
         case 'variation_awaiting_customer':
             return t('tasks.variation_awaiting_customer', { number: s('number'), title: s('title') });
+        case 'purchase_request_to_order':
+            return t('tasks.purchase_request_to_order', { number: s('number') });
         default:
             return task.kind;
     }

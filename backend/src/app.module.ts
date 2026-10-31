@@ -30,6 +30,7 @@ import { BillingModule } from './modules/billing/billing.module';
 import { VariationsModule } from './modules/variations/variations.module';
 import { PortalModule } from './modules/portal/portal.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
+import { ProcurementModule } from './modules/procurement/procurement.module';
 
 @Module({})
 export class AppModule {
@@ -55,6 +56,7 @@ export class AppModule {
                 VariationsModule,
                 PortalModule,
                 SuppliersModule,
+                ProcurementModule,
             ],
             controllers: [HealthController],
             providers: [

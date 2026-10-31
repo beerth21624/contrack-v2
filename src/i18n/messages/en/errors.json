@@ -120,6 +120,16 @@
     "invalid_range": "The start date must not be after the end date.",
     "evidence_required": "The variation cannot be accepted without who asked for it, when, and the customer's link answer or at least one piece of evidence",
     "duplicate_supplier": "An active supplier already uses this tax id and branch",
-    "supplier_archived": "This supplier is archived; restore it before editing"
+    "supplier_archived": "This supplier is archived; restore it before editing",
+    "override_reason_required": "There are budget warnings. Give a reason to continue",
+    "no_lines": "The document has no lines yet",
+    "quantity_not_positive": "Every line needs a quantity above 0",
+    "request_not_approved": "The purchase request is not approved",
+    "nothing_remaining": "This line has been fully ordered",
+    "no_suppliers": "Invite at least one supplier",
+    "supplier_quoted": "This supplier has quoted and cannot be removed",
+    "supplier_not_quoted": "This supplier has not quoted yet",
+    "request_in_rfq": "This purchase request is on an open RFQ",
+    "unknown_rfq_line": "The line is not on this RFQ"
   }
 }
