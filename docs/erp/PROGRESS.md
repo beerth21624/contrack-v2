@@ -27,7 +27,7 @@
 | WP-13 | ทะเบียนลูกค้า | sonnet | done | 02b2acf | migration `0013_wp13_customers`; โมดูล `customers`, port `CustomerLookup`, หน้า `/customers`, `CustomerPicker`; D-126…D-130 |
 | WP-14 | ลิงก์ลูกค้า (public) | opus | done | 0fdbc23 | migration `0014_wp14_customer_links`; โมดูล `customer-links`, registry `CustomerLinkHandlers`, route `(public)/c/[token]`, `ShareLinkButton`; D-131…D-136 |
 | WP-15 | Project Hub backend | opus | done | 7f5ad76 | migration `0015_wp15_project_hub`; โมดูล `backend/src/modules/hub/`; ports `ProjectCatalog` (projects), `ProjectLifecycle` (hub), registry `HubRollups` (core); D-137…D-142 |
-| WP-16 | Project Hub web + ต่อ nav เข้า AppLayoutUI | opus | done | HASH | ไม่มี migration; `src/features/erp/hub/*`, routes `/`, `/hub`, `/p/[projectId]`; เมนู ERP ใน `AppLayoutUI` เมื่อ `project-hub` active; D-143…D-149 |
+| WP-16 | Project Hub web + ต่อ nav เข้า AppLayoutUI | opus | done | 60a7001 | ไม่มี migration; `src/features/erp/hub/*`, routes `/`, `/hub`, `/p/[projectId]`; เมนู ERP ใน `AppLayoutUI` เมื่อ `project-hub` active; D-143…D-149 |
 | WP-17 | ประวัติ BOQ (versions, เทียบฉบับ) | opus | todo | | |
 | WP-18 | Baseline + cost codes (backend) | opus | todo | | |
 | WP-19 | Baseline web: BOQ อ่านอย่างเดียวเมื่อล็อก + CostCodePicker | opus | todo | | |
@@ -508,7 +508,7 @@
   - in-memory: แถว hub ที่ไม่เคยเขียนอ่านเป็นค่าเริ่มต้น (`estimating`)
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend + web) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/shared/contract src/i18n` ผ่าน; `cd backend && npx jest src/modules/projects` 199 ผ่าน, `npx jest src/shared src/modules/platform/presentation` ผ่าน, e2e `projects` 23 ผ่าน; smoke e2e ชั่วคราว (memory, ลบแล้ว): list 50 โครงการ + rollup source เรียก 1 ครั้ง, ฟิลด์ของโมดูลที่ไม่ลงทะเบียนเป็น null, viewer PATCH → 403, `estimating → won` → 409 `invalid_transition`, เดินครบถึง `closed`, admin `closed → warranty` → 403 / owner ได้, settings merge + reset, ลูกค้าของ workspace อื่น → 404, customerName/managerName, assign code ได้ / ซ้ำ → 409 `project_code_exists`, PATCH code ซ้ำ → 409 `duplicate_project_code`, `advance('won')` จาก quoted → won / in_progress ไม่เปลี่ยน / lost ไม่เปลี่ยน, กรอง status/q/type/customerId, summary, `GET /projects/:id` ไม่มีฟิลด์ hub, โครงการ workspace อื่น → 404, ลบโครงการที่มีรหัสได้ 204, ปิดโมดูล → 404 `module_disabled`; `npm run db:generate -- --name wp15_project_hub` ได้ `0015` ไม่ถาม interactive; ยังไม่ได้ทดสอบบน PostgreSQL จริง
 
-### WP-16 — Project Hub web + ต่อ nav เข้า AppLayoutUI (HASH)
+### WP-16 — Project Hub web + ต่อ nav เข้า AppLayoutUI (60a7001)
 - สร้าง (web): `src/features/erp/hub/{api.ts,hooks.ts,status.ts,HubPage.tsx,HubFilters.tsx,ProjectCard.tsx,ProjectShell.tsx,ProjectOverviewPage.tsx,HubFieldsDrawer.tsx,HomeRedirect.tsx}`; routes `src/app/page.tsx` (`<CloudProviders><HomeRedirect/>`), `src/app/(app)/hub/page.tsx`, `src/app/(app)/p/[projectId]/layout.tsx` (`ModuleGate` + `ProjectShell`), `src/app/(app)/p/[projectId]/page.tsx`
 - แก้: `nav-registry.ts` (`TOP_NAV`, `useWorkspaceNavMenu`, `ErpNavItem.badge`, `PROJECT_TABS` overview/boq, settings `modules`, `activeWorkspaceNavKey` ดู `TOP_NAV` ก่อน); `AppLayoutUI.tsx` (branch `hubOn`); `AccountMenu.tsx` (สลับภาษาเมื่อ `LANGUAGE_SWITCH || hubOn`); `ProjectsPage.tsx` (export `CreateProjectModal` เท่านั้น)
 - i18n (th+en): namespace `hub`; `enums.projectStatus`; `nav.home|projects|boqGroup|modules|tabs.overview|tabs.boq`
