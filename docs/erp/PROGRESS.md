@@ -21,7 +21,7 @@
 | WP-07 | Platform admin: ให้สิทธิ์โมดูล (backend + web) | sonnet | done | 45ee602 | ไม่มี migration; `PlatformAdminAccess`, `/platform/admin/{status,workspaces,…/entitlements/:module}`, `WorkspaceDirectory.search`; หน้า `/admin/entitlements` + namespace `admin`; D-89…D-93 |
 | WP-08 | Workflow อนุมัติ + audit log (backend) | opus | done | 765869e | migration `0009_wp08_approvals_audit`; โมดูล `approvals` + `audit`, `schema-erp-core.ts`, ports `Approvals`/`ApprovalHandlers`/`AuditLog`, `WorkspaceDirectory.members`; audit ของ `SetEntitlementUseCase`; D-94…D-103 |
 | WP-09 | หน้าอนุมัติ นโยบาย และ audit (web) | sonnet | done | cfdaad1 | ไม่มี migration; `src/features/erp/approvals/*`, `shared/AuditTimeline.tsx`, routes `/approvals`, `/workspace/approval-policies`, namespace `approvals`+`audit`, `enums.approval*`; D-105…D-107 |
-| WP-10 | การแจ้งเตือน: channel, ภาษาผู้รับ, sweep | opus | done | COMMIT | migration `0010_wp10_notifications`; template ERP 20 ตัว th/en; sweep `platform.trial-expiring`; D-108…D-113 |
+| WP-10 | การแจ้งเตือน: channel, ภาษาผู้รับ, sweep | opus | done | a984d6f | migration `0010_wp10_notifications`; template ERP 20 ตัว th/en; sweep `platform.trial-expiring`; D-108…D-113 |
 | WP-11 | บริการเลขเอกสาร + guard การลบ | opus | todo | | |
 | WP-12 | โปรไฟล์บริษัท + business profile + project type | sonnet | todo | | |
 | WP-13 | ทะเบียนลูกค้า | sonnet | todo | | |
@@ -373,7 +373,7 @@
   - เอกสารที่ส่งอนุมัติแล้ว subject ใหม่ต้องมีป้ายใน `enums.approvalSubject` อยู่แล้วครบ 9 ตัว
 - ตรวจแล้ว: tsc web ผ่าน, eslint ไฟล์ที่แก้ผ่าน, `node scripts/i18n/check-parity.mjs` ผ่าน, `npx vitest run src/features/erp src/i18n` ผ่าน; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์
 
-### WP-10 — การแจ้งเตือน: channel, ภาษาผู้รับ, sweep (COMMIT)
+### WP-10 — การแจ้งเตือน: channel, ภาษาผู้รับ, sweep (a984d6f)
 - สร้าง (ports/core): `ScNotificationTemplate` (ชื่อใหม่ของ union เดิม), `ErpNotificationTemplate` ครบ 20 ตัวตาม §7 ข้อ 1, `NotificationTemplate` = union; `DailySweeps` + `SweepContext`/`DailySweep` (core provide/export); `SweepMarks` (platform provide/export); `Approvals.notifyRequested`
 - platform: `application/ports/notification-channel.port.ts` (`NotificationChannel`, `NotificationChannels`), adapter `notification-channels.adapter.ts` (`SenderNotificationChannels(sms, line)`; e-mail = undefined), `DeliverQueuedUseCase` ส่งผ่าน channels (constructor `(deliveries, channels, clock)`), `SendNotificationUseCase` (constructor แทน `LineSender` ด้วย `NotificationChannels`) render ต่อ `recipient.locale`; `Recipient.locale`; `DrizzleRecipientDirectory` อ่าน `users.locale` + LINE จาก `user_channel_links` (verified); `InMemoryRecipientDirectory.addUser(id, { locale })`
 - templates: `renderNotification(template, payload, url?, locale = 'th')`; `TEMPLATES` เดิม = `Record<ScNotificationTemplate, …>` (sc.* ภาษา en = ไทยเดิมตรงตัว); ใหม่ `notification-templates.erp.ts` (th+en ทุกตัว, รายการ payload key ต่อ template อยู่หัวไฟล์ — **WP ภายหลังส่ง key ตามนั้น**), `notification-format.ts`; export `SC_NOTIFICATION_TEMPLATES`, `ERP_NOTIFICATION_TEMPLATES`, `NOTIFICATION_TEMPLATES` (ทั้งหมด 40)
