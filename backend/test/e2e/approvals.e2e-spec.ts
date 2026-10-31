@@ -17,7 +17,8 @@ describe('approvals (e2e)', () => {
 
     beforeAll(async () => {
         t = await startApp();
-        t.app.get(ApprovalHandlers).register('purchase_order.issue', {
+        // A subject no module handles yet (procurement registers `purchase_order.issue` itself since WP-39).
+        t.app.get(ApprovalHandlers).register('payment_run.approve', {
             onDecided: e => {
                 decided.push(e);
                 return Promise.resolve(okVoid());
@@ -45,7 +46,7 @@ describe('approvals (e2e)', () => {
     it('request → inbox → decide → audit', async () => {
         const approvals = t.app.get(Approvals);
         const ticket = await approvals.request({
-            workspaceId: asWorkspaceId(ws), subject: 'purchase_order.issue', subjectId: PO, projectId: null, amount: 60_000,
+            workspaceId: asWorkspaceId(ws), subject: 'payment_run.approve', subjectId: PO, projectId: null, amount: 60_000,
             title: 'PO-0001', requestedBy: asUserId(estimator.userId), requesterRole: 'estimator',
         });
         expect(ticket).toMatchObject({ ok: true, value: { status: 'pending', auto: false } });

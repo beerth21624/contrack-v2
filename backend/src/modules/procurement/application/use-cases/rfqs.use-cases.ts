@@ -1,6 +1,6 @@
 // ─── RFQ use cases (docs/erp/04-implementation-plan.md WP-38, docs/erp/02-domain-model.md §7.2) ───
 // Read `procurement.read`; everything else `procurement.manage`. Suppliers are checked through SupplierLookup
-// (of the workspace; an archived one cannot be invited). The PO made from an award is WP-39.
+// (of the workspace; an archived one cannot be invited). Awarding makes a PO draft from the winning quote (WP-39).
 import { Injectable } from '@nestjs/common';
 import {
     type AwardRfqRequest, type CreateRfqRequest, PURCHASE_REQUEST_ORDERABLE_STATUSES, type PatchRfqRequest, type PutRfqQuoteRequest,
@@ -8,6 +8,7 @@ import {
 } from '@contrack/contract';
 import { bangkokToday } from '@contrack/domain/dates/business-date';
 import { THAI_VAT_RATE, roundQty } from '@contrack/domain/money';
+import { orderLineAmount } from '@contrack/domain/procurement/order-totals';
 import { compareQuotes, quoteLineAmount, quoteTotals } from '@contrack/domain/procurement/compare';
 import { type ProjectGrant, ModuleAccess } from '../../../../shared/application/module-access';
 import {
@@ -22,6 +23,7 @@ import {
 } from '../ports/procurement.repository';
 import { ProcurementViews, rfqSummaryDto } from '../procurement-views';
 import { MODULE, ProcurementAccess, transact } from '../procurement.service';
+import { type DraftOrderLine, PurchaseOrderWorkflow, orderableSupplier } from '../purchasing.service';
 
 const READ = ['procurement.read' as const];
 const MANAGE = ['procurement.manage' as const];
@@ -485,13 +487,16 @@ export class PutRfqQuoteUseCase {
 
 /**
  * POST /rfqs/:rfqId/award — `procurement.manage`, RFQ sent: the winning supplier must have quoted (409
- * `supplier_not_quoted`) → `awarded`. WP-39 makes the PO draft from it.
+ * `supplier_not_quoted`) and not be archived → `awarded`, and a PO draft with the lines it offered (unit prices
+ * without VAT, payment term / delivery address / language from the quote and the RFQ) in the same transaction.
  */
 @Injectable()
 export class AwardRfqUseCase {
     constructor(
         private readonly access: ProcurementAccess,
         private readonly repo: RfqRepository,
+        private readonly suppliers: SupplierLookup,
+        private readonly workflow: PurchaseOrderWorkflow,
         private readonly audit: AuditLog,
         private readonly uow: UnitOfWork,
         private readonly clock: Clock,
@@ -513,13 +518,31 @@ export class AwardRfqUseCase {
             if (row?.status !== 'quoted' || quote === undefined) {
                 return err(DomainError.conflict('The supplier has not quoted', { reason: 'supplier_not_quoted', supplierId }));
             }
+            const supplier = await orderableSupplier(this.suppliers, ws, supplierId);
+            if (!supplier.ok) return supplier;
+            const quoteVat = quote.vat !== 0 ? THAI_VAT_RATE : 0;
+            const priced = new Map(quote.lines.filter(l => l.available).map(l => [l.rfqLineId, l]));
+            const lines: DraftOrderLine[] = (await this.repo.linesOf(ws, r.id)).flatMap(l => {
+                const p = priced.get(l.id);
+                if (p === undefined) return [];
+                const unitPrice = roundQty(quote.pricesIncludeVat ? p.unitPrice / (1 + quoteVat) : p.unitPrice);
+                return [{
+                    costCodeId: l.costCodeId, requestLineId: l.requestLineId, descTh: l.descTh, descEn: l.descEn, unit: l.unit, qty: l.qty,
+                    unitPrice, amount: orderLineAmount(l.qty, unitPrice),
+                }];
+            });
             const now = this.clock.now();
+            const order = await this.workflow.createDraft({
+                workspaceId: ws, projectId: r.projectId, supplier: supplier.value, rfqId: r.id, by: input.userId, lines,
+                deliveryAddress: r.deliveryAddress, language: r.language, paymentTermDays: quote.paymentTermDays ?? supplier.value.creditTermDays,
+            });
+            if (!order.ok) return order;
             await this.repo.save({ ...r, status: 'awarded', awardedSupplierId: supplierId, awardedAt: now, updatedAt: now });
             await this.audit.record({
                 workspaceId: ws, projectId: r.projectId, actor: input.userId, entityType: 'rfq', entityId: r.id, action: 'award',
-                data: { status: [r.status, 'awarded'], supplierId, subtotal: quote.subtotal, total: quote.total },
+                data: { status: [r.status, 'awarded'], supplierId, subtotal: quote.subtotal, total: quote.total, orderId: order.value },
             });
-            return ok({ awardedSupplierId: supplierId });
+            return ok({ awardedSupplierId: supplierId, orderId: order.value });
         });
     }
 }

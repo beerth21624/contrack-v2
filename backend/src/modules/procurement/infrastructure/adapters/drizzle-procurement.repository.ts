@@ -124,6 +124,14 @@ export class DrizzlePurchaseRequestRepository extends PurchaseRequestRepository 
         return out;
     }
 
+    async addOrderedQty(workspaceId: WorkspaceId, deltas: readonly { lineId: string; qty: number }[]): Promise<void> {
+        for (const d of deltas) {
+            await this.ctx.executor.update(pcRequestLines)
+                .set({ orderedQty: sql`round(${pcRequestLines.orderedQty} + ${d.qty}, 4)` })
+                .where(and(eq(pcRequestLines.workspaceId, workspaceId), eq(pcRequestLines.id, d.lineId)));
+        }
+    }
+
     deleteByProject(): Promise<void> {
         return Promise.resolve();
     }

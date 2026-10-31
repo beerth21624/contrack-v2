@@ -12,7 +12,8 @@
     "milestone_claimable": "{contract} milestone {no} {label} can be claimed",
     "quotation_expiring": "Quotation {number} {title} is about to expire",
     "variation_awaiting_customer": "Variation {number} {title} is waiting for the customer",
-    "purchase_request_to_order": "Purchase request {number} is approved and waiting for an order"
+    "purchase_request_to_order": "Purchase request {number} is approved and waiting for an order",
+    "purchase_order_to_receive": "Purchase order {number} from {supplierName} is waiting for delivery"
   },
   "risky": {
     "title": "Projects to watch",

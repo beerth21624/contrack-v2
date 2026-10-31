@@ -12,7 +12,8 @@
     "milestone_claimable": "{contract} งวดที่ {no} {label} เบิกงวดได้แล้ว",
     "quotation_expiring": "ใบเสนอราคา {number} {title} ใกล้หมดอายุ",
     "variation_awaiting_customer": "งานเพิ่ม-ลด {number} {title} รอลูกค้าตอบรับ",
-    "purchase_request_to_order": "ใบขอซื้อ {number} อนุมัติแล้ว รอสั่งซื้อ"
+    "purchase_request_to_order": "ใบขอซื้อ {number} อนุมัติแล้ว รอสั่งซื้อ",
+    "purchase_order_to_receive": "ใบสั่งซื้อ {number} จาก {supplierName} รอรับของ"
   },
   "risky": {
     "title": "โครงการที่ต้องจับตา",

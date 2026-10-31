@@ -10,7 +10,7 @@ import type {
     FilePurpose, FinCounterpartyType, FinDirection, FinEventType, HubProjectFields, HubProjectStatus, ModuleId, Permission, ProjectRollup, ProjectType,
 } from '@contrack/contract';
 import type { EntitlementStatus, PortalTaskKind, SearchHit } from '@contrack/contract';
-import type { SupplierKind, SupplierSnapshot, SupplierWhtPreset, TradeId } from '@contrack/contract';
+import type { PurchaseOrderStatus, SupplierKind, SupplierSnapshot, SupplierWhtPreset, TradeId } from '@contrack/contract';
 import type {
     ContractMilestoneKind, ContractMilestoneSource, ContractMilestoneStatus, ContractMilestoneTrigger, ContractVariationBilling,
     MainContractBillingMode, MainContractStatus, MainContractTerms, MilestoneTemplateItem,
@@ -1463,4 +1463,55 @@ export abstract class SupplierLookup {
     abstract snapshot(workspaceId: WorkspaceId, supplierId: string, language: DocLanguage): Promise<SupplierSnapshot | undefined>;
     /** Workspace of a supplier by id alone (the caller authorizes on that workspace next); undefined when unknown. */
     abstract locate(supplierId: string): Promise<WorkspaceId | undefined>;
+}
+
+// ── Purchase orders for payables (WP-39 → WP-49): provided by procurement ──
+
+/** A purchase order as other modules see it (amounts without VAT unless named otherwise). */
+export interface PurchaseOrderInfo {
+    id: string;
+    workspaceId: WorkspaceId;
+    projectId: ProjectId;
+    supplierId: string;
+    number: string | null;
+    status: PurchaseOrderStatus;
+    language: DocLanguage;
+    /** Frozen when issued. */
+    supplierSnapshot: SupplierSnapshot | null;
+    vatRate: number;
+    subtotal: number;
+    discount: number;
+    vat: number;
+    total: number;
+    whtPreset: SupplierWhtPreset;
+    paymentTermDays: number | null;
+}
+
+export interface PurchaseOrderLineInfo {
+    id: string;
+    orderId: string;
+    costCodeId: string | null;
+    descTh: string;
+    descEn: string;
+    unit: string;
+    qty: number;
+    unitPrice: number;
+    amount: number;
+    /** Line amount after its share of the header discount (what was committed). */
+    netAmount: number;
+    receivedQty: number;
+    billedQty: number;
+}
+
+/** Provided by procurement. No module check: the caller checked its own. Every method filters by workspace. */
+export abstract class PurchaseOrders {
+    abstract find(workspaceId: WorkspaceId, orderId: string): Promise<PurchaseOrderInfo | undefined>;
+    /** Lines in order with what was received / billed so far (input of the 3-way match). */
+    abstract linesWithReceived(workspaceId: WorkspaceId, orderId: string): Promise<PurchaseOrderLineInfo[]>;
+    /**
+     * Adds `qty` (negative to undo) to each line's billed quantity inside the caller's transaction. not_found for a line
+     * not of the workspace; unprocessable `qty_exceeds_received` when billed would pass received, or go below 0. Checks
+     * every line before writing.
+     */
+    abstract markBilled(workspaceId: WorkspaceId, lines: readonly { orderLineId: string; qty: number }[]): Promise<Result<void, DomainError>>;
 }

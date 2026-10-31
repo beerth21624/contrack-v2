@@ -7,7 +7,8 @@
 import { z } from 'zod';
 import { isoDateTimeSchema, uuidSchema } from '../common';
 import { fileDtoSchema } from '../files';
-import { businessDateSchema, docLanguageSchema, quantitySchema, unitPriceSchema } from './common';
+import { amountSchema, businessDateSchema, docLanguageSchema, quantitySchema, rateSchema, unitPriceSchema } from './common';
+import { supplierSnapshotSchema, supplierWhtPresetSchema } from './suppliers';
 
 export const PURCHASE_REQUEST_STATUSES = [
     'draft', 'pending_approval', 'approved', 'rejected', 'partially_ordered', 'ordered', 'closed', 'cancelled',
@@ -243,7 +244,8 @@ export const rfqCompareDtoSchema = z.object({
 });
 export type RfqCompareDto = z.infer<typeof rfqCompareDtoSchema>;
 
-export const rfqAwardDtoSchema = z.object({ awardedSupplierId: uuidSchema });
+/** POST /rfqs/:rfqId/award: the RFQ is `awarded` and a PO draft is made from the winning quote (WP-39). */
+export const rfqAwardDtoSchema = z.object({ awardedSupplierId: uuidSchema, orderId: uuidSchema });
 export type RfqAwardDto = z.infer<typeof rfqAwardDtoSchema>;
 
 // ── Requests ──
@@ -347,6 +349,249 @@ export const putRfqQuoteRequestSchema = z.object({
 });
 export type PutRfqQuoteRequest = z.infer<typeof putRfqQuoteRequestSchema>;
 
-/** POST /rfqs/:rfqId/award — a supplier who quoted (the PO draft is made by WP-39). */
+/** POST /rfqs/:rfqId/award — a supplier who quoted; makes a PO draft from that quote. */
 export const awardRfqRequestSchema = z.object({ supplierId: uuidSchema });
 export type AwardRfqRequest = z.infer<typeof awardRfqRequestSchema>;
+
+// ── purchase orders and goods receipts (WP-39) ──
+// PO: `draft → (pending_approval →) issued`, `pending_approval → draft` (rejected), `issued → partially_received →
+// received → closed`, `draft | pending_approval | issued (nothing received) → cancelled`. Issuing posts a cost
+// commitment per line (amount after the header discount, without VAT); each confirmed goods receipt moves its value
+// from committed to actual; closing releases what was not received. GR: `draft → confirmed | cancelled`.
+
+export const PURCHASE_ORDER_STATUSES = [
+    'draft', 'pending_approval', 'issued', 'partially_received', 'received', 'closed', 'cancelled',
+] as const;
+export const purchaseOrderStatusSchema = z.enum(PURCHASE_ORDER_STATUSES);
+export type PurchaseOrderStatus = z.infer<typeof purchaseOrderStatusSchema>;
+/** Issued and waiting for (more) goods: receipts may be made; counted as open in the hub. */
+export const PURCHASE_ORDER_RECEIVABLE_STATUSES: readonly PurchaseOrderStatus[] = ['issued', 'partially_received'];
+/** Statuses whose lines count as ordered (budget check, price history). */
+export const PURCHASE_ORDER_ISSUED_STATUSES: readonly PurchaseOrderStatus[] = ['issued', 'partially_received', 'received', 'closed'];
+
+export const GOODS_RECEIPT_STATUSES = ['draft', 'confirmed', 'cancelled'] as const;
+export const goodsReceiptStatusSchema = z.enum(GOODS_RECEIPT_STATUSES);
+export type GoodsReceiptStatus = z.infer<typeof goodsReceiptStatusSchema>;
+
+export const RECEIPT_CONDITIONS = ['ok', 'damaged', 'short'] as const;
+export const receiptConditionSchema = z.enum(RECEIPT_CONDITIONS);
+export type ReceiptCondition = z.infer<typeof receiptConditionSchema>;
+
+/** 3-way match result of one supplier bill line (pure `src/domain/procurement/three-way-match.ts`). */
+export const THREE_WAY_MATCH_STATUSES = ['matched', 'qty_exceeds_received', 'price_differs', 'no_po'] as const;
+export const threeWayMatchStatusSchema = z.enum(THREE_WAY_MATCH_STATUSES);
+export type ThreeWayMatchStatus = z.infer<typeof threeWayMatchStatusSchema>;
+
+export const purchaseOrderLineDtoSchema = z.object({
+    id: uuidSchema,
+    costCodeId: uuidSchema.nullable(),
+    costCode: z.string().nullable(),
+    /** The purchase request line it orders (null = typed on the PO). */
+    requestLineId: uuidSchema.nullable(),
+    descTh: z.string(),
+    descEn: z.string(),
+    unit: z.string(),
+    qty: z.number(),
+    /** Without VAT. */
+    unitPrice: z.number(),
+    /** qty × unitPrice (before the header discount). */
+    amount: z.number(),
+    receivedQty: z.number(),
+    billedQty: z.number(),
+    sort: z.number().int(),
+});
+export type PurchaseOrderLineDto = z.infer<typeof purchaseOrderLineDtoSchema>;
+
+const purchaseOrderBase = {
+    id: uuidSchema,
+    projectId: uuidSchema,
+    supplierId: uuidSchema,
+    /** Name of the supplier (from the snapshot once issued, else the supplier record). */
+    supplierName: z.string(),
+    rfqId: uuidSchema.nullable(),
+    /** `PO…`, set when issued. */
+    number: z.string().nullable(),
+    status: purchaseOrderStatusSchema,
+    orderDate: businessDateSchema.nullable(),
+    deliveryDate: businessDateSchema.nullable(),
+    deliveryAddress: z.string(),
+    language: docLanguageSchema,
+    vatRate: z.number(),
+    /** Σ line amounts, without VAT. */
+    subtotal: z.number(),
+    discount: z.number(),
+    vat: z.number(),
+    /** subtotal − discount + vat. */
+    total: z.number(),
+    whtPreset: supplierWhtPresetSchema,
+    paymentTermDays: z.number().int().nullable(),
+    terms: z.string(),
+    budgetWarnings: z.array(budgetWarningSchema),
+    overrideReason: z.string(),
+    issuedBy: uuidSchema.nullable(),
+    issuedAt: isoDateTimeSchema.nullable(),
+    createdAt: isoDateTimeSchema,
+    updatedAt: isoDateTimeSchema,
+};
+
+export const purchaseOrderSummaryDtoSchema = z.object({ ...purchaseOrderBase, lineCount: z.number().int() });
+export type PurchaseOrderSummaryDto = z.infer<typeof purchaseOrderSummaryDtoSchema>;
+export const purchaseOrderListDtoSchema = z.array(purchaseOrderSummaryDtoSchema);
+
+export const purchaseOrderDtoSchema = z.object({
+    ...purchaseOrderBase,
+    /** Frozen when issued (null while draft). */
+    supplierSnapshot: supplierSnapshotSchema.nullable(),
+    lines: z.array(purchaseOrderLineDtoSchema),
+    /** The caller may edit / issue the draft (`procurement.manage`, project not archived). */
+    canEdit: z.boolean(),
+    /** The caller may record goods received (`procurement.receive`, PO issued / partially received). */
+    canReceive: z.boolean(),
+    createdBy: uuidSchema,
+});
+export type PurchaseOrderDto = z.infer<typeof purchaseOrderDtoSchema>;
+
+export const goodsReceiptPhotoSchema = z.object({
+    fileId: uuidSchema,
+    takenAt: isoDateTimeSchema.nullable(),
+    caption: z.string(),
+});
+export type GoodsReceiptPhoto = z.infer<typeof goodsReceiptPhotoSchema>;
+
+export const goodsReceiptLineDtoSchema = z.object({
+    id: uuidSchema,
+    orderLineId: uuidSchema,
+    descTh: z.string(),
+    descEn: z.string(),
+    unit: z.string(),
+    /** Accepted quantity (moves to actual cost). */
+    qtyReceived: z.number(),
+    qtyRejected: z.number(),
+    condition: receiptConditionSchema,
+    note: z.string(),
+});
+export type GoodsReceiptLineDto = z.infer<typeof goodsReceiptLineDtoSchema>;
+
+export const goodsReceiptDtoSchema = z.object({
+    id: uuidSchema,
+    projectId: uuidSchema,
+    orderId: uuidSchema,
+    /** `GR…`, set when confirmed. */
+    number: z.string().nullable(),
+    status: goodsReceiptStatusSchema,
+    receivedDate: businessDateSchema,
+    receivedBy: uuidSchema,
+    deliveryNoteNo: z.string(),
+    photos: z.array(goodsReceiptPhotoSchema.extend({ file: fileDtoSchema.nullable() })),
+    note: z.string(),
+    lines: z.array(goodsReceiptLineDtoSchema),
+    /** Value moved to actual cost when confirmed (without VAT). */
+    amount: z.number(),
+    confirmedAt: isoDateTimeSchema.nullable(),
+    createdAt: isoDateTimeSchema,
+    updatedAt: isoDateTimeSchema,
+});
+export type GoodsReceiptDto = z.infer<typeof goodsReceiptDtoSchema>;
+export const goodsReceiptListDtoSchema = z.array(goodsReceiptDtoSchema);
+
+/** GET /suppliers/:supplierId/price-history — lines of the supplier's issued POs, newest first. */
+export const supplierPriceHistoryItemSchema = z.object({
+    orderId: uuidSchema,
+    orderNumber: z.string().nullable(),
+    projectId: uuidSchema,
+    orderDate: businessDateSchema.nullable(),
+    issuedAt: isoDateTimeSchema.nullable(),
+    descTh: z.string(),
+    descEn: z.string(),
+    unit: z.string(),
+    qty: z.number(),
+    unitPrice: z.number(),
+    costCodeId: uuidSchema.nullable(),
+});
+export type SupplierPriceHistoryItem = z.infer<typeof supplierPriceHistoryItemSchema>;
+export const supplierPriceHistoryDtoSchema = z.array(supplierPriceHistoryItemSchema);
+export const supplierPriceHistoryQuerySchema = z.object({ q: z.string().trim().max(100).optional() });
+export type SupplierPriceHistoryQuery = z.infer<typeof supplierPriceHistoryQuerySchema>;
+
+/** GET /workspaces/:workspaceId/purchase-orders?status=issued,partially_received */
+export const purchaseOrderListQuerySchema = z.object({
+    status: z.string().optional()
+        .transform(v => (v === undefined || v.trim() === '' ? undefined : v.split(',').map(x => x.trim()).filter(x => x !== '')))
+        .pipe(z.array(purchaseOrderStatusSchema).optional()),
+});
+export type PurchaseOrderListQuery = z.infer<typeof purchaseOrderListQuerySchema>;
+
+export const purchaseOrderLineInputSchema = z.object({
+    /** A line of an approved purchase request of the project (description / unit / cost code default to it). */
+    requestLineId: uuidSchema.nullable().optional(),
+    costCodeId: uuidSchema.nullable().optional(),
+    descTh: descField.optional(),
+    descEn: descField.optional(),
+    unit: z.string().trim().max(40).optional(),
+    qty: positiveQty,
+    /** Without VAT. Default: the request line's estimate, else the cost code's baseline material unit cost, else 0. */
+    unitPrice: unitPriceSchema.optional(),
+}).refine(l => (l.requestLineId ?? null) !== null || (l.costCodeId ?? null) !== null || (l.descTh ?? '') !== '' || (l.descEn ?? '') !== '', {
+    message: 'A line needs a request line, a cost code or a description',
+});
+export type PurchaseOrderLineInput = z.infer<typeof purchaseOrderLineInputSchema>;
+
+const orderHeader = {
+    orderDate: businessDateSchema.nullable().optional(),
+    deliveryDate: businessDateSchema.nullable().optional(),
+    deliveryAddress: z.string().trim().max(1000).optional(),
+    language: docLanguageSchema.optional(),
+    /** Default 7% when the supplier is VAT registered, else 0. */
+    vatRate: rateSchema.optional(),
+    discount: amountSchema.optional(),
+    whtPreset: supplierWhtPresetSchema.optional(),
+    paymentTermDays: z.number().int().min(0).max(3650).nullable().optional(),
+    terms: z.string().max(4000).optional(),
+};
+
+/**
+ * POST /projects/:projectId/purchase-orders — empty, or from purchase request lines (`requestLineIds`: quantity =
+ * what is not ordered yet, price = the estimate) and / or typed `lines`. A PO from an RFQ is made by the award.
+ */
+export const createPurchaseOrderRequestSchema = z.object({
+    supplierId: uuidSchema,
+    ...orderHeader,
+    requestLineIds: z.array(uuidSchema).max(500).optional(),
+    lines: z.array(purchaseOrderLineInputSchema).max(500).optional(),
+});
+export type CreatePurchaseOrderRequest = z.infer<typeof createPurchaseOrderRequestSchema>;
+
+/** PATCH /purchase-orders/:orderId — draft only; `lines` replaces every line. */
+export const patchPurchaseOrderRequestSchema = z.object({
+    supplierId: uuidSchema.optional(),
+    ...orderHeader,
+    overrideReason: z.string().trim().max(2000).optional(),
+    lines: z.array(purchaseOrderLineInputSchema).max(500).optional(),
+});
+export type PatchPurchaseOrderRequest = z.infer<typeof patchPurchaseOrderRequestSchema>;
+
+/** POST /purchase-orders/:orderId/issue — budget warnings need `overrideReason` (sent here or saved before). */
+export const issuePurchaseOrderRequestSchema = z.object({
+    overrideReason: z.string().trim().max(2000).optional(),
+});
+export type IssuePurchaseOrderRequest = z.infer<typeof issuePurchaseOrderRequestSchema>;
+
+/** POST /purchase-orders/:orderId/receipts — a draft receipt (confirm it to post the cost). Photos: purposes `delivery_note_photo` / `goods_photo`. */
+export const createGoodsReceiptRequestSchema = z.object({
+    receivedDate: businessDateSchema.optional(),
+    deliveryNoteNo: z.string().trim().max(100).optional(),
+    note: noteField.optional(),
+    photos: z.array(z.object({
+        fileId: uuidSchema,
+        takenAt: isoDateTimeSchema.nullable().optional(),
+        caption: z.string().trim().max(500).optional(),
+    })).max(30).optional(),
+    lines: z.array(z.object({
+        orderLineId: uuidSchema,
+        qtyReceived: quantitySchema.refine(v => v >= 0, { message: 'Must be 0 or more' }),
+        qtyRejected: quantitySchema.refine(v => v >= 0, { message: 'Must be 0 or more' }).optional(),
+        condition: receiptConditionSchema.optional(),
+        note: z.string().max(1000).optional(),
+    })).min(1).max(500),
+});
+export type CreateGoodsReceiptRequest = z.infer<typeof createGoodsReceiptRequestSchema>;

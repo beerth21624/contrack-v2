@@ -30,6 +30,8 @@ function taskText(task: PortalTask, t: TaskTranslator, tEnums: ReturnType<typeof
             return t('tasks.variation_awaiting_customer', { number: s('number'), title: s('title') });
         case 'purchase_request_to_order':
             return t('tasks.purchase_request_to_order', { number: s('number') });
+        case 'purchase_order_to_receive':
+            return t('tasks.purchase_order_to_receive', { number: s('number'), supplierName: s('supplierName') });
         default:
             return task.kind;
     }

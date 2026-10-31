@@ -1,4 +1,5 @@
 import type { RfqStatus } from '@contrack/contract';
+import { roundQty } from '@contrack/domain/money';
 import type { ProjectId, WorkspaceId } from '../../../../shared/domain/ids';
 import {
     type PurchaseRequestLineRecord, PurchaseRequestRepository, type PurchaseRequestRecord, REQUESTED_STATUSES, type RfqCounts,
@@ -85,6 +86,18 @@ export class InMemoryPurchaseRequestRepository extends PurchaseRequestRepository
             }
         }
         return Promise.resolve(out);
+    }
+
+    addOrderedQty(workspaceId: WorkspaceId, deltas: readonly { lineId: string; qty: number }[]): Promise<void> {
+        const add = new Map<string, number>();
+        for (const d of deltas) add.set(d.lineId, (add.get(d.lineId) ?? 0) + d.qty);
+        for (const list of this.lines.values()) {
+            for (const l of list) {
+                const q = add.get(l.id);
+                if (q !== undefined && l.workspaceId === workspaceId) l.orderedQty = roundQty(l.orderedQty + q);
+            }
+        }
+        return Promise.resolve();
     }
 
     deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void> {

@@ -3,15 +3,16 @@
 // drizzle.config.ts lists this file for migrations. sc_vendor_list_entry_id / vendor_workspace_id / project_id of a rating
 // point at other modules' rows: no FK (checked through ports, D-19).
 import type {
-    BankAccount, BudgetWarning, DocLanguage, PurchaseRequestSource, PurchaseRequestStatus, RfqQuoteLine, RfqStatus, RfqSupplierStatus,
-    SupplierKind, SupplierWhtPreset, TradeId,
+    BankAccount, BudgetWarning, DocLanguage, GoodsReceiptPhoto, GoodsReceiptStatus, PurchaseOrderStatus, PurchaseRequestSource,
+    PurchaseRequestStatus, ReceiptCondition, RfqQuoteLine, RfqStatus, RfqSupplierStatus, SupplierKind, SupplierSnapshot, SupplierWhtPreset,
+    TradeId,
 } from '@contrack/contract';
 import { sql } from 'drizzle-orm';
 import {
     boolean, check, index, integer, jsonb, numeric, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid,
 } from 'drizzle-orm/pg-core';
 import { workspaces } from './schema';
-import { businessDate, createdAt, money, projectTenantFk, quantity, unitPrice, updatedAt } from './schema-helpers';
+import { businessDate, createdAt, money, projectTenantFk, quantity, rate, unitPrice, updatedAt } from './schema-helpers';
 
 // ── suppliers (WP-37, §7.1) ──
 
@@ -199,4 +200,110 @@ export const pcRfqQuotes = pgTable('pc_rfq_quotes', {
     unique('pc_rfq_quotes_rfq_supplier_key').on(t.rfqId, t.supplierId),
 ]);
 
-export const procurementTables = { supSuppliers, supRatings, pcRequests, pcRequestLines, pcRfqs, pcRfqLines, pcRfqSuppliers, pcRfqQuotes };
+// ── purchase orders and goods receipts (WP-39, §7.2) ──
+
+/** A purchase order (PO) to one supplier; the commitment of each line is posted to the cost ledger when issued. */
+export const pcOrders = pgTable('pc_orders', {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id').notNull(),
+    supplierId: uuid('supplier_id').notNull().references(() => supSuppliers.id),
+    rfqId: uuid('rfq_id').references(() => pcRfqs.id, { onDelete: 'set null' }),
+    number: text('number'),
+    status: text('status').$type<PurchaseOrderStatus>().notNull().default('draft'),
+    orderDate: businessDate('order_date'),
+    deliveryDate: businessDate('delivery_date'),
+    deliveryAddress: text('delivery_address').notNull().default(''),
+    language: text('language').$type<DocLanguage>().notNull().default('th'),
+    supplierSnapshot: jsonb('supplier_snapshot').$type<SupplierSnapshot>(),
+    vatRate: rate('vat_rate').notNull().default(0.07),
+    subtotal: money('subtotal').notNull().default(0),
+    discount: money('discount').notNull().default(0),
+    vat: money('vat').notNull().default(0),
+    total: money('total').notNull().default(0),
+    whtPreset: text('wht_preset').$type<SupplierWhtPreset>().notNull().default('none'),
+    paymentTermDays: integer('payment_term_days'),
+    terms: text('terms').notNull().default(''),
+    budgetWarnings: jsonb('budget_warnings').$type<BudgetWarning[]>().notNull().default([]),
+    overrideReason: text('override_reason').notNull().default(''),
+    issuedBy: uuid('issued_by'),
+    issuedAt: timestamp('issued_at', { withTimezone: true }),
+    createdBy: uuid('created_by').notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+}, t => [
+    projectTenantFk('pc_orders', t),
+    unique('pc_orders_workspace_number_key').on(t.workspaceId, t.number),
+    index('pc_orders_workspace_project_idx').on(t.workspaceId, t.projectId),
+    index('pc_orders_workspace_status_idx').on(t.workspaceId, t.status),
+    index('pc_orders_supplier_idx').on(t.workspaceId, t.supplierId),
+    check('pc_orders_status_check', sql`${t.status} in ('draft', 'pending_approval', 'issued', 'partially_received', 'received', 'closed', 'cancelled')`),
+    check('pc_orders_language_check', sql`${t.language} in ('th', 'en')`),
+    check('pc_orders_discount_check', sql`${t.discount} >= 0 and ${t.discount} <= ${t.subtotal}`),
+]);
+
+export const pcOrderLines = pgTable('pc_order_lines', {
+    id: uuid('id').primaryKey(),
+    orderId: uuid('order_id').notNull().references(() => pcOrders.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    costCodeId: uuid('cost_code_id'),
+    requestLineId: uuid('request_line_id').references(() => pcRequestLines.id, { onDelete: 'set null' }),
+    descTh: text('desc_th').notNull().default(''),
+    descEn: text('desc_en').notNull().default(''),
+    unit: text('unit').notNull().default(''),
+    qty: quantity('qty').notNull(),
+    unitPrice: unitPrice('unit_price').notNull().default(0),
+    amount: money('amount').notNull().default(0),
+    receivedQty: quantity('received_qty').notNull().default(0),
+    billedQty: quantity('billed_qty').notNull().default(0),
+    sort: integer('sort').notNull().default(0),
+}, t => [
+    index('pc_order_lines_order_idx').on(t.orderId, t.sort),
+    index('pc_order_lines_cost_code_idx').on(t.workspaceId, t.costCodeId),
+]);
+
+/** A goods receipt (GR) against a PO: confirmed → actual cost + commitment released per line. */
+export const pcReceipts = pgTable('pc_receipts', {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id').notNull(),
+    orderId: uuid('order_id').notNull().references(() => pcOrders.id, { onDelete: 'cascade' }),
+    number: text('number'),
+    status: text('status').$type<GoodsReceiptStatus>().notNull().default('draft'),
+    receivedDate: businessDate('received_date').notNull(),
+    receivedBy: uuid('received_by').notNull(),
+    deliveryNoteNo: text('delivery_note_no').notNull().default(''),
+    photos: jsonb('photos').$type<GoodsReceiptPhoto[]>().notNull().default([]),
+    note: text('note').notNull().default(''),
+    amount: money('amount').notNull().default(0),
+    confirmedAt: timestamp('confirmed_at', { withTimezone: true }),
+    createdBy: uuid('created_by').notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+}, t => [
+    projectTenantFk('pc_receipts', t),
+    unique('pc_receipts_workspace_number_key').on(t.workspaceId, t.number),
+    index('pc_receipts_order_idx').on(t.orderId, t.createdAt),
+    check('pc_receipts_status_check', sql`${t.status} in ('draft', 'confirmed', 'cancelled')`),
+]);
+
+export const pcReceiptLines = pgTable('pc_receipt_lines', {
+    id: uuid('id').primaryKey(),
+    receiptId: uuid('receipt_id').notNull().references(() => pcReceipts.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    orderLineId: uuid('order_line_id').notNull().references(() => pcOrderLines.id, { onDelete: 'cascade' }),
+    qtyReceived: quantity('qty_received').notNull().default(0),
+    qtyRejected: quantity('qty_rejected').notNull().default(0),
+    condition: text('condition').$type<ReceiptCondition>().notNull().default('ok'),
+    note: text('note').notNull().default(''),
+    sort: integer('sort').notNull().default(0),
+}, t => [
+    index('pc_receipt_lines_receipt_idx').on(t.receiptId, t.sort),
+    check('pc_receipt_lines_condition_check', sql`${t.condition} in ('ok', 'damaged', 'short')`),
+    check('pc_receipt_lines_qty_check', sql`${t.qtyReceived} >= 0 and ${t.qtyRejected} >= 0`),
+]);
+
+export const procurementTables = {
+    supSuppliers, supRatings, pcRequests, pcRequestLines, pcRfqs, pcRfqLines, pcRfqSuppliers, pcRfqQuotes, pcOrders, pcOrderLines,
+    pcReceipts, pcReceiptLines,
+};

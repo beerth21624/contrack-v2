@@ -1,5 +1,6 @@
 import type {
-    BudgetWarning, DocLanguage, PurchaseRequestSource, PurchaseRequestStatus, RfqQuoteLine, RfqStatus, RfqSupplierStatus,
+    BudgetWarning, DocLanguage, GoodsReceiptPhoto, GoodsReceiptStatus, PurchaseOrderStatus, PurchaseRequestSource, PurchaseRequestStatus,
+    ReceiptCondition, RfqQuoteLine, RfqStatus, RfqSupplierStatus, SupplierSnapshot, SupplierWhtPreset,
 } from '@contrack/contract';
 import type { ProjectId, UserId, WorkspaceId } from '../../../../shared/domain/ids';
 
@@ -72,6 +73,8 @@ export abstract class PurchaseRequestRepository {
     abstract requestedQty(
         workspaceId: WorkspaceId, projectId: ProjectId, costCodeIds: readonly string[], exceptRequestId: string | null,
     ): Promise<Map<string, number>>;
+    /** Adds `qty` (may be negative) to each line's `ordered_qty`. */
+    abstract addOrderedQty(workspaceId: WorkspaceId, deltas: readonly { lineId: string; qty: number }[]): Promise<void>;
 
     /** Memory adapter only (PostgreSQL cascades from projects). */
     abstract deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void>;
@@ -172,6 +175,160 @@ export abstract class RfqRepository {
     abstract upsertQuote(q: RfqQuoteRecord): Promise<void>;
     abstract deleteQuote(workspaceId: WorkspaceId, rfqId: string, supplierId: string): Promise<void>;
     abstract counts(workspaceId: WorkspaceId, rfqIds: readonly string[]): Promise<Map<string, RfqCounts>>;
+
+    /** Memory adapter only (PostgreSQL cascades from projects). */
+    abstract deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void>;
+}
+
+/** One `pc_orders` row. */
+export interface PurchaseOrderRecord {
+    id: string;
+    workspaceId: WorkspaceId;
+    projectId: ProjectId;
+    supplierId: string;
+    rfqId: string | null;
+    number: string | null;
+    status: PurchaseOrderStatus;
+    orderDate: string | null;
+    deliveryDate: string | null;
+    deliveryAddress: string;
+    language: DocLanguage;
+    supplierSnapshot: SupplierSnapshot | null;
+    vatRate: number;
+    subtotal: number;
+    discount: number;
+    vat: number;
+    total: number;
+    whtPreset: SupplierWhtPreset;
+    paymentTermDays: number | null;
+    terms: string;
+    budgetWarnings: BudgetWarning[];
+    overrideReason: string;
+    issuedBy: UserId | null;
+    issuedAt: Date | null;
+    createdBy: UserId;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/** One `pc_order_lines` row. */
+export interface PurchaseOrderLineRecord {
+    id: string;
+    orderId: string;
+    workspaceId: WorkspaceId;
+    costCodeId: string | null;
+    requestLineId: string | null;
+    descTh: string;
+    descEn: string;
+    unit: string;
+    qty: number;
+    unitPrice: number;
+    amount: number;
+    receivedQty: number;
+    billedQty: number;
+    sort: number;
+}
+
+/** Statuses whose lines hold quantity of a cost code in the PO budget check (closed ones count what was received). */
+export const ORDERED_STATUSES: readonly PurchaseOrderStatus[] = ['pending_approval', 'issued', 'partially_received', 'received', 'closed'];
+
+/** Quantity a PO line holds of its cost code: a closed PO keeps only what was received. */
+export const orderHeldQty = (status: PurchaseOrderStatus, l: Pick<PurchaseOrderLineRecord, 'qty' | 'receivedQty'>): number =>
+    status === 'closed' ? l.receivedQty : Math.max(l.qty, l.receivedQty);
+
+/** One line of the price history of a supplier. */
+export interface PriceHistoryRow {
+    orderId: string;
+    orderNumber: string | null;
+    projectId: ProjectId;
+    orderDate: string | null;
+    issuedAt: Date | null;
+    descTh: string;
+    descEn: string;
+    unit: string;
+    qty: number;
+    unitPrice: number;
+    costCodeId: string | null;
+}
+
+/** Tables `pc_orders` / `pc_order_lines`. Every method filters by workspace except `find`. */
+export abstract class PurchaseOrderRepository {
+    abstract find(orderId: string): Promise<PurchaseOrderRecord | undefined>;
+    abstract lock(workspaceId: WorkspaceId, orderId: string): Promise<PurchaseOrderRecord | undefined>;
+    /** Newest first. */
+    abstract listByProjects(workspaceId: WorkspaceId, projectIds: readonly ProjectId[]): Promise<PurchaseOrderRecord[]>;
+    /** Newest first; `statuses` empty / undefined = all. */
+    abstract listByWorkspace(workspaceId: WorkspaceId, statuses?: readonly PurchaseOrderStatus[]): Promise<PurchaseOrderRecord[]>;
+    /** A second (workspace, number) throws. */
+    abstract insert(r: PurchaseOrderRecord): Promise<void>;
+    abstract save(r: PurchaseOrderRecord): Promise<void>;
+
+    /** `sort` order. */
+    abstract linesOf(workspaceId: WorkspaceId, orderId: string): Promise<PurchaseOrderLineRecord[]>;
+    abstract linesByIds(workspaceId: WorkspaceId, lineIds: readonly string[]): Promise<PurchaseOrderLineRecord[]>;
+    abstract replaceLines(workspaceId: WorkspaceId, orderId: string, lines: readonly PurchaseOrderLineRecord[]): Promise<void>;
+    /** Updates received / billed quantities of existing lines. */
+    abstract saveLineProgress(workspaceId: WorkspaceId, lines: readonly Pick<PurchaseOrderLineRecord, 'id' | 'receivedQty' | 'billedQty'>[]): Promise<void>;
+    abstract lineCounts(workspaceId: WorkspaceId, orderIds: readonly string[]): Promise<Map<string, number>>;
+    /**
+     * Quantity per cost code held by the project's POs in ORDERED_STATUSES (see `orderHeldQty`), leaving out
+     * `exceptOrderId`; `withoutRequestOnly` counts only lines typed on the PO (not ordering a purchase request line).
+     */
+    abstract orderedQty(
+        workspaceId: WorkspaceId, projectId: ProjectId, costCodeIds: readonly string[], exceptOrderId: string | null, withoutRequestOnly: boolean,
+    ): Promise<Map<string, number>>;
+    /** Lines of the supplier's POs in PURCHASE_ORDER_ISSUED_STATUSES whose description contains `q`, newest first. */
+    abstract priceHistory(workspaceId: WorkspaceId, supplierId: string, q: string, limit: number): Promise<PriceHistoryRow[]>;
+
+    /** Memory adapter only (PostgreSQL cascades from projects). */
+    abstract deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void>;
+}
+
+/** One `pc_receipts` row. */
+export interface GoodsReceiptRecord {
+    id: string;
+    workspaceId: WorkspaceId;
+    projectId: ProjectId;
+    orderId: string;
+    number: string | null;
+    status: GoodsReceiptStatus;
+    receivedDate: string;
+    receivedBy: UserId;
+    deliveryNoteNo: string;
+    photos: GoodsReceiptPhoto[];
+    note: string;
+    amount: number;
+    confirmedAt: Date | null;
+    createdBy: UserId;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/** One `pc_receipt_lines` row. */
+export interface GoodsReceiptLineRecord {
+    id: string;
+    receiptId: string;
+    workspaceId: WorkspaceId;
+    orderLineId: string;
+    qtyReceived: number;
+    qtyRejected: number;
+    condition: ReceiptCondition;
+    note: string;
+    sort: number;
+}
+
+/** Tables `pc_receipts` / `pc_receipt_lines`. Every method filters by workspace except `find`. */
+export abstract class GoodsReceiptRepository {
+    abstract find(receiptId: string): Promise<GoodsReceiptRecord | undefined>;
+    abstract lock(workspaceId: WorkspaceId, receiptId: string): Promise<GoodsReceiptRecord | undefined>;
+    /** Oldest first. */
+    abstract listByOrder(workspaceId: WorkspaceId, orderId: string): Promise<GoodsReceiptRecord[]>;
+    /** A second (workspace, number) throws. */
+    abstract insert(r: GoodsReceiptRecord): Promise<void>;
+    abstract save(r: GoodsReceiptRecord): Promise<void>;
+    /** `sort` order. */
+    abstract linesOf(workspaceId: WorkspaceId, receiptId: string): Promise<GoodsReceiptLineRecord[]>;
+    abstract replaceLines(workspaceId: WorkspaceId, receiptId: string, lines: readonly GoodsReceiptLineRecord[]): Promise<void>;
 
     /** Memory adapter only (PostgreSQL cascades from projects). */
     abstract deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void>;

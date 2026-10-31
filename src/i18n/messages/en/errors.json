@@ -130,6 +130,11 @@
     "supplier_quoted": "This supplier has quoted and cannot be removed",
     "supplier_not_quoted": "This supplier has not quoted yet",
     "request_in_rfq": "This purchase request is on an open RFQ",
-    "unknown_rfq_line": "The line is not on this RFQ"
+    "unknown_rfq_line": "The line is not on this RFQ",
+    "over_received": "More would be received than was ordered",
+    "goods_received": "Goods have been received on this purchase order",
+    "unknown_order_line": "The line is not on this purchase order",
+    "nothing_received": "Enter a quantity received or rejected",
+    "qty_exceeds_received": "More would be billed than was received"
   }
 }

@@ -53,7 +53,8 @@
     "send": "ส่ง",
     "invite": "เชิญผู้ขาย",
     "quote": "บันทึกราคาเสนอ",
-    "award": "เลือกผู้ขาย"
+    "award": "เลือกผู้ขาย",
+    "confirm": "ยืนยัน"
   },
   "entities": {
     "approval_request": "คำขออนุมัติ",
@@ -73,6 +74,8 @@
     "variation": "งานเพิ่ม-ลด (VO)",
     "supplier": "ผู้ขาย",
     "purchase_request": "ใบขอซื้อ",
-    "rfq": "ใบขอใบเสนอราคา"
+    "rfq": "ใบขอใบเสนอราคา",
+    "purchase_order": "ใบสั่งซื้อ",
+    "goods_receipt": "ใบรับของ"
   }
 }

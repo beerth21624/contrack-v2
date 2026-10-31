@@ -53,7 +53,8 @@
     "send": "Sent",
     "invite": "Invited suppliers",
     "quote": "Recorded a quote",
-    "award": "Awarded"
+    "award": "Awarded",
+    "confirm": "Confirmed"
   },
   "entities": {
     "approval_request": "Approval request",
@@ -73,6 +74,8 @@
     "variation": "Variation order",
     "supplier": "Supplier",
     "purchase_request": "Purchase request",
-    "rfq": "Request for quotation"
+    "rfq": "Request for quotation",
+    "purchase_order": "Purchase order",
+    "goods_receipt": "Goods receipt"
   }
 }

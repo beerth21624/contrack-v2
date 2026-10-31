@@ -1,12 +1,27 @@
 // ─── Purchasing (module `procurement`, docs/erp/02-domain-model.md §7.2, WP-38 …) ───
 // Purchase requests (site or BOQ, budget check per cost code against CostCodeLookup + CostLedger, numbering
 // `purchase_request`, approval `purchase_request.approve`) and RFQs (suppliers through SupplierLookup, numbering `rfq`,
-// quotes typed by the team, comparison, award). Registers ApprovalHandlers, PortalSources (approved PRs waiting for a
-// PO) and ProjectDependents. Deleting a project with a PR / RFQ number is refused by numbering's guard.
+// quotes typed by the team, comparison, award → PO draft), purchase orders (budget check, approval
+// `purchase_order.issue`, numbering `purchase_order`, cost commitments) and goods receipts (numbering `goods_receipt`,
+// actual cost). Registers ApprovalHandlers, HubRollups (open POs), PortalSources (approved PRs waiting for a PO, POs
+// waiting for goods) and ProjectDependents; provides the PurchaseOrders port. Deleting a project with a numbered
+// document is refused by numbering's guard.
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
-import { ApprovalHandlers, PortalSources, ProjectDependents } from '../../shared/application/ports';
+import { ApprovalHandlers, HubRollups, PortalSources, ProjectDependents, PurchaseOrders } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
-import { PurchaseRequestRepository, RfqRepository } from './application/ports/procurement.repository';
+import {
+    GoodsReceiptRepository, PurchaseOrderRepository, PurchaseRequestRepository, RfqRepository,
+} from './application/ports/procurement.repository';
+import { ProcurementPurchaseOrders, PurchasingHandlers } from './application/purchasing-handlers';
+import { PurchasingViews } from './application/purchasing-views';
+import { PurchaseOrderLines, PurchaseOrderWorkflow } from './application/purchasing.service';
+import {
+    CancelGoodsReceiptUseCase, ConfirmGoodsReceiptUseCase, CreateGoodsReceiptUseCase, ListGoodsReceiptsUseCase,
+} from './application/use-cases/goods-receipts.use-cases';
+import {
+    CancelPurchaseOrderUseCase, ClosePurchaseOrderUseCase, CreatePurchaseOrderUseCase, GetPurchaseOrderUseCase, IssuePurchaseOrderUseCase,
+    ListProjectPurchaseOrdersUseCase, ListWorkspacePurchaseOrdersUseCase, PatchPurchaseOrderUseCase, SupplierPriceHistoryUseCase,
+} from './application/use-cases/purchase-orders.use-cases';
 import { ProcurementHandlers } from './application/procurement-handlers';
 import { ProcurementViews } from './application/procurement-views';
 import { MODULE, ProcurementAccess, PurchaseRequestLines } from './application/procurement.service';
@@ -24,6 +39,12 @@ import {
 import {
     InMemoryPurchaseRequestRepository, InMemoryRfqRepository,
 } from './infrastructure/adapters/in-memory-procurement.repository';
+import {
+    DrizzleGoodsReceiptRepository, DrizzlePurchaseOrderRepository,
+} from './infrastructure/adapters/drizzle-purchasing.repository';
+import {
+    InMemoryGoodsReceiptRepository, InMemoryPurchaseOrderRepository,
+} from './infrastructure/adapters/in-memory-purchasing.repository';
 import { ProcurementController } from './presentation/procurement.controller';
 
 @Global()
@@ -32,6 +53,8 @@ import { ProcurementController } from './presentation/procurement.controller';
     providers: [
         persistence(PurchaseRequestRepository, () => new InMemoryPurchaseRequestRepository(), ctx => new DrizzlePurchaseRequestRepository(ctx)),
         persistence(RfqRepository, () => new InMemoryRfqRepository(), ctx => new DrizzleRfqRepository(ctx)),
+        persistence(PurchaseOrderRepository, () => new InMemoryPurchaseOrderRepository(), ctx => new DrizzlePurchaseOrderRepository(ctx)),
+        persistence(GoodsReceiptRepository, () => new InMemoryGoodsReceiptRepository(), ctx => new DrizzleGoodsReceiptRepository(ctx)),
         ProcurementAccess,
         PurchaseRequestLines,
         ProcurementViews,
@@ -52,23 +75,51 @@ import { ProcurementController } from './presentation/procurement.controller';
         CancelRfqUseCase,
         PutRfqQuoteUseCase,
         AwardRfqUseCase,
+        PurchaseOrderLines,
+        PurchaseOrderWorkflow,
+        PurchasingViews,
+        PurchasingHandlers,
+        { provide: PurchaseOrders, useClass: ProcurementPurchaseOrders },
+        ListProjectPurchaseOrdersUseCase,
+        ListWorkspacePurchaseOrdersUseCase,
+        GetPurchaseOrderUseCase,
+        CreatePurchaseOrderUseCase,
+        PatchPurchaseOrderUseCase,
+        IssuePurchaseOrderUseCase,
+        CancelPurchaseOrderUseCase,
+        ClosePurchaseOrderUseCase,
+        SupplierPriceHistoryUseCase,
+        ListGoodsReceiptsUseCase,
+        CreateGoodsReceiptUseCase,
+        ConfirmGoodsReceiptUseCase,
+        CancelGoodsReceiptUseCase,
     ],
+    exports: [PurchaseOrders],
 })
 export class ProcurementModule implements OnModuleInit {
     constructor(
         private readonly approvals: ApprovalHandlers,
         private readonly portal: PortalSources,
+        private readonly rollups: HubRollups,
         private readonly dependents: ProjectDependents,
         private readonly requests: PurchaseRequestRepository,
         private readonly rfqs: RfqRepository,
+        private readonly orders: PurchaseOrderRepository,
+        private readonly receipts: GoodsReceiptRepository,
         private readonly handlers: ProcurementHandlers,
+        private readonly purchasing: PurchasingHandlers,
     ) {}
 
     onModuleInit(): void {
         this.approvals.register('purchase_request.approve', { onDecided: e => this.handlers.onPurchaseRequestDecided(e) });
+        this.approvals.register('purchase_order.issue', { onDecided: e => this.purchasing.onPurchaseOrderDecided(e) });
         this.portal.register(MODULE, 'procurement.manage', ctx => this.handlers.portalToOrder(ctx));
+        this.portal.register(MODULE, 'procurement.receive', ctx => this.purchasing.portalToReceive(ctx));
+        this.rollups.register(MODULE, (ws, projectIds) => this.purchasing.rollup(ws, projectIds));
         // Memory adapters: forget a deleted project's documents (PostgreSQL drops them with the project).
         this.dependents.register(async (workspaceId, projectId) => {
+            await this.receipts.deleteByProject(workspaceId, projectId);
+            await this.orders.deleteByProject(workspaceId, projectId);
             await this.rfqs.deleteByProject(workspaceId, projectId);
             await this.requests.deleteByProject(workspaceId, projectId);
         });

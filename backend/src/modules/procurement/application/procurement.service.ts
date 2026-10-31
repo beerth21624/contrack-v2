@@ -10,7 +10,8 @@ import { type ProjectId, type UserId, type WorkspaceId, isUuid } from '../../../
 import type { Permission } from '../../../shared/domain/permissions';
 import { type Result, err, ok } from '../../../shared/domain/result';
 import {
-    type PurchaseRequestLineRecord, PurchaseRequestRepository, type PurchaseRequestRecord, type RfqRecord, RfqRepository,
+    GoodsReceiptRepository, type GoodsReceiptRecord, PurchaseOrderRepository, type PurchaseOrderRecord, type PurchaseRequestLineRecord,
+    PurchaseRequestRepository, type PurchaseRequestRecord, type RfqRecord, RfqRepository,
 } from './ports/procurement.repository';
 
 export const MODULE = 'procurement';
@@ -43,6 +44,8 @@ export class ProcurementAccess {
         private readonly access: ModuleAccess,
         private readonly requests: PurchaseRequestRepository,
         private readonly rfqs: RfqRepository,
+        private readonly orders: PurchaseOrderRepository,
+        private readonly receipts: GoodsReceiptRepository,
     ) {}
 
     private async grantOn<T extends { workspaceId: WorkspaceId; projectId: ProjectId }>(
@@ -64,6 +67,16 @@ export class ProcurementAccess {
         if (!isUuid(rfqId)) return err(DomainError.notFound('Rfq'));
         return this.grantOn(userId, await this.rfqs.find(rfqId.toLowerCase()), 'Rfq', permissions, write);
     }
+
+    async order(userId: UserId, orderId: string, permissions: Permission[], write: boolean): Promise<Result<{ grant: ProjectGrant; doc: PurchaseOrderRecord }, DomainError>> {
+        if (!isUuid(orderId)) return err(DomainError.notFound('PurchaseOrder'));
+        return this.grantOn(userId, await this.orders.find(orderId.toLowerCase()), 'PurchaseOrder', permissions, write);
+    }
+
+    async receipt(userId: UserId, receiptId: string, permissions: Permission[], write: boolean): Promise<Result<{ grant: ProjectGrant; doc: GoodsReceiptRecord }, DomainError>> {
+        if (!isUuid(receiptId)) return err(DomainError.notFound('GoodsReceipt'));
+        return this.grantOn(userId, await this.receipts.find(receiptId.toLowerCase()), 'GoodsReceipt', permissions, write);
+    }
 }
 
 /** A line before it is stored (id / request / sort set by `PurchaseRequestLines.build`). */
@@ -73,6 +86,7 @@ export type DraftRequestLine = Omit<PurchaseRequestLineRecord, 'id' | 'requestId
 export class PurchaseRequestLines {
     constructor(
         private readonly repo: PurchaseRequestRepository,
+        private readonly orders: PurchaseOrderRepository,
         private readonly costCodes: CostCodeLookup,
         private readonly ledger: CostLedger,
         private readonly ids: IdGenerator,
@@ -120,9 +134,13 @@ export class PurchaseRequestLines {
         return sumMoney(lines.map(l => l.estAmount));
     }
 
-    /** What other requests of the project hold of each cost code. */
-    priorQty(workspaceId: WorkspaceId, projectId: ProjectId, costCodeIds: readonly string[], exceptRequestId: string | null): Promise<Map<string, number>> {
-        return this.repo.requestedQty(workspaceId, projectId, costCodeIds, exceptRequestId);
+    /** What other requests of the project hold of each cost code, plus PO lines typed without a request (D-278). */
+    async priorQty(workspaceId: WorkspaceId, projectId: ProjectId, costCodeIds: readonly string[], exceptRequestId: string | null): Promise<Map<string, number>> {
+        const out = await this.repo.requestedQty(workspaceId, projectId, costCodeIds, exceptRequestId);
+        for (const [code, qty] of await this.orders.orderedQty(workspaceId, projectId, costCodeIds, null, true)) {
+            out.set(code, roundQty((out.get(code) ?? 0) + qty));
+        }
+        return out;
     }
 
     /** Budget warnings of a request's lines against its cost codes, the ledger and the other requests. */

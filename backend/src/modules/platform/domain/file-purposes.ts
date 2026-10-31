@@ -20,4 +20,6 @@ export const FILE_PURPOSE_MODULE: Readonly<Record<FilePurpose, ModuleId>> = {
     customer_wht_certificate: 'billing',
     variation_evidence: 'variations',
     supplier_quote: 'procurement',
+    delivery_note_photo: 'procurement',
+    goods_photo: 'procurement',
 };

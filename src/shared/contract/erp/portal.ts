@@ -11,7 +11,7 @@ import { docTypeSchema } from './numbering';
 /** Task kinds (web: `portal.tasks.<kind>` with `params`). Append only; modules 5–9 add theirs. */
 export const PORTAL_TASK_KINDS = [
     'approval_pending', 'invoice_overdue', 'milestone_claimable', 'quotation_expiring', 'variation_awaiting_customer',
-    'purchase_request_to_order',
+    'purchase_request_to_order', 'purchase_order_to_receive',
 ] as const;
 export const portalTaskKindSchema = z.enum(PORTAL_TASK_KINDS);
 export type PortalTaskKind = z.infer<typeof portalTaskKindSchema>;
