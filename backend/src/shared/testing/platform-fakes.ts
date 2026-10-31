@@ -2,7 +2,7 @@
 import { type FileDto, type FilePurpose, MODULE_IDS, type ModuleId, type Role } from '@contrack/contract';
 import {
     AppLinks, FileService, ModuleFlags, type NotificationRequest, Notifier, ProjectDirectory, ProjectReader, type ProjectRead,
-    type ProjectStatus, ProjectStatusLookup, WorkspaceAccess, WorkspaceDirectory,
+    type ProjectStatus, ProjectStatusLookup, WorkspaceAccess, WorkspaceDirectory, type WorkspaceSummary,
 } from '../application/ports';
 import { DomainError, type ProjectId, type Result, type UserId, type WorkspaceId, err, okVoid } from '../domain';
 
@@ -94,6 +94,17 @@ export class FakeWorkspaceDirectory extends WorkspaceDirectory {
 
     memberIds(workspaceId: WorkspaceId): Promise<UserId[]> {
         return Promise.resolve([...(this.members.get(workspaceId) ?? [])]);
+    }
+
+    search(q: string, limit: number): Promise<WorkspaceSummary[]> {
+        const needle = q.trim().toLowerCase();
+        const found = [...this.nameOf.entries()]
+            .filter(([id, name]) => needle === '' || id.toLowerCase() === needle || name.toLowerCase().includes(needle))
+            .slice(0, limit)
+            .map(([id, name]): WorkspaceSummary => ({
+                id, name, kind: 'company', memberCount: this.members.get(id)?.length ?? 0, createdAt: new Date(0),
+            }));
+        return Promise.resolve(found);
     }
 }
 

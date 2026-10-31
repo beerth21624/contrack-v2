@@ -5,6 +5,8 @@ import type { Workspace } from '../../domain/entities/workspace.entity';
 export abstract class WorkspaceRepository {
     abstract findById(id: WorkspaceId): Promise<Workspace | undefined>;
     abstract findMany(ids: readonly WorkspaceId[]): Promise<Workspace[]>;
+    /** Name contains `q` (case-insensitive) or id equals `q`; empty `q` matches all. Newest first. Platform admin only. */
+    abstract search(q: string, limit: number): Promise<Workspace[]>;
     abstract insert(workspace: Workspace): Promise<void>;
     /** Persists the mutable fields (name). */
     abstract update(workspace: Workspace): Promise<void>;

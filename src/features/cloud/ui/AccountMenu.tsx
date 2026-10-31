@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import { App, Avatar, Button, Dropdown, type MenuProps } from 'antd';
 import {
-    AppstoreOutlined, CheckOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, ScheduleOutlined, TeamOutlined, ToolOutlined,
+    AppstoreOutlined, CheckOutlined, SafetyCertificateOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, ScheduleOutlined, TeamOutlined, ToolOutlined,
 } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
@@ -17,6 +17,7 @@ import { signOut } from '../auth/actions';
 import { useCurrentWorkspace } from '../query/hooks';
 import { ROLE_LABEL, can } from '../permissions';
 import { usePlatformModules } from '@/features/modules/modules';
+import { usePlatformAdminStatus } from '@/features/erp/admin/hooks';
 
 /** The language switch stays hidden until the old screens are translated (docs/erp/PROGRESS.md D-16). */
 const LANGUAGE_SWITCH = process.env.NEXT_PUBLIC_LANGUAGE_SWITCH === '1';
@@ -33,6 +34,9 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
     const { message } = App.useApp();
     const tCommon = useTranslations('common');
     const tAccount = useTranslations('account');
+    const tAdmin = useTranslations('admin');
+    // Platform admins (PLATFORM_ADMIN_EMAILS) get the entitlements page; nobody else sees the entry.
+    const platformAdmin = usePlatformAdminStatus().admin;
     const { locale, setLocale } = useAppLocale();
 
     if (status === 'unknown') return null;
@@ -75,6 +79,7 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
         { key: 'projects', icon: <FolderOpenOutlined />, label: 'โครงการทั้งหมด' },
         { key: 'members', icon: <TeamOutlined />, label: 'สมาชิก' },
         ...(offersModules ? [{ key: 'modules', icon: <AppstoreOutlined />, label: 'โมดูลเสริม' }] : []),
+        ...(platformAdmin ? [{ key: 'admin-entitlements', icon: <SafetyCertificateOutlined />, label: tAdmin('menuLink') }] : []),
         // Business module: the entry exists only while the platform offers it.
         ...(workforceOn ? [
             { key: 'crews', icon: <ToolOutlined />, label: 'ทีมช่างและบุคลากร' },
@@ -114,6 +119,8 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
             router.push('/workspace/members');
         } else if (key === 'modules') {
             router.push('/workspace/modules');
+        } else if (key === 'admin-entitlements') {
+            router.push('/admin/entitlements');
         } else if (key === 'crews') {
             router.push('/workspace/crews');
         } else if (key === 'board') {

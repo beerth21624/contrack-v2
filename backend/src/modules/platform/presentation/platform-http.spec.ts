@@ -5,12 +5,12 @@ import { Global, type INestApplication, Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { MAX_FILE_BYTES, MODULE_IDS, startTrialResponseSchema, workspaceModulesDtoSchema } from '@contrack/contract';
+import { MAX_FILE_BYTES, MODULE_IDS, adminWorkspacesDtoSchema, startTrialResponseSchema, workspaceModulesDtoSchema } from '@contrack/contract';
 import {
     AccessTokenVerifier, type AuthenticatedUser, ModuleFlags, ModuleWorkRegistry, Notifier, ProjectStatusLookup, WorkspaceAccess,
-    WorkspaceDirectory,
+    UserDirectory, type UserProfile, WorkspaceDirectory,
 } from '../../../shared/application/ports';
-import { asUserId } from '../../../shared/domain/ids';
+import { type UserId, asUserId } from '../../../shared/domain/ids';
 import { testEnv } from '../../../shared/infrastructure/config/env';
 import { CoreModule } from '../../../shared/infrastructure/core.module';
 import { AuthGuard } from '../../../shared/presentation/auth';
@@ -30,6 +30,14 @@ class TokenIsUserId extends AccessTokenVerifier {
     }
 }
 
+class FakeUsers extends UserDirectory {
+    findMany(ids: readonly UserId[]): Promise<Map<UserId, UserProfile>> {
+        const email = (id: UserId): string => (id === ('00000000-0000-4000-a000-000000000001' as UserId) ? 'Admin@Example.com' : 'viewer@example.com');
+        return Promise.resolve(new Map(ids.map(id => [id, { id, email: email(id), displayName: 'x' }])));
+    }
+}
+
+const fakeWorkspaces = new FakeWorkspaceDirectory();
 const roles = new FakeRoles();
 const usage = new FakeModuleWork();
 
@@ -39,9 +47,10 @@ const usage = new FakeModuleWork();
         { provide: WorkspaceAccess, useValue: roles },
         { provide: ProjectStatusLookup, useValue: new FakeProjectStatuses() },
         { provide: AccessTokenVerifier, useClass: TokenIsUserId },
-        { provide: WorkspaceDirectory, useValue: new FakeWorkspaceDirectory() },
+        { provide: WorkspaceDirectory, useValue: fakeWorkspaces },
+        { provide: UserDirectory, useClass: FakeUsers },
     ],
-    exports: [WorkspaceAccess, ProjectStatusLookup, AccessTokenVerifier, WorkspaceDirectory],
+    exports: [WorkspaceAccess, ProjectStatusLookup, AccessTokenVerifier, WorkspaceDirectory, UserDirectory],
 })
 class OtherModulesFakes {}
 
@@ -58,7 +67,7 @@ describe('platform HTTP edge', () => {
         roles.set(OWNER, WS as never, 'owner');
         roles.set(VIEWER, WS as never, 'viewer');
         const moduleRef = await Test.createTestingModule({
-            imports: [CoreModule.forRoot({ env: testEnv() }), OtherModulesFakes, PlatformModule],
+            imports: [CoreModule.forRoot({ env: testEnv({ PLATFORM_ADMIN_EMAILS: 'admin@example.com' }) }), OtherModulesFakes, PlatformModule],
             providers: [{ provide: APP_GUARD, useClass: AuthGuard }, { provide: APP_FILTER, useClass: ErrorFilter }],
         }).compile();
         usage.registerInto(moduleRef.get(ModuleWorkRegistry));
@@ -122,6 +131,31 @@ describe('platform HTTP edge', () => {
             const list = workspaceModulesDtoSchema.parse((await request(server).get(`/workspaces/${WS}/modules`).set(...auth(VIEWER)).expect(200)).body);
             expect(list.find(m => m.module === 'billing')).toMatchObject({ enabled: false, active: false });
             expect(list.find(m => m.module === 'boq-control')).toMatchObject({ enabled: true, active: true });
+        });
+    });
+
+    describe('platform admin', () => {
+        it('status is open to everybody; the rest is 404 for non-admins', async () => {
+            const server = http();
+            expect((await request(server).get('/platform/admin/status').set(...auth(OWNER)).expect(200)).body).toEqual({ admin: true });
+            expect((await request(server).get('/platform/admin/status').set(...auth(VIEWER)).expect(200)).body).toEqual({ admin: false });
+            await request(server).get('/platform/admin/status').expect(401);
+            await request(server).get('/platform/admin/workspaces').set(...auth(VIEWER)).expect(404);
+            await request(server).put(`/platform/admin/workspaces/${WS}/entitlements/billing`).set(...auth(VIEWER)).send({ status: 'purchased' }).expect(404);
+        });
+
+        it('the admin finds a workspace and sets an entitlement that the workspace sees at once', async () => {
+            const server = http();
+            fakeWorkspaces.nameOf.set(WS as never, 'Acme Builders');
+            const found = adminWorkspacesDtoSchema.parse((await request(server).get('/platform/admin/workspaces?q=acme').set(...auth(OWNER)).expect(200)).body);
+            expect(found.map(w => w.name)).toEqual(['Acme Builders']);
+            const put = await request(server).put(`/platform/admin/workspaces/${WS}/entitlements/billing`).set(...auth(OWNER))
+                .send({ status: 'purchased', note: 'invoice 1' }).expect(200);
+            expect(put.body).toMatchObject({ module: 'billing', status: 'purchased', note: 'invoice 1' });
+            const list = workspaceModulesDtoSchema.parse((await request(server).get(`/workspaces/${WS}/modules`).set(...auth(VIEWER)).expect(200)).body);
+            expect(list.find(m => m.module === 'billing')?.entitlement.status).toBe('purchased');
+            await request(server).put(`/platform/admin/workspaces/${WS}/entitlements/billing`).set(...auth(OWNER)).send({ status: 'trial' }).expect(400);
+            await request(server).put(`/platform/admin/workspaces/${WS}/entitlements/workforce`).set(...auth(OWNER)).send({ status: 'purchased' }).expect(422);
         });
     });
 

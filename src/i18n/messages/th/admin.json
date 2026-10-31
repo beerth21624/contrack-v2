@@ -1,0 +1,59 @@
+{
+  "menuLink": "สิทธิ์ใช้โมดูล (ผู้ดูแลระบบ)",
+  "notFound": {
+    "title": "ไม่พบหน้านี้",
+    "hint": "ไม่มีหน้านี้ในระบบ",
+    "back": "กลับหน้าแรก"
+  },
+  "entitlements": {
+    "title": "สิทธิ์ใช้งานโมดูล",
+    "subtitle": "ค้นหา workspace แล้วให้ ต่อ หรือยกเลิกสิทธิ์ใช้งานโมดูล",
+    "search": "ค้นหาด้วยชื่อหรือรหัส workspace",
+    "searchButton": "ค้นหา",
+    "limitHint": "แสดงผลล่าสุด {count} รายการ",
+    "empty": "ไม่พบ workspace",
+    "loadFailed": "โหลดรายการ workspace ไม่สำเร็จ",
+    "columns": {
+      "name": "Workspace",
+      "kind": "ประเภท",
+      "members": "สมาชิก",
+      "created": "สร้างเมื่อ",
+      "granted": "โมดูลที่มีสิทธิ์"
+    },
+    "kind": {
+      "personal": "ส่วนตัว",
+      "company": "บริษัท"
+    },
+    "manage": "จัดการ",
+    "modulesTitle": "โมดูลของ {name}",
+    "module": {
+      "module": "โมดูล",
+      "status": "สถานะ",
+      "expires": "หมดอายุ",
+      "note": "หมายเหตุ",
+      "edit": "แก้ไข"
+    },
+    "noExpiry": "ไม่มีวันหมดอายุ"
+  },
+  "status": {
+    "none": "ยังไม่มีสิทธิ์",
+    "not_required": "ไม่ต้องมีสิทธิ์",
+    "purchased": "ซื้อแล้ว",
+    "trial": "ทดลองใช้",
+    "beta": "เบต้า",
+    "expired": "หมดอายุ",
+    "revoked": "ยกเลิก"
+  },
+  "form": {
+    "title": "ตั้งสิทธิ์ใช้งาน {module}",
+    "status": "สถานะ",
+    "expiresAt": "หมดอายุวันที่",
+    "expiresAtHint": "วันสุดท้ายที่สิทธิ์ยังใช้ได้ (นับทั้งวัน) เว้นว่างถ้าไม่มีวันหมดอายุ",
+    "expiresRequired": "การทดลองใช้ต้องระบุวันหมดอายุ",
+    "note": "หมายเหตุ",
+    "notePlaceholder": "เช่น เลขที่ใบแจ้งหนี้ ผู้ขอ",
+    "save": "บันทึก",
+    "cancel": "ยกเลิก",
+    "saved": "บันทึกสิทธิ์ใช้งาน {module} แล้ว"
+  }
+}

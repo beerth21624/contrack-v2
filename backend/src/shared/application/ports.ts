@@ -222,6 +222,19 @@ export abstract class WorkspaceDirectory {
     abstract personalWorkspaceOf(userId: UserId): Promise<WorkspaceId | undefined>;
     /** User ids of every member of a workspace (notification recipients). */
     abstract memberIds(workspaceId: WorkspaceId): Promise<UserId[]>;
+    /**
+     * Platform admin search: workspaces whose name contains `q` (case-insensitive) or whose id is `q`; empty `q` = every
+     * workspace. Newest first, at most `limit`.
+     */
+    abstract search(q: string, limit: number): Promise<WorkspaceSummary[]>;
+}
+
+export interface WorkspaceSummary {
+    id: WorkspaceId;
+    name: string;
+    kind: 'personal' | 'company';
+    memberCount: number;
+    createdAt: Date;
 }
 
 /** What identity tells the business modules after a phone sign-in (inside the sign-in transaction). */

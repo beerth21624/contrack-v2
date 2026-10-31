@@ -10,6 +10,7 @@ import type { MenuProps } from 'antd';
 import { useTranslations } from 'next-intl';
 import { type ModuleId, type Permission, type Role, can } from '@/shared/contract';
 import { useActiveModules } from '@/features/modules/modules';
+import { usePlatformAdminStatus } from '../admin/hooks';
 import { useErpWorkspace } from '../shared/useErpWorkspace';
 
 export type AntdMenuItem = NonNullable<MenuProps['items']>[number];
@@ -29,6 +30,8 @@ export interface ErpNavGate {
     anyModule?: readonly ModuleId[];
     /** can(role, permission). */
     permission?: Permission;
+    /** Only for platform admins (PLATFORM_ADMIN_EMAILS). */
+    admin?: boolean;
 }
 
 export interface ErpNavItem extends ErpNavGate {
@@ -55,14 +58,20 @@ export const WORKSPACE_NAV: readonly ErpNavGroup[] = [
     { groupKey: 'sales', items: [] },
     { groupKey: 'purchasing', items: [] },
     { groupKey: 'finance', items: [] },
-    { groupKey: 'settings', items: [] },
+    {
+        groupKey: 'settings',
+        items: [
+            { key: 'admin-entitlements', labelKey: 'entitlements', href: '/admin/entitlements', admin: true, match: p => p.startsWith('/admin/entitlements') },
+        ],
+    },
 ];
 
 /** Tabs of a project page (/p/[projectId]/…), in display order. Empty until WP-16 and the module WPs add theirs. */
 export const PROJECT_TABS: readonly ErpProjectTab[] = [];
 
 /** The entry passes its module / permission gate. */
-export function navItemVisible(item: ErpNavGate, active: ReadonlySet<ModuleId>, role: Role | undefined): boolean {
+export function navItemVisible(item: ErpNavGate, active: ReadonlySet<ModuleId>, role: Role | undefined, isPlatformAdmin = false): boolean {
+    if (item.admin === true && !isPlatformAdmin) return false;
     if (item.module !== undefined && !active.has(item.module)) return false;
     if (item.anyModule !== undefined && item.anyModule.length > 0 && !item.anyModule.some(m => active.has(m))) return false;
     if (item.permission !== undefined && !can(role, item.permission)) return false;
@@ -104,8 +113,9 @@ export function useWorkspaceNav(workspaceId?: string): AntdMenuItem[] {
     const ws = useErpWorkspace(workspaceId);
     const active = useNavModules(ws.workspaceId);
     const role = ws.role;
+    const { admin } = usePlatformAdminStatus();
     return useMemo(() => WORKSPACE_NAV.flatMap((group): AntdMenuItem[] => {
-        const items = group.items.filter(item => navItemVisible(item, active, role));
+        const items = group.items.filter(item => navItemVisible(item, active, role, admin));
         if (items.length === 0) return [];
         return [{
             key: `erp-group-${group.groupKey}`,
@@ -117,7 +127,7 @@ export function useWorkspaceNav(workspaceId?: string): AntdMenuItem[] {
                 onClick: () => router.push(item.href),
             })),
         }];
-    }), [t, router, active, role]);
+    }), [t, router, active, role, admin]);
 }
 
 export interface ProjectTabView {
@@ -133,8 +143,9 @@ export function useProjectTabs(projectId: string, workspaceId?: string): Project
     const ws = useErpWorkspace(workspaceId);
     const active = useNavModules(ws.workspaceId);
     const role = ws.role;
+    const { admin } = usePlatformAdminStatus();
     return useMemo(() => PROJECT_TABS
-        .filter(tab => navItemVisible(tab, active, role))
+        .filter(tab => navItemVisible(tab, active, role, admin))
         .map(tab => ({ key: tab.key, label: t(tab.labelKey), href: tab.href(projectId), icon: tab.icon })),
-    [t, active, role, projectId]);
+    [t, active, role, admin, projectId]);
 }

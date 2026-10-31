@@ -10,6 +10,7 @@ import documents from './documents.json';
 import modules from './modules.json';
 import roles from './roles.json';
 import erp from './erp.json';
+import admin from './admin.json';
 
 const messages = {
   common,
@@ -24,6 +25,7 @@ const messages = {
   modules,
   roles,
   erp,
+  admin,
 };
 
 export default messages;

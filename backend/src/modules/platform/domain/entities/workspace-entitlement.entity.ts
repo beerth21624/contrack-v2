@@ -65,6 +65,42 @@ export class WorkspaceEntitlement {
         return copyDate(this.props.trialUsedAt);
     }
 
+    get note(): string {
+        return this.props.note;
+    }
+
+    get updatedAt(): Date {
+        return new Date(this.props.updatedAt.getTime());
+    }
+
+    /**
+     * A platform admin sets the grant (replaces status, end and note). `trialUsedAt` is never cleared; an admin-granted
+     * trial counts as the workspace's trial (set when still empty), so it cannot start another one after it ends.
+     */
+    grant(status: EntitlementGrantStatus, expiresAt: Date | null, by: UserId, note: string, now: Date): void {
+        this.props = {
+            ...this.props,
+            status,
+            startsAt: new Date(now.getTime()),
+            expiresAt: copyDate(expiresAt),
+            trialUsedAt: status === 'trial' && this.props.trialUsedAt === null ? new Date(now.getTime()) : this.props.trialUsedAt,
+            grantedBy: by,
+            note,
+            updatedAt: new Date(now.getTime()),
+        };
+    }
+
+    /** A grant that never existed before, set by a platform admin (no trial used yet). */
+    static granted(
+        workspaceId: WorkspaceId, module: ModuleId, status: EntitlementGrantStatus, expiresAt: Date | null, by: UserId, note: string, now: Date,
+    ): WorkspaceEntitlement {
+        const entity = new WorkspaceEntitlement({
+            workspaceId, module, status, startsAt: now, expiresAt: null, trialUsedAt: null, grantedBy: by, note: '', updatedAt: now,
+        });
+        entity.grant(status, expiresAt, by, note, now);
+        return entity;
+    }
+
     /** Starts the one trial of this module on an existing row (the caller checked `trialUsedAt` is null). */
     startTrial(days: number, now: Date): void {
         this.withTrial(days, now);

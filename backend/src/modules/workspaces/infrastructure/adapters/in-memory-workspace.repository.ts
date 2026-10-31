@@ -20,6 +20,15 @@ export class InMemoryWorkspaceRepository extends WorkspaceRepository {
         return Promise.resolve(found);
     }
 
+    search(q: string, limit: number): Promise<Workspace[]> {
+        const needle = q.trim().toLowerCase();
+        const found = [...this.rows.values()]
+            .filter(r => needle === '' || r.id.toLowerCase() === needle || r.name.value.toLowerCase().includes(needle))
+            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+            .slice(0, limit);
+        return Promise.resolve(found.map(r => Workspace.rehydrate(r)));
+    }
+
     insert(workspace: Workspace): Promise<void> {
         if (this.rows.has(workspace.id)) return Promise.reject(new Error(`workspace ${workspace.id} already exists`));
         this.rows.set(workspace.id, workspace.toProps());

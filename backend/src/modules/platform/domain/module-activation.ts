@@ -82,6 +82,13 @@ function entitlementStatus(inputs: ModuleFlagInputs, module: ModuleId): Entitlem
     return grantIsLive(grant, inputs.now) ? grant.status : 'expired';
 }
 
+/** The stored grant as the platform admin sees it, whatever the ENTITLEMENTS mode: `none` when never granted. */
+export function grantStatus(grant: GrantState | undefined, now: Date): EntitlementStatus {
+    if (grant === undefined) return 'none';
+    if (grant.status === 'revoked') return 'revoked';
+    return grantIsLive(grant, now) ? grant.status : 'expired';
+}
+
 export function moduleState(inputs: ModuleFlagInputs, module: ModuleId): ModuleState {
     const available = inputs.released.has(module);
     const legacy = MODULE_REGISTRY[module].entitlement === 'none';

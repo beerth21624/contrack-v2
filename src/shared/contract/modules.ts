@@ -135,3 +135,58 @@ export const startTrialResponseSchema = z.object({
     modules: workspaceModulesDtoSchema,
 });
 export type StartTrialResponse = z.infer<typeof startTrialResponseSchema>;
+
+// ─── Platform admin: entitlements of any workspace (docs/erp/04-implementation-plan.md WP-07) ───
+// Only users whose e-mail is in PLATFORM_ADMIN_EMAILS. Every admin endpoint except `status` answers 404 `not_found`
+// to everyone else (and when the list is empty), so the area is never revealed.
+
+/** GET /platform/admin/status: answers 200 to every signed-in user (the web app decides whether to show the admin link). */
+export const platformAdminStatusDtoSchema = z.object({ admin: z.boolean() });
+export type PlatformAdminStatusDto = z.infer<typeof platformAdminStatusDtoSchema>;
+
+/** GET /platform/admin/workspaces?q=&limit= (q: part of the name or the exact workspace id; empty = newest first). */
+export const adminWorkspaceListQuerySchema = z.object({
+    q: z.string().trim().max(100).optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(25),
+});
+export type AdminWorkspaceListQuery = z.infer<typeof adminWorkspaceListQuerySchema>;
+
+/** One entitlement-bound module of a workspace as the admin sees it (the stored grant; ENTITLEMENTS=open is ignored). */
+export const adminEntitlementDtoSchema = z.object({
+    module: moduleIdSchema,
+    /** `none` (never granted), purchased / trial / beta (live), `expired` or `revoked`. */
+    status: entitlementStatusSchema,
+    expiresAt: isoDateTimeSchema.nullable(),
+    note: z.string(),
+    /** When the workspace started its one self-service trial (or an admin granted a trial). */
+    trialUsedAt: isoDateTimeSchema.nullable(),
+    updatedAt: isoDateTimeSchema.nullable(),
+});
+export type AdminEntitlementDto = z.infer<typeof adminEntitlementDtoSchema>;
+
+export const adminWorkspaceDtoSchema = z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    kind: z.enum(['personal', 'company']),
+    memberCount: z.number().int().nonnegative(),
+    createdAt: isoDateTimeSchema,
+    /** One entry per module that needs an entitlement (MODULE_IDS order). */
+    entitlements: z.array(adminEntitlementDtoSchema),
+});
+export type AdminWorkspaceDto = z.infer<typeof adminWorkspaceDtoSchema>;
+export const adminWorkspacesDtoSchema = z.array(adminWorkspaceDtoSchema);
+
+/**
+ * PUT /platform/admin/workspaces/:workspaceId/entitlements/:module. `trial` needs `expiresAt`; `purchased` / `beta` may
+ * have none (no end); `revoked` ignores it. Only modules that need an entitlement (ERP modules) can be set (else 422).
+ */
+export const putEntitlementRequestSchema = z.object({
+    status: z.enum(ENTITLEMENT_GRANT_STATUSES),
+    expiresAt: isoDateTimeSchema.nullable().optional(),
+    note: z.string().trim().max(500).optional(),
+}).superRefine((v, ctx) => {
+    if (v.status === 'trial' && (v.expiresAt === undefined || v.expiresAt === null)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['expiresAt'], message: 'A trial needs an end date' });
+    }
+});
+export type PutEntitlementRequest = z.infer<typeof putEntitlementRequestSchema>;

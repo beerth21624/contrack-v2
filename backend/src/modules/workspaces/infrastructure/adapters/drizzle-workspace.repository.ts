@@ -1,10 +1,12 @@
-import { eq, inArray } from 'drizzle-orm';
+import { desc, eq, ilike, inArray, or } from 'drizzle-orm';
 import { type WorkspaceId, asWorkspaceId } from '../../../../shared/domain/ids';
 import type { DatabaseContext } from '../../../../shared/infrastructure/database/database';
 import { workspaces } from '../../../../shared/infrastructure/database/schema';
 import { WorkspaceRepository } from '../../application/ports/workspace.repository';
 import { Workspace } from '../../domain/entities/workspace.entity';
 import { WorkspaceName } from '../../domain/value-objects/workspace-name.value-object';
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Row = typeof workspaces.$inferSelect;
 
@@ -29,6 +31,16 @@ export class DrizzleWorkspaceRepository extends WorkspaceRepository {
     async findMany(ids: readonly WorkspaceId[]): Promise<Workspace[]> {
         if (ids.length === 0) return [];
         const rows = await this.ctx.executor.select().from(workspaces).where(inArray(workspaces.id, [...new Set(ids)]));
+        return rows.map(toEntity);
+    }
+
+    async search(q: string, limit: number): Promise<Workspace[]> {
+        const needle = q.trim();
+        // `%`, `_` and `\` in the text are literal characters, not wildcards.
+        const pattern = `%${needle.replace(/[\\%_]/g, c => `\\${c}`)}%`;
+        const byName = ilike(workspaces.name, pattern);
+        const where = needle === '' ? undefined : (UUID.test(needle) ? or(byName, eq(workspaces.id, needle.toLowerCase())) : byName);
+        const rows = await this.ctx.executor.select().from(workspaces).where(where).orderBy(desc(workspaces.createdAt), workspaces.id).limit(limit);
         return rows.map(toEntity);
     }
 

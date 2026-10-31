@@ -1,6 +1,6 @@
 // ─── Shared port WorkspaceDirectory (names of buyer companies / crews for the business modules) ───
 import { Injectable } from '@nestjs/common';
-import { WorkspaceDirectory } from '../../../../shared/application/ports';
+import { WorkspaceDirectory, type WorkspaceSummary } from '../../../../shared/application/ports';
 import type { UserId, WorkspaceId } from '../../../../shared/domain/ids';
 import { MembershipRepository } from '../../application/ports/membership.repository';
 import { WorkspaceRepository } from '../../application/ports/workspace.repository';
@@ -30,5 +30,11 @@ export class RepositoryWorkspaceDirectory extends WorkspaceDirectory {
 
     async memberIds(workspaceId: WorkspaceId): Promise<UserId[]> {
         return (await this.memberships.listByWorkspace(workspaceId)).map(m => m.userId);
+    }
+
+    async search(q: string, limit: number): Promise<WorkspaceSummary[]> {
+        const found = await this.workspaces.search(q, limit);
+        const counts = await this.memberships.countByWorkspaces(found.map(w => w.id));
+        return found.map(w => ({ id: w.id, name: w.name.value, kind: w.kind, memberCount: counts.get(w.id) ?? 0, createdAt: w.createdAt }));
     }
 }

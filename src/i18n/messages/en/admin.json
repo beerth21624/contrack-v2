@@ -1,0 +1,59 @@
+{
+  "menuLink": "Module entitlements (admin)",
+  "notFound": {
+    "title": "Not found",
+    "hint": "This page does not exist.",
+    "back": "Back to home"
+  },
+  "entitlements": {
+    "title": "Module entitlements",
+    "subtitle": "Find a workspace and grant, extend or revoke the right to use a module.",
+    "search": "Search by workspace name or id",
+    "searchButton": "Search",
+    "limitHint": "Showing the newest {count} matches",
+    "empty": "No workspace found",
+    "loadFailed": "Could not load workspaces",
+    "columns": {
+      "name": "Workspace",
+      "kind": "Type",
+      "members": "Members",
+      "created": "Created",
+      "granted": "Modules with rights"
+    },
+    "kind": {
+      "personal": "Personal",
+      "company": "Company"
+    },
+    "manage": "Manage",
+    "modulesTitle": "Modules of {name}",
+    "module": {
+      "module": "Module",
+      "status": "Status",
+      "expires": "Expires",
+      "note": "Note",
+      "edit": "Edit"
+    },
+    "noExpiry": "No end date"
+  },
+  "status": {
+    "none": "None",
+    "not_required": "Not required",
+    "purchased": "Purchased",
+    "trial": "Trial",
+    "beta": "Beta",
+    "expired": "Expired",
+    "revoked": "Revoked"
+  },
+  "form": {
+    "title": "Set right to use {module}",
+    "status": "Status",
+    "expiresAt": "Expires on",
+    "expiresAtHint": "Last day the right is valid (the whole day counts). Leave empty for no end.",
+    "expiresRequired": "A trial needs an end date",
+    "note": "Note",
+    "notePlaceholder": "e.g. invoice number, who asked",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "Saved the right to use {module}"
+  }
+}

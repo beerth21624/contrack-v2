@@ -20,10 +20,13 @@ import { RecipientDirectory } from './application/ports/recipient-directory.port
 import { SmsSender } from './application/ports/sms-sender.port';
 import { WorkspaceEntitlementRepository } from './application/ports/workspace-entitlement.repository';
 import { WorkspaceModuleRepository } from './application/ports/workspace-module.repository';
+import { PlatformAdminAccess } from './application/platform-admin-access';
 import { FileLinks } from './application/services/file-links';
 import { ModuleFlagCache } from './application/services/module-flag-cache';
 import { WorkspaceModuleStates } from './application/services/workspace-module-states';
 import { DeliverQueuedUseCase } from './application/use-cases/deliver-queued.use-case';
+import { GetPlatformAdminStatusUseCase } from './application/use-cases/get-platform-admin-status.use-case';
+import { ListAdminWorkspacesUseCase } from './application/use-cases/list-admin-workspaces.use-case';
 import { ListNotificationsUseCase } from './application/use-cases/list-notifications.use-case';
 import { ListPlatformModulesUseCase } from './application/use-cases/list-platform-modules.use-case';
 import { ListWorkspaceModulesUseCase } from './application/use-cases/list-workspace-modules.use-case';
@@ -31,6 +34,7 @@ import { MarkNotificationsReadUseCase } from './application/use-cases/mark-notif
 import { ReadFileContentUseCase } from './application/use-cases/read-file-content.use-case';
 import { SendNotificationUseCase } from './application/use-cases/send-notification.use-case';
 import { SetWorkspaceModuleUseCase } from './application/use-cases/set-workspace-module.use-case';
+import { SetEntitlementUseCase } from './application/use-cases/set-entitlement.use-case';
 import { StartTrialUseCase } from './application/use-cases/start-trial.use-case';
 import { UploadFileUseCase } from './application/use-cases/upload-file.use-case';
 import { DeliveryWorker } from './infrastructure/adapters/delivery-worker';
@@ -55,6 +59,7 @@ import { ConfigAppLinks, UseCaseNotifier } from './infrastructure/adapters/notif
 import { ConsoleSmsSender, ThaiBulkSmsSender } from './infrastructure/adapters/sms-sender.adapter';
 import { FilesController } from './presentation/files.controller';
 import { PlatformModulesController, WorkspaceModulesController } from './presentation/modules.controller';
+import { PlatformAdminController } from './presentation/platform-admin.controller';
 import { NotificationsController } from './presentation/notifications.controller';
 import { RecordingSmsSender } from './testing/recording-sms-sender';
 
@@ -70,7 +75,7 @@ function smsSender(config: AppConfig): SmsSender {
 
 @Global()
 @Module({
-    controllers: [PlatformModulesController, WorkspaceModulesController, FilesController, NotificationsController],
+    controllers: [PlatformModulesController, PlatformAdminController, WorkspaceModulesController, FilesController, NotificationsController],
     providers: [
         {
             provide: PlatformSettings,
@@ -119,6 +124,10 @@ function smsSender(config: AppConfig): SmsSender {
         ListWorkspaceModulesUseCase,
         SetWorkspaceModuleUseCase,
         StartTrialUseCase,
+        PlatformAdminAccess,
+        GetPlatformAdminStatusUseCase,
+        ListAdminWorkspacesUseCase,
+        SetEntitlementUseCase,
         UploadFileUseCase,
         ReadFileContentUseCase,
         ListNotificationsUseCase,
