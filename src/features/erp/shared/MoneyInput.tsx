@@ -20,7 +20,8 @@ export function MoneyInput({ allowNegative = false, min, max, className, style, 
             precision={2}
             formatter={formatter}
             parser={parser}
-            inputMode="decimal"
+            // The phone decimal pad (iOS) has no minus key.
+            inputMode={allowNegative ? 'text' : 'decimal'}
             className={`tabular-nums ${className ?? ''}`}
             style={{ width: '100%', ...style }}
         />

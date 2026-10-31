@@ -23,7 +23,8 @@ export function QtyInput({ allowNegative = false, precision = 4, min, max, class
             precision={precision}
             formatter={formatter}
             parser={parser}
-            inputMode="decimal"
+            // The phone decimal pad (iOS) has no minus key.
+            inputMode={allowNegative ? 'text' : 'decimal'}
             className={`tabular-nums ${className ?? ''}`}
             style={{ width: '100%', ...style }}
         />

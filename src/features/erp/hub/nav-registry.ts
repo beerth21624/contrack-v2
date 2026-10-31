@@ -83,6 +83,17 @@ export function activeProjectTabKey(pathname: string, tabs: readonly ErpProjectT
     return tabs.find(tab => tab.match(pathname))?.key;
 }
 
+const NO_MODULES: ReadonlySet<ModuleId> = new Set<ModuleId>();
+
+/**
+ * The active modules of exactly `workspaceId`. While it is still unknown (workspaces loading) nothing is active:
+ * useActiveModules(undefined) would fall back to the open project's workspace and could flash entries of another one.
+ */
+function useNavModules(workspaceId: string | undefined): ReadonlySet<ModuleId> {
+    const active = useActiveModules(workspaceId);
+    return workspaceId === undefined ? NO_MODULES : active;
+}
+
 /**
  * The workspace menu for antd Menu: one submenu per group with at least one visible entry (groups without any are
  * left out, so release 1 gets []). `workspaceId`: default the current workspace (useErpWorkspace).
@@ -91,7 +102,7 @@ export function useWorkspaceNav(workspaceId?: string): AntdMenuItem[] {
     const t = useTranslations('nav');
     const router = useRouter();
     const ws = useErpWorkspace(workspaceId);
-    const active = useActiveModules(ws.workspaceId);
+    const active = useNavModules(ws.workspaceId);
     const role = ws.role;
     return useMemo(() => WORKSPACE_NAV.flatMap((group): AntdMenuItem[] => {
         const items = group.items.filter(item => navItemVisible(item, active, role));
@@ -120,7 +131,7 @@ export interface ProjectTabView {
 export function useProjectTabs(projectId: string, workspaceId?: string): ProjectTabView[] {
     const t = useTranslations('nav');
     const ws = useErpWorkspace(workspaceId);
-    const active = useActiveModules(ws.workspaceId);
+    const active = useNavModules(ws.workspaceId);
     const role = ws.role;
     return useMemo(() => PROJECT_TABS
         .filter(tab => navItemVisible(tab, active, role))
