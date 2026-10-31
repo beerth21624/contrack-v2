@@ -16,5 +16,13 @@
     "settings": "Settings"
   },
   "company": "Company",
-  "customers": "Customers"
+  "customers": "Customers",
+  "home": "Home",
+  "projects": "Projects",
+  "boqGroup": "BOQ",
+  "modules": "Add-on modules",
+  "tabs": {
+    "overview": "Overview",
+    "boq": "BOQ"
+  }
 }

@@ -318,7 +318,8 @@ function ProjectsContent() {
     );
 }
 
-function CreateProjectModal({ open, workspaceId, upload, onClose, onCreated }: {
+/** The "new project" modal (also used by the Project Hub, WP-16). */
+export function CreateProjectModal({ open, workspaceId, upload, onClose, onCreated }: {
     open: boolean;
     workspaceId: string;
     /** Upload this (guest) project instead of starting a new one. */

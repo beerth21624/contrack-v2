@@ -19,7 +19,7 @@ import { ROLE_LABEL, can } from '../permissions';
 import { useModuleEnabled, usePlatformModules } from '@/features/modules/modules';
 import { usePlatformAdminStatus } from '@/features/erp/admin/hooks';
 
-/** The language switch stays hidden until the old screens are translated (docs/erp/PROGRESS.md D-16). */
+/** The language switch stays hidden until the old screens are translated, unless project-hub is active (docs/erp/PROGRESS.md D-16). */
 const LANGUAGE_SWITCH = process.env.NEXT_PUBLIC_LANGUAGE_SWITCH === '1';
 
 export function AccountMenu({ compact = false }: { compact?: boolean }) {
@@ -93,7 +93,7 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
             { key: 'crews', icon: <ToolOutlined />, label: 'ทีมช่างและบุคลากร' },
             { key: 'board', icon: <ScheduleOutlined />, label: 'กระดานจัดคน' },
         ] : []),
-        ...(LANGUAGE_SWITCH ? [
+        ...(LANGUAGE_SWITCH || hubOn ? [
             { type: 'divider' as const },
             {
                 type: 'group' as const, key: 'lang', label: tAccount('language'),

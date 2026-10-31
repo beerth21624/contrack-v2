@@ -81,5 +81,17 @@
     "individual": "Individual",
     "juristic": "Company",
     "government": "Government agency"
+  },
+  "projectStatus": {
+    "lead": "Lead",
+    "estimating": "Estimating",
+    "quoted": "Quoted",
+    "won": "Won",
+    "in_progress": "In progress",
+    "handover": "Handover",
+    "warranty": "Warranty",
+    "closed": "Closed",
+    "lost": "Lost",
+    "cancelled": "Cancelled"
   }
 }

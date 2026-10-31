@@ -18,6 +18,8 @@ import { useModuleEnabled } from '@/features/modules/modules';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 import { useHasVendorWorkspace } from '@/features/subcontracting/shared/useHasVendorWorkspace';
 import { useAntdLocale } from '@/i18n/LocaleProvider';
+import { type AntdMenuItem, activeWorkspaceNavKey, useWorkspaceNavMenu } from '@/features/erp/hub/nav-registry';
+import { useErpWorkspace } from '@/features/erp/shared/useErpWorkspace';
 
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
@@ -34,6 +36,11 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
     const cloudWorkspace = useProjectStore(state => (state.binding.kind === 'cloud' ? state.binding.workspaceId : undefined));
     const subcontracting = useModuleEnabled('subcontracting', cloudWorkspace).enabled;
     const isVendor = useHasVendorWorkspace();
+    // ERP (project-hub active for the switcher's workspace): the menu of docs/erp/01-architecture.md §3.3. Off: the
+    // release-1 menu below, untouched.
+    const erpWorkspaceId = useErpWorkspace().workspaceId;
+    const hubOn = useModuleEnabled('project-hub', erpWorkspaceId).enabled;
+    const erpNav = useWorkspaceNavMenu();
 
     // Determine active menu key from pathname
     let activeKey = 'journey';
@@ -53,6 +60,19 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
         ...(subcontracting ? [{ key: 'subcontracting', icon: <TeamOutlined />, label: tNav('subcontracting'), onClick: () => router.push('/subcontracting') }] : []),
         ...(isVendor ? [{ key: 'vendor', icon: <ToolOutlined />, label: 'งานรับเหมาช่วง', onClick: () => router.push('/vendor') }] : []),
     ];
+
+    const boqKeys = new Set(['journey', 'boq', 'man-day', 'schedule', 'cashflow']);
+    const hubMenuItems: AntdMenuItem[] = hubOn ? [
+        ...erpNav.top,
+        { key: 'boq-group', icon: <CalculatorOutlined />, label: tNav('boqGroup'), children: menuItems.filter(i => boqKeys.has(i.key)) },
+        ...(erpNav.groups.sales !== undefined ? [erpNav.groups.sales] : []),
+        ...(erpNav.groups.purchasing !== undefined ? [erpNav.groups.purchasing] : []),
+        ...(erpNav.groups.finance !== undefined ? [erpNav.groups.finance] : []),
+        ...menuItems.filter(i => i.key === 'subcontracting' || i.key === 'vendor'),
+        ...(erpNav.groups.settings !== undefined ? [erpNav.groups.settings] : []),
+    ] : [];
+    const shownItems: AntdMenuItem[] = hubOn ? hubMenuItems : menuItems;
+    const selectedKey = hubOn ? (activeWorkspaceNavKey(pathname) ?? activeKey) : activeKey;
 
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -98,8 +118,8 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
                 <div className="hidden xl:flex flex-1 min-w-0">
                     <Menu
                         mode="horizontal" theme="dark"
-                        selectedKeys={[activeKey]}
-                        items={menuItems}
+                        selectedKeys={[selectedKey]}
+                        items={shownItems}
                         // The full bar height (64 − the 2 px bottom border): antd's header rule makes the menu inherit
                         // the header's line-height, so it is set here.
                         style={{ flex: 1, minWidth: 0, borderBottom: 'none', background: 'transparent', lineHeight: '62px' }}
@@ -148,9 +168,9 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
             >
                 <Menu
                     mode="inline"
-                    selectedKeys={[activeKey]}
+                    selectedKeys={[selectedKey]}
                     onClick={() => setDrawerOpen(false)}
-                    items={menuItems}
+                    items={shownItems}
                     style={{ borderRight: 'none' }}
                 />
             </Drawer>

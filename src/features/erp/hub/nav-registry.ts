@@ -4,13 +4,14 @@
 // Each WP with a screen appends its entry here (never edits AppLayoutUI.tsx / ProjectShell directly). WP-16 wires
 // useWorkspaceNav() into the top menu and useProjectTabs() into ProjectShell. An entry shows only when its module is
 // active for the workspace (all four layers), at least one of `anyModule` is, and the role has `permission`.
-import { useMemo, type ReactNode } from 'react';
+import { createElement, useMemo, type ComponentType, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import type { MenuProps } from 'antd';
 import { useTranslations } from 'next-intl';
 import { type ModuleId, type Permission, type Role, can } from '@/shared/contract';
 import { useActiveModules } from '@/features/modules/modules';
 import { usePlatformAdminStatus } from '../admin/hooks';
+import { ApprovalBadge } from '../approvals/ApprovalBadge';
 import { useErpWorkspace } from '../shared/useErpWorkspace';
 
 export type AntdMenuItem = NonNullable<MenuProps['items']>[number];
@@ -42,6 +43,8 @@ export interface ErpNavItem extends ErpNavGate {
     icon?: ReactNode;
     /** The pathname belongs to this entry (highlights it). */
     match: (pathname: string) => boolean;
+    /** Wraps the label (and its group's label) with a count, e.g. pending approvals. */
+    badge?: ComponentType<{ children?: ReactNode }>;
 }
 
 export interface ErpNavGroup {
@@ -52,6 +55,13 @@ export interface ErpNavGroup {
 export interface ErpProjectTab extends Omit<ErpNavItem, 'href'> {
     href: (projectId: string) => string;
 }
+
+/** Entries on the top level of the menu, before the groups (docs/erp/01-architecture.md §3.3). */
+export const TOP_NAV: readonly ErpNavItem[] = [
+    // Only when the portal exists: without it "home" would be a second link to /hub.
+    { key: 'home', labelKey: 'home', href: '/home', module: 'portal', match: p => p === '/home' || p.startsWith('/home/') },
+    { key: 'projects', labelKey: 'projects', href: '/hub', module: 'project-hub', match: p => p === '/hub' || p.startsWith('/hub/') || p.startsWith('/p/') },
+];
 
 /** Workspace-level menu, by group (label nav.groups.<groupKey>). Empty until the module WPs add their entries. */
 export const WORKSPACE_NAV: readonly ErpNavGroup[] = [
@@ -67,16 +77,25 @@ export const WORKSPACE_NAV: readonly ErpNavGroup[] = [
         groupKey: 'settings',
         items: [
             { key: 'company', labelKey: 'company', href: '/workspace/company', module: 'project-hub', permission: 'company.read', match: p => p.startsWith('/workspace/company') },
-            { key: 'approvals', labelKey: 'approvals', href: '/approvals', module: 'project-hub', match: p => p.startsWith('/approvals') },
+            { key: 'approvals', labelKey: 'approvals', href: '/approvals', module: 'project-hub', badge: ApprovalBadge, match: p => p.startsWith('/approvals') },
             { key: 'approval-policies', labelKey: 'approvalPolicies', href: '/workspace/approval-policies', module: 'project-hub', permission: 'company.manage', match: p => p.startsWith('/workspace/approval-policies') },
             { key: 'numbering', labelKey: 'numbering', href: '/workspace/numbering', module: 'project-hub', permission: 'company.read', match: p => p.startsWith('/workspace/numbering') },
+            { key: 'modules', labelKey: 'modules', href: '/workspace/modules', permission: 'modules.manage', match: p => p.startsWith('/workspace/modules') },
             { key: 'admin-entitlements', labelKey: 'entitlements', href: '/admin/entitlements', admin: true, match: p => p.startsWith('/admin/entitlements') },
         ],
     },
 ];
 
-/** Tabs of a project page (/p/[projectId]/…), in display order. Empty until WP-16 and the module WPs add theirs. */
-export const PROJECT_TABS: readonly ErpProjectTab[] = [];
+const projectRoot = /^\/p\/[^/]+\/?$/;
+
+/**
+ * Tabs of a project page (/p/[projectId]/…), in display order. `boq` leaves the project pages: ProjectShell opens the
+ * project in the project store (openCloudProject) and goes to /boq.
+ */
+export const PROJECT_TABS: readonly ErpProjectTab[] = [
+    { key: 'overview', labelKey: 'tabs.overview', href: id => `/p/${encodeURIComponent(id)}`, module: 'project-hub', match: p => projectRoot.test(p) },
+    { key: 'boq', labelKey: 'tabs.boq', href: () => '/boq', permission: 'projects.read', match: p => p.startsWith('/boq') },
+];
 
 /** The entry passes its module / permission gate. */
 export function navItemVisible(item: ErpNavGate, active: ReadonlySet<ModuleId>, role: Role | undefined, isPlatformAdmin = false): boolean {
@@ -87,8 +106,10 @@ export function navItemVisible(item: ErpNavGate, active: ReadonlySet<ModuleId>, 
     return true;
 }
 
-/** The key of the workspace entry the pathname belongs to (WP-16 asks this before its own if/else), else undefined. */
-export function activeWorkspaceNavKey(pathname: string, groups: readonly ErpNavGroup[] = WORKSPACE_NAV): string | undefined {
+/** The key of the workspace entry the pathname belongs to (AppLayoutUI asks this before its own if/else), else undefined. */
+export function activeWorkspaceNavKey(pathname: string, groups: readonly ErpNavGroup[] = WORKSPACE_NAV, top: readonly ErpNavItem[] = TOP_NAV): string | undefined {
+    const topHit = top.find(item => item.match(pathname));
+    if (topHit !== undefined) return topHit.key;
     for (const group of groups) {
         const hit = group.items.find(item => item.match(pathname));
         if (hit !== undefined) return hit.key;
@@ -112,31 +133,59 @@ function useNavModules(workspaceId: string | undefined): ReadonlySet<ModuleId> {
     return workspaceId === undefined ? NO_MODULES : active;
 }
 
-/**
- * The workspace menu for antd Menu: one submenu per group with at least one visible entry (groups without any are
- * left out, so release 1 gets []). `workspaceId`: default the current workspace (useErpWorkspace).
- */
-export function useWorkspaceNav(workspaceId?: string): AntdMenuItem[] {
+function itemLabel(item: ErpNavItem, label: string): ReactNode {
+    const Badge = item.badge;
+    return Badge === undefined ? label : createElement(Badge, null, label);
+}
+
+export interface WorkspaceNavMenu {
+    /** Top-level entries (home, projects). */
+    top: AntdMenuItem[];
+    /** One submenu per group with at least one visible entry; a group without any is missing. */
+    groups: Partial<Record<ErpNavGroupKey, AntdMenuItem>>;
+}
+
+/** The visible ERP menu, split so the app shell can put its own entries between the groups. */
+export function useWorkspaceNavMenu(workspaceId?: string): WorkspaceNavMenu {
     const t = useTranslations('nav');
     const router = useRouter();
     const ws = useErpWorkspace(workspaceId);
     const active = useNavModules(ws.workspaceId);
     const role = ws.role;
     const { admin } = usePlatformAdminStatus();
-    return useMemo(() => WORKSPACE_NAV.flatMap((group): AntdMenuItem[] => {
-        const items = group.items.filter(item => navItemVisible(item, active, role, admin));
-        if (items.length === 0) return [];
-        return [{
-            key: `erp-group-${group.groupKey}`,
-            label: t(`groups.${group.groupKey}`),
-            children: items.map(item => ({
-                key: item.key,
-                icon: item.icon,
-                label: t(item.labelKey),
-                onClick: () => router.push(item.href),
-            })),
-        }];
-    }), [t, router, active, role, admin]);
+    return useMemo(() => {
+        const toItem = (item: ErpNavItem): AntdMenuItem => ({
+            key: item.key,
+            icon: item.icon,
+            label: itemLabel(item, t(item.labelKey)),
+            onClick: () => router.push(item.href),
+        });
+        const groups: Partial<Record<ErpNavGroupKey, AntdMenuItem>> = {};
+        for (const group of WORKSPACE_NAV) {
+            const items = group.items.filter(item => navItemVisible(item, active, role, admin));
+            if (items.length === 0) continue;
+            const badged = items.find(item => item.badge !== undefined);
+            const label = t(`groups.${group.groupKey}`);
+            groups[group.groupKey] = {
+                key: `erp-group-${group.groupKey}`,
+                label: badged === undefined ? label : itemLabel(badged, label),
+                children: items.map(toItem),
+            };
+        }
+        return { top: TOP_NAV.filter(item => navItemVisible(item, active, role, admin)).map(toItem), groups };
+    }, [t, router, active, role, admin]);
+}
+
+/**
+ * The workspace menu for antd Menu: one submenu per group with at least one visible entry (groups without any are
+ * left out, so release 1 gets []). `workspaceId`: default the current workspace (useErpWorkspace).
+ */
+export function useWorkspaceNav(workspaceId?: string): AntdMenuItem[] {
+    const menu = useWorkspaceNavMenu(workspaceId);
+    return useMemo(() => [
+        ...menu.top,
+        ...ERP_NAV_GROUPS.flatMap(g => { const item = menu.groups[g]; return item === undefined ? [] : [item]; }),
+    ], [menu]);
 }
 
 export interface ProjectTabView {

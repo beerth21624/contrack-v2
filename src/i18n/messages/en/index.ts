@@ -17,6 +17,7 @@ import numbering from './numbering.json';
 import company from './company.json';
 import customers from './customers.json';
 import customerLinks from './customerLinks.json';
+import hub from './hub.json';
 
 const messages = {
   common,
@@ -38,6 +39,7 @@ const messages = {
   company,
   customers,
   customerLinks,
+  hub,
 };
 
 export default messages;

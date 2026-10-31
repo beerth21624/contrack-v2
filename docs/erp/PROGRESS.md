@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-15 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-16 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -27,7 +27,7 @@
 | WP-13 | ทะเบียนลูกค้า | sonnet | done | 02b2acf | migration `0013_wp13_customers`; โมดูล `customers`, port `CustomerLookup`, หน้า `/customers`, `CustomerPicker`; D-126…D-130 |
 | WP-14 | ลิงก์ลูกค้า (public) | opus | done | 0fdbc23 | migration `0014_wp14_customer_links`; โมดูล `customer-links`, registry `CustomerLinkHandlers`, route `(public)/c/[token]`, `ShareLinkButton`; D-131…D-136 |
 | WP-15 | Project Hub backend | opus | done | 7f5ad76 | migration `0015_wp15_project_hub`; โมดูล `backend/src/modules/hub/`; ports `ProjectCatalog` (projects), `ProjectLifecycle` (hub), registry `HubRollups` (core); D-137…D-142 |
-| WP-16 | Project Hub web + ต่อ nav เข้า AppLayoutUI | opus | todo | | |
+| WP-16 | Project Hub web + ต่อ nav เข้า AppLayoutUI | opus | done | HASH | ไม่มี migration; `src/features/erp/hub/*`, routes `/`, `/hub`, `/p/[projectId]`; เมนู ERP ใน `AppLayoutUI` เมื่อ `project-hub` active; D-143…D-149 |
 | WP-17 | ประวัติ BOQ (versions, เทียบฉบับ) | opus | todo | | |
 | WP-18 | Baseline + cost codes (backend) | opus | todo | | |
 | WP-19 | Baseline web: BOQ อ่านอย่างเดียวเมื่อล็อก + CostCodePicker | opus | todo | | |
@@ -239,6 +239,13 @@
 | D-140 | 2026-11-01 | (WP-15) สถานะเปลี่ยนผ่าน `PATCH /projects/:id/hub {status}` (ไม่มี endpoint แยก); `closed → warranty` โดยคนที่ไม่ใช่ owner → 403 `forbidden`; PATCH คืน `HubProjectDetailDto` (มี `nextStatuses` ตามบทบาท, `canEdit`, `effectiveProjectType`, `effectiveSettings`, `managerName`); `settings` merge ทีละ key + `settingsReset: key[]` ลบค่าทับ; `managerUserId` ต้องเป็นสมาชิก (ไม่ใช่ → 400); วันที่สิ้นสุดก่อนวันเริ่ม → 400; แก้ `code` เองได้ ชน → 409 `duplicate_project_code` | 02 §1.9 ไม่กำหนดรูปแบบ endpoint/ข้อผิดพลาดเหล่านี้ |
 | D-141 | 2026-11-01 | (WP-15) `POST /projects/:id/hub/code`: มีรหัสแล้ว → 409 `project_code_exists`; เลขที่ออกตรงกับรหัสที่พิมพ์เองของโครงการอื่น → rollback ทั้ง transaction (ไม่เสียเลข) แล้วตอบ 409 `duplicate_project_code`; ล้างรหัสแล้วขอใหม่ → 409 `already_issued` จาก numbering (หนึ่งเลขต่อ subject) ให้ผู้ใช้พิมพ์รหัสเอง | ตามกติกา DocumentNumbering (WP-11) |
 | D-142 | 2026-11-01 | (WP-15) `HubSummaryDto` = `{total, byStatus (ครบทุกสถานะ), contractValue, outstandingReceivable (Σ max(0, billed − received)), overdueReceivable, generatedAt}` ของโครงการที่ไม่ archived — เงินเป็น null เมื่อไม่มี rollup ใดให้ค่า; list กรอง `status` (คั่นด้วย comma ได้), `type` (ประเภทที่มีผล = ของโครงการหรือค่าเริ่มต้นบริษัท), `customerId`, `q` (ชื่อ รหัส ลูกค้า ที่อยู่) ในหน่วยความจำหลังอ่านครั้งเดียว; audit `entityType:'project'` action `status_change` (`data.status [from,to]`, `automatic:true` เมื่อมาจาก `ProjectLifecycle`) / `hub_update` (`data.changed`) | ขอบเขต WP ระบุแค่ "จำนวนต่อสถานะ + Σ มูลค่าสัญญา/ค้างรับ" |
+| D-143 | 2026-11-01 | (WP-16) เมนูบนสุด (ERP) ใช้ `useWorkspaceNavMenu()` ใหม่ใน registry (คืน `{top, groups}` ให้ shell แทรกกลุ่ม BOQ/จ้างช่วง/vendor ระหว่างกลุ่มของ registry ตามลำดับ §3.3); `useWorkspaceNav()` ยังอยู่ (top + ทุกกลุ่ม); รายการบนสุดอยู่ใน `TOP_NAV` | registry เดิมมีแต่กลุ่ม ไม่มีที่สำหรับ `home`/`projects` |
+| D-144 | 2026-11-01 | (WP-16) `home` แสดงเฉพาะเมื่อ `portal` active (→ `/home`); ไม่มี portal แสดงแค่ `projects` (→ `/hub`, match `/hub` และ `/p/*`) | §3.3 ให้ home ไป `/hub` เมื่อไม่มี portal ซึ่งจะซ้ำกับ projects |
+| D-145 | 2026-11-01 | (WP-16) โหมด ERP เลือกจาก `project-hub` active ของ workspace ใน switcher (`useErpWorkspace`) เหมือน registry; โหมดเดิม (`hubOn=false`) ใช้ `menuItems`/`activeKey` เดิมไม่แตะเลย; กลุ่ม settings เพิ่มรายการ `modules` (`/workspace/modules`, `modules.manage`); badge: `ErpNavItem.badge` (component) — approvals ใช้ `ApprovalBadge` และกลุ่มที่มีรายการ badge ก็ครอบป้ายกลุ่มด้วย | §3.3 ระบุ modules ในกลุ่ม settings |
+| D-146 | 2026-11-01 | (WP-16) `/` เป็น client redirect (`HomeRedirect`): platform modules error/ไม่มี `project-hub` → `/journey` โดยไม่เริ่ม session; ไม่มี workspace / workspace modules error → `/journey` | release 1 ต้องไป `/journey` เสมอ |
+| D-147 | 2026-11-01 | (WP-16) สร้างโครงการจาก Hub: modal เดิม (`CreateProjectModal` export จาก `ProjectsPage.tsx`, ไม่เปลี่ยนพฤติกรรม) → POST code อัตโนมัติ (ล้มเหลว = เตือน ไม่บล็อก) → เปิด `HubFieldsDrawer` (โหมดใหม่ ปุ่ม "ไว้ทีหลัง") → ปิดแล้วไป `/p/<id>`; drawer PATCH เฉพาะช่องที่เปลี่ยน (ส่ง code เดิมซ้ำจะถูกตรวจซ้ำ) | 04 ให้ "PATCH hub fields + assign code" |
+| D-148 | 2026-11-01 | (WP-16) `HubFieldsDrawer` ยังไม่แก้ `settings` (ค่าเชิงพาณิชย์ทับรายโครงการ) — overview แสดง `effectiveSettings` อ่านอย่างเดียว; ประเภทโครงการบนการ์ด = ของโครงการ หรือค่าเริ่มต้นบริษัท (`company.defaultProjectType ?? defaultProjectTypeFor`) ถ้าอ่านโปรไฟล์ได้ (`company.read`) ไม่งั้นไม่แสดง | ไม่อยู่ใน acceptance; list DTO ไม่มี effective type |
+| D-149 | 2026-11-01 | (WP-16) แท็บโครงการ `overview` (`project-hub`) และ `boq` (`projects.read`, href `/boq`); `ProjectShell` แท็บ boq / ปุ่ม "เปิด BOQ" ใช้ `useOpenProjectBoq(projectId).open(meta?)` (เปิดโครงการถ้ายังไม่ได้เปิด → `setMeta` → `/boq`); "คัดลอกลูกค้า/ที่อยู่ไปหัว BOQ" เขียน `ownerName` = ชื่อลูกค้า, `siteAddress` เฉพาะค่าที่ไม่ว่าง แสดงเมื่อ `detail.canEdit`; เปลี่ยนสถานะจากปุ่มสถานะในหัว shell (เมนูจาก `nextStatuses`) | ตาม 04 |
 
 ## Handoff notes
 
@@ -500,3 +507,17 @@
   - ค่าเชิงพาณิชย์ของโครงการ: `detail.effectiveSettings` (เว็บ) หรือ backend `resolveSettings(hub.projectType ?? company.defaultProjectType ?? defaultProjectTypeFor(...), company.defaults, hub.settings)` — backend โมดูลอื่นยังไม่มี port อ่าน hub fields (ถ้าต้องใช้ เช่น quotations อ่าน `customerId`/`settings` ให้เพิ่ม method ใน `ProjectLifecycle` หรือ port ใหม่ `HubProjectLookup` ที่ hub provide)
   - in-memory: แถว hub ที่ไม่เคยเขียนอ่านเป็นค่าเริ่มต้น (`estimating`)
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend + web) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/shared/contract src/i18n` ผ่าน; `cd backend && npx jest src/modules/projects` 199 ผ่าน, `npx jest src/shared src/modules/platform/presentation` ผ่าน, e2e `projects` 23 ผ่าน; smoke e2e ชั่วคราว (memory, ลบแล้ว): list 50 โครงการ + rollup source เรียก 1 ครั้ง, ฟิลด์ของโมดูลที่ไม่ลงทะเบียนเป็น null, viewer PATCH → 403, `estimating → won` → 409 `invalid_transition`, เดินครบถึง `closed`, admin `closed → warranty` → 403 / owner ได้, settings merge + reset, ลูกค้าของ workspace อื่น → 404, customerName/managerName, assign code ได้ / ซ้ำ → 409 `project_code_exists`, PATCH code ซ้ำ → 409 `duplicate_project_code`, `advance('won')` จาก quoted → won / in_progress ไม่เปลี่ยน / lost ไม่เปลี่ยน, กรอง status/q/type/customerId, summary, `GET /projects/:id` ไม่มีฟิลด์ hub, โครงการ workspace อื่น → 404, ลบโครงการที่มีรหัสได้ 204, ปิดโมดูล → 404 `module_disabled`; `npm run db:generate -- --name wp15_project_hub` ได้ `0015` ไม่ถาม interactive; ยังไม่ได้ทดสอบบน PostgreSQL จริง
+
+### WP-16 — Project Hub web + ต่อ nav เข้า AppLayoutUI (HASH)
+- สร้าง (web): `src/features/erp/hub/{api.ts,hooks.ts,status.ts,HubPage.tsx,HubFilters.tsx,ProjectCard.tsx,ProjectShell.tsx,ProjectOverviewPage.tsx,HubFieldsDrawer.tsx,HomeRedirect.tsx}`; routes `src/app/page.tsx` (`<CloudProviders><HomeRedirect/>`), `src/app/(app)/hub/page.tsx`, `src/app/(app)/p/[projectId]/layout.tsx` (`ModuleGate` + `ProjectShell`), `src/app/(app)/p/[projectId]/page.tsx`
+- แก้: `nav-registry.ts` (`TOP_NAV`, `useWorkspaceNavMenu`, `ErpNavItem.badge`, `PROJECT_TABS` overview/boq, settings `modules`, `activeWorkspaceNavKey` ดู `TOP_NAV` ก่อน); `AppLayoutUI.tsx` (branch `hubOn`); `AccountMenu.tsx` (สลับภาษาเมื่อ `LANGUAGE_SWITCH || hubOn`); `ProjectsPage.tsx` (export `CreateProjectModal` เท่านั้น)
+- i18n (th+en): namespace `hub`; `enums.projectStatus`; `nav.home|projects|boqGroup|modules|tabs.overview|tabs.boq`
+- migration: ไม่มี (WP ถัดไปที่แก้ schema ได้ `0016_*`)
+- เบี่ยงจากแผน: D-143 … D-149; ไม่เขียนเทสต์ใหม่
+- WP ถัดไปต้องรู้:
+  - แท็บโครงการ: เพิ่มใน `PROJECT_TABS` ก่อน/หลัง `boq` ตามลำดับ §3.3 (`{ key: 'versions', labelKey: 'tabs.versions', href: id => '/p/' + encodeURIComponent(id) + '/versions', module: 'boq-control', match: p => /^\/p\/[^/]+\/versions/.test(p) }`) + คีย์ `nav.tabs.<key>` th+en; หน้าใต้ `src/app/(app)/p/[projectId]/<tab>/page.tsx` ได้ `ProjectShell` (หัว + แท็บ) จาก layout แล้ว ไม่ต้องครอบ `ModuleGate` project-hub ซ้ำ แต่ต้องครอบ `ModuleGate` ของโมดูลตัวเอง
+  - ข้อมูลโครงการในหน้าแท็บ: `useHubProject(projectId)` (cache เดียวกับ shell; `detail.project.workspaceId`, `detail.effectiveSettings`, `detail.hub.customerId`); mutation ที่เปลี่ยนสถานะ/ rollup ให้ invalidate `hubKeys.detail(projectId)` และ `hubKeys.all(ws)`
+  - เมนู workspace: เพิ่มใน `WORKSPACE_NAV` เหมือนเดิม — แสดงใน `AppLayoutUI` เฉพาะเมื่อ `project-hub` active; ตัวนับบนเมนู: `badge: <Component>` (รับ `children`)
+  - `/home` (portal, WP-36): `HomeRedirect` ส่งไป `/home` เมื่อ `portal` active แล้ว และ `TOP_NAV.home` จะแสดงเอง
+  - ป้ายสถานะ: `<StatusTag enumName="projectStatus" value={s} tones={PROJECT_STATUS_TONES} />` (`./status.ts`)
+- ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; `npx eslint src/features/erp/hub src/components/AppLayoutUI.tsx src/features/cloud/ui/AccountMenu.tsx src/features/cloud/projects/ProjectsPage.tsx src/app/page.tsx "src/app/(app)/hub" "src/app/(app)/p"` ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/features/erp src/i18n` ผ่าน; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์ (ไม่มี backend ที่เปิดโมดูลไว้)

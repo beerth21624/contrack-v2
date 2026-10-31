@@ -16,5 +16,13 @@
     "settings": "ตั้งค่า"
   },
   "company": "ข้อมูลบริษัท",
-  "customers": "ลูกค้า"
+  "customers": "ลูกค้า",
+  "home": "หน้าแรก",
+  "projects": "โครงการ",
+  "boqGroup": "งาน BOQ",
+  "modules": "โมดูลเสริม",
+  "tabs": {
+    "overview": "ภาพรวม",
+    "boq": "BOQ"
+  }
 }
