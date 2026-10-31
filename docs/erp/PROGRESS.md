@@ -43,7 +43,7 @@
 | WP-29 | งวดเบิก + ใบแจ้งหนี้ backend | opus | done | 00979b7 | migration `0022_wp29_billing`; โมดูล `billing` (claims, invoices, retention/advance ledgers), contract `erp/billing.ts`, port `MainContracts.locate` + `completedAt`; D-227…D-235 |
 | WP-30 | รับเงิน ใบกำกับภาษี ลูกหนี้ เตือน PromptPay backend | opus | done | 315cd6f | migration `0023_wp30_receipts`; receipts/TI/CN/aging/statement/PromptPay ในโมดูล `billing`, sweeps `billing.invoice-due`/`billing.retention-release-due`, ลิงก์ลูกค้า `invoice`, port `BillingTotals` + `CustomerLookup.locate`; D-236…D-243 |
 | WP-31 | Billing web | sonnet | done | 63c59b8 | หน้า `/p/<id>/billing` (งวดเบิก เงินล่วงหน้า เงินประกัน ใบแจ้งหนี้ รับเงิน), `/p/<id>/billing/claims/<id>`, `/receivables`, statement ในหน้าลูกค้า; i18n `billing` + enums; D-244…D-247 |
-| WP-32 | Billing เอกสารพิมพ์ + QR | sonnet | done | HASH | เอกสารพิมพ์ ใบแจ้งหนี้/ใบกำกับภาษี/ใบลดหนี้/ใบเสร็จ(รวม TI)/ใบรับรองงวดงาน + QR PromptPay + renderer ลิงก์ลูกค้า `invoice`; deps `qrcode@1.5.4`; D-248…D-250 |
+| WP-32 | Billing เอกสารพิมพ์ + QR | sonnet | done | fa21ba1 | เอกสารพิมพ์ ใบแจ้งหนี้/ใบกำกับภาษี/ใบลดหนี้/ใบเสร็จ(รวม TI)/ใบรับรองงวดงาน + QR PromptPay + renderer ลิงก์ลูกค้า `invoice`; deps `qrcode@1.5.4`; D-248…D-250 |
 | WP-33 | VO backend | opus | todo | | |
 | WP-34 | VO web + ราคาด้วยเครื่องคำนวณ (sandbox) | opus | todo | | |
 | WP-35 | Portal backend + ค้นหา | opus | todo | | |
@@ -809,7 +809,7 @@
 - WP-32 ต้องรู้: ยังไม่มีปุ่มพิมพ์/QR ใน `InvoicesTable` (เพิ่มคอลัมน์ action ลิงก์ `/print/invoice/<id>`, `/print/receipt/<id>`, `/print/claim/<id>`); ใบเสร็จไม่มีหน้ารายการ (ดูได้เฉพาะตอนบันทึก); ฟอร์มวันที่ใช้ `<Input type="date">` เว้นว่าง = ค่าเริ่มต้นฝั่งเซิร์ฟเวอร์
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/features/erp/billing`, routes, `CustomerDetailPage`, `nav-registry` ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n` ผ่าน; ยังไม่ได้ลองกดใน browser
 
-### WP-32 — Billing เอกสารพิมพ์ + QR (HASH)
+### WP-32 — Billing เอกสารพิมพ์ + QR (fa21ba1)
 - สร้าง `src/features/erp/billing/`: `print-model.ts` (pure: `buildInvoicePrintModel|buildReceiptPrintModel|buildClaimPrintModel`), `DocParts.tsx`, `InvoicePrintDocument`, `TaxInvoicePrintDocument`, `ReceiptPrintDocument` (รวม "ใบเสร็จรับเงิน/ใบกำกับภาษี" เมื่อ `taxInvoiceIds.length === 1`; หลายใบ → ตารางแสดงเลข TI ต่อใบแจ้งหนี้ + รายการเลข TI), `ClaimCertificateDocument`, `PromptPayQr` (`qrcode` → data URL), `PrintPages.tsx`, `InvoiceCustomerView.tsx` (ลงทะเบียน renderer `invoice`; import ใน `(public)/c/[token]/page.tsx`); routes `(print)/print/invoice|receipt|claim/[id]`
 - dependency: `qrcode@1.5.4`, `@types/qrcode@1.5.5` (root package.json + lock)
 - i18n (th+en): `documents.invoice|taxInvoice|receipt|claim`, `billing.print`
