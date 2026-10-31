@@ -5,8 +5,8 @@ import type {
     AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDeletedEvent, ProjectDocDto, ProjectDto, ProjectUpdatedEvent, Role,
 } from '@contrack/contract';
 import type {
-    ApprovalDecision, ApprovalStatus, ApprovalSubject, BankAccount, BusinessProfile, CompanyDefaults, CustomerLinkAction, CustomerLinkSubject,
-    DocLanguage, DocType, FileDto, FilePurpose, HubProjectStatus, ModuleId, Permission, ProjectRollup, ProjectType,
+    ApprovalDecision, ApprovalStatus, ApprovalSubject, BankAccount, BaselineReason, BaselineStatus, BusinessProfile, CompanyDefaults,
+    CostCodeSource, CostCodeStatus, CustomerLinkAction, CustomerLinkSubject, DocLanguage, DocType, FileDto, FilePurpose, HubProjectStatus, ModuleId, Permission, ProjectRollup, ProjectType,
 } from '@contrack/contract';
 import type { DomainError } from '../domain/domain-error';
 import type { ProjectId, RateCardId, RevisionId, UserId, WorkspaceId } from '../domain/ids';
@@ -791,4 +791,180 @@ export abstract class RevisionLookup {
     abstract list(workspaceId: WorkspaceId, projectId: ProjectId): Promise<RevisionInfo[]>;
     /** The stored project snapshot of one revision; undefined when it is not a revision of that project. */
     abstract snapshot(workspaceId: WorkspaceId, projectId: ProjectId, revisionId: RevisionId): Promise<BoqProject | undefined>;
+}
+
+// ── Baseline + cost codes (WP-18, docs/erp/02-domain-model.md §1.10, 01-architecture §11) ──
+
+export type BoqEditLock = (workspaceId: WorkspaceId, projectId: ProjectId, docKey: string) => Promise<boolean>;
+
+/**
+ * Provided by core: PutDocUseCase asks inside its transaction (project row locked) whether a document may not be
+ * written because the BOQ is locked (boq-control registers: active baseline + `calc:*` / `boq:*` / `journey`).
+ * No lock registered = every document writable (release 1). A lock checks itself that its module is active.
+ */
+export class BoqEditLocks {
+    private readonly locks: BoqEditLock[] = [];
+
+    register(lock: BoqEditLock): void {
+        this.locks.push(lock);
+    }
+
+    async isLocked(workspaceId: WorkspaceId, projectId: ProjectId, docKey: string): Promise<boolean> {
+        for (const lock of this.locks) if (await lock(workspaceId, projectId, docKey)) return true;
+        return false;
+    }
+}
+
+/** Why a baseline may not be unlocked, e.g. `{ reason: 'contract_signed', count: 1 }`. */
+export type BaselineUnlockBlocker = DeletionBlocker;
+export type BaselineUnlockGuard = (workspaceId: WorkspaceId, projectId: ProjectId) => Promise<BaselineUnlockBlocker[]>;
+
+/**
+ * Provided by core: reasons the baseline of a project may not be unlocked (main-contracts: signed contract, billing:
+ * claims, variations: accepted VO, ledger: entries). Asked by the unlock use case inside its transaction.
+ */
+export class BaselineUnlockGuards {
+    private readonly guards: BaselineUnlockGuard[] = [];
+
+    register(guard: BaselineUnlockGuard): void {
+        this.guards.push(guard);
+    }
+
+    async blockers(workspaceId: WorkspaceId, projectId: ProjectId): Promise<BaselineUnlockBlocker[]> {
+        const out: BaselineUnlockBlocker[] = [];
+        for (const guard of this.guards) out.push(...await guard(workspaceId, projectId));
+        return out;
+    }
+}
+
+/** One `project_cost_codes` row as other modules see it (money rounded, quantities to 4 places). */
+export interface CostCode {
+    id: string;
+    workspaceId: WorkspaceId;
+    projectId: ProjectId;
+    code: string;
+    source: CostCodeSource;
+    sourceRef: string | null;
+    sectionNo: number;
+    lineKey: string | null;
+    descTh: string;
+    descEn: string;
+    unit: string;
+    sort: number;
+    baselineQty: number;
+    baselineMatUnit: number;
+    baselineLabUnit: number;
+    baselineMat: number;
+    baselineLab: number;
+    baselineTotal: number;
+    voQty: number;
+    voCost: number;
+    /** = baselineTotal + voCost. */
+    budgetTotal: number;
+    contractAmount: number;
+    voContractAmount: number;
+    reportedProgress: number;
+    certifiedProgress: number;
+    status: CostCodeStatus;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/** One line of an accepted VO. `costCodeId` null = a new item (a cost code `VO{voSeq}-{n}` is made). */
+export interface CostCodeVariationLine {
+    costCodeId: string | null;
+    sectionNo: number;
+    lineKey: string | null;
+    descTh: string;
+    descEn: string;
+    unit: string;
+    /** Signed. */
+    qtyDelta: number;
+    /** Signed cost of the change. */
+    costAmount: number;
+    /** Signed selling value of the change (no VAT). */
+    sellAmount: number;
+}
+
+/** One line of the accepted quotation for allocateContractAmounts. */
+export interface CostCodeContractLine {
+    lineKey: string | null;
+    sectionNo: number;
+    descTh: string;
+    descEn: string;
+    unit: string;
+    /** Sell amount of the line (weight of the allocation). */
+    sellAmount: number;
+}
+
+export interface ContractAllocationResult {
+    /** Manual cost codes made for quotation lines without a baseline cost code. */
+    created: number;
+    /** Active baseline cost codes left at contract_amount 0 (no quotation line). */
+    uncoveredCount: number;
+}
+
+/**
+ * Provided by boq-control. No module check (the calling module checked its own); every method filters by workspace
+ * and project. Writes join the caller's `uow.run`.
+ */
+export abstract class CostCodeLookup {
+    /** The cost codes of the project among `ids` (unknown ids left out). */
+    abstract findMany(workspaceId: WorkspaceId, projectId: ProjectId, ids: readonly string[]): Promise<CostCode[]>;
+    /** Every cost code of the project (also omitted ones): baseline, variation, manual; BOQ order. */
+    abstract listByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<CostCode[]>;
+    /**
+     * Effect of an accepted VO: existing codes `vo_qty += qtyDelta`, `vo_cost += costAmount`, `budget_total`,
+     * `vo_contract_amount += sellAmount` (a code cut to zero quantity → omitted); new items → `source='variation'`.
+     * Returns the cost code id of every line (same order). not_found when a costCodeId is not of the project.
+     */
+    abstract applyVariation(
+        workspaceId: WorkspaceId, projectId: ProjectId, input: { variationId: string; voSeq: number; lines: readonly CostCodeVariationLine[] },
+    ): Promise<Result<string[], DomainError>>;
+    /** Latest cumulative progress (fraction 0–1) from site reports; unknown ids ignored. */
+    abstract setReportedProgress(
+        workspaceId: WorkspaceId, projectId: ProjectId, entries: readonly { costCodeId: string; progress: number }[],
+    ): Promise<void>;
+    /** Latest cumulative progress (fraction 0–1) of certified claims; unknown ids ignored. */
+    abstract setCertifiedProgress(
+        workspaceId: WorkspaceId, projectId: ProjectId, entries: readonly { costCodeId: string; progress: number }[],
+    ): Promise<void>;
+    /**
+     * Spreads `total` (contract value without VAT) over `contract_amount` so that Σ = total exactly: by the quotation
+     * lines' sell amounts when given (matched by line_key), else by baseline_total. Every other cost code gets 0.
+     * unprocessable `no_cost_codes` when there is nothing to allocate to.
+     */
+    abstract allocateContractAmounts(
+        workspaceId: WorkspaceId, projectId: ProjectId, input: { total: number; lines?: readonly CostCodeContractLine[] },
+    ): Promise<Result<ContractAllocationResult, DomainError>>;
+}
+
+export interface BaselineInfo {
+    id: string;
+    workspaceId: WorkspaceId;
+    projectId: ProjectId;
+    versionId: string;
+    revisionId: RevisionId;
+    status: BaselineStatus;
+    reason: BaselineReason;
+    contractId: string | null;
+    lockedBy: UserId;
+    lockedAt: Date;
+}
+
+/** Provided by boq-control (no module check: the calling module checked its own). */
+export abstract class BaselineControl {
+    /**
+     * Locks the BOQ inside the caller's `uow.run`: the given BOQ version of the project, or a new revision
+     * `BASELINE-<n>` of the current documents; builds / updates the cost codes. conflict `baseline_already_locked`,
+     * not_found for a version of another project, unprocessable when the project no longer computes.
+     */
+    abstract lock(
+        workspaceId: WorkspaceId, projectId: ProjectId,
+        input: { versionId?: string; reason: BaselineReason; contractId: string | null; by: UserId },
+    ): Promise<Result<BaselineInfo, DomainError>>;
+    /** The active baseline; undefined when the BOQ is not locked. */
+    abstract status(workspaceId: WorkspaceId, projectId: ProjectId): Promise<BaselineInfo | undefined>;
+    /** The project snapshot of the active baseline (for VO pricing); undefined when not locked. */
+    abstract baselineProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<BoqProject | undefined>;
 }

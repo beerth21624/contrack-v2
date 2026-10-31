@@ -1,3 +1,4 @@
+import type { BoqVersionKind } from '@contrack/contract';
 import { and, asc, eq } from 'drizzle-orm';
 import { type ProjectId, type WorkspaceId, asProjectId, asRevisionId, asUserId, asWorkspaceId } from '../../../../shared/domain/ids';
 import type { DatabaseContext } from '../../../../shared/infrastructure/database/database';
@@ -77,6 +78,11 @@ export class DrizzleBoqVersionRepository extends BoqVersionRepository {
             await this.ctx.executor.insert(boqVersionLines)
                 .values(rows.lines.slice(i, i + CHUNK).map(l => ({ ...l, versionId, workspaceId })));
         }
+    }
+
+    async setKind(workspaceId: WorkspaceId, versionId: string, kind: BoqVersionKind): Promise<void> {
+        await this.ctx.executor.update(boqVersions).set({ kind })
+            .where(and(eq(boqVersions.workspaceId, workspaceId), eq(boqVersions.id, versionId)));
     }
 
     async deleteByProject(): Promise<void> {

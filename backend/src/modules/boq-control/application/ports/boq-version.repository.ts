@@ -35,6 +35,7 @@ export abstract class BoqVersionRepository {
     /** Sections (section_no order) and lines (sort order) of a version. */
     abstract rows(workspaceId: WorkspaceId, versionId: string): Promise<BoqVersionRows>;
     abstract insert(version: BoqVersionRecord, rows: BoqVersionRows): Promise<void>;
+    abstract setKind(workspaceId: WorkspaceId, versionId: string, kind: BoqVersionKind): Promise<void>;
     /** Memory adapter only (PostgreSQL cascades from projects). */
     abstract deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void>;
 }

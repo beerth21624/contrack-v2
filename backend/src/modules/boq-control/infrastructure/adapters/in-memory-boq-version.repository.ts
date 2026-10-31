@@ -1,3 +1,4 @@
+import type { BoqVersionKind } from '@contrack/contract';
 import type { ProjectId, WorkspaceId } from '../../../../shared/domain/ids';
 import { BoqVersionRepository, type BoqVersionRecord, type BoqVersionRows } from '../../application/ports/boq-version.repository';
 
@@ -38,6 +39,12 @@ export class InMemoryBoqVersionRepository extends BoqVersionRepository {
         if (clash) return Promise.reject(new Error(`duplicate boq version ${version.id} (revision ${version.revisionId}, no ${version.versionNo})`));
         this.versions.set(version.id, copy(version));
         this.content.set(version.id, structuredClone(rows));
+        return Promise.resolve();
+    }
+
+    setKind(workspaceId: WorkspaceId, versionId: string, kind: BoqVersionKind): Promise<void> {
+        const v = this.versions.get(versionId);
+        if (v?.workspaceId === workspaceId) v.kind = kind;
         return Promise.resolve();
     }
 

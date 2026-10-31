@@ -50,6 +50,10 @@
     "action_not_supported": "This document does not take that answer",
     "project_code_exists": "This project already has a code",
     "duplicate_project_code": "Another project already uses this code",
-    "project_does_not_compute": "The current BOQ does not compute; check the BOQ page"
+    "project_does_not_compute": "The current BOQ does not compute; check the BOQ page",
+    "baseline_already_locked": "The BOQ baseline is already locked",
+    "baseline_not_locked": "The BOQ baseline is not locked",
+    "baseline_unlock_blocked": "The baseline cannot be unlocked because documents already refer to it",
+    "no_cost_codes": "The project has no cost codes to allocate the contract value to"
   }
 }

@@ -50,6 +50,10 @@
     "action_not_supported": "เอกสารนี้ไม่รองรับคำตอบนี้",
     "project_code_exists": "โครงการนี้มีรหัสแล้ว",
     "duplicate_project_code": "รหัสโครงการนี้ถูกใช้กับโครงการอื่นแล้ว",
-    "project_does_not_compute": "BOQ ปัจจุบันคำนวณไม่ได้ ตรวจข้อมูลในหน้า BOQ"
+    "project_does_not_compute": "BOQ ปัจจุบันคำนวณไม่ได้ ตรวจข้อมูลในหน้า BOQ",
+    "baseline_already_locked": "BOQ ฉบับฐานถูกล็อกอยู่แล้ว",
+    "baseline_not_locked": "BOQ ยังไม่ได้ล็อกฉบับฐาน",
+    "baseline_unlock_blocked": "ปลดล็อกฉบับฐานไม่ได้ เพราะมีเอกสารที่อ้างอิงฉบับฐานนี้แล้ว",
+    "no_cost_codes": "โครงการยังไม่มีรหัสต้นทุนให้จัดสรรมูลค่าสัญญา"
   }
 }

@@ -77,6 +77,11 @@ export class BoqVersionRecorder {
         return { versions: synced, revisions: await this.revisions.list(workspaceId, projectId) };
     }
 
+    /** Same backfill inside the caller's transaction, which already holds the project row lock. */
+    async syncInTransaction(workspaceId: WorkspaceId, projectId: ProjectId): Promise<BoqVersionRecord[]> {
+        return this.syncLocked(workspaceId, projectId, new Map());
+    }
+
     private async syncLocked(
         workspaceId: WorkspaceId, projectId: ProjectId, known: Map<RevisionId, BoqProject>,
     ): Promise<BoqVersionRecord[]> {

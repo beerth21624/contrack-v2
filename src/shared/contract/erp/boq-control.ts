@@ -112,3 +112,103 @@ export const boqVersionCompareDtoSchema = z.object({
     counts: z.object({ added: z.number().int(), removed: z.number().int(), changed: z.number().int(), same: z.number().int() }),
 });
 export type BoqVersionCompareDto = z.infer<typeof boqVersionCompareDtoSchema>;
+
+// ─── Baseline + cost codes (WP-18, docs/erp/02-domain-model.md §1.10) ───
+
+export const BASELINE_STATUSES = ['active', 'unlocked'] as const;
+export const baselineStatusSchema = z.enum(BASELINE_STATUSES);
+export type BaselineStatus = z.infer<typeof baselineStatusSchema>;
+
+export const BASELINE_REASONS = ['contract_signed', 'manual'] as const;
+export const baselineReasonSchema = z.enum(BASELINE_REASONS);
+export type BaselineReason = z.infer<typeof baselineReasonSchema>;
+
+export const COST_CODE_SOURCES = ['baseline', 'variation', 'manual'] as const;
+export const costCodeSourceSchema = z.enum(COST_CODE_SOURCES);
+export type CostCodeSource = z.infer<typeof costCodeSourceSchema>;
+
+export const COST_CODE_STATUSES = ['active', 'omitted'] as const;
+export const costCodeStatusSchema = z.enum(COST_CODE_STATUSES);
+export type CostCodeStatus = z.infer<typeof costCodeStatusSchema>;
+
+export const baselineDtoSchema = z.object({
+    id: uuidSchema,
+    projectId: uuidSchema,
+    versionId: uuidSchema,
+    versionNo: z.number().int(),
+    /** Label of the revision the locked version was made from (e.g. `BASELINE-1`). */
+    label: z.string(),
+    status: baselineStatusSchema,
+    reason: baselineReasonSchema,
+    contractId: uuidSchema.nullable(),
+    lockedBy: uuidSchema,
+    lockedAt: isoDateTimeSchema,
+    unlockedBy: uuidSchema.nullable(),
+    unlockedAt: isoDateTimeSchema.nullable(),
+    unlockReason: z.string(),
+});
+export type BaselineDto = z.infer<typeof baselineDtoSchema>;
+
+/** Why unlocking is refused (signed contract, claims, accepted VOs, ledger entries), e.g. `{reason:'contract_signed', count:1}`. */
+export const baselineUnlockBlockerSchema = z.object({ reason: z.string(), count: z.number().int() });
+export type BaselineUnlockBlocker = z.infer<typeof baselineUnlockBlockerSchema>;
+
+/** GET /projects/:projectId/baseline (also the answer of lock / unlock). */
+export const baselineStatusDtoSchema = z.object({
+    locked: z.boolean(),
+    /** The active baseline; null when the BOQ is not locked. */
+    baseline: baselineDtoSchema.nullable(),
+    /** Every baseline of the project, newest first (the active one included). */
+    history: z.array(baselineDtoSchema),
+    /** Active cost codes of the project. */
+    costCodeCount: z.number().int(),
+    /** Empty = unlocking is allowed (when locked). */
+    unlockBlockers: z.array(baselineUnlockBlockerSchema),
+});
+export type BaselineStatusDto = z.infer<typeof baselineStatusDtoSchema>;
+
+/** POST /projects/:projectId/baseline — no versionId = a new revision `BASELINE-<n>` of the current BOQ is made. */
+export const lockBaselineRequestSchema = z.object({
+    versionId: uuidSchema.optional(),
+    /** `contract_signed` locks are made by the contract module (WP-26), never over HTTP. */
+    reason: z.literal('manual').default('manual'),
+});
+export type LockBaselineRequest = z.infer<typeof lockBaselineRequestSchema>;
+
+export const unlockBaselineRequestSchema = z.object({
+    reason: z.string().trim().min(1).max(500),
+});
+export type UnlockBaselineRequest = z.infer<typeof unlockBaselineRequestSchema>;
+
+/** One cost code; cost fields are null for a caller without `cost.read`. */
+export const costCodeDtoSchema = z.object({
+    id: uuidSchema,
+    projectId: uuidSchema,
+    code: z.string(),
+    source: costCodeSourceSchema,
+    sourceRef: uuidSchema.nullable(),
+    sectionNo: z.number().int(),
+    lineKey: z.string().nullable(),
+    descTh: z.string(),
+    descEn: z.string(),
+    unit: z.string(),
+    sort: z.number().int(),
+    baselineQty: z.number(),
+    voQty: z.number(),
+    baselineMatUnit: z.number().nullable(),
+    baselineLabUnit: z.number().nullable(),
+    baselineMat: z.number().nullable(),
+    baselineLab: z.number().nullable(),
+    baselineTotal: z.number().nullable(),
+    voCost: z.number().nullable(),
+    budgetTotal: z.number().nullable(),
+    contractAmount: z.number(),
+    voContractAmount: z.number(),
+    reportedProgress: z.number(),
+    certifiedProgress: z.number(),
+    status: costCodeStatusSchema,
+    updatedAt: isoDateTimeSchema,
+});
+export type CostCodeDto = z.infer<typeof costCodeDtoSchema>;
+/** Baseline codes first, then VO, then manual; each in BOQ order. */
+export const costCodeListDtoSchema = z.array(costCodeDtoSchema);

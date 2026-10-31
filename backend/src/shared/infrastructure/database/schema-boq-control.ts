@@ -2,9 +2,11 @@
 // docs/erp/02-domain-model.md §1.10. Imports only schema.ts (core) and schema-helpers.ts. Add every table to
 // `boqControlTables`; database.ts merges it and drizzle.config.ts lists this file for migrations.
 import { sql } from 'drizzle-orm';
-import { boolean, check, foreignKey, index, integer, numeric, pgTable, primaryKey, text, unique, uuid } from 'drizzle-orm/pg-core';
+import {
+    boolean, check, foreignKey, index, integer, numeric, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid,
+} from 'drizzle-orm/pg-core';
 import { projectRevisions, workspaces } from './schema';
-import { createdAt, money, projectTenantFk, quantity, unitPrice } from './schema-helpers';
+import { createdAt, money, projectTenantFk, quantity, rate, unitPrice, updatedAt } from './schema-helpers';
 
 /** One row per `project_revisions` row: the BOQ lines of that snapshot, computed once. */
 export const boqVersions = pgTable('boq_versions', {
@@ -70,4 +72,66 @@ export const boqVersionLines = pgTable('boq_version_lines', {
     foreignKey({ name: 'boq_version_lines_version_fk', columns: [t.versionId], foreignColumns: [boqVersions.id] }).onDelete('cascade'),
 ]);
 
-export const boqControlTables = { boqVersions, boqVersionSections, boqVersionLines };
+/** A locked BOQ version (WP-18): at most one `active` per project; unlocking keeps the row as history. */
+export const projectBaselines = pgTable('project_baselines', {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id').notNull(),
+    versionId: uuid('version_id').notNull(),
+    status: text('status', { enum: ['active', 'unlocked'] }).notNull(),
+    reason: text('reason', { enum: ['contract_signed', 'manual'] }).notNull(),
+    /** mc_contracts id (another stream: no FK, D-19). */
+    contractId: uuid('contract_id'),
+    lockedBy: uuid('locked_by').notNull(),
+    lockedAt: timestamp('locked_at', { withTimezone: true }).notNull(),
+    unlockedBy: uuid('unlocked_by'),
+    unlockedAt: timestamp('unlocked_at', { withTimezone: true }),
+    unlockReason: text('unlock_reason').notNull().default(''),
+}, t => [
+    projectTenantFk('project_baselines', t),
+    foreignKey({ name: 'project_baselines_version_fk', columns: [t.versionId], foreignColumns: [boqVersions.id] }).onDelete('cascade'),
+    uniqueIndex('project_baselines_active_key').on(t.projectId).where(sql`${t.status} = 'active'`),
+    index('project_baselines_workspace_project_idx').on(t.workspaceId, t.projectId),
+    check('project_baselines_status_check', sql`${t.status} in ('active', 'unlocked')`),
+    check('project_baselines_reason_check', sql`${t.reason} in ('contract_signed', 'manual')`),
+]);
+
+/** Cost codes: the permanent id every ERP module refers to (one per baseline line, VO line or manual line). */
+export const projectCostCodes = pgTable('project_cost_codes', {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id').notNull(),
+    code: text('code').notNull(),
+    source: text('source', { enum: ['baseline', 'variation', 'manual'] }).notNull(),
+    sourceRef: uuid('source_ref'),
+    sectionNo: integer('section_no').notNull(),
+    lineKey: text('line_key'),
+    descTh: text('desc_th').notNull(),
+    descEn: text('desc_en').notNull().default(''),
+    unit: text('unit').notNull(),
+    sort: integer('sort').notNull(),
+    baselineQty: quantity('baseline_qty').notNull().default(0),
+    baselineMatUnit: unitPrice('baseline_mat_unit').notNull().default(0),
+    baselineLabUnit: unitPrice('baseline_lab_unit').notNull().default(0),
+    baselineMat: money('baseline_mat').notNull().default(0),
+    baselineLab: money('baseline_lab').notNull().default(0),
+    baselineTotal: money('baseline_total').notNull().default(0),
+    voQty: quantity('vo_qty').notNull().default(0),
+    voCost: money('vo_cost').notNull().default(0),
+    budgetTotal: money('budget_total').notNull().default(0),
+    contractAmount: money('contract_amount').notNull().default(0),
+    voContractAmount: money('vo_contract_amount').notNull().default(0),
+    reportedProgress: rate('reported_progress').notNull().default(0),
+    certifiedProgress: rate('certified_progress').notNull().default(0),
+    status: text('status', { enum: ['active', 'omitted'] }).notNull().default('active'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+}, t => [
+    projectTenantFk('project_cost_codes', t),
+    unique('project_cost_codes_project_code_key').on(t.projectId, t.code),
+    index('project_cost_codes_workspace_project_idx').on(t.workspaceId, t.projectId),
+    check('project_cost_codes_source_check', sql`${t.source} in ('baseline', 'variation', 'manual')`),
+    check('project_cost_codes_status_check', sql`${t.status} in ('active', 'omitted')`),
+]);
+
+export const boqControlTables = { boqVersions, boqVersionSections, boqVersionLines, projectBaselines, projectCostCodes };

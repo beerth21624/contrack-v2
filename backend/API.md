@@ -252,3 +252,13 @@ Schemas: `../src/shared/contract/erp/boq-control.ts`. One `boq_versions` row (+ 
 | GET | `/projects/:projectId/boq-versions` | → `BoqVersionDto[]` | newest first; backfills missing versions first |
 | GET | `/boq-versions/:versionId` | → `BoqVersionDetailDto` | sections (section order) + lines (BOQ order) |
 | GET | `/projects/:projectId/boq-versions/compare?from=&to=` | → `BoqVersionCompareDto` | `to` = a version id of the same project or `live` (current documents, not stored; `to: null` in the answer); lines `added\|removed\|changed\|same` + Δqty/Δtotal, per-section and total deltas; version of another project → 404 |
+
+## Baseline + cost codes (module `boq-control`; WP-18)
+Schemas: `../src/shared/contract/erp/boq-control.ts`. Locking freezes one BOQ version (`boq_versions.kind = 'baseline'`) and upserts `project_cost_codes` from its lines by `code` (= `line_key`): ids never change across re-baselines, baseline codes whose line is gone become `omitted`. While a baseline is active (and `boq-control` active) `PUT /projects/:id/docs/:docKey` for `calc:*`, `boq:*`, `journey` → 409 `conflict` reason `baseline_locked` (registry `BoqEditLocks`); `meta` / `planning:*` stay writable. Ports for other modules: `BaselineControl` (`lock` inside the caller's transaction, `status`, `baselineProject`), `CostCodeLookup` (`findMany`, `listByProject`, `applyVariation`, `setReportedProgress`, `setCertifiedProgress`, `allocateContractAmounts`); registry `BaselineUnlockGuards`. Not a member → 404; module not active → 404 `module_disabled`; lock / unlock audited (`project_baseline`).
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/projects/:projectId/baseline` | → `BaselineStatusDto` | `projects.read`; `{locked, baseline, history (newest first), costCodeCount, unlockBlockers}` |
+| POST | `/projects/:projectId/baseline` | `LockBaselineRequest` → `BaselineStatusDto` (201) | `boq.baseline.lock`; no `versionId` = new revision `BASELINE-<n>` of the current documents; already locked → 409 `baseline_already_locked`; version of another project → 404; archived → 409 `project_archived`; BOQ does not compute → 422 |
+| POST | `/projects/:projectId/baseline/unlock` | `UnlockBaselineRequest` → `BaselineStatusDto` (200) | `boq.baseline.unlock`; not locked → 409 `baseline_not_locked`; a guard blocker → 409 `baseline_unlock_blocked` with `details.blockers[]`; cost codes are kept |
+| GET | `/projects/:projectId/cost-codes` | → `CostCodeDto[]` | `projects.read`; baseline → variation → manual, BOQ order; cost fields null without `cost.read` |

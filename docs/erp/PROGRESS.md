@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-17 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-18 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -29,7 +29,7 @@
 | WP-15 | Project Hub backend | opus | done | 7f5ad76 | migration `0015_wp15_project_hub`; โมดูล `backend/src/modules/hub/`; ports `ProjectCatalog` (projects), `ProjectLifecycle` (hub), registry `HubRollups` (core); D-137…D-142 |
 | WP-16 | Project Hub web + ต่อ nav เข้า AppLayoutUI | opus | done | 60a7001 | ไม่มี migration; `src/features/erp/hub/*`, routes `/`, `/hub`, `/p/[projectId]`; เมนู ERP ใน `AppLayoutUI` เมื่อ `project-hub` active; D-143…D-149 |
 | WP-17 | ประวัติ BOQ (versions, เทียบฉบับ) | opus | done | 874d2b5 | migration `0016_wp17_boq_versions`; โมดูล `boq-control` (versions), registry `RevisionHooks` (core), ports `RevisionWriter`/`RevisionLookup` (projects), route `/p/[projectId]/versions`; D-150…D-156 |
-| WP-18 | Baseline + cost codes (backend) | opus | todo | | |
+| WP-18 | Baseline + cost codes (backend) | opus | done | | migration `0017_wp18_baseline`; `project_baselines`/`project_cost_codes`, registries `BoqEditLocks`/`BaselineUnlockGuards` (core), ports `CostCodeLookup`/`BaselineControl` (boq-control); D-157…D-163 |
 | WP-19 | Baseline web: BOQ อ่านอย่างเดียวเมื่อล็อก + CostCodePicker | opus | todo | | |
 | WP-20 | Cost ledger + financial events | opus | todo | | |
 | WP-21 | ราคากลางภาครัฐ | sonnet | todo | | |
@@ -253,6 +253,13 @@
 | D-154 | 2026-11-01 | (WP-17) ผลรวมของ version: section `mat_total`/`lab_total` = `sumMoney` ของบรรทัดที่ปัดแล้ว, `total = mat + lab`; `construction_total` = Σ หมวด `inConstructionTotal`, `pre_construction_total` = Σ หมวดอื่น; `line_key` ซ้ำ (ไม่ควรเกิด) ได้ suffix `#2`; `sort` = ลำดับแถว item ในทั้ง BOQ (นับทุกแถว item รวมที่ถูกตัดทิ้ง) | ตาม D-05 และ PK `(version_id, line_key)` |
 | D-155 | 2026-11-01 | (WP-17) compare: line `changed` เมื่อ qty, ราคาต่อหน่วย, ยอด, หน่วย, ชื่อ, gross qty หรือหมวดต่างกัน; DTO มี `counts` และ `totals {before, after, delta}` ของ construction/pre/mat/lab เพิ่มจาก 02; `to=live` คำนวณจาก `ProjectReader` (คำนวณไม่ได้ → 422 reason `project_does_not_compute`); `from`/`to` ต้องเป็น version ของ `:projectId` ไม่งั้น 404 | หน้าเว็บต้องสรุปตัวเลขโดยไม่คำนวณเอง |
 | D-156 | 2026-11-01 | (WP-17) ลิงก์ "ดูประวัติและเทียบ" ใน `RevisionButtons` ใช้ `useTranslations('boqControl')` (ข้อความเดิมของไฟล์ยังเป็นไทยตรง รอ track I) แสดงเมื่อ `boq-control` active ของ workspace ของโครงการที่เปิด | release 1 (โมดูลปิด) หน้าตาเดิมทุกประการ |
+| D-157 | 2026-11-01 | (WP-18) `BaselineControl.status(ws, projectId)` / `baselineProject(ws, projectId)` รับ `workspaceId` ด้วย (04 เขียน `status(projectId)`) | ตรงกับ port อื่นทุกตัวที่กรองด้วย workspace |
+| D-158 | 2026-11-01 | (WP-18) HTTP lock รับ `reason` ได้แค่ `'manual'` (`contract_signed` มาจาก `BaselineControl.lock` ของ WP-26 เท่านั้น); ไม่ระบุ version → revision `BASELINE-<n>` (n = จำนวน baseline เดิม + 1 ข้ามชื่อที่มีแล้ว) แล้ว `BoqVersionRecorder.syncInTransaction` ใน transaction เดียวกัน (มี version แม้ hook ไม่ทำงาน); lock ล็อกแถว `projects` ก่อนเสมอ | กัน lock ซ้อน; WP-26 เรียกได้ตอนเซ็นใน transaction ของสัญญา |
+| D-159 | 2026-11-01 | (WP-18) unlock ต้องมี `reason` (1–500 ตัว); ไม่เปลี่ยน `boq_versions.kind` กลับเป็น `snapshot` (เก็บไว้เป็นประวัติว่าเคยเป็นฐาน) และไม่แตะ cost code | "cost code ไม่ถูกลบ" ตาม 02 §1.10; หน้าประวัติแสดงฉบับที่เคยเป็นฐานได้ |
+| D-160 | 2026-11-01 | (WP-18) `BaselineStatusDto = {locked, baseline, history (ใหม่→เก่า), costCodeCount (active), unlockBlockers}`; `CostCodeDto` ซ่อน (null) เฉพาะ `baseline*Unit`, `baselineMat/Lab/Total`, `voCost`, `budgetTotal` เมื่อไม่มี `cost.read` — `contractAmount`/`voContractAmount`/progress/qty แสดงกับทุกคนที่มี `projects.read` | 04 ระบุซ่อน "ต้นทุน" เท่านั้น; หน้าเว็บ WP-19 ต้องรู้ว่าปลดล็อกได้ไหมโดยไม่ยิงซ้ำ |
+| D-161 | 2026-11-01 | (WP-18) `BoqEditLocks` ของ boq-control ล็อกเฉพาะเมื่อ `boq-control` active: ปิดโมดูลขณะมี baseline active → แก้ BOQ ได้ตามเดิม (release 1) เปิดใหม่ → ล็อกอีก; baseline ไม่ถูกปลดอัตโนมัติ | เกณฑ์ "โมดูลปิด: PUT doc ทุก key เหมือนเดิม" |
+| D-162 | 2026-11-01 | (WP-18) `CostCodeLookup`: `applyVariation` บรรทัด `qtyDelta < 0` ที่ทำให้ `baseline_qty + vo_qty ≤ 0` → `omitted`; รายการใหม่ `VO{voSeq}-{n}` sort ต่อท้าย; `allocateContractAmounts` น้ำหนักติดลบ = 0, จับคู่เฉพาะ cost code baseline ที่ active, ไม่จับคู่ → `X-{n}` ใหม่ (เลขต่อจากเดิม), cost code อื่นทั้งหมด (รวม manual เดิม) = 0, ไม่มีอะไรให้จัดสรร → 422 `no_cost_codes`; progress ถูก clamp 0–1 ปัด 6 ตำแหน่ง | 02 §1.10 ไม่ระบุกรณีขอบ |
+| D-163 | 2026-11-01 | (WP-18) ไม่เขียนเทสต์สั้นของ `allocateContractAmounts` (`src/domain/boq-control/contract-allocation.ts`) ตามคำสั่งรอบนี้ ("ห้ามเขียนเทสต์ใหม่") — ตรวจด้วย smoke e2e ชั่วคราวแทน (ลบแล้ว) | เกณฑ์รับงานข้อ 4 ขอเทสต์สั้น แต่คำสั่งของเจ้าของรอบนี้สำคัญกว่า |
 
 ## Handoff notes
 
@@ -545,3 +552,18 @@
   - `BoqVersionRecorder.ensure(ws, projectId)` = backfill + รายการ (ใช้ก่อนอ่าน version ของโครงการที่อาจมี revision เก่า); ยังไม่ export port ของ boq-control ให้โมดูลอื่น (WP-18 เพิ่ม `CostCodeLookup`/`BaselineControl`)
   - เว็บ: `useBoqVersions(projectId)` (`staleTime: 0`), `useBoqVersion(id)`, `useBoqCompare(projectId, from, to|'live')`; key `boqControlKeys`
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend + web) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/shared/contract src/i18n src/features/erp` ผ่าน; `cd backend && npx jest src/modules/projects` 199 ผ่าน, e2e `projects` 23 ผ่าน; smoke e2e ชั่วคราว (memory, ลบแล้ว): revision ตอนโมดูลปิด → `GET boq-versions` 404 `module_disabled`; trial + เปิด → list backfill R1 เป็นฉบับ 1; R2 ขณะเปิด → ฉบับ 2 (203 บรรทัด); เทียบ R1/R2 → same 203; เทียบกับ live → 200, `to: null`; คนนอก → 404; `to=bad` → 400; ปิดโมดูลแล้วสร้าง revision ได้ปกติ; ยังไม่ได้ทดสอบบน PostgreSQL จริงและยังไม่เปิดหน้าในเบราว์เซอร์
+
+### WP-18 — Baseline + cost codes (backend) (commit: ดู ledger)
+- สร้าง: `project_baselines`, `project_cost_codes` ใน `schema-boq-control.ts` (`boqControlTables`); migration `0017_wp18_baseline` (ไม่ถาม interactive) → WP ถัดไปที่แก้ schema ได้ `0018_*`
+- contract `erp/boq-control.ts`: `BASELINE_STATUSES`, `BASELINE_REASONS`, `COST_CODE_SOURCES`, `COST_CODE_STATUSES`, `baselineDtoSchema`, `baselineUnlockBlockerSchema`, `baselineStatusDtoSchema`, `lockBaselineRequestSchema`, `unlockBaselineRequestSchema`, `costCodeDtoSchema`, `costCodeListDtoSchema`
+- pure `src/domain/boq-control/contract-allocation.ts` (`allocateContractAmounts(total, costCodes, lines?)`)
+- `ports.ts` + core: registries `BoqEditLocks` (`isLocked(ws, projectId, docKey)`), `BaselineUnlockGuards` (`register(guard)` คืน `{reason,count}[]`); ports `CostCodeLookup`, `BaselineControl`; types `CostCode`, `CostCodeVariationLine`, `CostCodeContractLine`, `ContractAllocationResult`, `BaselineInfo`
+- `PutDocUseCase`: param สุดท้าย `locks: BoqEditLocks = new BoqEditLocks()` ถามหลัง `lockForUpdate` → 409 `conflict` `details.reason = 'baseline_locked'` (ไม่มี lock = เดิม; reset doc ผ่าน PutDoc จึงโดนกฎเดียวกัน)
+- boq-control: `application/ports/baseline.repository.ts` (`BaselineRepository`, `CostCodeRepository`), adapters drizzle/in-memory, `BoqVersionRepository.setKind`, `BoqVersionRecorder.syncInTransaction`; `application/use-cases/baseline.use-cases.ts` (`CostCodeService` = `CostCodeLookup`, `BaselineService` = `BaselineControl`, `BaselineViews`, `Get/Lock/UnlockBaselineUseCase`, `ListCostCodesUseCase`, `isBaselineDoc`); module export `CostCodeLookup`, `BaselineControl`; ลงทะเบียน `BoqEditLocks`; `backend/API.md`
+- i18n `errors.reasons`: `baseline_already_locked`, `baseline_not_locked`, `baseline_unlock_blocked`, `no_cost_codes` (`baseline_locked` มีอยู่แล้ว)
+- WP ถัดไปต้องรู้:
+  - WP-19 (web): `GET /projects/:id/baseline` ให้ `locked` + `unlockBlockers` (ปุ่มปลดล็อก disabled เมื่อมีเหตุ); lock body `{}` หรือ `{versionId}`; unlock body `{reason}`; PUT doc ที่โดนล็อกได้ 409 `baseline_locked` (sync engine ต้องไม่ retry วน); cost codes เรียง baseline → VO → manual
+  - WP-20/26/29/33: guard ลงทะเบียน `app.get(BaselineUnlockGuards).register((ws, projectId) => …)` ใน `onModuleInit` (ตรวจ module active เอง); WP-26 เรียก `baselineControl.lock(ws, projectId, { versionId, reason: 'contract_signed', contractId, by })` ภายใน `uow.run` ของตัวเอง (ถ้า `status()` = undefined) แล้ว `costCodeLookup.allocateContractAmounts(ws, projectId, { total, lines })`
+  - WP-33: `applyVariation(ws, projectId, { variationId, voSeq, lines })` คืน id ต่อบรรทัด (ลำดับเดิม); `baselineProject(ws, projectId)` = snapshot ของ revision ที่ล็อก
+  - ทุกเมธอดของ port ไม่ตรวจโมดูล/สิทธิ์ (ผู้เรียกตรวจเอง) และเขียนผ่าน executor ของ transaction ผู้เรียก — ตรวจทุกอย่างก่อนเขียน เพราะ `err` ที่ return (ไม่ throw) ไม่ rollback
+- ตรวจแล้ว: `npx tsc --noEmit` backend + web ผ่าน; eslint ไฟล์ที่แก้ผ่าน; i18n parity ผ่าน; `npx jest src/modules/projects` 199 ผ่าน; e2e `projects` 23 ผ่าน; `npx vitest run src/shared/contract src/i18n` ผ่าน; smoke e2e ชั่วคราว (memory, ลบแล้ว): โมดูลปิด → `GET baseline` 404 `module_disabled`; lock → `BASELINE-1`, cost code 203 = `lineCount` 203, version kind `baseline`; viewer เห็น `baselineTotal: null`; PUT `boq:R58`/`journey` → 409 `baseline_locked`, `meta` → 200; lock ซ้ำ → 409; guard มีเหตุ → 409 `baseline_unlock_blocked` + `blockers`; unlock → แก้ `boq:R9 {qty:0}` → lock ใหม่ `BASELINE-2` → id เดิมทุก code, 1 omitted / 202 active; allocate ไม่มีใบเสนอราคา Σ = 1,234,567.89 พอดี; มีบรรทัด (5 จับคู่ + 1 ไม่มี lineKey) Σ = 1,000 พอดี, สร้าง `X-1`, uncovered 198; `applyVariation` คืน 2 id; ปิดโมดูล → PUT `journey` 200; ยังไม่ได้ทดสอบบน PostgreSQL จริง

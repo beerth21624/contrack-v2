@@ -2,7 +2,7 @@
 // Optimistic concurrency per document (baseVersion), the project row locked per write so the stored summary is
 // always the shared engine's result for the latest documents, and realtime only after COMMIT.
 import { Injectable } from '@nestjs/common';
-import { Clock, UnitOfWork } from '../../../../shared/application/ports';
+import { BoqEditLocks, Clock, UnitOfWork } from '../../../../shared/application/ports';
 import { DomainError, type ProjectId, type Result, type UserId, err, ok } from '../../../../shared/domain';
 import { ActivityEntry } from '../../domain/entities/activity-entry.entity';
 import { ProjectDoc } from '../../domain/entities/project-doc.entity';
@@ -43,6 +43,8 @@ export class PutDocUseCase {
         private readonly events: ProjectEvents,
         private readonly uow: UnitOfWork,
         private readonly clock: Clock,
+        /** Core registry (the default keeps hand-built test kits working: nothing locked). */
+        private readonly locks: BoqEditLocks = new BoqEditLocks(),
     ) {}
 
     async execute(input: PutDocInput): Promise<Result<PutDocOutput, DomainError>> {
@@ -65,6 +67,10 @@ export class PutDocUseCase {
             const project = await this.projects.lockForUpdate(workspaceId, input.projectId);
             if (project === undefined) return err(DomainError.notFound('Project'));
             if (project.isArchived) return err(archived());
+            // ERP baseline (boq-control): the BOQ quantities are frozen while the baseline is locked.
+            if (await this.locks.isLocked(workspaceId, project.id, docKey)) {
+                return err(DomainError.conflict('The BOQ baseline is locked; unlock it to edit', { reason: 'baseline_locked' }));
+            }
 
             const stored = await this.docs.listByProject(workspaceId, project.id);
             const current = stored.find(d => d.docKey === docKey);
