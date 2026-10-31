@@ -240,5 +240,8 @@
     "sections": "Categories that changed",
     "lines": "Items that changed",
     "noChanges": "No changes"
+  },
+  "print": {
+    "button": "Print / PDF"
   }
 }

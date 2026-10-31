@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Alert, App, Button, Dropdown, Select, Skeleton, Space, Tag } from 'antd';
-import { DownOutlined, SendOutlined, SwapOutlined } from '@ant-design/icons';
+import { DownOutlined, PrinterOutlined, SendOutlined, SwapOutlined } from '@ant-design/icons';
 import { useTranslations } from 'next-intl';
 import { type QuotationDto, type QuotationVersionDto, can } from '@/shared/contract';
 import { useErrorMessage } from '@/features/cloud/api/error-message';
@@ -173,6 +173,9 @@ function VersionEditor({ dto, quotation, onPick }: { dto: QuotationVersionDto; q
                                     <Button icon={<DownOutlined />} aria-label={t('newVersion.more')} />
                                 </Dropdown>
                             </Space.Compact>
+                        )}
+                        {dto.status !== 'cancelled' && (
+                            <Button icon={<PrinterOutlined />} href={`/print/quotation/${encodeURIComponent(dto.id)}`} target="_blank">{t('print.button')}</Button>
                         )}
                         {dto.status === 'issued' && mayIssue && (
                             <ShareLinkButton workspaceId={quotation.workspaceId} subjectType="quotation" subjectId={dto.id} />

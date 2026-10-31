@@ -1,6 +1,8 @@
 'use client';
 
 import { useParams } from 'next/navigation';
+// Owner modules register their renderers (side effect of the import).
+import '@/features/erp/quotations/QuotationCustomerView';
 import { PublicLinkPage } from '@/features/erp/customer-links/PublicLinkPage';
 
 export default function PublicLinkRoute() {

@@ -36,7 +36,7 @@
 | WP-22 | Quotation: domain คำนวณ + overlay อังกฤษของ BOQ | opus | done | 831e5a5 | ไม่มี migration; `src/domain/quotation/*` (pricing/build/compare/government/costing), `template.v5.en.ts` + `units.ts`, contract `erp/quotations.ts` (ค่าคงที่); D-180…D-185 |
 | WP-23 | Quotation backend | opus | done | 87e6361 | migration `0020_wp23_quotations`; โมดูล `quotations`, ports `BoqVersionSource` (boq-control) + `ProjectLifecycle.hubFields`, hooks `afterRespond`/`onViewed` ของลิงก์; D-186…D-195 |
 | WP-24 | Quotation web: รายการ ตัวแก้ไข เทียบฉบับ | sonnet | done | 8ecea92 | `src/features/erp/quotations/*`, routes `/p/[id]/quotations[/[quotationId]]`, แท็บ nav, ปุ่มสร้างบน ProjectOverviewPage + BoqHomePage; i18n `quotations`; D-196…D-200 |
-| WP-25 | Quotation เอกสารพิมพ์ TH/EN + หน้าลูกค้า | sonnet | todo | | |
+| WP-25 | Quotation เอกสารพิมพ์ TH/EN + หน้าลูกค้า | sonnet | done | HASH25 | `print-model.ts`, `QuotationPrintDocument`, `GovernmentForms`, `QuotationPrintPage`, `QuotationCustomerView` (renderer ลิงก์), route `/print/quotation/[versionId]`, ปุ่มพิมพ์ในตัวแก้ไข; i18n `documents.quotation/government`; D-201…D-203 |
 | WP-26 | สัญญาหลัก backend | opus | todo | | |
 | WP-27 | สัญญาหลัก web + พิมพ์สัญญา | sonnet | todo | | |
 | WP-28 | Billing domain คำนวณ | opus | todo | | |
@@ -297,6 +297,9 @@
 | D-198 | 2026-11-01 | (WP-24) แก้ไขได้เมื่อ `status = draft` และ `canEdit && seesMargins` (ทุกบทบาทที่มี `quotations.manage` มี seeMargins อยู่แล้ว); มุมมองอื่นแสดงตัวเลขจาก DTO ตรง ๆ (ต้นทุนที่ถูกซ่อนไม่แสดงคอลัมน์); บรรทัด `boq` แก้ได้เฉพาะชื่อและปริมาณ (ต้นทุน/หน่วยไม่แก้) บรรทัด `custom` แก้ได้ทุกช่อง; บรรทัด boq ที่แก้ปริมาณคิดต้นทุน `qty × (mat+lab)` เหมือน server และกลับเป็นต้นทุน BOQ เดิมถ้าปริมาณกลับมาเท่าเดิม | ตาม D-192 |
 | D-199 | 2026-11-01 | (WP-24) ปุ่ม "สร้างใบเสนอราคาจาก BOQ" (`CreateQuotationButton`) แสดงเมื่อโมดูล `quotations` active และมี `quotations.manage`; อยู่บน ProjectOverviewPage และ BoqHomePage (เฉพาะโครงการ cloud) กดแล้ว `POST {}` แล้วไปหน้าแก้ไข; หน้ารายการมีกล่องตัวเลือก (ชื่อ ฉบับ BOQ รูปแบบ ระดับรายละเอียด ภาษา) | ตามแผน; การสร้างซ้ำได้หลายใบต่อโครงการ |
 | D-200 | 2026-11-01 | (WP-24) แท็บโครงการ `quotations` (`quotations.read`) ต่อท้าย `PROJECT_TABS`; ฉบับใหม่ (สำเนา / สร้างใหม่จาก BOQ ล่าสุด) ทำได้เมื่อฉบับที่ดูไม่ใช่ร่าง/รออนุมัติและยังไม่มีร่างค้าง; query ของฉบับใช้ `gcTime: 0` เพื่อให้ตัวแก้ไขเริ่มจากข้อมูลสดเสมอ | ตัวแก้ไขเก็บ state ในหน้า ห้ามเริ่มจากสำเนาเก่าใน cache |
+| D-201 | 2026-11-01 | (WP-25) ชนิดตารางพิมพ์ตาม `detailLevel` + `format`: `lump_sum` = แถวเดียวยอดรวม, `per_category` = หนึ่งแถวต่อหมวด, `full` = รายการทุกบรรทัด (format `detailed` แยกคอลัมน์ค่าวัสดุ/ค่าแรงต่อหน่วย, อื่น ๆ ราคาต่อหน่วยรวม); ลายน้ำ DRAFT เมื่อ draft/pending_approval, VOID เมื่อ cancelled | เอกสารไม่ได้ระบุ; เข้ากับค่าเริ่มต้นของโปรไฟล์ (residential = per_category, commercial = full+detailed) | หน้าลูกค้าไม่แสดงลายน้ำ (หน้ามีสถานะของตัวเอง) |
+| D-202 | 2026-11-01 | (WP-25) รูปโลโก้/ตราประทับ/ลายเซ็น: หน้าพิมพ์ใช้ไฟล์ปัจจุบันของโปรไฟล์บริษัท (`useCompanyProfile` ให้ FileDto มี url ลงนามแล้ว) เพราะ snapshot เก็บแค่ file id และไม่มี endpoint อ่านไฟล์ตาม id; หน้าลูกค้า (public) ไม่มีรูป (ไฟล์ต้องใช้ session) แต่ข้อความหัวมาจาก snapshot | ไม่แก้ backend ใน WP นี้ | ถ้าต้องการโลโก้บนหน้าลูกค้า ต้องเพิ่ม URL ลงนามใน payload ของลิงก์ (WP ภายหลัง) |
+| D-203 | 2026-11-01 | (WP-25) ปร.4/ปร.5 ใช้ต้นทุนตรง (`cost*`) เมื่อผู้พิมพ์มี `quotations.seeMargins` (ปร.5 = Σ ต้นทุน × Factor F = ยอด part); ถ้าไม่เห็นต้นทุน (และบนลิงก์ลูกค้า) ปร.4 ใช้ราคาขายต่อบรรทัด และ ปร.5 แสดงยอดขายต่อหมวด + ยอดรวมต่อ part (ระบุ Factor F ในหัวรวม) | ลูกค้าห้ามเห็นต้นทุน แต่ยอดต้องตรงตัวแก้ไข | ปร.6 พิมพ์เมื่อมี > 1 part; ลำดับหน้า ปร.6 → ปร.5 → ปร.4 |
 
 ## Handoff notes
 
@@ -678,3 +681,11 @@
 - ไม่มี migration / ไม่แก้ backend; ไม่เขียนเทสต์ (คำสั่งเจ้าของ: ส่งของก่อน)
 - WP ถัดไปต้องรู้ (WP-25/26): ปุ่มพิมพ์/ดาวน์โหลดยังไม่มี (WP-25 เพิ่มใน header ของ `QuotationEditorPage` ข้าง `ShareLinkButton`); ปุ่มแชร์ลิงก์แสดงเมื่อฉบับ `issued` และมี `quotations.issue`; `logic.ts` `pricedFromDto` แปลง DTO เป็นโมเดล `src/domain/quotation` (ต้นทุนที่ถูกซ่อน = 0) ใช้เรนเดอร์เอกสารได้; หน้า `/p/<id>/quotations/<quotationId>` เปิดฉบับ `currentVersionId` ก่อน; ข้อความไทย/อังกฤษของชื่อหมวด/รายการใช้ `titleTh/descTh` เป็นหลัก (`titleEn` ว่าง → ไทย)
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้/สร้างผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/features/boq-home` ผ่าน; ยังไม่ได้เปิดเบราว์เซอร์ทดสอบกับ backend จริง
+
+### WP-25 — Quotation เอกสารพิมพ์ TH/EN + หน้าลูกค้า (HASH25)
+- สร้าง `src/features/erp/quotations/`: `print-model.ts` (pure: `buildQuotationPrintModel`, `companyFromSnapshot/FromProfile`, `customerFromSnapshot/FromDto`, `standardMode`), `QuotationPrintDocument.tsx` (แผ่นเอกสารใช้ร่วมกับหน้าพิมพ์และหน้าลูกค้า; ภาษา/ตัวเลข/วันที่ตาม `version.language` + ปีพ.ศ. ตาม `yearStyle`; จำนวนเงินเป็นคำ; สีแบรนด์), `GovernmentForms.tsx` (ปร.6/ปร.5/ปร.4), `QuotationPrintPage.tsx`, `QuotationCustomerView.tsx` (ลงทะเบียน renderer `quotation` ผ่าน import ใน `src/app/(public)/c/[token]/page.tsx`); route `src/app/(print)/print/quotation/[versionId]/page.tsx`; ปุ่ม "พิมพ์ / PDF" (เปิดแท็บใหม่) ใน header ของ `QuotationEditorPage`
+- i18n: `documents.quotation.*`, `documents.government.*`, `quotations.print.button` (th+en); ปุ่มแชร์ลิงก์มีอยู่แล้วจาก WP-24
+- หน้าลูกค้า: ตอบรับ/ขอแก้/ปฏิเสธใช้ `RespondForm` เดิม; backend `afterRespond` (WP-23) เปลี่ยนสถานะฉบับ; มือถือ ≤600px ซ่อนคอลัมน์จำนวน/หน่วย/ราคาต่อหน่วย แล้วแสดง "จำนวน หน่วย × ราคา" ใต้ชื่อรายการ
+- ไม่มี migration / ไม่แก้ backend; ไม่เขียนเทสต์ (คำสั่งเจ้าของ: ส่งของก่อน)
+- WP ถัดไปต้องรู้: `QuotationPrintDocument` + `PrintCompany`/`PrintCustomer` เป็นต้นแบบเอกสารพิมพ์อื่น (สัญญา/ใบแจ้งหนี้) ได้; CSS ของเอกสารอยู่ใน `<style>` ในคอมโพเนนต์ (คลาส `qtd-*`); การปรับเศษ/ส่วนลดแสดงเป็นบรรทัดในตารางยอดรวม
+- ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/features/erp/quotations` + `(print)` + `(public)` ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; ยังไม่ได้เปิดเบราว์เซอร์/พิมพ์จริงกับ backend
