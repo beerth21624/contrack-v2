@@ -16,7 +16,7 @@
 | WP-02 | ไลบรารีเงิน ภาษี วันที่ | opus | done | cad77d2 | ไม่มี migration; `round2` ย้ายไป `src/domain/money/money.ts`; `amountInWords(v, locale)` ใน `src/i18n/format.ts` (D-52) |
 | WP-03 | Module registry, flag 4 ชั้น, entitlement, ModuleAccess (backend + contract) | opus | done | 267e14d | migration `0007_wp03_entitlements`; `ModuleUsage` → `ModuleWorkRegistry` (core); D-63…D-72 |
 | WP-04 | หน้าโมดูลและทดลองใช้ (web) | sonnet | done | 402deac | namespace `modules` (th+en), `useModuleEnabled` อ่าน `active`, `useActiveModules`/`useStartTrial`/`useModuleState`; ModulesPage แยกกลุ่ม + ทดลอง + dialog cascade (D-74…D-76) |
-| WP-05 | บทบาทและสิทธิ์ ERP | opus | done | COMMIT_HASH | migration `0008_wp05_roles`; matrix ย้ายไป `src/shared/contract/permissions.ts` (backend + เว็บ re-export); namespace `roles`; D-77…D-81 |
+| WP-05 | บทบาทและสิทธิ์ ERP | opus | done | a299d97 | migration `0008_wp05_roles`; matrix ย้ายไป `src/shared/contract/permissions.ts` (backend + เว็บ re-export); namespace `roles`; D-77…D-81 |
 | WP-06 | ERP web foundation: UI kit, nav registry, กรอบพิมพ์ | opus | todo | | |
 | WP-07 | Platform admin: ให้สิทธิ์โมดูล (backend + web) | sonnet | todo | | |
 | WP-08 | Workflow อนุมัติ + audit log (backend) | opus | todo | | |
@@ -261,7 +261,7 @@
   - โมดูลที่ลงทะเบียน counter ใน `ModuleWorkRegistry` ต้องเพิ่มคีย์ `modules.work.<counter>` (th+en)
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/shared/contract` 16 ผ่าน; ยังไม่ได้ทดสอบในเบราว์เซอร์/Robot
 
-### WP-05 — บทบาทและสิทธิ์ ERP (COMMIT_HASH)
+### WP-05 — บทบาทและสิทธิ์ ERP (a299d97)
 - สร้าง (contract): `src/shared/contract/permissions.ts` (`PERMISSIONS` ครบ §5.2, matrix §5.3 + สิทธิ์เดิมของบทบาทใหม่, `can`, `roleRank`) export จาก `index.ts`; `common.ts`: `ROLES` 8 ตัว, `ASSIGNABLE_ROLES` + `assignableRoleSchema` 7 ตัว
 - backend: `shared/domain/permissions.ts` = re-export (D-77); `schema.ts` enum + check `memberships_role_check`/`invitations_role_check`; policy ของ workspaces ไม่ต้องแก้ (ใช้ `roleRank` อยู่แล้ว บทบาทใหม่ rank 1 = เหมือน estimator); `backend/API.md` บรรทัดเชิญ
 - web: `src/features/cloud/permissions.ts` re-export + `ROLE_LABEL`/`ROLE_HINT` ไทยของบทบาทใหม่ + `ERP_ROLES` + `grantableRoles(actor, includeOwner, includeErp)`; `rate-cards.ts`/`workforce.ts` abilities ผ่าน `can()`; `project-store.ts` `isReadOnly` = cloud && `!can(role,'projects.edit')`; `MembersPage.tsx` ใช้ namespace `roles` + ตัวเลือก ERP เมื่อ `project-hub` active (D-80)
