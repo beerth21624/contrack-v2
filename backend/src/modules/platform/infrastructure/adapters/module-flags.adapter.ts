@@ -1,36 +1,24 @@
-// ─── Shared port ModuleFlags: platform list (env) AND the workspace's switch (cached briefly) ───
+// ─── Shared port ModuleFlags: the four layers (release, entitlement, switch, dependencies), rows cached briefly ───
 import { Injectable } from '@nestjs/common';
 import type { ModuleId } from '@contrack/contract';
 import { ModuleFlags } from '../../../../shared/application/ports';
 import type { WorkspaceId } from '../../../../shared/domain/ids';
-import { PlatformSettings } from '../../application/ports/platform-settings.port';
-import { WorkspaceModuleRepository } from '../../application/ports/workspace-module.repository';
-import { ModuleFlagCache } from '../../application/services/module-flag-cache';
+import { WorkspaceModuleStates } from '../../application/services/workspace-module-states';
+import { isActive } from '../../domain/module-activation';
 
 @Injectable()
 export class RepositoryModuleFlags extends ModuleFlags {
-    private readonly offered: ReadonlySet<ModuleId>;
-
-    constructor(
-        settings: PlatformSettings,
-        private readonly modules: WorkspaceModuleRepository,
-        private readonly cache: ModuleFlagCache,
-    ) {
+    constructor(private readonly states: WorkspaceModuleStates) {
         super();
-        this.offered = new Set(settings.modulesEnabled);
     }
 
     platformEnabled(module: ModuleId): boolean {
-        return this.offered.has(module);
+        return this.states.isReleased(module);
     }
 
     async isEnabled(workspaceId: WorkspaceId, module: ModuleId): Promise<boolean> {
-        if (!this.offered.has(module)) return false;
-        const cached = this.cache.get(workspaceId, module);
-        if (cached !== undefined) return cached;
-        const entry = await this.modules.find(workspaceId, module);
-        const enabled = entry?.enabled ?? false;
-        this.cache.set(workspaceId, module, enabled);
-        return enabled;
+        // Not offered (release 1 for every ERP module): answered without touching the database.
+        if (!this.states.isReleased(module)) return false;
+        return isActive(await this.states.cachedInputs(workspaceId), module);
     }
 }

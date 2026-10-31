@@ -11,3 +11,5 @@ export * from './subcontracting';
 export * from './ai-assist';
 export * from './rate-cards';
 export * from './workforce';
+export * from './module-registry';
+export * from './erp';

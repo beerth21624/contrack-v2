@@ -1,5 +1,6 @@
-import type { NotificationDto, NotificationListDto, WorkspaceModuleDto } from '@contrack/contract';
+import type { NotificationDto, NotificationListDto, StartTrialResponse, WorkspaceModuleDto } from '@contrack/contract';
 import type { NotificationList } from '../application/use-cases/list-notifications.use-case';
+import type { StartTrialResult } from '../application/use-cases/start-trial.use-case';
 import type { WorkspaceModuleView } from '../application/use-cases/workspace-module.view';
 import type { Notification } from '../domain/entities/notification.entity';
 
@@ -9,6 +10,21 @@ export function toWorkspaceModuleDto(view: WorkspaceModuleView): WorkspaceModule
         available: view.available,
         enabled: view.enabled,
         enabledAt: view.enabledAt === null ? null : view.enabledAt.toISOString(),
+        entitlement: {
+            status: view.entitlement.status,
+            expiresAt: view.entitlement.expiresAt === null ? null : view.entitlement.expiresAt.toISOString(),
+        },
+        active: view.active,
+        missingDependencies: [...view.missingDependencies],
+        trialAvailable: view.trialAvailable,
+    };
+}
+
+export function toStartTrialResponse(result: StartTrialResult): StartTrialResponse {
+    return {
+        module: toWorkspaceModuleDto(result.module),
+        started: [...result.started],
+        modules: result.modules.map(toWorkspaceModuleDto),
     };
 }
 

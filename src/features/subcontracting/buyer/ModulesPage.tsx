@@ -4,7 +4,7 @@
 // Off never deletes data: the module's pages and buttons disappear and the app is plain BOQ estimation again.
 import { Alert, App, Select, Switch, Table, Tag } from 'antd';
 import {
-    MODULE_LABEL, moduleOffBlockersSchema, type ModuleId, type WorkspaceModuleDto,
+    MODULE_LABEL, MODULE_REGISTRY, moduleOffBlockersSchema, type ModuleId, type WorkspaceModuleDto,
 } from '@/shared/contract';
 import { isApiError, thaiErrorMessage } from '@/features/cloud/api/errors';
 import { can } from '@/features/cloud/permissions';
@@ -49,6 +49,8 @@ function ModulesTable({ workspaceId, mayManage }: { workspaceId: string; mayMana
     const { modal, message } = App.useApp();
     const modules = useWorkspaceModules(workspaceId);
     const put = usePutWorkspaceModule(workspaceId);
+    // ERP modules the server does not offer are not shown at all (release 1 looks exactly as before; D-50).
+    const rows = (modules.data ?? []).filter(m => m.available || MODULE_REGISTRY[m.module].kind !== 'erp');
 
     const send = async (module: ModuleId, enabled: boolean, confirm?: boolean) => {
         try {
@@ -56,11 +58,19 @@ function ModulesTable({ workspaceId, mayManage }: { workspaceId: string; mayMana
             void message.success(`${enabled ? 'เปิด' : 'ปิด'} ${MODULE_LABEL[module]} แล้ว`);
         } catch (e) {
             const blockers = isApiError(e) && e.code === 'conflict' ? moduleOffBlockersSchema.safeParse(e.details) : null;
-            if (blockers?.success === true) {
+            if (blockers?.success === true && blockers.data.activeSubcontracts !== undefined) {
                 modal.confirm({
                     title: `ยังมีสัญญาที่ดำเนินอยู่ ${String(blockers.data.activeSubcontracts)} สัญญา`,
                     content: 'ถ้าปิดตอนนี้ ทีมเราจะไม่เห็นเมนูจ้างช่วง และทีมช่างจะดูสัญญาได้อย่างเดียว (ขอเบิกหรือแก้ไขไม่ได้) จนกว่าจะเปิดอีกครั้ง ข้อมูลไม่หาย',
                     okText: 'ปิดต่อ', okButtonProps: { danger: true }, cancelText: 'ยกเลิก',
+                    onOk: () => send(module, false, true),
+                });
+            } else if (blockers?.success === true) {
+                // ERP modules that depend on this one are switched off with it (the full dialog comes with WP-04).
+                modal.confirm({
+                    title: `ปิด ${MODULE_LABEL[module]}?`,
+                    content: blockers.data.dependents.map(d => MODULE_LABEL[d]).join(', '),
+                    okText: 'ปิดโมดูล', okButtonProps: { danger: true }, cancelText: 'ยกเลิก',
                     onOk: () => send(module, false, true),
                 });
             } else void message.error(thaiErrorMessage(e));
@@ -113,7 +123,7 @@ function ModulesTable({ workspaceId, mayManage }: { workspaceId: string; mayMana
     return (
         <Card>
             {!mayManage && <Alert type="info" showIcon className="!mb-3" title="เฉพาะเจ้าของหรือผู้ดูแลพื้นที่ทำงานเปิด-ปิดโมดูลได้" />}
-            <Table<WorkspaceModuleDto> rowKey="module" columns={columns} dataSource={modules.data ?? []} loading={modules.isLoading}
+            <Table<WorkspaceModuleDto> rowKey="module" columns={columns} dataSource={rows} loading={modules.isLoading}
                 pagination={false} size="middle" scroll={{ x: 480 }}
                 locale={{ emptyText: modules.isError ? thaiErrorMessage(modules.error) : 'ไม่มีโมดูล' }} />
         </Card>

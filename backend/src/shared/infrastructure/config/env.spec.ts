@@ -63,3 +63,22 @@ describe('MODULES_ENABLED', () => {
         expect(testEnv({ MODULES_ENABLED: '' }).MODULES_ENABLED).toEqual([]);
     });
 });
+
+describe('ENTITLEMENTS and PLATFORM_ADMIN_EMAILS', () => {
+    it('ENTITLEMENTS defaults to enforce in production, open elsewhere; testEnv is open and offers the ERP modules', () => {
+        expect(loadEnv(BASE).ENTITLEMENTS).toBe('open');
+        expect(loadEnv({ ...BASE, NODE_ENV: 'development' }).ENTITLEMENTS).toBe('open');
+        expect(loadEnv({ ...BASE, NODE_ENV: 'production', COOKIE_SECURE: 'true', PERSISTENCE: 'memory' }).ENTITLEMENTS).toBe('enforce');
+        expect(loadEnv({ ...BASE, ENTITLEMENTS: 'enforce' }).ENTITLEMENTS).toBe('enforce');
+        expect(() => loadEnv({ ...BASE, ENTITLEMENTS: 'maybe' })).toThrow(/ENTITLEMENTS/);
+        expect(new AppConfig(testEnv()).entitlements).toBe('open');
+        expect(testEnv().MODULES_ENABLED).toEqual(expect.arrayContaining(['project-hub', 'labour', 'handover']));
+    });
+
+    it('PLATFORM_ADMIN_EMAILS: lower case, trimmed, none by default; a bad address refuses the start', () => {
+        expect(loadEnv(BASE).PLATFORM_ADMIN_EMAILS).toEqual([]);
+        expect(new AppConfig(loadEnv({ ...BASE, PLATFORM_ADMIN_EMAILS: ' Ops@ConTrack.co.th , b@x.io,' })).platformAdminEmails)
+            .toEqual(['ops@contrack.co.th', 'b@x.io']);
+        expect(() => loadEnv({ ...BASE, PLATFORM_ADMIN_EMAILS: 'not-an-email' })).toThrow(/PLATFORM_ADMIN_EMAILS/);
+    });
+});

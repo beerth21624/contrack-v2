@@ -3,7 +3,7 @@
 import type { InstallmentDto, PackageStatus, Role } from '@contrack/contract';
 import { computeProject, createProject } from '@contrack/domain/project';
 import { type SnapshotLine, buildSnapshot, subcontractableRows } from '@contrack/domain/subcontracting/snapshot';
-import { UserDirectory, type UserProfile } from '../../../../shared/application/ports';
+import { ModuleWorkRegistry, UserDirectory, type UserProfile } from '../../../../shared/application/ports';
 import { asProjectId, asUserId, asWorkspaceId, type ProjectId, type UserId, type WorkspaceId } from '../../../../shared/domain';
 import { AppConfig, testEnv } from '../../../../shared/infrastructure/config/env';
 import { InMemoryUnitOfWork } from '../../../../shared/infrastructure/database/database';
@@ -169,6 +169,9 @@ export function contractsKit() {
     const uow = new InMemoryUnitOfWork();
 
     const subcontracts = new InMemorySubcontractRepository();
+    const moduleWork = new ModuleWorkRegistry();
+    const moduleUsage = new RepositoryModuleUsage(subcontracts, moduleWork);
+    moduleUsage.onModuleInit();
     const documents = new InMemoryContractDocumentRepository();
     const variations = new InMemoryVariationRepository();
     const claims = new InMemoryClaimRepository();
@@ -268,7 +271,8 @@ export function contractsKit() {
         reject: new RejectClaimUseCase(access, claims, activity, views, uow, clock),
         listRetention: new ListRetentionUseCase(access, retention),
         moveRetention: new MoveRetentionUseCase(access, retention, activity, uow, clock, ids),
-        moduleUsage: new RepositoryModuleUsage(subcontracts),
+        moduleWork,
+        moduleUsage,
         vendorStats: new RepositoryVendorStats(subcontracts, ratings),
         linkListener: new RepositoryVendorLinkListener(subcontracts, vendors, activity, clock),
         sweep: new RetentionDueSweep(subcontracts, retention, flags, notices, uow, clock,

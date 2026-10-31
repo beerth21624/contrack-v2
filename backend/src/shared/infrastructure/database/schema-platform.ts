@@ -5,6 +5,7 @@
 import { sql } from 'drizzle-orm';
 import { boolean, check, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users, workspaces } from './schema';
+import { updatedAt } from './schema-helpers';
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 
@@ -65,4 +66,25 @@ export const notificationDeliveries = pgTable('notification_deliveries', {
     check('notification_deliveries_status_check', sql`${t.status} in ('queued', 'sent', 'failed')`),
 ]);
 
-export const platformTables = { workspaceModules, files, notifications, notificationDeliveries };
+/**
+ * Layer 2 of the module flags (docs/erp/01-architecture.md §4.3): what a workspace may use of the modules that need an
+ * entitlement. Granted by a platform admin or a self-started trial (`trial_used_at` set once, never cleared). A grant
+ * counts while `status` is purchased / trial / beta and `expires_at` is null or in the future.
+ */
+export const workspaceEntitlements = pgTable('workspace_entitlements', {
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    module: text('module').notNull(),
+    status: text('status', { enum: ['purchased', 'trial', 'beta', 'revoked'] }).notNull(),
+    startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    trialUsedAt: timestamp('trial_used_at', { withTimezone: true }),
+    /** The platform admin who granted it (plain uuid: the user may be gone); null for a self-started trial. */
+    grantedBy: uuid('granted_by'),
+    note: text('note').notNull().default(''),
+    updatedAt: updatedAt(),
+}, t => [
+    primaryKey({ columns: [t.workspaceId, t.module] }),
+    check('workspace_entitlements_status_check', sql`${t.status} in ('purchased', 'trial', 'beta', 'revoked')`),
+]);
+
+export const platformTables = { workspaceModules, files, notifications, notificationDeliveries, workspaceEntitlements };

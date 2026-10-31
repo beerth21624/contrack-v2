@@ -9,7 +9,7 @@ describe('ListWorkspaceModulesUseCase', () => {
 
     beforeEach(() => {
         kit = new PlatformTestKit(['subcontracting', 'materials']);
-        useCase = new ListWorkspaceModulesUseCase(kit.roles, kit.modules, kit.settings);
+        useCase = new ListWorkspaceModulesUseCase(kit.roles, kit.states);
     });
 
     it.each(ROLES_UNDER_TEST)('a %s sees every module id in MODULE_IDS order', async role => {
@@ -26,7 +26,10 @@ describe('ListWorkspaceModulesUseCase', () => {
         entry.switch(true, s.byRole.owner, kit.clock.now());
         await kit.modules.save(entry);
         const views = valueOf(await useCase.execute({ actorId: s.byRole.viewer, workspaceId: s.workspaceId }));
-        expect(views[0]).toEqual({ module: 'subcontracting', available: true, enabled: true, enabledAt: kit.clock.now() });
+        expect(views[0]).toEqual({
+            module: 'subcontracting', available: true, enabled: true, enabledAt: kit.clock.now(),
+            entitlement: { status: 'not_required', expiresAt: null }, active: true, missingDependencies: [], trialAvailable: false,
+        });
     });
 
     it('a module switched on earlier but no longer offered by the platform reads as off', async () => {
@@ -35,7 +38,7 @@ describe('ListWorkspaceModulesUseCase', () => {
         entry.switch(true, s.byRole.owner, kit.clock.now());
         await kit.modules.save(entry);
         const views = valueOf(await useCase.execute({ actorId: s.byRole.owner, workspaceId: s.workspaceId }));
-        expect(views[2]).toEqual({ module: 'owner-leads', available: false, enabled: false, enabledAt: null });
+        expect(views[2]).toMatchObject({ module: 'owner-leads', available: false, enabled: false, enabledAt: null, active: false });
     });
 
     it('a non-member gets not_found', async () => {

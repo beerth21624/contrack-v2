@@ -147,11 +147,14 @@ export abstract class AccessTokenVerifier {
 
 // ─── Platform services (module flags, files, notifications). Implemented by src/modules/platform. ───
 
-/** Which business modules are on: for the platform (env MODULES_ENABLED) and for a workspace (owner/admin switch). */
+/**
+ * Which business modules are on: for the platform (env MODULES_ENABLED) and for a workspace
+ * (docs/erp/01-architecture.md §4.3: release, entitlement, the owner/admin switch and every dependency active).
+ */
 export abstract class ModuleFlags {
-    /** The platform offers the module at all. */
+    /** Layer 1: the platform offers the module at all. */
     abstract platformEnabled(module: ModuleId): boolean;
-    /** The platform offers it AND the workspace switched it on. */
+    /** The module is active for the workspace: offered, entitled, switched on, and every dependency active. */
     abstract isEnabled(workspaceId: WorkspaceId, module: ModuleId): Promise<boolean>;
 }
 
@@ -238,7 +241,26 @@ export abstract class PhoneSignInHook {
     abstract afterSignIn(event: PhoneSignInEvent): Promise<{ vendorWorkspaceId: WorkspaceId | null }>;
 }
 
-/** Provided by business modules: work that would be hidden by switching the module off (asked before switching off). */
-export abstract class ModuleUsage {
-    abstract activeWork(workspaceId: WorkspaceId, module: ModuleId): Promise<{ activeSubcontracts: number }>;
+/** Running work of one module in one workspace, per counter name (e.g. `{ activeSubcontracts: 2 }`). */
+export type ModuleWorkCounter = (workspaceId: WorkspaceId) => Promise<Record<string, number>>;
+
+/**
+ * Provided by core: work that switching a module off would hide, asked before switching off (409 asks to confirm
+ * while any count is above 0). A business module registers its counter once, at start-up (`onModuleInit`).
+ */
+export class ModuleWorkRegistry {
+    private readonly counters = new Map<ModuleId, ModuleWorkCounter[]>();
+
+    register(module: ModuleId, counter: ModuleWorkCounter): void {
+        this.counters.set(module, [...(this.counters.get(module) ?? []), counter]);
+    }
+
+    /** Every counter of `module` (counts of the same name are added); `{}` when the module registered none. */
+    async workOf(workspaceId: WorkspaceId, module: ModuleId): Promise<Record<string, number>> {
+        const out: Record<string, number> = {};
+        for (const counter of this.counters.get(module) ?? []) {
+            for (const [name, n] of Object.entries(await counter(workspaceId))) out[name] = (out[name] ?? 0) + n;
+        }
+        return out;
+    }
 }

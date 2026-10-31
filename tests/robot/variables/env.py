@@ -23,5 +23,10 @@ TEST_PASSWORD = "RobotTest#2026"
 
 # Module ids in contract order (src/shared/contract/modules.ts MODULE_IDS) and the ones the E2E server offers
 # (MODULES_ENABLED in env/backend.e2e.env).
-MODULE_IDS = ["subcontracting", "materials", "owner-leads", "ai-assist", "workforce"]
+MODULE_IDS = [
+    "subcontracting", "materials", "owner-leads", "ai-assist", "workforce",
+    # ERP (WP-03): listed by GET /workspaces/:id/modules; not offered by the E2E server (available false)
+    "project-hub", "portal", "boq-control", "quotations", "contracts", "billing", "variations",
+    "procurement", "site-diary", "labour", "job-cost", "payables", "handover",
+]
 OFFERED_MODULES = ["subcontracting", "workforce"]

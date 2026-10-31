@@ -3,6 +3,12 @@ import { isIP } from 'node:net';
 import { z } from 'zod';
 import { MODULE_IDS, type ModuleId } from '@contrack/contract';
 
+/** ERP modules (docs/erp/01-architecture.md §4.1); testEnv() offers them all. */
+const ERP_MODULE_IDS: readonly ModuleId[] = [
+    'project-hub', 'portal', 'boq-control', 'quotations', 'contracts', 'billing', 'variations',
+    'procurement', 'site-diary', 'labour', 'job-cost', 'payables', 'handover',
+];
+
 const bool = z.enum(['true', 'false']).transform(v => v === 'true');
 
 /** Names Express understands in a `trust proxy` list. */
@@ -63,12 +69,26 @@ const envSchema = z.object({
     /** Proxies whose X-Forwarded-For is believed (req.ip for rate limits). Default: only the local Next server. */
     TRUST_PROXY: trustProxy,
     /**
-     * Business modules this server offers (comma separated: subcontracting, materials, owner-leads, ai-assist).
-     * Empty = ConTrack is plain BOQ estimation. A workspace can switch on only what is listed here.
+     * Business modules this server offers (layer 1 of 4, docs/erp/01-architecture.md §4.3), comma separated.
+     * Legacy: subcontracting, materials, owner-leads, ai-assist, workforce.
+     * ERP: project-hub, portal, boq-control, quotations, contracts, billing, variations, procurement, site-diary,
+     * labour, job-cost, payables, handover.
+     * Empty = ConTrack is plain BOQ estimation (release 1). A workspace can switch on only what is listed here; an ERP
+     * module also needs an entitlement (ENTITLEMENTS) and its dependencies (src/shared/contract/module-registry.ts).
      */
     MODULES_ENABLED: z.string().default('')
         .transform(v => v.split(',').map(s => s.trim()).filter(s => s !== ''))
         .pipe(z.array(z.enum(MODULE_IDS))),
+    /**
+     * Layer 2: `enforce` = an ERP module is active only with an unexpired purchased / trial / beta grant
+     * (workspace_entitlements); `open` = every module counts as entitled (development, tests).
+     * Default: enforce when NODE_ENV=production, else open. Legacy modules never need a grant.
+     */
+    ENTITLEMENTS: z.enum(['enforce', 'open']).optional(),
+    /** Platform admins (grant module entitlements): comma separated e-mails, compared lower case. Default none. */
+    PLATFORM_ADMIN_EMAILS: z.string().default('')
+        .transform(v => v.split(',').map(s => s.trim().toLowerCase()).filter(s => s !== ''))
+        .pipe(z.array(z.string().email())),
     /** Public URL of the web app, for links in SMS / LINE / e-mail (invitations, notifications). */
     PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
     /** Uploaded files: local = FILE_STORAGE_DIR on disk; memory = in-process (tests, PERSISTENCE=memory). */
@@ -103,7 +123,10 @@ const envSchema = z.object({
     if (env.NODE_ENV === 'production' && !env.COOKIE_SECURE) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['COOKIE_SECURE'], message: 'must be true in production' });
     }
-});
+}).transform(env => ({
+    ...env,
+    ENTITLEMENTS: env.ENTITLEMENTS ?? (env.NODE_ENV === 'production' ? 'enforce' as const : 'open' as const),
+}));
 
 export type Env = z.infer<typeof envSchema>;
 
@@ -127,6 +150,16 @@ export class AppConfig {
     isModuleEnabled(id: ModuleId): boolean {
         return this.env.MODULES_ENABLED.includes(id);
     }
+
+    /** Layer 2 of the module flags: `open` treats every module as entitled. */
+    get entitlements(): Env['ENTITLEMENTS'] {
+        return this.env.ENTITLEMENTS;
+    }
+
+    /** Lower-case e-mails of the platform admins (used by WP-07). */
+    get platformAdminEmails(): readonly string[] {
+        return this.env.PLATFORM_ADMIN_EMAILS;
+    }
 }
 
 export function loadEnv(source: Record<string, string | undefined> = process.env): Env {
@@ -138,13 +171,17 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
     return parsed.data;
 }
 
-/** Configuration for tests and the in-memory e2e app: every business module on (`MODULES_ENABLED: ''` turns them off). */
+/**
+ * Configuration for tests and the in-memory e2e app: the legacy modules that exist (subcontracting, ai-assist,
+ * workforce) and every ERP module offered, entitlements open (`MODULES_ENABLED: ''` turns them all off).
+ */
 export function testEnv(overrides: Partial<Record<keyof Env, string>> = {}): Env {
     return loadEnv({
         NODE_ENV: 'test',
         PERSISTENCE: 'memory',
         JWT_ACCESS_SECRET: 'test-secret-test-secret-test-secret-123',
-        MODULES_ENABLED: 'subcontracting,ai-assist,workforce',
+        MODULES_ENABLED: ['subcontracting', 'ai-assist', 'workforce', ...ERP_MODULE_IDS].join(','),
+        ENTITLEMENTS: 'open',
         FILE_STORAGE: 'memory',
         ...overrides,
     });

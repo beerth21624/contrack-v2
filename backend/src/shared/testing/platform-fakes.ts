@@ -1,14 +1,14 @@
 // ─── Fakes of the platform / cross-module ports, for unit tests of any module (not a spec itself) ───
-import type { FileDto, FilePurpose, ModuleId, Role } from '@contrack/contract';
+import { type FileDto, type FilePurpose, MODULE_IDS, type ModuleId, type Role } from '@contrack/contract';
 import {
     AppLinks, FileService, ModuleFlags, type NotificationRequest, Notifier, ProjectDirectory, ProjectReader, type ProjectRead,
-    WorkspaceAccess, WorkspaceDirectory,
+    type ProjectStatus, ProjectStatusLookup, WorkspaceAccess, WorkspaceDirectory,
 } from '../application/ports';
 import { DomainError, type ProjectId, type Result, type UserId, type WorkspaceId, err, okVoid } from '../domain';
 
 /** Every module on for every workspace unless switched off with `set`. */
 export class FakeModuleFlags extends ModuleFlags {
-    platform = new Set<ModuleId>(['subcontracting', 'materials', 'owner-leads', 'ai-assist', 'workforce']);
+    platform = new Set<ModuleId>(MODULE_IDS);
     private readonly off = new Set<string>();
 
     set(workspaceId: WorkspaceId, module: ModuleId, enabled: boolean): void {
@@ -132,5 +132,20 @@ export class FakeProjects extends ProjectReader {
                 return Promise.resolve(byId.get(projectId)?.workspaceId);
             }
         })();
+    }
+}
+
+/** Project workspace / archive state set with `set(projectId, status)` (ModuleAccess, attach-to-project checks). */
+export class FakeProjectStatuses extends ProjectStatusLookup {
+    readonly byId = new Map<ProjectId, ProjectStatus>();
+
+    set(projectId: ProjectId, status: ProjectStatus | undefined): void {
+        if (status === undefined) this.byId.delete(projectId);
+        else this.byId.set(projectId, status);
+    }
+
+    find(projectId: ProjectId): Promise<ProjectStatus | undefined> {
+        const s = this.byId.get(projectId);
+        return Promise.resolve(s === undefined ? undefined : { ...s });
     }
 }

@@ -1,8 +1,11 @@
-// ─── Platform services: module switches, uploaded files, notifications (owned by the platform work stream) ───
-// Provides ModuleFlags, FileService, Notifier, AppLinks (src/shared/application/ports.ts) and SmsSender
-// (./application/ports/sms-sender.port.ts, used by identity for OTP codes) to every module.
-// Needs WorkspaceAccess (workspaces) and ModuleUsage (business modules).
+// ─── Platform services: module flags (4 layers) and entitlements, uploaded files, notifications (platform work stream) ───
+// Provides ModuleFlags, FileService, Notifier, AppLinks (src/shared/application/ports.ts), ModuleAccess
+// (src/shared/application/module-access.ts, every ERP use case) and SmsSender (./application/ports/sms-sender.port.ts,
+// used by identity for OTP codes) to every module.
+// Needs WorkspaceAccess / WorkspaceDirectory (workspaces), ProjectStatusLookup (projects) and ModuleWorkRegistry (core,
+// filled by the business modules).
 import { Global, Module } from '@nestjs/common';
+import { ModuleAccess } from '../../shared/application/module-access';
 import { AppLinks, FileService, ModuleFlags, Notifier, WorkspaceDirectory } from '../../shared/application/ports';
 import { AppConfig } from '../../shared/infrastructure/config/env';
 import { persistence } from '../../shared/infrastructure/core.module';
@@ -15,9 +18,11 @@ import { NotificationRepository } from './application/ports/notification.reposit
 import { PlatformSettings } from './application/ports/platform-settings.port';
 import { RecipientDirectory } from './application/ports/recipient-directory.port';
 import { SmsSender } from './application/ports/sms-sender.port';
+import { WorkspaceEntitlementRepository } from './application/ports/workspace-entitlement.repository';
 import { WorkspaceModuleRepository } from './application/ports/workspace-module.repository';
 import { FileLinks } from './application/services/file-links';
 import { ModuleFlagCache } from './application/services/module-flag-cache';
+import { WorkspaceModuleStates } from './application/services/workspace-module-states';
 import { DeliverQueuedUseCase } from './application/use-cases/deliver-queued.use-case';
 import { ListNotificationsUseCase } from './application/use-cases/list-notifications.use-case';
 import { ListPlatformModulesUseCase } from './application/use-cases/list-platform-modules.use-case';
@@ -26,12 +31,14 @@ import { MarkNotificationsReadUseCase } from './application/use-cases/mark-notif
 import { ReadFileContentUseCase } from './application/use-cases/read-file-content.use-case';
 import { SendNotificationUseCase } from './application/use-cases/send-notification.use-case';
 import { SetWorkspaceModuleUseCase } from './application/use-cases/set-workspace-module.use-case';
+import { StartTrialUseCase } from './application/use-cases/start-trial.use-case';
 import { UploadFileUseCase } from './application/use-cases/upload-file.use-case';
 import { DeliveryWorker } from './infrastructure/adapters/delivery-worker';
 import { DrizzleFileRepository } from './infrastructure/adapters/drizzle-file.repository';
 import { DrizzleNotificationDeliveryRepository } from './infrastructure/adapters/drizzle-notification-delivery.repository';
 import { DrizzleNotificationRepository } from './infrastructure/adapters/drizzle-notification.repository';
 import { DrizzleRecipientDirectory } from './infrastructure/adapters/drizzle-recipient-directory.adapter';
+import { DrizzleWorkspaceEntitlementRepository } from './infrastructure/adapters/drizzle-workspace-entitlement.repository';
 import { DrizzleWorkspaceModuleRepository } from './infrastructure/adapters/drizzle-workspace-module.repository';
 import { RepositoryFileService } from './infrastructure/adapters/file-service.adapter';
 import { InMemoryFileStorage, LocalDiskFileStorage } from './infrastructure/adapters/file-storage.adapter';
@@ -40,6 +47,7 @@ import { InMemoryFileRepository } from './infrastructure/adapters/in-memory-file
 import { InMemoryNotificationDeliveryRepository } from './infrastructure/adapters/in-memory-notification-delivery.repository';
 import { InMemoryNotificationRepository } from './infrastructure/adapters/in-memory-notification.repository';
 import { InMemoryRecipientDirectory } from './infrastructure/adapters/in-memory-recipient-directory.adapter';
+import { InMemoryWorkspaceEntitlementRepository } from './infrastructure/adapters/in-memory-workspace-entitlement.repository';
 import { InMemoryWorkspaceModuleRepository } from './infrastructure/adapters/in-memory-workspace-module.repository';
 import { LoggingLineSender } from './infrastructure/adapters/logging-line-sender.adapter';
 import { RepositoryModuleFlags } from './infrastructure/adapters/module-flags.adapter';
@@ -67,9 +75,15 @@ function smsSender(config: AppConfig): SmsSender {
         {
             provide: PlatformSettings,
             inject: [AppConfig],
-            useFactory: (config: AppConfig): PlatformSettings => new PlatformSettings(config.modulesEnabled, config.env.PUBLIC_APP_URL),
+            useFactory: (config: AppConfig): PlatformSettings =>
+                new PlatformSettings(config.modulesEnabled, config.env.PUBLIC_APP_URL, config.entitlements),
         },
         persistence(WorkspaceModuleRepository, () => new InMemoryWorkspaceModuleRepository(), ctx => new DrizzleWorkspaceModuleRepository(ctx)),
+        persistence(
+            WorkspaceEntitlementRepository,
+            () => new InMemoryWorkspaceEntitlementRepository(),
+            ctx => new DrizzleWorkspaceEntitlementRepository(ctx),
+        ),
         persistence(FileRepository, () => new InMemoryFileRepository(), ctx => new DrizzleFileRepository(ctx)),
         persistence(NotificationRepository, () => new InMemoryNotificationRepository(), ctx => new DrizzleNotificationRepository(ctx)),
         persistence(
@@ -99,10 +113,12 @@ function smsSender(config: AppConfig): SmsSender {
             useFactory: (config: AppConfig): LineSender => new LoggingLineSender(config.env.LINE_CHANNEL_ACCESS_TOKEN),
         },
         ModuleFlagCache,
+        WorkspaceModuleStates,
         FileLinks,
         ListPlatformModulesUseCase,
         ListWorkspaceModulesUseCase,
         SetWorkspaceModuleUseCase,
+        StartTrialUseCase,
         UploadFileUseCase,
         ReadFileContentUseCase,
         ListNotificationsUseCase,
@@ -111,10 +127,11 @@ function smsSender(config: AppConfig): SmsSender {
         DeliverQueuedUseCase,
         DeliveryWorker,
         { provide: ModuleFlags, useClass: RepositoryModuleFlags },
+        ModuleAccess,
         { provide: FileService, useClass: RepositoryFileService },
         { provide: Notifier, useClass: UseCaseNotifier },
         { provide: AppLinks, inject: [PlatformSettings], useFactory: (s: PlatformSettings): AppLinks => new ConfigAppLinks(s.publicAppUrl) },
     ],
-    exports: [ModuleFlags, FileService, Notifier, AppLinks, SmsSender],
+    exports: [ModuleFlags, ModuleAccess, FileService, Notifier, AppLinks, SmsSender],
 })
 export class PlatformModule {}

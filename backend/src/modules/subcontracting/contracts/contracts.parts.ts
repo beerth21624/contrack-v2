@@ -2,7 +2,6 @@
 // Owned by the contracts work stream: list every controller and provider of this stream here. Providers of the ports this
 // stream implements (see ../shared/ports.ts) must be registered here too, and listed in the exports.
 import type { Provider, Type } from '@nestjs/common';
-import { ModuleUsage } from '../../../shared/application/ports';
 import { persistence } from '../../../shared/infrastructure/core.module';
 import { SubcontractCreator, SubcontractingSettingsReader, VendorLinkListener, VendorStats } from '../shared/ports';
 import { ContractAccess } from './application/contract-access';
@@ -72,7 +71,8 @@ export const CONTRACTS_PROVIDERS: Provider[] = [
     { provide: SubcontractCreator, useClass: CreateSubcontractUseCase },
     { provide: VendorStats, useClass: RepositoryVendorStats },
     { provide: VendorLinkListener, useClass: RepositoryVendorLinkListener },
-    { provide: ModuleUsage, useClass: RepositoryModuleUsage },
+    // registers the running-work counter of the module in ModuleWorkRegistry (onModuleInit)
+    RepositoryModuleUsage,
     // application services
     ContractAccess, ContractViews, ContractNotices, PackageFollowUp, ProjectFactsLoader, RetentionDueSweep,
     // use cases
@@ -89,5 +89,5 @@ export const CONTRACTS_PROVIDERS: Provider[] = [
 
 /** Ports from ../shared/ports.ts (or shared/application/ports.ts) this stream provides to the others. */
 export const CONTRACTS_EXPORTS: (abstract new (...args: never[]) => unknown)[] = [
-    SubcontractCreator, SubcontractingSettingsReader, VendorStats, VendorLinkListener, ModuleUsage,
+    SubcontractCreator, SubcontractingSettingsReader, VendorStats, VendorLinkListener,
 ];

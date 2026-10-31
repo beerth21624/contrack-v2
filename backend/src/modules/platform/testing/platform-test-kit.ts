@@ -1,6 +1,6 @@
-// ─── Test support for the platform specs: in-memory adapters, fixed clock, sequential ids, fake roles / usage ───
-import type { ModuleId, Role } from '@contrack/contract';
-import { ModuleUsage } from '../../../shared/application/ports';
+// ─── Test support for the platform specs: in-memory adapters, fixed clock, sequential ids, fake roles / running work ───
+import { MODULE_IDS, type ModuleId, type Role } from '@contrack/contract';
+import { ModuleWorkRegistry } from '../../../shared/application/ports';
 import type { DomainError } from '../../../shared/domain/domain-error';
 import { type UserId, type WorkspaceId, asUserId, asWorkspaceId } from '../../../shared/domain/ids';
 import type { Result } from '../../../shared/domain/result';
@@ -11,12 +11,15 @@ import { LineSender } from '../application/ports/line-sender.port';
 import { PlatformSettings } from '../application/ports/platform-settings.port';
 import { FileLinks } from '../application/services/file-links';
 import { ModuleFlagCache } from '../application/services/module-flag-cache';
+import { WorkspaceModuleStates } from '../application/services/workspace-module-states';
+import type { EntitlementMode } from '../domain/module-activation';
 import { InMemoryFileStorage } from '../infrastructure/adapters/file-storage.adapter';
 import { HmacFileLinkSigner } from '../infrastructure/adapters/hmac-file-link-signer.adapter';
 import { InMemoryFileRepository } from '../infrastructure/adapters/in-memory-file.repository';
 import { InMemoryNotificationDeliveryRepository } from '../infrastructure/adapters/in-memory-notification-delivery.repository';
 import { InMemoryNotificationRepository } from '../infrastructure/adapters/in-memory-notification.repository';
 import { InMemoryRecipientDirectory } from '../infrastructure/adapters/in-memory-recipient-directory.adapter';
+import { InMemoryWorkspaceEntitlementRepository } from '../infrastructure/adapters/in-memory-workspace-entitlement.repository';
 import { InMemoryWorkspaceModuleRepository } from '../infrastructure/adapters/in-memory-workspace-module.repository';
 import { RecordingSmsSender } from './recording-sms-sender';
 
@@ -41,18 +44,29 @@ export function errorOf(result: Result<unknown, DomainError>): DomainError {
     return result.error;
 }
 
-/** Running work per (workspace, module), set by the test. Records every question. */
-export class FakeModuleUsage extends ModuleUsage {
-    readonly active = new Map<string, number>();
+/** Running work per (workspace, module), set by the test; registered for every module. Records every question. */
+export class FakeModuleWork {
+    readonly active = new Map<string, Record<string, number>>();
     calls = 0;
 
+    /** `{ activeSubcontracts: n }` for (workspace, module). */
     set(workspaceId: WorkspaceId, module: ModuleId, activeSubcontracts: number): void {
-        this.active.set(`${workspaceId}|${module}`, activeSubcontracts);
+        this.active.set(`${workspaceId}|${module}`, { activeSubcontracts });
     }
 
-    activeWork(workspaceId: WorkspaceId, module: ModuleId): Promise<{ activeSubcontracts: number }> {
-        this.calls += 1;
-        return Promise.resolve({ activeSubcontracts: this.active.get(`${workspaceId}|${module}`) ?? 0 });
+    setWork(workspaceId: WorkspaceId, module: ModuleId, work: Record<string, number>): void {
+        this.active.set(`${workspaceId}|${module}`, { ...work });
+    }
+
+    /** Registers a counter of every module in `registry`. */
+    registerInto(registry: ModuleWorkRegistry): ModuleWorkRegistry {
+        for (const module of MODULE_IDS) {
+            registry.register(module, ws => {
+                this.calls += 1;
+                return Promise.resolve({ ...(this.active.get(`${ws}|${module}`) ?? {}) });
+            });
+        }
+        return registry;
     }
 }
 
@@ -90,10 +104,13 @@ export class PlatformTestKit {
     readonly ids = new SequentialIdGenerator();
     readonly uow = new InMemoryUnitOfWork();
     readonly roles = new FakeRoles();
-    readonly usage = new FakeModuleUsage();
+    readonly usage = new FakeModuleWork();
+    readonly work: ModuleWorkRegistry = this.usage.registerInto(new ModuleWorkRegistry());
     readonly settings: PlatformSettings;
     readonly modules = new InMemoryWorkspaceModuleRepository();
+    readonly entitlements = new InMemoryWorkspaceEntitlementRepository();
     readonly cache: ModuleFlagCache;
+    readonly states: WorkspaceModuleStates;
     readonly files = new InMemoryFileRepository();
     readonly storage = new InMemoryFileStorage();
     readonly signer = new HmacFileLinkSigner(TEST_SECRET, FILE_TTL_SECONDS);
@@ -105,9 +122,10 @@ export class PlatformTestKit {
     readonly appLinks = new FixedAppLinks();
     private n = 0;
 
-    constructor(modulesEnabled: readonly ModuleId[] = ['subcontracting']) {
-        this.settings = new PlatformSettings(modulesEnabled, 'https://app.test');
+    constructor(modulesEnabled: readonly ModuleId[] = ['subcontracting'], entitlements: EntitlementMode = 'open') {
+        this.settings = new PlatformSettings(modulesEnabled, 'https://app.test', entitlements);
         this.cache = new ModuleFlagCache(this.clock);
+        this.states = new WorkspaceModuleStates(this.settings, this.modules, this.entitlements, this.cache, this.clock);
         this.links = new FileLinks(this.signer, this.clock);
     }
 

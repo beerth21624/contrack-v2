@@ -12,7 +12,7 @@ describe('Ports provided by the contracts stream', () => {
         expect((await kit.settings.get(BUYER_WS)).estimatorCanAward).toBe(true);
     });
 
-    it('ModuleUsage counts pending + active subcontracts of the buyer for subcontracting only', async () => {
+    it('RepositoryModuleUsage counts pending + active subcontracts of the buyer for subcontracting only', async () => {
         const kit = contractsKit();
         await kit.award();
         const active = await activeContract(kit);
@@ -23,6 +23,9 @@ describe('Ports provided by the contracts stream', () => {
         expect(await kit.moduleUsage.activeWork(VENDOR_WS, 'subcontracting')).toEqual({ activeSubcontracts: 0 });
         must(await kit.terminate.execute({ userId: BUYER.owner, subcontractId: active, reason: 'x' }));
         expect(await kit.moduleUsage.activeWork(BUYER_WS, 'subcontracting')).toEqual({ activeSubcontracts: 1 });
+        // Registered in ModuleWorkRegistry: what the platform asks before switching the module off.
+        expect(await kit.moduleWork.workOf(BUYER_WS, 'subcontracting')).toEqual({ activeSubcontracts: 1 });
+        expect(await kit.moduleWork.workOf(BUYER_WS, 'materials')).toEqual({});
     });
 
     it('VendorStats: last engagement, completed count, average rating from this buyer', async () => {

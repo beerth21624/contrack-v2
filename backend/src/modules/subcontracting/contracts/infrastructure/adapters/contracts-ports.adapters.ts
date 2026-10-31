@@ -1,7 +1,7 @@
-// ─── Ports the contracts stream provides to the others: settings reader, vendor stats, vendor link, module usage ───
-import { Injectable } from '@nestjs/common';
+// ─── Ports the contracts stream provides to the others: settings reader, vendor stats, vendor link, running work ───
+import { Injectable, type OnModuleInit } from '@nestjs/common';
 import type { ModuleId, SubcontractingSettingsDto } from '@contrack/contract';
-import { Clock, ModuleUsage } from '../../../../../shared/application/ports';
+import { Clock, ModuleWorkRegistry } from '../../../../../shared/application/ports';
 import type { WorkspaceId } from '../../../../../shared/domain';
 import type { ScInvitationId } from '../../../shared/ids';
 import {
@@ -25,10 +25,13 @@ export class RepositorySettingsReader extends SubcontractingSettingsReader {
     }
 }
 
+/** Running work of the subcontracting module, registered in ModuleWorkRegistry (asked before switching it off). */
 @Injectable()
-export class RepositoryModuleUsage extends ModuleUsage {
-    constructor(private readonly subcontracts: SubcontractRepository) {
-        super();
+export class RepositoryModuleUsage implements OnModuleInit {
+    constructor(private readonly subcontracts: SubcontractRepository, private readonly registry: ModuleWorkRegistry) {}
+
+    onModuleInit(): void {
+        this.registry.register('subcontracting', ws => this.activeWork(ws, 'subcontracting'));
     }
 
     /** Contracts waiting for acceptance or running: switching the module off would hide them from the buyer. */

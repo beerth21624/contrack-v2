@@ -50,6 +50,13 @@
       "when": 1793458733658,
       "tag": "0006_wp01_user_locale",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793460839407,
+      "tag": "0007_wp03_entitlements",
+      "breakpoints": true
     }
   ]
 }

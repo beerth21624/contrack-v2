@@ -1,5 +1,6 @@
 import { PlatformSettings } from '../../application/ports/platform-settings.port';
 import { MODULE_FLAG_CACHE_MS } from '../../application/services/module-flag-cache';
+import { WorkspaceModuleStates } from '../../application/services/workspace-module-states';
 import { WorkspaceModule } from '../../domain/entities/workspace-module.entity';
 import { PlatformTestKit } from '../../testing/platform-test-kit';
 import { RepositoryModuleFlags } from './module-flags.adapter';
@@ -10,7 +11,7 @@ describe('RepositoryModuleFlags', () => {
 
     beforeEach(() => {
         kit = new PlatformTestKit(['subcontracting']);
-        flags = new RepositoryModuleFlags(kit.settings, kit.modules, kit.cache);
+        flags = new RepositoryModuleFlags(kit.states);
     });
 
     async function switchDirectly(enabled: boolean): Promise<ReturnType<PlatformTestKit['seedWorkspace']>> {
@@ -35,7 +36,9 @@ describe('RepositoryModuleFlags', () => {
 
     it('the platform switch wins over a workspace row', async () => {
         const s = await switchDirectly(true);
-        const off = new RepositoryModuleFlags(new PlatformSettings([], 'https://app.test'), kit.modules, kit.cache);
+        const off = new RepositoryModuleFlags(
+            new WorkspaceModuleStates(new PlatformSettings([], 'https://app.test'), kit.modules, kit.entitlements, kit.cache, kit.clock),
+        );
         expect(await off.isEnabled(s.workspaceId, 'subcontracting')).toBe(false);
     });
 

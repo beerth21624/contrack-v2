@@ -1,26 +1,27 @@
 // HTTP edge of the platform module: real Nest wiring (CoreModule in memory + PlatformModule), fakes for the ports
-// other modules provide (WorkspaceAccess, ModuleUsage, AccessTokenVerifier, WorkspaceDirectory). Not an e2e suite: no other module runs.
+// other modules provide (WorkspaceAccess, ProjectStatusLookup, AccessTokenVerifier, WorkspaceDirectory). Not an e2e suite: no other module runs.
 import type { Server } from 'node:http';
 import { Global, type INestApplication, Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { MAX_FILE_BYTES, MODULE_IDS } from '@contrack/contract';
+import { MAX_FILE_BYTES, MODULE_IDS, startTrialResponseSchema, workspaceModulesDtoSchema } from '@contrack/contract';
 import {
-    AccessTokenVerifier, type AuthenticatedUser, ModuleFlags, ModuleUsage, Notifier, WorkspaceAccess, WorkspaceDirectory,
+    AccessTokenVerifier, type AuthenticatedUser, ModuleFlags, ModuleWorkRegistry, Notifier, ProjectStatusLookup, WorkspaceAccess,
+    WorkspaceDirectory,
 } from '../../../shared/application/ports';
 import { asUserId } from '../../../shared/domain/ids';
 import { testEnv } from '../../../shared/infrastructure/config/env';
 import { CoreModule } from '../../../shared/infrastructure/core.module';
 import { AuthGuard } from '../../../shared/presentation/auth';
 import { ErrorFilter } from '../../../shared/presentation/http';
-import { FakeRoles, FakeWorkspaceDirectory } from '../../../shared/testing/platform-fakes';
+import { FakeProjectStatuses, FakeRoles, FakeWorkspaceDirectory } from '../../../shared/testing/platform-fakes';
 import { NotificationDeliveryRepository } from '../application/ports/notification-delivery.repository';
 import { SmsSender } from '../application/ports/sms-sender.port';
 import { DeliveryWorker } from '../infrastructure/adapters/delivery-worker';
 import { InMemoryNotificationDeliveryRepository } from '../infrastructure/adapters/in-memory-notification-delivery.repository';
 import { PlatformModule } from '../platform.module';
-import { FakeModuleUsage } from '../testing/platform-test-kit';
+import { FakeModuleWork } from '../testing/platform-test-kit';
 import { RecordingSmsSender } from '../testing/recording-sms-sender';
 
 class TokenIsUserId extends AccessTokenVerifier {
@@ -30,17 +31,17 @@ class TokenIsUserId extends AccessTokenVerifier {
 }
 
 const roles = new FakeRoles();
-const usage = new FakeModuleUsage();
+const usage = new FakeModuleWork();
 
 @Global()
 @Module({
     providers: [
         { provide: WorkspaceAccess, useValue: roles },
-        { provide: ModuleUsage, useValue: usage },
+        { provide: ProjectStatusLookup, useValue: new FakeProjectStatuses() },
         { provide: AccessTokenVerifier, useClass: TokenIsUserId },
         { provide: WorkspaceDirectory, useValue: new FakeWorkspaceDirectory() },
     ],
-    exports: [WorkspaceAccess, ModuleUsage, AccessTokenVerifier, WorkspaceDirectory],
+    exports: [WorkspaceAccess, ProjectStatusLookup, AccessTokenVerifier, WorkspaceDirectory],
 })
 class OtherModulesFakes {}
 
@@ -60,6 +61,7 @@ describe('platform HTTP edge', () => {
             imports: [CoreModule.forRoot({ env: testEnv() }), OtherModulesFakes, PlatformModule],
             providers: [{ provide: APP_GUARD, useClass: AuthGuard }, { provide: APP_FILTER, useClass: ErrorFilter }],
         }).compile();
+        usage.registerInto(moduleRef.get(ModuleWorkRegistry));
         app = moduleRef.createNestApplication({ logger: false });
         await app.init();
     });
@@ -71,7 +73,8 @@ describe('platform HTTP edge', () => {
     describe('modules', () => {
         it('GET /platform/modules is public', async () => {
             const res = await request(http()).get('/platform/modules').expect(200);
-            expect(res.body).toEqual({ modules: ['subcontracting', 'ai-assist', 'workforce'] });
+            expect(res.body).toEqual({ modules: [...testEnv().MODULES_ENABLED] });
+            expect((res.body as { modules: string[] }).modules).toEqual(expect.arrayContaining(['subcontracting', 'workforce', 'project-hub']));
         });
 
         it('a member lists, the owner switches on, ModuleFlags agrees at once', async () => {
@@ -95,6 +98,30 @@ describe('platform HTTP edge', () => {
             const conflict = await request(server).put(`/workspaces/${WS}/modules/subcontracting`).set(...auth(OWNER)).send({ enabled: false }).expect(409);
             expect(conflict.body).toMatchObject({ code: 'conflict', details: { activeSubcontracts: 2 } });
             await request(server).put(`/workspaces/${WS}/modules/subcontracting`).set(...auth(OWNER)).send({ enabled: false, confirm: true }).expect(200);
+        });
+
+        it('ERP modules: dependencies, trial once, cascade off (ENTITLEMENTS=open in tests)', async () => {
+            const server = http();
+            const missing = await request(server).put(`/workspaces/${WS}/modules/billing`).set(...auth(OWNER)).send({ enabled: true }).expect(422);
+            expect(missing.body).toMatchObject({
+                code: 'unprocessable', details: { reason: 'missing_dependencies', missing: ['project-hub', 'boq-control', 'contracts'] },
+            });
+            await request(server).post(`/workspaces/${WS}/modules/billing/trial`).set(...auth(VIEWER)).expect(403);
+            await request(server).post(`/workspaces/${WS}/modules/workforce/trial`).set(...auth(OWNER)).expect(422);
+            const trial = await request(server).post(`/workspaces/${WS}/modules/billing/trial`).set(...auth(OWNER)).expect(200);
+            const body = startTrialResponseSchema.parse(trial.body);
+            expect(body.started).toEqual(['billing']);
+            expect(body.module).toMatchObject({ module: 'billing', enabled: true, active: true, trialAvailable: false, entitlement: { status: 'trial' } });
+            expect(await app.get(ModuleFlags).isEnabled(WS as never, 'contracts')).toBe(true);
+            const again = await request(server).post(`/workspaces/${WS}/modules/billing/trial`).set(...auth(OWNER)).expect(409);
+            expect(again.body).toMatchObject({ code: 'conflict', details: { reason: 'trial_used' } });
+
+            const blocked = await request(server).put(`/workspaces/${WS}/modules/contracts`).set(...auth(OWNER)).send({ enabled: false }).expect(409);
+            expect(blocked.body).toMatchObject({ code: 'conflict', details: { reason: 'has_dependents', dependents: ['billing'], work: {} } });
+            await request(server).put(`/workspaces/${WS}/modules/contracts`).set(...auth(OWNER)).send({ enabled: false, confirm: true }).expect(200);
+            const list = workspaceModulesDtoSchema.parse((await request(server).get(`/workspaces/${WS}/modules`).set(...auth(VIEWER)).expect(200)).body);
+            expect(list.find(m => m.module === 'billing')).toMatchObject({ enabled: false, active: false });
+            expect(list.find(m => m.module === 'boq-control')).toMatchObject({ enabled: true, active: true });
         });
     });
 

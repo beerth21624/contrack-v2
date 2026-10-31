@@ -9,14 +9,14 @@ describe('SetWorkspaceModuleUseCase', () => {
 
     beforeEach(() => {
         kit = new PlatformTestKit(['subcontracting']);
-        useCase = new SetWorkspaceModuleUseCase(kit.roles, kit.modules, kit.usage, kit.settings, kit.cache, kit.clock);
-        flags = new RepositoryModuleFlags(kit.settings, kit.modules, kit.cache);
+        useCase = new SetWorkspaceModuleUseCase(kit.roles, kit.states, kit.modules, kit.work, kit.uow, kit.clock);
+        flags = new RepositoryModuleFlags(kit.states);
     });
 
     it.each(['owner', 'admin'] as const)('a %s switches a module on (records who and when)', async role => {
         const s = kit.seedWorkspace();
         const view = valueOf(await useCase.execute({ actorId: s.byRole[role], workspaceId: s.workspaceId, module: 'subcontracting', enabled: true }));
-        expect(view).toEqual({ module: 'subcontracting', available: true, enabled: true, enabledAt: kit.clock.now() });
+        expect(view).toMatchObject({ module: 'subcontracting', available: true, enabled: true, enabledAt: kit.clock.now(), active: true });
         const stored = await kit.modules.find(s.workspaceId, 'subcontracting');
         expect(stored?.toProps()).toMatchObject({ enabled: true, enabledBy: s.byRole[role] });
     });
@@ -63,7 +63,7 @@ describe('SetWorkspaceModuleUseCase', () => {
         const view = valueOf(await useCase.execute({
             actorId: s.byRole.owner, workspaceId: s.workspaceId, module: 'subcontracting', enabled: false, confirm: true,
         }));
-        expect(view).toEqual({ module: 'subcontracting', available: true, enabled: false, enabledAt: null });
+        expect(view).toMatchObject({ module: 'subcontracting', available: true, enabled: false, enabledAt: null, active: false });
         const stored = (await kit.modules.find(s.workspaceId, 'subcontracting'))?.toProps();
         expect(stored).toMatchObject({ enabled: false, enabledAt: switchedOnAt });
     });

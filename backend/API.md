@@ -63,7 +63,7 @@ never changes a project. No realtime event: clients refetch after their own writ
 | DELETE | `/workspaces/:workspaceId/rate-cards/:rateCardId` | → 204 | `rateCards.archive` (owner, admin); soft delete (`archived_at`); archiving an archived card again → 204 |
 
 ## platform (business modules that can be switched on and off)
-Schemas: `../src/shared/contract/modules.ts`. Env `MODULES_ENABLED` = comma-separated module ids (`MODULE_IDS`: `workforce`);
+Schemas: `../src/shared/contract/modules.ts`. Env `MODULES_ENABLED` = comma-separated module ids (`MODULE_IDS`);
 empty (the default) = ConTrack is plain BOQ estimation. An unknown id refuses the start. A module that is off answers
 **404 `module_disabled`** on every one of its routes, signed in or not (`ModuleGuard`, a global guard that runs before
 authentication; controllers are marked `@RequiresModule('<id>')`, `src/shared/presentation/modules.ts`). Its tables and
@@ -72,6 +72,15 @@ data are kept, and deleting a project still removes its rows.
 | Method | Path | Body → Response | Notes |
 |---|---|---|---|
 | GET | `/platform/modules` **public** | → `PlatformModulesDto` `{ modules }` | what this server offers (MODULE_IDS order) |
+| GET | `/workspaces/:workspaceId/modules` | → `WorkspaceModuleDto[]` (MODULE_IDS order) | every member; `available` (env), `enabled` (switch), `entitlement`, `active` (all four layers), `missingDependencies`, `trialAvailable` |
+| PUT | `/workspaces/:workspaceId/modules/:module` | `PutWorkspaceModuleRequest` `{ enabled, confirm? }` → `WorkspaceModuleDto` | `modules.manage`; not offered → 422; on: not entitled → 422 `{ reason: 'not_entitled' }`, a dependency not active → 422 `{ reason: 'missing_dependencies', missing }`; off while switched-on modules depend on it or it has running work (`ModuleWorkRegistry`) and no `confirm` → 409 `ModuleOffBlockers` `{ reason: 'has_dependents', dependents, work, activeSubcontracts? }`; with `confirm` the dependents are switched off too |
+| POST | `/workspaces/:workspaceId/modules/:module/trial` | → `StartTrialResponse` `{ module, started, modules }` (200) | `modules.manage`; once per module per workspace: `trial` entitlement for `trialDays` (30), switches it (and its dependencies) on, and starts the trial of each dependency the workspace is not entitled to; not offered / no trial (`reason: 'no_trial'`) / a dependency that cannot be used (`missing_dependencies`) → 422; `trial_used` / `already_entitled` / `entitlement_revoked` → 409 |
+
+**Four layers** (`docs/erp/01-architecture.md` §4.3): `active` = offered (`MODULES_ENABLED`) and entitled (legacy
+modules always; else `ENTITLEMENTS=open`, or an unexpired purchased / trial / beta row in `workspace_entitlements`) and
+switched on (`workspace_modules`) and every dependency (`src/shared/contract/module-registry.ts`) active. Env
+`ENTITLEMENTS` = `enforce` | `open` (default enforce in production, open elsewhere); `PLATFORM_ADMIN_EMAILS` (WP-07).
+ERP use cases authorize through `ModuleAccess` (`src/shared/application/module-access.ts`): not_found → module_disabled → forbidden.
 
 ## workforce: crews and people (ทีมช่างและบุคลากร), business module `workforce` (W1)
 Schemas: `../src/shared/contract/workforce.ts`; design: `../docs/workforce/00-crew-management-design.md`. Every route below
