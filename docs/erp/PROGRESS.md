@@ -29,7 +29,7 @@
 | WP-15 | Project Hub backend | opus | done | 7f5ad76 | migration `0015_wp15_project_hub`; โมดูล `backend/src/modules/hub/`; ports `ProjectCatalog` (projects), `ProjectLifecycle` (hub), registry `HubRollups` (core); D-137…D-142 |
 | WP-16 | Project Hub web + ต่อ nav เข้า AppLayoutUI | opus | done | 60a7001 | ไม่มี migration; `src/features/erp/hub/*`, routes `/`, `/hub`, `/p/[projectId]`; เมนู ERP ใน `AppLayoutUI` เมื่อ `project-hub` active; D-143…D-149 |
 | WP-17 | ประวัติ BOQ (versions, เทียบฉบับ) | opus | done | 874d2b5 | migration `0016_wp17_boq_versions`; โมดูล `boq-control` (versions), registry `RevisionHooks` (core), ports `RevisionWriter`/`RevisionLookup` (projects), route `/p/[projectId]/versions`; D-150…D-156 |
-| WP-18 | Baseline + cost codes (backend) | opus | done | | migration `0017_wp18_baseline`; `project_baselines`/`project_cost_codes`, registries `BoqEditLocks`/`BaselineUnlockGuards` (core), ports `CostCodeLookup`/`BaselineControl` (boq-control); D-157…D-163 |
+| WP-18 | Baseline + cost codes (backend) | opus | done | cba4d4e | migration `0017_wp18_baseline`; `project_baselines`/`project_cost_codes`, registries `BoqEditLocks`/`BaselineUnlockGuards` (core), ports `CostCodeLookup`/`BaselineControl` (boq-control); D-157…D-163 |
 | WP-19 | Baseline web: BOQ อ่านอย่างเดียวเมื่อล็อก + CostCodePicker | opus | todo | | |
 | WP-20 | Cost ledger + financial events | opus | todo | | |
 | WP-21 | ราคากลางภาครัฐ | sonnet | todo | | |
@@ -553,7 +553,7 @@
   - เว็บ: `useBoqVersions(projectId)` (`staleTime: 0`), `useBoqVersion(id)`, `useBoqCompare(projectId, from, to|'live')`; key `boqControlKeys`
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend + web) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/shared/contract src/i18n src/features/erp` ผ่าน; `cd backend && npx jest src/modules/projects` 199 ผ่าน, e2e `projects` 23 ผ่าน; smoke e2e ชั่วคราว (memory, ลบแล้ว): revision ตอนโมดูลปิด → `GET boq-versions` 404 `module_disabled`; trial + เปิด → list backfill R1 เป็นฉบับ 1; R2 ขณะเปิด → ฉบับ 2 (203 บรรทัด); เทียบ R1/R2 → same 203; เทียบกับ live → 200, `to: null`; คนนอก → 404; `to=bad` → 400; ปิดโมดูลแล้วสร้าง revision ได้ปกติ; ยังไม่ได้ทดสอบบน PostgreSQL จริงและยังไม่เปิดหน้าในเบราว์เซอร์
 
-### WP-18 — Baseline + cost codes (backend) (commit: ดู ledger)
+### WP-18 — Baseline + cost codes (backend) (cba4d4e)
 - สร้าง: `project_baselines`, `project_cost_codes` ใน `schema-boq-control.ts` (`boqControlTables`); migration `0017_wp18_baseline` (ไม่ถาม interactive) → WP ถัดไปที่แก้ schema ได้ `0018_*`
 - contract `erp/boq-control.ts`: `BASELINE_STATUSES`, `BASELINE_REASONS`, `COST_CODE_SOURCES`, `COST_CODE_STATUSES`, `baselineDtoSchema`, `baselineUnlockBlockerSchema`, `baselineStatusDtoSchema`, `lockBaselineRequestSchema`, `unlockBaselineRequestSchema`, `costCodeDtoSchema`, `costCodeListDtoSchema`
 - pure `src/domain/boq-control/contract-allocation.ts` (`allocateContractAmounts(total, costCodes, lines?)`)
