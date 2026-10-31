@@ -47,7 +47,7 @@
 | WP-33 | VO backend | opus | done | 37a9830 | migration `0024_wp33_variations`; โมดูล `variations` (CRUD, lines, compute จาก sandbox, evidence, submit/approval, ลิงก์ลูกค้า, record-response, withdraw, cancel, ผลเมื่อ accepted), ports `QuotationPricingLookup` + `ProjectLifecycle.shiftPlannedFinish`; D-251…D-256 |
 | WP-34 | VO web + ราคาด้วยเครื่องคำนวณ (sandbox) | opus | done | 5371542 | ไม่มี migration; `src/features/erp/variations/*`, binding `sandbox` ใน project-store, routes `/p/[id]/variations[/[variationId]]` + `/print/variation/[id]`, แท็บ nav, renderer ลิงก์ `variation`; i18n `variations`; D-257…D-262 |
 | WP-35 | Portal backend + ค้นหา | opus | done | 0363f2f | ไม่มี migration; โมดูล `portal` (`GET …/portal`, `GET …/search?q=`), registries `PortalSources`/`SearchSources` (core), port `ModuleStatesLookup` (platform), contract `erp/portal.ts`; D-263…D-268 |
-| WP-36 | Portal web | sonnet | done | HASH | หน้า `/home`, ค้นหา Ctrl/⌘+K, slot `HEADER_EXTRAS` ใน nav registry; ไม่มี migration; D-269…D-271 |
+| WP-36 | Portal web | sonnet | done | 0ac39c3 | หน้า `/home`, ค้นหา Ctrl/⌘+K, slot `HEADER_EXTRAS` ใน nav registry; ไม่มี migration; D-269…D-271 |
 | WP-37 | ทะเบียนผู้ขาย | opus | todo | | |
 | WP-38 | PR + RFQ backend | opus | todo | | |
 | WP-39 | PO + รับของ + 3-way match backend | opus | todo | | |
@@ -874,7 +874,7 @@
 - WP ถัดไปต้องรู้: WP-36 แปลข้อความด้วย `portal.tasks.<kind>` (params ดิบ: `number`, `title`, `customer`, `daysOverdue`, `contract`, `no`, `labelTh`/`labelEn`, `versionNo`, `subject`) และ `portal.quickActions.<id>`; โมดูล 5–9 เพิ่ม task kind ใน `PORTAL_TASK_KINDS` (append) + `PortalSources.register(module, permission, source)` ใน `onModuleInit`; supplier search (WP-37) ใช้ `SearchSources.register('procurement' หรือโมดูลของตน, 'suppliers.read', …)` type `supplier`; เอกสารเลขใหม่ (PO, GR, …) ต้องเพิ่ม subject type ในตาราง `ROUTES` ของ `numbering-search.ts`; `cashOutlook` ให้ WP-47 เติมใน `GetPortalUseCase` จาก `CashPlanSources`
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้/สร้างผ่าน; jest approvals + platform (32) และ e2e approvals/projects (26) ผ่าน; smoke e2e ชั่วคราว (ไม่ commit): portal 404 `module_disabled` ก่อนเปิด, owner เห็น task `billing.receive` แต่ estimator ไม่เห็น, ค้น `pj2026` ได้เลขเอกสาร + โครงการ
 
-### WP-36 — Portal web (HASH)
+### WP-36 — Portal web (0ac39c3)
 - web `src/features/erp/portal/`: `api.ts`, `hooks.ts` (`portalKeys`, `usePortal`, `useGlobalSearch`), `refresh.ts`, `PortalPage.tsx`, `TasksList.tsx`, `RiskyProjects.tsx`, `CashOutlookChart.tsx` (SVG), `ModuleTiles.tsx`, `QuickActions.tsx`, `GlobalSearch.tsx`; route `src/app/(app)/home/page.tsx` (`ModuleGate portal`)
 - `nav-registry.ts`: `HEADER_EXTRAS` + `ErpHeaderExtras`; `AppLayoutUI.tsx` เรนเดอร์ก่อน `NotificationBell`
 - i18n (th+en): namespace `portal`
