@@ -1,0 +1,70 @@
+{
+  "pageTitle": "Document from your contractor",
+  "loading": "Loading the document…",
+  "notFoundTitle": "This link cannot be used",
+  "notFoundHint": "The link may have expired, been cancelled or be mistyped. Please contact the sender of the document.",
+  "loadFailed": "Could not load the document",
+  "retry": "Try again",
+  "rateLimited": "This link was opened too often. Please wait a moment and try again.",
+  "from": "From {company}",
+  "expiresAt": "Link valid until {date}",
+  "subjects": {
+    "quotation": "Quotation",
+    "variation": "Variation order",
+    "invoice": "Invoice"
+  },
+  "actions": {
+    "accept": "Accept",
+    "request_change": "Request changes",
+    "reject": "Reject"
+  },
+  "noRenderer": "The details of this document cannot be shown",
+  "viewOnly": "This document is for viewing only",
+  "notRespondable": "This document can no longer be answered",
+  "answered": "Answered: {action}",
+  "answeredBy": "By {name} on {date}",
+  "respond": {
+    "title": "Answer this document",
+    "action": "Answer",
+    "name": "Your name",
+    "namePlaceholder": "Full name",
+    "nameRequired": "Please enter your name",
+    "note": "Note",
+    "notePlaceholder": "Anything to add (optional)",
+    "submit": "Send answer",
+    "confirmTitle": "Confirm \"{action}\"?",
+    "confirmHint": "Once sent, the answer cannot be changed",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "disclaimer": "Your name, the time and your IP address are recorded with the answer",
+    "sent": "Answer sent. Thank you.",
+    "failed": "Could not send the answer. Please try again.",
+    "alreadyResponded": "This link has already been answered",
+    "invalidTransition": "This document can no longer be answered"
+  },
+  "share": {
+    "button": "Customer link",
+    "title": "Link for the customer",
+    "hint": "The customer can open the document without signing in",
+    "expiresInDays": "Valid for (days)",
+    "create": "Create a new link",
+    "created": "Link created. Copy it now: it is shown only once.",
+    "copy": "Copy",
+    "copied": "Link copied",
+    "share": "Share",
+    "existing": "Links created",
+    "none": "No links yet",
+    "revoke": "Cancel link",
+    "revokeConfirm": "Cancel this link? The customer will no longer be able to open it.",
+    "revoked": "Link cancelled",
+    "createdAt": "Created {date}",
+    "expires": "Expires {date}",
+    "views": "Opened {count} times",
+    "status": {
+      "active": "Active",
+      "responded": "Answered",
+      "expired": "Expired",
+      "revoked": "Cancelled"
+    }
+  }
+}

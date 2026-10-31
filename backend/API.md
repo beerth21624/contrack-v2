@@ -221,3 +221,14 @@ Schemas: `../src/shared/contract/erp/customers.ts`. Port `CustomerLookup` (`find
 | GET | `/customers/:customerId` | → `CustomerDto` | `customers.read`; a customer of a workspace the caller is not in → 404 |
 | PATCH | `/customers/:customerId` | `PatchCustomerRequest` → `CustomerDto` | `customers.manage`; archived → 409 `customer_archived` |
 | POST | `/customers/:customerId/archive` · `/restore` | → `CustomerDto` | `customers.manage`; idempotent; restore onto a taken tax id + branch → 409 `duplicate_customer`; audited `customer` / `create\|update\|archive\|restore` |
+
+## customer-links (ERP foundation; WP-14)
+Schemas: `../src/shared/contract/erp/customer-links.ts`. Registry `CustomerLinkHandlers` (core): the owner module of a subject registers `{permission, view, respond?}` in `onModuleInit`.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| POST | `/workspaces/:workspaceId/customer-links` | `CreateCustomerLinkRequest` → `CreateCustomerLinkResponse` (`{url, token, link}`) | gated by `project-hub`; permission = the subject handler's; no handler / subject not in the workspace → 404; `expiresInDays` 1–365 (default 30); the raw token is returned only here |
+| GET | `/workspaces/:workspaceId/customer-links?subjectType=&subjectId=` | → `CustomerLinkDto[]` | newest first; handler permission |
+| POST | `/customer-links/:linkId/revoke` | → `CustomerLinkDto` | idempotent; handler permission; audited `customer_link` / `share\|revoke\|respond` |
+| GET | `/public/links/:token` | → `CustomerLinkViewDto` | **no auth**; wrong / expired / revoked token, `project-hub` not active, no handler or subject gone → the same 404; counts the view; 30 requests / 10 min per token + IP → 429 |
+| POST | `/public/links/:token/respond` | `RespondRequest` `{action, name, note}` → `CustomerLinkViewDto` | **no auth**; view-only subject → 422 `respond_not_supported`; action the subject does not take → 422 `action_not_supported`; answered already → 409 `already_responded`; document no longer answerable → 409 `invalid_transition`; stores name, note, IP, user agent, time |

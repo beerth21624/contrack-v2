@@ -18,7 +18,10 @@
     "create": "Customer created",
     "update": "Customer edited",
     "archive": "Archived",
-    "restore": "Restored"
+    "restore": "Restored",
+    "share": "Customer link created",
+    "revoke": "Link cancelled",
+    "respond": "Customer answered"
   },
   "entities": {
     "approval_request": "Approval request",
@@ -27,6 +30,7 @@
     "numbering_series": "Numbering series",
     "issued_document": "Document number",
     "company_profile": "Company profile",
-    "customer": "Customer"
+    "customer": "Customer",
+    "customer_link": "Customer link"
   }
 }

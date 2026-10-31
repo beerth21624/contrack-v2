@@ -19,6 +19,7 @@ import { ApprovalsModule } from './modules/approvals/approvals.module';
 import { CompanyModule } from './modules/company/company.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { NumberingModule } from './modules/numbering/numbering.module';
+import { CustomerLinksModule } from './modules/customer-links/customer-links.module';
 
 @Module({})
 export class AppModule {
@@ -33,6 +34,7 @@ export class AppModule {
                 NumberingModule,
                 CompanyModule,
                 CustomersModule,
+                CustomerLinksModule,
             ],
             controllers: [HealthController],
             providers: [

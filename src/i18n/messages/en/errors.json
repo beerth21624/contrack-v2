@@ -44,6 +44,9 @@
     "already_voided": "This number is already voided.",
     "invalid_tax_id": "The tax id is not valid. Check the 13 digits again.",
     "duplicate_customer": "An active customer already uses this tax id and branch",
-    "customer_archived": "This customer is archived; restore it before editing"
+    "customer_archived": "This customer is archived; restore it before editing",
+    "already_responded": "This link has already been answered",
+    "respond_not_supported": "This document cannot be answered from a link",
+    "action_not_supported": "This document does not take that answer"
   }
 }

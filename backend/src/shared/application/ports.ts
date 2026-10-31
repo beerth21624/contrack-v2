@@ -5,8 +5,8 @@ import type {
     AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDeletedEvent, ProjectDocDto, ProjectUpdatedEvent, Role,
 } from '@contrack/contract';
 import type {
-    ApprovalDecision, ApprovalStatus, ApprovalSubject, BankAccount, BusinessProfile, CompanyDefaults, DocLanguage, DocType, FileDto,
-    FilePurpose, ModuleId, ProjectType,
+    ApprovalDecision, ApprovalStatus, ApprovalSubject, BankAccount, BusinessProfile, CompanyDefaults, CustomerLinkAction, CustomerLinkSubject,
+    DocLanguage, DocType, FileDto, FilePurpose, ModuleId, Permission, ProjectType,
 } from '@contrack/contract';
 import type { DomainError } from '../domain/domain-error';
 import type { ProjectId, RateCardId, UserId, WorkspaceId } from '../domain/ids';
@@ -634,5 +634,60 @@ export class WorkspaceDeletionGuards {
         const out: DeletionBlocker[] = [];
         for (const guard of this.guards) out.push(...await guard(workspaceId));
         return out;
+    }
+}
+
+// ─── Customer links (ERP foundation, docs/erp/02-domain-model.md §1.8). The registry lives in core; the owner module
+// of each subject (quotations, variations, billing) registers its handler in `onModuleInit`. ───
+
+/** What the public page shows for one subject (built by the owner module). */
+export interface CustomerLinkSubjectView {
+    projectId: ProjectId;
+    language: DocLanguage;
+    /** e.g. the document number. */
+    title: string;
+    /** The document is in a state the customer may answer (quotation version `issued`, VO `submitted`). */
+    respondable: boolean;
+    /** Subject-specific content for the web renderer; never costs or margins (01-architecture §14.7). */
+    payload: unknown;
+}
+
+export interface CustomerLinkRespondInput {
+    workspaceId: WorkspaceId;
+    projectId: ProjectId;
+    subjectId: string;
+    linkId: string;
+    action: CustomerLinkAction;
+    name: string;
+    note: string;
+    at: Date;
+}
+
+export interface CustomerLinkHandler {
+    /** Permission (on the link's workspace) needed to create, list and revoke links of this subject. */
+    permission: Permission;
+    /**
+     * The subject of `workspaceId`, or undefined when it does not exist there or its module is not active
+     * (the link then answers 404, like a wrong token).
+     */
+    view(workspaceId: WorkspaceId, subjectId: string): Promise<CustomerLinkSubjectView | undefined>;
+    /**
+     * Applies the answer. Runs inside the customer-links transaction (an error rolls the answer back). The document no
+     * longer answerable → conflict `invalid_transition`. Omitted = view only (respond → 422 `respond_not_supported`).
+     */
+    respond?(input: CustomerLinkRespondInput): Promise<Result<void, DomainError>>;
+}
+
+/** Provided by core: one handler per subject type, registered once at start-up. */
+export class CustomerLinkHandlers {
+    private readonly handlers = new Map<CustomerLinkSubject, CustomerLinkHandler>();
+
+    register(subjectType: CustomerLinkSubject, handler: CustomerLinkHandler): void {
+        if (this.handlers.has(subjectType)) throw new Error(`A customer link handler for "${subjectType}" is already registered`);
+        this.handlers.set(subjectType, handler);
+    }
+
+    handlerOf(subjectType: CustomerLinkSubject): CustomerLinkHandler | undefined {
+        return this.handlers.get(subjectType);
     }
 }

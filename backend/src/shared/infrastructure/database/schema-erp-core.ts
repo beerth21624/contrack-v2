@@ -4,7 +4,7 @@
 // drizzle.config.ts lists this file for migrations.
 import { sql } from 'drizzle-orm';
 import { bigserial, boolean, check, foreignKey, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
-import type { BankAccount, BusinessProfile, CompanyDefaults, Role } from '@contrack/contract';
+import type { BankAccount, BusinessProfile, CompanyDefaults, CustomerLinkAction, Role } from '@contrack/contract';
 import { workspaces } from './schema';
 import { businessDate, createdAt, money, projectTenantFk, rate, updatedAt } from './schema-helpers';
 
@@ -219,6 +219,43 @@ export const customers = pgTable('customers', {
     check('customers_name_check', sql`${t.nameTh} <> '' or ${t.nameEn} <> ''`),
 ]);
 
+// ── customer links (WP-14, 02-domain-model.md §1.8) ──
+
+/** The customer's answer on a link (the only "signature": typed name + time + IP). */
+export interface CustomerLinkResponseRow {
+    action: CustomerLinkAction;
+    name: string;
+    note: string;
+    ip: string;
+    userAgent: string;
+    at: string;
+}
+
+/** A public link to one document. Only the SHA-256 of the token is stored; the raw token is shown once. */
+export const customerLinks = pgTable('customer_links', {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    projectId: uuid('project_id').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    subjectType: text('subject_type', { enum: ['quotation', 'variation', 'invoice'] }).notNull(),
+    subjectId: uuid('subject_id').notNull(),
+    /** Plain uuid: the user may be gone. */
+    createdBy: uuid('created_by'),
+    createdAt: createdAt(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    lastViewedAt: timestamp('last_viewed_at', { withTimezone: true }),
+    viewCount: integer('view_count').notNull().default(0),
+    respondedAt: timestamp('responded_at', { withTimezone: true }),
+    response: jsonb('response').$type<CustomerLinkResponseRow>(),
+}, t => [
+    projectTenantFk('customer_links', t),
+    unique('customer_links_token_hash_key').on(t.tokenHash),
+    index('customer_links_subject_idx').on(t.workspaceId, t.subjectType, t.subjectId),
+    check('customer_links_subject_type_check', sql`${t.subjectType} in ('quotation', 'variation', 'invoice')`),
+]);
+
 export const erpCoreTables = {
     approvalPolicies, approvalRequests, approvalSteps, auditEvents, docNumberSeries, docNumberCounters, issuedDocuments, companyProfiles, customers,
+    customerLinks,
 };

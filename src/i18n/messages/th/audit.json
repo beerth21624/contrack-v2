@@ -18,7 +18,10 @@
     "create": "สร้างลูกค้า",
     "update": "แก้ไขลูกค้า",
     "archive": "เก็บเข้าคลัง",
-    "restore": "นำออกจากคลัง"
+    "restore": "นำออกจากคลัง",
+    "share": "สร้างลิงก์ลูกค้า",
+    "revoke": "ยกเลิกลิงก์",
+    "respond": "ลูกค้าตอบกลับ"
   },
   "entities": {
     "approval_request": "คำขออนุมัติ",
@@ -27,6 +30,7 @@
     "numbering_series": "ชุดเลขเอกสาร",
     "issued_document": "เลขเอกสาร",
     "company_profile": "ข้อมูลบริษัท",
-    "customer": "ลูกค้า"
+    "customer": "ลูกค้า",
+    "customer_link": "ลิงก์ลูกค้า"
   }
 }
