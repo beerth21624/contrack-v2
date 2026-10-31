@@ -28,7 +28,7 @@
 | WP-14 | ลิงก์ลูกค้า (public) | opus | done | 0fdbc23 | migration `0014_wp14_customer_links`; โมดูล `customer-links`, registry `CustomerLinkHandlers`, route `(public)/c/[token]`, `ShareLinkButton`; D-131…D-136 |
 | WP-15 | Project Hub backend | opus | done | 7f5ad76 | migration `0015_wp15_project_hub`; โมดูล `backend/src/modules/hub/`; ports `ProjectCatalog` (projects), `ProjectLifecycle` (hub), registry `HubRollups` (core); D-137…D-142 |
 | WP-16 | Project Hub web + ต่อ nav เข้า AppLayoutUI | opus | done | 60a7001 | ไม่มี migration; `src/features/erp/hub/*`, routes `/`, `/hub`, `/p/[projectId]`; เมนู ERP ใน `AppLayoutUI` เมื่อ `project-hub` active; D-143…D-149 |
-| WP-17 | ประวัติ BOQ (versions, เทียบฉบับ) | opus | done | HASH | migration `0016_wp17_boq_versions`; โมดูล `boq-control` (versions), registry `RevisionHooks` (core), ports `RevisionWriter`/`RevisionLookup` (projects), route `/p/[projectId]/versions`; D-150…D-156 |
+| WP-17 | ประวัติ BOQ (versions, เทียบฉบับ) | opus | done | 874d2b5 | migration `0016_wp17_boq_versions`; โมดูล `boq-control` (versions), registry `RevisionHooks` (core), ports `RevisionWriter`/`RevisionLookup` (projects), route `/p/[projectId]/versions`; D-150…D-156 |
 | WP-18 | Baseline + cost codes (backend) | opus | todo | | |
 | WP-19 | Baseline web: BOQ อ่านอย่างเดียวเมื่อล็อก + CostCodePicker | opus | todo | | |
 | WP-20 | Cost ledger + financial events | opus | todo | | |
@@ -529,7 +529,7 @@
   - ป้ายสถานะ: `<StatusTag enumName="projectStatus" value={s} tones={PROJECT_STATUS_TONES} />` (`./status.ts`)
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; `npx eslint src/features/erp/hub src/components/AppLayoutUI.tsx src/features/cloud/ui/AccountMenu.tsx src/features/cloud/projects/ProjectsPage.tsx src/app/page.tsx "src/app/(app)/hub" "src/app/(app)/p"` ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/features/erp src/i18n` ผ่าน; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์ (ไม่มี backend ที่เปิดโมดูลไว้)
 
-### WP-17 — ประวัติ BOQ (versions, เทียบฉบับ) (HASH)
+### WP-17 — ประวัติ BOQ (versions, เทียบฉบับ) (874d2b5)
 - สร้าง: `backend/src/shared/infrastructure/database/schema-boq-control.ts` (`boq_versions`, `boq_version_sections`, `boq_version_lines`; `boqControlTables`) + `database.ts` + `drizzle.config.ts`; migration `0016_wp17_boq_versions` (ตรงตามคาด, ไม่ถาม interactive) → WP ถัดไปที่แก้ schema ได้ `0017_*`
 - `ENGINE_VERSION` ย้ายไป `src/domain/project.ts`; `project.entity.ts` re-export ชื่อเดิม (ค่าเดิม `'excel-v5'`)
 - pure: `src/domain/boq-control/version-lines.ts` (`boqVersionLines(boq)` → `{sections, lines, totals}`), `diff.ts` (`diffBoqVersions(a, b)` → `{sections, lines, totals, counts}`); ไม่เขียนเทสต์ใหม่ (ตามคำสั่งรอบนี้)
