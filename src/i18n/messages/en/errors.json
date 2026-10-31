@@ -42,6 +42,8 @@
     "date_before_last_issued": "The document date cannot be before the latest number of the same series.",
     "invalid_pattern": "The number pattern is not valid.",
     "already_voided": "This number is already voided.",
-    "invalid_tax_id": "The tax id is not valid. Check the 13 digits again."
+    "invalid_tax_id": "The tax id is not valid. Check the 13 digits again.",
+    "duplicate_customer": "An active customer already uses this tax id and branch",
+    "customer_archived": "This customer is archived; restore it before editing"
   }
 }

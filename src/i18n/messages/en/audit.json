@@ -14,7 +14,11 @@
     "cancelled": "Request cancelled",
     "set": "Changed",
     "issue": "Number issued",
-    "void": "Number voided"
+    "void": "Number voided",
+    "create": "Customer created",
+    "update": "Customer edited",
+    "archive": "Archived",
+    "restore": "Restored"
   },
   "entities": {
     "approval_request": "Approval request",
@@ -22,6 +26,7 @@
     "entitlement": "Module entitlement",
     "numbering_series": "Numbering series",
     "issued_document": "Document number",
-    "company_profile": "Company profile"
+    "company_profile": "Company profile",
+    "customer": "Customer"
   }
 }

@@ -14,7 +14,11 @@
     "cancelled": "ยกเลิกคำขอ",
     "set": "ตั้งค่า",
     "issue": "ออกเลข",
-    "void": "ยกเลิกเลข"
+    "void": "ยกเลิกเลข",
+    "create": "สร้างลูกค้า",
+    "update": "แก้ไขลูกค้า",
+    "archive": "เก็บเข้าคลัง",
+    "restore": "นำออกจากคลัง"
   },
   "entities": {
     "approval_request": "คำขออนุมัติ",
@@ -22,6 +26,7 @@
     "entitlement": "สิทธิ์ใช้โมดูล",
     "numbering_series": "ชุดเลขเอกสาร",
     "issued_document": "เลขเอกสาร",
-    "company_profile": "ข้อมูลบริษัท"
+    "company_profile": "ข้อมูลบริษัท",
+    "customer": "ลูกค้า"
   }
 }

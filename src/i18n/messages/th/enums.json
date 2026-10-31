@@ -76,5 +76,10 @@
     "full": "ทุกรายการ",
     "per_category": "รายหมวด",
     "lump_sum": "เหมารวม"
+  },
+  "customerKind": {
+    "individual": "บุคคลธรรมดา",
+    "juristic": "นิติบุคคล",
+    "government": "หน่วยงานราชการ"
   }
 }

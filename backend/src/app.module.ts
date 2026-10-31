@@ -17,6 +17,7 @@ import { WorkforceModule } from './modules/workforce/workforce.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { ApprovalsModule } from './modules/approvals/approvals.module';
 import { CompanyModule } from './modules/company/company.module';
+import { CustomersModule } from './modules/customers/customers.module';
 import { NumberingModule } from './modules/numbering/numbering.module';
 
 @Module({})
@@ -31,6 +32,7 @@ export class AppModule {
                 PlatformModule, SubcontractingModule, AiAssistModule, RateCardsModule, WorkforceModule, AuditModule, ApprovalsModule,
                 NumberingModule,
                 CompanyModule,
+                CustomersModule,
             ],
             controllers: [HealthController],
             providers: [

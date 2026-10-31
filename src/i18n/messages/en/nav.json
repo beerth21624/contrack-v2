@@ -15,5 +15,6 @@
     "finance": "Finance",
     "settings": "Settings"
   },
-  "company": "Company"
+  "company": "Company",
+  "customers": "Customers"
 }

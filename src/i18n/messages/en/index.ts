@@ -15,6 +15,7 @@ import approvals from './approvals.json';
 import audit from './audit.json';
 import numbering from './numbering.json';
 import company from './company.json';
+import customers from './customers.json';
 
 const messages = {
   common,
@@ -34,6 +35,7 @@ const messages = {
   audit,
   numbering,
   company,
+  customers,
 };
 
 export default messages;

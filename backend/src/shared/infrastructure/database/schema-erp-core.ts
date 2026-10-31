@@ -186,6 +186,39 @@ export const companyProfiles = pgTable('company_profiles', {
     check('company_profiles_document_year_style_check', sql`${t.documentYearStyle} in ('ce', 'be')`),
 ]);
 
+// ── customers (WP-13, 02-domain-model.md §1.7) ──
+
+export const customers = pgTable('customers', {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    kind: text('kind', { enum: ['individual', 'juristic', 'government'] }).notNull(),
+    nameTh: text('name_th').notNull().default(''),
+    nameEn: text('name_en').notNull().default(''),
+    taxId: text('tax_id').notNull().default(''),
+    branchCode: text('branch_code').notNull().default(''),
+    addressTh: text('address_th').notNull().default(''),
+    addressEn: text('address_en').notNull().default(''),
+    contactName: text('contact_name').notNull().default(''),
+    phone: text('phone').notNull().default(''),
+    email: text('email').notNull().default(''),
+    lineId: text('line_id').notNull().default(''),
+    defaultWhtRate: rate('default_wht_rate'),
+    defaultDocLanguage: text('default_doc_language', { enum: ['th', 'en'] }).notNull().default('th'),
+    paymentTermDays: integer('payment_term_days').notNull().default(30),
+    note: text('note').notNull().default(''),
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
+    /** Plain uuid: the user may be gone. */
+    createdBy: uuid('created_by'),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+}, t => [
+    index('customers_workspace_archived_idx').on(t.workspaceId, t.archivedAt),
+    uniqueIndex('customers_tax_branch_key').on(t.workspaceId, t.taxId, t.branchCode).where(sql`${t.taxId} <> '' and ${t.archivedAt} is null`),
+    check('customers_kind_check', sql`${t.kind} in ('individual', 'juristic', 'government')`),
+    check('customers_default_doc_language_check', sql`${t.defaultDocLanguage} in ('th', 'en')`),
+    check('customers_name_check', sql`${t.nameTh} <> '' or ${t.nameEn} <> ''`),
+]);
+
 export const erpCoreTables = {
-    approvalPolicies, approvalRequests, approvalSteps, auditEvents, docNumberSeries, docNumberCounters, issuedDocuments, companyProfiles,
+    approvalPolicies, approvalRequests, approvalSteps, auditEvents, docNumberSeries, docNumberCounters, issuedDocuments, companyProfiles, customers,
 };

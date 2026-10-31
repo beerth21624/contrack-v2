@@ -210,3 +210,14 @@ Schemas: `../src/shared/contract/erp/company.ts`. Port `CompanyProfiles` (`get`,
 |---|---|---|---|
 | GET | `/workspaces/:workspaceId/company` | → `CompanyProfileDto` (`isDefault` = nothing saved; Thai legal name = workspace name then; images as `FileDto` with signed links) | `company.read` |
 | PUT | `/workspaces/:workspaceId/company` | `PutCompanyProfileRequest` (the whole profile) → `CompanyProfileDto` | `company.manage`; tax id with a wrong check digit → 400 `validation_failed` (`reason: 'invalid_tax_id'`); newly attached images must be uploaded by the caller (purposes `company_logo` / `company_stamp` / `company_signature`); audited `company_profile` / `set` |
+
+## customers (ERP foundation, gated by `project-hub`; WP-13)
+Schemas: `../src/shared/contract/erp/customers.ts`. Port `CustomerLookup` (`find`, `findMany`, `snapshot(ws, id, language)`) for other modules.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/workspaces/:workspaceId/customers?q=&kind=&archived=&limit=` | → `CustomerDto[]` | `customers.read`; `q` matches names, tax id, contact, phone, email, LINE id; active customers unless `archived=true`; sorted by name |
+| POST | `/workspaces/:workspaceId/customers` | `CreateCustomerRequest` → `CustomerDto` | `customers.manage`; neither `nameTh` nor `nameEn` → 400; same tax id + branch as an active customer → 409 `duplicate_customer` |
+| GET | `/customers/:customerId` | → `CustomerDto` | `customers.read`; a customer of a workspace the caller is not in → 404 |
+| PATCH | `/customers/:customerId` | `PatchCustomerRequest` → `CustomerDto` | `customers.manage`; archived → 409 `customer_archived` |
+| POST | `/customers/:customerId/archive` · `/restore` | → `CustomerDto` | `customers.manage`; idempotent; restore onto a taken tax id + branch → 409 `duplicate_customer`; audited `customer` / `create\|update\|archive\|restore` |

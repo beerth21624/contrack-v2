@@ -76,5 +76,10 @@
     "full": "Every line",
     "per_category": "Per category",
     "lump_sum": "Lump sum"
+  },
+  "customerKind": {
+    "individual": "Individual",
+    "juristic": "Company",
+    "government": "Government agency"
   }
 }

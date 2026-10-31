@@ -544,6 +544,57 @@ export abstract class CompanyProfiles {
     abstract snapshot(workspaceId: WorkspaceId, language: DocLanguage): Promise<CompanySnapshot>;
 }
 
+/** A customer of the register (`customers` row). */
+export interface Customer {
+    id: string;
+    workspaceId: WorkspaceId;
+    kind: 'individual' | 'juristic' | 'government';
+    nameTh: string;
+    nameEn: string;
+    taxId: string;
+    branchCode: string;
+    addressTh: string;
+    addressEn: string;
+    contactName: string;
+    phone: string;
+    email: string;
+    lineId: string;
+    /** null = by kind. */
+    defaultWhtRate: number | null;
+    defaultDocLanguage: DocLanguage;
+    paymentTermDays: number;
+    note: string;
+    archivedAt: Date | null;
+    createdBy: UserId | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/** Buyer block of a document in one language, stored in the document's `customer_snapshot`. */
+export interface CustomerSnapshot {
+    id: string;
+    kind: Customer['kind'];
+    /** In the document language; falls back to the other language when empty. */
+    name: string;
+    taxId: string;
+    branchCode: string;
+    address: string;
+    contactName: string;
+    phone: string;
+    email: string;
+    /** The withholding rate in force (the customer's own, or the rate of its kind). */
+    whtRate: number;
+    paymentTermDays: number;
+    language: DocLanguage;
+}
+
+/** Provided by customers. No module check: the calling module checked its own. Every method filters by workspace. */
+export abstract class CustomerLookup {
+    abstract find(workspaceId: WorkspaceId, customerId: string): Promise<Customer | undefined>;
+    abstract findMany(workspaceId: WorkspaceId, customerIds: readonly string[]): Promise<Customer[]>;
+    abstract snapshot(workspaceId: WorkspaceId, customerId: string, language: DocLanguage): Promise<CustomerSnapshot | undefined>;
+}
+
 /** Why a delete is refused, e.g. `{ reason: 'document_issued_exists', count: 3 }`. */
 export interface DeletionBlocker {
     reason: string;

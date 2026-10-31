@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-12 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-13 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -24,7 +24,7 @@
 | WP-10 | การแจ้งเตือน: channel, ภาษาผู้รับ, sweep | opus | done | a984d6f | migration `0010_wp10_notifications`; template ERP 20 ตัว th/en; sweep `platform.trial-expiring`; D-108…D-113 |
 | WP-11 | บริการเลขเอกสาร + guard การลบ | opus | done | 4706b00 | migration `0011_wp11_numbering`; โมดูล `numbering`, port `DocumentNumbering`, `ProjectDeletionGuards`/`WorkspaceDeletionGuards`, หน้า `/workspace/numbering`; D-114…D-120 |
 | WP-12 | โปรไฟล์บริษัท + business profile + project type | sonnet | done | fa2dfb1 | migration `0012_wp12_company`; โมดูล `company`, port `CompanyProfiles`, `src/domain/erp/profiles.ts`, หน้า `/workspace/company`; D-121…D-125 |
-| WP-13 | ทะเบียนลูกค้า | sonnet | todo | | |
+| WP-13 | ทะเบียนลูกค้า | sonnet | done | HASH | migration `0013_wp13_customers`; โมดูล `customers`, port `CustomerLookup`, หน้า `/customers`, `CustomerPicker`; D-126…D-130 |
 | WP-14 | ลิงก์ลูกค้า (public) | opus | todo | | |
 | WP-15 | Project Hub backend | opus | todo | | |
 | WP-16 | Project Hub web + ต่อ nav เข้า AppLayoutUI | opus | todo | | |
@@ -222,6 +222,11 @@
 1. ตาราง Factor F ทางการ (กรมบัญชีกลาง) ฉบับที่ต้องการใช้ (D-12)
 2. สูตรค่า K ตามประเภทงานที่ใช้บ่อย (D-13)
 3. ต้องการเอกสารสองภาษาในหน้าเดียว (ไทย/อังกฤษคู่กัน) หรือไม่ (D-32)
+| D-126 | 2026-11-01 | (WP-13) tax id ของลูกค้า**ไม่ตรวจ checksum** (ลูกค้าต่างชาติ/เลขบัตรอื่นยังกรอกได้); ตรวจเฉพาะซ้ำ (tax id + สาขา ของลูกค้าที่ยังไม่เก็บเข้าคลัง) → 409 `duplicate_customer` ทั้งตอนสร้าง แก้ และ restore; tax id ว่างไม่ตรวจซ้ำ | acceptance ไม่ระบุ checksum; สาขาต่างกันเป็นคนละลูกค้าได้ |
+| D-127 | 2026-11-01 | (WP-13) ลูกค้าที่เก็บเข้าคลังแก้ไม่ได้ (409 `customer_archived`) ต้อง restore ก่อน; archive/restore ซ้ำเป็น idempotent (คืนข้อมูลเดิม 200) | กันแก้ข้อมูลที่ซ่อนจากตัวเลือก |
+| D-128 | 2026-11-01 | (WP-13) `GET/PATCH /customers/:id` หาแถวก่อนแล้วตรวจสิทธิ์ที่ workspace ของแถว; ไม่ใช่สมาชิก → 404 `not_found` (ไม่เผยว่ามีอยู่); `CustomerLookup.find/findMany/snapshot` กรองด้วย workspace เสมอและคืนแถวที่เก็บเข้าคลังด้วย (เอกสารเก่าต้องอ่านได้) | tenant isolation |
+| D-129 | 2026-11-01 | (WP-13) `CustomerSnapshot` = `{id, kind, name, taxId, branchCode, address, contactName, phone, email, whtRate, paymentTermDays, language}`; ชื่อ/ที่อยู่ว่างในภาษาที่ขอจะ fallback เป็นอีกภาษา; `whtRate` = อัตราของลูกค้า หรืออัตราตาม kind (`CUSTOMER_KIND_WHT_RATE`) | เอกสารต้องไม่พิมพ์ผู้ซื้อว่าง |
+| D-130 | 2026-11-01 | (WP-13) FILE_PURPOSE `customer_document` ลงทะเบียนแล้ว (→ `project-hub`) แต่ยังไม่มีหน้าแนบไฟล์ในหน้าลูกค้า (ไม่อยู่ใน acceptance); เมนู: nav registry กลุ่ม sales + ลิงก์ใน `AccountMenu` (เพราะ shell ยังไม่ render `WORKSPACE_NAV`); list ไม่แบ่งหน้า (limit 200 เริ่มต้น สูงสุด 500) | ตามขอบเขต WP |
 
 ## Handoff notes
 
@@ -437,3 +442,17 @@
   - เอกสารที่ออกให้เก็บ `await companyProfiles.snapshot(ws, doc.language)` ลง jsonb ของเอกสาร (บริษัทไม่จด VAT → `vatRate` = 0, `vatRegistered=false` ใช้ห้ามออก `tax_invoice`); รูปเป็น id ให้ `FileService.describe` ตอนแสดง
   - หน้า company เป็นหน้าเดียวที่แก้โปรไฟล์ (PUT ทั้งก้อน); `useCompanyProfile(ws)` / `companyKeys.all(ws)` ใช้ซ้ำในหน้าอื่นได้ (เช่น ปุ่มสร้างโครงการอ่าน `effectiveProjectType`)
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (web + backend) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/domain/erp src/i18n` ผ่าน; `cd backend && npx jest …/upload` 17 ผ่าน; e2e ชั่วคราว (ลบแล้ว, memory): GET ค่าเริ่มต้น (ชื่อ = workspace, type `residential_new`), PUT tax id checksum ผิด → 400 `validation_failed`, PUT ถูก → `effectiveProjectType` `government`, `snapshot('en')` ไม่จด VAT → `vatRate 0`, แม่แบบงวดรวม ≠ 100% → 400; `npm run db:generate -- --name wp12_company` ได้ `0012` ไม่ถาม interactive; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์ / PostgreSQL จริง
+
+### WP-13 — ทะเบียนลูกค้า (HASH)
+- สร้าง (contract): `src/shared/contract/erp/customers.ts` (`CUSTOMER_KINDS`, `CUSTOMER_KIND_WHT_RATE`, `customerDtoSchema`, `createCustomerRequestSchema` (ช่องที่เหลือมี default), `patchCustomerRequestSchema`, `customerListQuerySchema`); FILE_PURPOSE `customer_document`
+- schema: `customers` ใน `schema-erp-core.ts` (+ `erpCoreTables`); partial unique `(workspace_id, tax_id, branch_code) where tax_id <> '' and archived_at is null`; migration `0013_wp13_customers` → WP ถัดไปที่แก้ schema ได้ `0014_*`
+- port (`ports.ts`): `CustomerLookup` (`find`/`findMany`/`snapshot(ws, id, language)`), types `Customer`, `CustomerSnapshot`; โมดูล `backend/src/modules/customers/` (`@Global`, export `CustomerLookup`); `app.module.ts`; `backend/API.md`
+- web: `src/features/erp/customers/{api.ts,hooks.ts,CustomerForm.tsx,CustomersPage.tsx,CustomerDetailPage.tsx}`, `src/features/erp/shared/CustomerPicker.tsx`, routes `/customers`, `/customers/[customerId]`, nav registry กลุ่ม sales, ลิงก์ใน `AccountMenu`
+- i18n (th+en): namespace `customers`, `enums.customerKind`, `nav.customers`, `audit.actions.create|update|archive|restore`, `audit.entities.customer`, `errors.reasons.duplicate_customer|customer_archived`
+- เบี่ยงจากแผน: D-126 … D-130; ไม่เขียนเทสต์ใหม่
+- WP ถัดไปต้องรู้:
+  - ตรวจ/ดึงลูกค้า: `const c = await customerLookup.find(ws, customerId)` (undefined = ไม่มี/คนละ workspace); ตอนออกเอกสาร `customer_snapshot = await customerLookup.snapshot(ws, customerId, doc.language)` เก็บลง jsonb
+  - ออก `tax_invoice` ให้ `juristic`/`government`: ตรวจ `snapshot.taxId !== ''` เอง ไม่งั้น 422 `customer_tax_id_required` (ต้องเพิ่มข้อความ `errors.reasons` เอง)
+  - ฝั่งเว็บ: `<CustomerPicker value={id} onChange={(id, customer) => …} />` (สร้างลูกค้าใหม่ในตัว, ซ่อนปุ่มสร้างถ้าไม่มี `customers.manage`); `useCustomers(ws, {q,kind,archived})`, `useCustomer(id)`, `customerKeys`
+  - `SearchSources` ของลูกค้าให้ WP-35 ลงทะเบียน; หน้าลูกค้ายังไม่มีประวัติการขาย (WP-36)
+- ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (web + backend) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/features/erp` ผ่าน; `cd backend && npx jest src/modules/platform/domain src/modules/company` ผ่าน; e2e ชั่วคราว (ลบแล้ว, memory): ไม่มีชื่อ → 400, tax id+สาขาซ้ำ → 409, สาขาอื่นได้ 201, viewer สร้าง → 403, ค้นหา `q` ได้, คนนอก workspace → 404, PATCH ล้างชื่อทั้งคู่ → 400, archive แล้วสร้างซ้ำได้ + restore ชน → 409, `snapshot` ได้ whtRate ที่ตั้งเอง; `npm run db:generate -- --name wp13_customers` ได้ `0013` ไม่ถาม interactive; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์ / PostgreSQL จริง

@@ -1,0 +1,79 @@
+{
+  "title": "Customers",
+  "subtitle": "The customer register for quotations, contracts and invoices",
+  "search": "Search name, tax id, contact, phone",
+  "allKinds": "All types",
+  "showArchived": "Show archived",
+  "add": "Add customer",
+  "empty": "No customers yet",
+  "emptyHint": "Add your first customer to use it on quotations and contracts",
+  "emptySearch": "No customers match the search",
+  "loadFailed": "Could not load the customers",
+  "retry": "Try again",
+  "notFound": "Customer not found",
+  "back": "Back to customers",
+  "columns": {
+    "name": "Name",
+    "kind": "Type",
+    "taxId": "Tax id",
+    "contact": "Contact",
+    "phone": "Phone",
+    "status": "Status"
+  },
+  "archivedTag": "Archived",
+  "readOnly": "You can view customers but not change them",
+  "sections": {
+    "identity": "General",
+    "contact": "Contact",
+    "commercial": "Commercial terms",
+    "note": "Note"
+  },
+  "fields": {
+    "kind": "Customer type",
+    "nameTh": "Name (Thai)",
+    "nameEn": "Name (English)",
+    "nameHint": "Fill in at least one language",
+    "taxId": "Tax id",
+    "taxIdHint": "Needed to issue a tax invoice to a company or a government agency",
+    "branchCode": "Branch code",
+    "branchCodeHint": "Head office = 00000",
+    "addressTh": "Address (Thai)",
+    "addressEn": "Address (English)",
+    "contactName": "Contact person",
+    "phone": "Phone",
+    "email": "Email",
+    "emailInvalid": "The email address is not valid",
+    "lineId": "LINE ID",
+    "whtRate": "Withholding tax rate (%)",
+    "whtRateHint": "Leave empty to follow the type (individual 0%, company 3%, government 1%)",
+    "docLanguage": "Document language",
+    "paymentTermDays": "Credit terms (days)",
+    "note": "Note",
+    "nameRequired": "Enter a Thai or an English name"
+  },
+  "languages": {
+    "th": "ไทย",
+    "en": "English"
+  },
+  "actions": {
+    "save": "Save",
+    "create": "Create customer",
+    "archive": "Archive",
+    "restore": "Restore",
+    "archiveConfirm": "Archive this customer?",
+    "archiveHint": "The customer disappears from pickers; existing documents stay",
+    "restoreConfirm": "Restore this customer?"
+  },
+  "saved": "Saved",
+  "created": "Customer created",
+  "archivedDone": "Archived",
+  "restoredDone": "Restored",
+  "picker": {
+    "placeholder": "Select or search a customer",
+    "create": "New customer",
+    "createNamed": "Create customer \"{name}\"",
+    "noResult": "No customers found",
+    "modalTitle": "New customer",
+    "cancel": "Cancel"
+  }
+}

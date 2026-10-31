@@ -55,7 +55,12 @@ export interface ErpProjectTab extends Omit<ErpNavItem, 'href'> {
 
 /** Workspace-level menu, by group (label nav.groups.<groupKey>). Empty until the module WPs add their entries. */
 export const WORKSPACE_NAV: readonly ErpNavGroup[] = [
-    { groupKey: 'sales', items: [] },
+    {
+        groupKey: 'sales',
+        items: [
+            { key: 'customers', labelKey: 'customers', href: '/customers', module: 'project-hub', permission: 'customers.read', match: p => p.startsWith('/customers') },
+        ],
+    },
     { groupKey: 'purchasing', items: [] },
     { groupKey: 'finance', items: [] },
     {
