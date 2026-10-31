@@ -22,5 +22,24 @@
     "payment_run.approve": "Payment run",
     "timesheet.approve": "Timesheet",
     "pay_period.approve": "Pay period"
+  },
+  "docType": {
+    "project": "Project code",
+    "quotation": "Quotation",
+    "contract": "Contract",
+    "invoice": "Invoice / billing note",
+    "tax_invoice": "Tax invoice",
+    "receipt": "Receipt",
+    "credit_note": "Credit note",
+    "variation": "Variation order",
+    "purchase_request": "Purchase request",
+    "rfq": "Request for quotation",
+    "purchase_order": "Purchase order",
+    "goods_receipt": "Goods receipt",
+    "supplier_bill": "Supplier bill",
+    "payment_voucher": "Payment voucher",
+    "wht_certificate": "WHT certificate (50 Tawi)",
+    "handover": "Handover",
+    "warranty_claim": "Warranty claim"
   }
 }

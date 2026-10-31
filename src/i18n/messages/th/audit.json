@@ -12,11 +12,15 @@
     "approved": "อนุมัติ",
     "rejected": "ปฏิเสธ",
     "cancelled": "ยกเลิกคำขอ",
-    "set": "ตั้งค่า"
+    "set": "ตั้งค่า",
+    "issue": "ออกเลข",
+    "void": "ยกเลิกเลข"
   },
   "entities": {
     "approval_request": "คำขออนุมัติ",
     "approval_policy": "นโยบายอนุมัติ",
-    "entitlement": "สิทธิ์ใช้โมดูล"
+    "entitlement": "สิทธิ์ใช้โมดูล",
+    "numbering_series": "ชุดเลขเอกสาร",
+    "issued_document": "เลขเอกสาร"
   }
 }

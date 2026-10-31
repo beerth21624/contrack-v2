@@ -23,7 +23,7 @@ Max-Age = refresh TTL.
 | POST | `/workspaces` | `CreateWorkspaceRequest` → `WorkspaceDto` (201) | any user (becomes owner of a company workspace) |
 | GET | `/workspaces/:workspaceId` | → `WorkspaceDto` | `workspace.read` |
 | PATCH | `/workspaces/:workspaceId` | `RenameWorkspaceRequest` → `WorkspaceDto` | `workspace.rename` |
-| DELETE | `/workspaces/:workspaceId` | → 204 | `workspace.delete` (company only; `personal_workspace` 409) |
+| DELETE | `/workspaces/:workspaceId` | → 204 | `workspace.delete` (company only; `personal_workspace` 409); issued ERP documents (other than project codes) → 409 `{ reason: 'document_issued_exists', blockers }` |
 | GET | `/workspaces/:workspaceId/members` | → `MemberDto[]` | `members.read` |
 | PATCH | `/workspaces/:workspaceId/members/:userId` | `ChangeRoleRequest` → `MemberDto` | `members.changeRole`; only an owner gives/takes `owner`; admin cannot touch owners; never leave 0 owners (`last_owner`) |
 | DELETE | `/workspaces/:workspaceId/members/:userId` | → 204 | `members.remove` (or yourself = leave); not the last owner; not in a personal workspace |
@@ -39,7 +39,7 @@ Max-Age = refresh TTL.
 | POST | `/workspaces/:workspaceId/projects` | `CreateProjectRequest` → `ProjectDetailDto` (201) | `projects.create`; optional `docs` = upload of a guest project (all validated) |
 | GET | `/projects/:projectId` | → `ProjectDetailDto` | `projects.read` |
 | PATCH | `/projects/:projectId` | `UpdateProjectRequest` → `ProjectDto` | rename `projects.edit`; archive/restore `projects.archive`; renaming an archived project → 409 `conflict` unless the same request restores it (`archived: false`); an unchanged value is a no-op (no activity, no event) |
-| DELETE | `/projects/:projectId` | → 204 | `projects.delete`; viewers receive `project.deleted` |
+| DELETE | `/projects/:projectId` | → 204 | `projects.delete`; viewers receive `project.deleted`; issued ERP documents of the project (other than its code) → 409 `{ reason: 'document_issued_exists', blockers }` |
 | PUT | `/projects/:projectId/docs/:docKey` | `PutDocRequest` → `PutDocResponse` | `projects.edit`; `version_conflict` 409 with `VersionConflictDetails`; a bad `docKey` (fails `docKeySchema` or names no calculator / BOQ line / sheet), invalid or oversize data (> `MAX_DOC_BYTES`), or a project that stops computing → 422 `unprocessable`; archived → 409 `conflict` |
 | GET | `/projects/:projectId/revisions` | → `RevisionDto[]` (newest first) | `projects.read` |
 | POST | `/projects/:projectId/revisions` | `CreateRevisionRequest` → `RevisionDto` (201) | `revisions.create`; label unique per project (`conflict`) |
@@ -97,6 +97,15 @@ Every route: not a member → 404 `not_found`; `project-hub` not active → 404 
 | GET | `/workspaces/:workspaceId/approval-policies` | → `ApprovalPolicyDto[]` (APPROVAL_SUBJECTS order; `isDefault` = no saved row) | `company.read` |
 | PUT | `/workspaces/:workspaceId/approval-policies/:subject` | `PutApprovalPolicyRequest` `{ enabled, minAmount, approverRoles, selfApprove }` → `ApprovalPolicyDto` | `company.manage`; unknown subject → 404; `owner` is always added to `approverRoles`; new requests only |
 | GET | `/workspaces/:workspaceId/audit?entityType=&entityId=&limit=&before=` | → `AuditListDto` `{ items, nextBefore }` (newest first, `before` = event id) | `audit.read`; append-only trail (approvals, approval policies, entitlements, …) |
+
+## document numbering (ERP foundation, gated by `project-hub`; WP-11)
+Schemas: `../src/shared/contract/erp/numbering.ts`. Numbers are issued only inside other modules (`DocumentNumbering.issue`
+port, `docs/erp/01-architecture.md` §8). Every route: not a member → 404 `not_found`; `project-hub` not active → 404 `module_disabled`.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/workspaces/:workspaceId/numbering` | → `NumberingSeriesDto[]` (DOC_TYPES order) | `company.read`; `nextNumber` = preview for today (reserves nothing), `issuedInPeriod` > 0 = locked |
+| PUT | `/workspaces/:workspaceId/numbering/:docType` | `PutNumberingSeriesRequest` `{ prefix, pattern, reset, yearStyle }` → `NumberingSeriesDto` | `company.manage`; unknown docType → 404; bad pattern → 422 `{ reason: 'invalid_pattern', problems }`; any change while today's period has numbers → 409 `{ reason: 'period_has_documents' }` |
 
 ## workforce: crews and people (ทีมช่างและบุคลากร), business module `workforce` (W1)
 Schemas: `../src/shared/contract/workforce.ts`; design: `../docs/workforce/00-crew-management-design.md`. Every route below

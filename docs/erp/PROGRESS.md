@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-10-31 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-10 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-11 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -22,7 +22,7 @@
 | WP-08 | Workflow อนุมัติ + audit log (backend) | opus | done | 765869e | migration `0009_wp08_approvals_audit`; โมดูล `approvals` + `audit`, `schema-erp-core.ts`, ports `Approvals`/`ApprovalHandlers`/`AuditLog`, `WorkspaceDirectory.members`; audit ของ `SetEntitlementUseCase`; D-94…D-103 |
 | WP-09 | หน้าอนุมัติ นโยบาย และ audit (web) | sonnet | done | cfdaad1 | ไม่มี migration; `src/features/erp/approvals/*`, `shared/AuditTimeline.tsx`, routes `/approvals`, `/workspace/approval-policies`, namespace `approvals`+`audit`, `enums.approval*`; D-105…D-107 |
 | WP-10 | การแจ้งเตือน: channel, ภาษาผู้รับ, sweep | opus | done | a984d6f | migration `0010_wp10_notifications`; template ERP 20 ตัว th/en; sweep `platform.trial-expiring`; D-108…D-113 |
-| WP-11 | บริการเลขเอกสาร + guard การลบ | opus | todo | | |
+| WP-11 | บริการเลขเอกสาร + guard การลบ | opus | done | HASH | migration `0011_wp11_numbering`; โมดูล `numbering`, port `DocumentNumbering`, `ProjectDeletionGuards`/`WorkspaceDeletionGuards`, หน้า `/workspace/numbering`; D-114…D-120 |
 | WP-12 | โปรไฟล์บริษัท + business profile + project type | sonnet | todo | | |
 | WP-13 | ทะเบียนลูกค้า | sonnet | todo | | |
 | WP-14 | ลิงก์ลูกค้า (public) | opus | todo | | |
@@ -205,6 +205,13 @@
 | D-111 | 2026-11-01 | (WP-10) `toPhone` (คนที่อาจยังไม่มีบัญชี) ได้ข้อความภาษาไทยเสมอ; ผู้รับอื่นได้ข้อความตาม `users.locale` (render ครั้งเดียวต่อภาษา); PERSISTENCE=memory ไม่รู้ภาษาผู้ใช้ → ไทย | ไม่แตะ `UserProfile` (เพิ่มฟิลด์แล้วจะเปลี่ยนรูปที่ adapter/spec ของ identity คืน) |
 | D-112 | 2026-11-01 | (WP-10) แจ้งเตือนอนุมัติ: `approval.decided` ส่งจาก `DecideApprovalUseCase` หลัง commit ถึง `requestedBy` (ยกเว้นตัดสินเอง); `approval.requested` ส่งผ่าน port ใหม่ `Approvals.notifyRequested(requestId)` ที่ **โมดูลผู้เรียกต้องเรียกหลัง commit เมื่อ ticket = pending** (อ่าน request ใหม่ ผู้รับ = สมาชิกที่บทบาทอยู่ใน `approverRoles` ของ step ยกเว้นผู้ขอ) | `request` ทำงานใน transaction ของผู้เรียก และ UnitOfWork ไม่มี after-commit hook |
 | D-113 | 2026-11-01 | (WP-10) `trial.expiring`: ทุก trial ที่ `expires_at` อยู่ใน (now, now+3 วัน] ของโมดูลที่ platform release ถึงสมาชิกที่มี `modules.manage`; key `${ws}:${module}` ต่อวัน Bangkok (จึงได้วันละครั้งตลอด 3 วัน); payload `date` = วันสุดท้ายที่ trial ยังใช้ได้ (`bangkokToday(expiresAt − 1 ms)`), `href` `/workspace/modules` | เกณฑ์ "ครั้งเดียวต่อวัน" |
+| D-114 | 2026-11-01 | (WP-11) `validatePattern(pattern, reset)` รับ reset ด้วย: นอกจากกฎใน 04 (`{seq:N}` หนึ่งครั้ง N 3–6, token ไม่รู้จัก, monthly ต้องมี `{mm}`) ยังบังคับ reset `yearly`/`monthly` ต้องมีปี (`{yyyy}` หรือ `{yy}`) และยาวไม่เกิน 64 ตัว; ปัญหาคืนเป็นรายการ code (`seq_missing`, `seq_repeated`, `seq_width`, `unknown_token`, `month_required`, `year_required`, `too_long`) → 422 `invalid_pattern` + `problems` | กันเลขของต่างปีชนกัน (unique `(workspace_id, doc_type, number)`) |
+| D-115 | 2026-11-01 | (WP-11) เปลี่ยน series ได้เมื่อรอบ "วันนี้" (Bangkok) ทั้งตาม reset เดิมและ reset ใหม่ยังไม่มีเลขออก; นับ `year_style` เป็นการเปลี่ยนด้วย (เพราะเปลี่ยนเลขที่พิมพ์); บันทึกค่าเดิมซ้ำไม่ถือว่าเปลี่ยน | 01 §8.4 ระบุเฉพาะ prefix/pattern/reset |
+| D-116 | 2026-11-01 | (WP-11) ชุดที่ใช้ตรวจ `date_before_last_issued` = counter period เดียวกัน (docType + `period_key`) นับทั้งเลข issued และ voided | เลขเรียงตามวันที่ภายในเล่ม/รอบเดียวกัน |
+| D-117 | 2026-11-01 | (WP-11) ถ้าเลขที่จัดรูปแบบได้ซ้ำกับเลขที่มีอยู่แล้ว (เกิดได้เฉพาะหลังเปลี่ยน pattern ในรอบอื่น) ข้ามไป seq ถัดไปจนได้เลขว่าง แทนการตอบ 500 | เลข (สตริง) ที่ออกไปแล้วยังไม่ถูกใช้ซ้ำ และไม่มีเอกสารใดได้เลขข้าม |
+| D-118 | 2026-11-01 | (WP-11) guard การลบของ numbering นับ `issued_documents` (issued + voided, ยกเว้น `project`) **ไม่ว่าโมดูล ERP จะ active หรือไม่** — ต่างจากกติกา handler ทั่วไปใน 01 §11 | เอกสารภาษีที่ออกแล้วต้องเก็บไว้ แม้ปิดโมดูลภายหลัง; release 1 ไม่มีแถวจึงไม่เปลี่ยนพฤติกรรม |
+| D-119 | 2026-11-01 | (WP-11) 409 ของการลบ: `details = { reason: <blocker แรก>, blockers: [{reason, count}] }`; `DeleteProjectUseCase`/`DeleteWorkspaceUseCase` รับ guard registry เป็นพารามิเตอร์ตัวสุดท้ายแบบมีค่าเริ่มต้น (`new …Guards()`) เพื่อไม่ต้องแก้ test kit เดิม; ถามหลัง `lockForUpdate` ใน transaction เดียวกับการลบ | |
+| D-120 | 2026-11-01 | (WP-11) GET `/numbering` ใช้ `company.read` (แบบ approval-policies); เมนู nav registry + `AccountMenu` แสดงเมื่อ `project-hub` active และมี `company.read`; void ไม่มี HTTP (ผ่าน port เท่านั้น) | ตาม D-107 |
 
 ### คำถามค้างถึงเจ้าของ
 1. ตาราง Factor F ทางการ (กรมบัญชีกลาง) ฉบับที่ต้องการใช้ (D-12)
@@ -389,3 +396,24 @@
   - sweep ใหม่: inject `DailySweeps` + `SweepMarks` แล้วใน `onModuleInit` `this.sweeps.register('<module>.<name>', async ({ now, today }) => { … if (await this.marks.markOnce('<module>.<name>', key, today)) notify … })` — ตรวจเองว่าโมดูล release/active (`flags.platformEnabled`, `flags.isEnabled(ws, m)`); เทสต์เรียก `DailySweepsRunner.runOnce()` หรือฟังก์ชัน sweep ตรง ๆ
   - ผูก LINE จริงภายหลัง: เขียนแถว `user_channel_links (user_id, 'line', <LINE user id>, verified_at)` แล้ว `LoggingLineSender` ต้องเปลี่ยนเป็นตัวเรียก Messaging API
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend + `NotificationBell.tsx`) ผ่าน; `cd backend && npx jest src/modules/platform src/modules/approvals src/modules/identity/infrastructure src/shared` 293 ผ่าน; `npx jest src/modules/subcontracting` 483 ผ่าน; e2e `approvals` + `subcontracting` 6 ผ่าน; spec ชั่วคราว (ลบแล้ว) ยืนยัน: notify เดียวกันได้ en "Invoice INV-1 to ACME for THB 1,250,000.00 is due on 30 Oct 2026" / th "ใบแจ้งหนี้ INV-1 ของ ACME ยอด 1,250,000.00 บาท ครบกำหนดชำระ 30 ต.ค. 2026", ทุก template ERP render ครบทั้งสองภาษา, trial หมดใน 2 วัน + `runOnce()` สองครั้ง → owner ได้ 1 แถว viewer 0; `npm run db:generate -- --name wp10_notifications` ได้ `0010` ไม่ถาม interactive; ยังไม่ได้ทดสอบบน PostgreSQL จริง/เบราว์เซอร์
+
+### WP-11 — บริการเลขเอกสาร + guard การลบ (HASH)
+- สร้าง (contract): `src/shared/contract/erp/numbering.ts` (`DOC_TYPES` 17 ตัว + `docTypeSchema`, `DOC_TYPE_DEFAULTS` `{prefix, reset}`, `NUMBER_RESETS`, `YEAR_STYLES`, `NUMBER_PATTERN_TOKENS`, `DEFAULT_NUMBER_PATTERN`/`DEFAULT_MONTHLY_NUMBER_PATTERN`, `DATE_ORDERED_DOC_TYPES`, `DELETION_EXEMPT_DOC_TYPES`, `ISSUED_DOCUMENT_STATUSES`, `numberingSeriesDtoSchema`/`numberingSeriesListDtoSchema`, `putNumberingSeriesRequestSchema`) export ใน `erp/index.ts`
+- pure: `src/domain/erp/numbering.ts` (`formatDocNumber`, `periodKeyOf`, `validatePattern(pattern, reset)` → `PatternProblem[]`, types `NumberReset`/`YearStyle`); backend import `@contrack/domain/erp/numbering`
+- schema: `doc_number_series`, `doc_number_counters`, `issued_documents` ใน `schema-erp-core.ts` (+ `erpCoreTables`); FK workspace cascade, ไม่มี FK project
+- ports (`ports.ts`): `DocumentNumbering` (`issue`/`void`/`preview`), `IssueNumberInput`, `IssuedNumber`, `VoidNumberInput`, `DeletionBlocker`, `ProjectDeletionGuards`, `WorkspaceDeletionGuards` (core provide/export ใน `CoreModule`)
+- `backend/src/modules/numbering/`: repo port `NumberingRepository` (`exclusive(ws, docType, period, work)` = upsert counter ล็อกแถวจนจบ transaction / KeyedMutex ใน memory), drizzle + in-memory adapters, `domain/numbering-series.ts` (`effectiveSeries`, `seriesNumber`, `seriesPeriodKey`, `seriesChanged`), `RepositoryDocumentNumbering` (port + ลงทะเบียน guard ใน `onModuleInit`), use cases `ListNumberingSeriesUseCase`/`PutNumberingSeriesUseCase`, `NumberingController`, `numbering.module.ts` (`@Global`, export `DocumentNumbering`); `app.module.ts`; `backend/API.md`
+- `KeyedMutex` ย้ายไป `backend/src/shared/infrastructure/keyed-mutex.ts` (ไฟล์เดิมใน workspaces re-export)
+- `DeleteProjectUseCase` / `DeleteWorkspaceUseCase` ถาม guard ใน transaction ก่อนลบ → 409 `document_issued_exists`
+- web: `src/features/erp/numbering/{api.ts,hooks.ts,NumberingSettingsPage.tsx}`, route `src/app/(app)/workspace/numbering/page.tsx` (`ModuleGate project-hub`), nav registry กลุ่ม settings (`numbering`), ลิงก์ใน `AccountMenu`
+- i18n (th+en): namespace `numbering`, `enums.docType`, `nav.numbering`, `errors.reasons.date_before_last_issued|invalid_pattern|already_voided`, `audit.actions.issue|void`, `audit.entities.numbering_series|issued_document` (token `{prefix}` ฯลฯ ในข้อความต้อง quote แบบ ICU `'{prefix}'`)
+- migration: `0011_wp11_numbering` (ตรงตามคาด) → WP ถัดไปที่แก้ schema ได้ `0012_*`
+- เบี่ยงจากแผน: D-114 … D-120; ไม่เขียนเทสต์ใหม่ (รวมเทสต์สั้นของ `src/domain/erp/numbering.ts`) ตามคำสั่งเฟส demo
+- WP ถัดไปต้องรู้:
+  - ออกเลข (ใน `uow.run` ของ use case ตัวเอง หลังตรวจว่าเอกสารยังเป็นร่าง): `const n = await this.numbering.issue({ workspaceId, docType: 'quotation', issueDate, subjectType: 'quotation', subjectId: q.id, projectId, issuedBy: userId }); if (!n.ok) return n;` แล้วเก็บ `n.value.number` ลงเอกสาร — `subjectId` ต้องเป็น uuid, หนึ่งเลขต่อ (docType, subjectId) ออกซ้ำ → 409 `already_issued`
+  - ยกเลิก: `numbering.void({ workspaceId, docType, subjectId, reason, by })` (ไม่มี HTTP); ออกใหม่หลัง void ต้องเป็น subject ใหม่
+  - เลขตัวอย่าง (ไม่จอง): `numbering.preview(ws, docType, issueDate)`
+  - in-memory UoW ไม่ rollback: เลขที่ออกใน transaction ที่ล้มยังถูกใช้ใน memory (Postgres คืนเลขได้ถูกต้อง)
+  - guard การลบอื่น: inject `ProjectDeletionGuards`/`WorkspaceDeletionGuards` แล้ว `register(async (ws, projectId) => [{ reason, count }])` ใน `onModuleInit` — ต้องเพิ่มข้อความ `errors.reasons.<reason>` เอง
+  - WP-15 (รหัสโครงการ): `docType: 'project'`, `subjectType: 'project'`, `subjectId` = project id — ไม่บล็อกการลบโครงการ/workspace
+- ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend + web) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `cd backend && npx jest src/modules/workspaces src/modules/projects src/shared src/modules/approvals` 1763 ผ่าน; e2e `projects` + `workspaces` + `approvals` 43 ผ่าน; `npx vitest run src/features/erp src/i18n` ผ่าน; spec ชั่วคราว (ลบแล้ว) ยืนยัน: memory — `Promise.all` 20 ครั้งได้ seq 1–20, `tax_invoice` ย้อนวัน → 422 `date_before_last_issued`, guard ของโครงการที่มีแค่ `project` = ว่าง; e2e — GET 17 ชุด + preview `QT2026-0001`, PUT ขณะมีเลขในรอบ → 409 `period_has_documents`, pattern ผิด → 422 `invalid_pattern`, DELETE โครงการที่มีใบเสนอราคา → 409 `document_issued_exists`, โครงการที่มีแค่รหัสลบได้ 204, ลบ workspace → 409; **PostgreSQL จริง** (DB ชั่วคราว `wp11_scratch_test` ลบแล้ว, migration 0000…0011 รันครบ) — 20 ครั้งพร้อมกันได้ 1–20, transaction ที่ throw หลัง issue → ครั้งถัดไปได้ `QT2026-0021` เลขเดิม, date order 422, preview ไม่จอง; `npm run db:generate -- --name wp11_numbering` ได้ `0011` ไม่ถาม interactive; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์

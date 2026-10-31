@@ -13,6 +13,7 @@ import erp from './erp.json';
 import admin from './admin.json';
 import approvals from './approvals.json';
 import audit from './audit.json';
+import numbering from './numbering.json';
 
 const messages = {
   common,
@@ -30,6 +31,7 @@ const messages = {
   admin,
   approvals,
   audit,
+  numbering,
 };
 
 export default messages;

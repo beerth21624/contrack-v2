@@ -16,6 +16,7 @@ import { RateCardsModule } from './modules/rate-cards/rate-cards.module';
 import { WorkforceModule } from './modules/workforce/workforce.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { ApprovalsModule } from './modules/approvals/approvals.module';
+import { NumberingModule } from './modules/numbering/numbering.module';
 
 @Module({})
 export class AppModule {
@@ -27,6 +28,7 @@ export class AppModule {
             imports: [
                 CoreModule.forRoot(options), IdentityModule, WorkspacesModule, ProjectsModule, RealtimeModule,
                 PlatformModule, SubcontractingModule, AiAssistModule, RateCardsModule, WorkforceModule, AuditModule, ApprovalsModule,
+                NumberingModule,
             ],
             controllers: [HealthController],
             providers: [

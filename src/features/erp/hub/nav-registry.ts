@@ -63,6 +63,7 @@ export const WORKSPACE_NAV: readonly ErpNavGroup[] = [
         items: [
             { key: 'approvals', labelKey: 'approvals', href: '/approvals', module: 'project-hub', match: p => p.startsWith('/approvals') },
             { key: 'approval-policies', labelKey: 'approvalPolicies', href: '/workspace/approval-policies', module: 'project-hub', permission: 'company.manage', match: p => p.startsWith('/workspace/approval-policies') },
+            { key: 'numbering', labelKey: 'numbering', href: '/workspace/numbering', module: 'project-hub', permission: 'company.read', match: p => p.startsWith('/workspace/numbering') },
             { key: 'admin-entitlements', labelKey: 'entitlements', href: '/admin/entitlements', admin: true, match: p => p.startsWith('/admin/entitlements') },
         ],
     },

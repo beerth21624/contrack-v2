@@ -8,6 +8,7 @@
   "entitlements": "Module entitlements",
   "approvals": "Approvals",
   "approvalPolicies": "Approval policies",
+  "numbering": "Document numbering",
   "groups": {
     "sales": "Sales",
     "purchasing": "Purchasing",

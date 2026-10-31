@@ -6,7 +6,7 @@ import { sql } from 'drizzle-orm';
 import { bigserial, boolean, check, foreignKey, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import type { Role } from '@contrack/contract';
 import { workspaces } from './schema';
-import { createdAt, money, projectTenantFk, updatedAt } from './schema-helpers';
+import { businessDate, createdAt, money, projectTenantFk, updatedAt } from './schema-helpers';
 
 // ── approvals (WP-08, docs/erp/01-architecture.md §6) ──
 
@@ -92,4 +92,57 @@ export const auditEvents = pgTable('audit_events', {
     index('audit_events_workspace_at_idx').on(t.workspaceId, t.at),
 ]);
 
-export const erpCoreTables = { approvalPolicies, approvalRequests, approvalSteps, auditEvents };
+// ── numbering (WP-11, docs/erp/01-architecture.md §8, 02-domain-model.md §1.6) ──
+
+/** A workspace's own series of one document type; no row = DOC_TYPE_DEFAULTS. */
+export const docNumberSeries = pgTable('doc_number_series', {
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    docType: text('doc_type').notNull(),
+    prefix: text('prefix').notNull(),
+    pattern: text('pattern').notNull(),
+    reset: text('reset', { enum: ['yearly', 'monthly', 'never'] }).notNull(),
+    yearStyle: text('year_style', { enum: ['ce', 'be'] }).notNull(),
+    updatedBy: uuid('updated_by'),
+    updatedAt: updatedAt(),
+}, t => [
+    primaryKey({ columns: [t.workspaceId, t.docType] }),
+    check('doc_number_series_reset_check', sql`${t.reset} in ('yearly', 'monthly', 'never')`),
+    check('doc_number_series_year_style_check', sql`${t.yearStyle} in ('ce', 'be')`),
+]);
+
+/** Last number used per (document type, period); the upsert's row lock serialises concurrent issues. */
+export const docNumberCounters = pgTable('doc_number_counters', {
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    docType: text('doc_type').notNull(),
+    periodKey: text('period_key').notNull(),
+    lastSeq: integer('last_seq').notNull(),
+    updatedAt: updatedAt(),
+}, t => [primaryKey({ columns: [t.workspaceId, t.docType, t.periodKey] })]);
+
+/** Every number ever issued (never deleted; voided ones stay). No project FK: a number outlives a deleted project. */
+export const issuedDocuments = pgTable('issued_documents', {
+    id: uuid('id').primaryKey(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    docType: text('doc_type').notNull(),
+    number: text('number').notNull(),
+    periodKey: text('period_key').notNull(),
+    seq: integer('seq').notNull(),
+    issueDate: businessDate('issue_date').notNull(),
+    subjectType: text('subject_type').notNull(),
+    subjectId: uuid('subject_id').notNull(),
+    projectId: uuid('project_id'),
+    issuedBy: uuid('issued_by').notNull(),
+    issuedAt: timestamp('issued_at', { withTimezone: true }).notNull().defaultNow(),
+    status: text('status', { enum: ['issued', 'voided'] }).notNull().default('issued'),
+    voidedBy: uuid('voided_by'),
+    voidedAt: timestamp('voided_at', { withTimezone: true }),
+    voidReason: text('void_reason').notNull().default(''),
+}, t => [
+    unique('issued_documents_number_key').on(t.workspaceId, t.docType, t.number),
+    unique('issued_documents_subject_key').on(t.workspaceId, t.docType, t.subjectId),
+    index('issued_documents_project_idx').on(t.workspaceId, t.projectId),
+    index('issued_documents_period_idx').on(t.workspaceId, t.docType, t.periodKey),
+    check('issued_documents_status_check', sql`${t.status} in ('issued', 'voided')`),
+]);
+
+export const erpCoreTables = { approvalPolicies, approvalRequests, approvalSteps, auditEvents, docNumberSeries, docNumberCounters, issuedDocuments };

@@ -22,5 +22,24 @@
     "payment_run.approve": "รอบจ่ายเงิน",
     "timesheet.approve": "ใบลงเวลา",
     "pay_period.approve": "งวดค่าแรง"
+  },
+  "docType": {
+    "project": "รหัสโครงการ",
+    "quotation": "ใบเสนอราคา",
+    "contract": "สัญญา",
+    "invoice": "ใบแจ้งหนี้/ใบวางบิล",
+    "tax_invoice": "ใบกำกับภาษี",
+    "receipt": "ใบเสร็จรับเงิน",
+    "credit_note": "ใบลดหนี้",
+    "variation": "งานเพิ่ม-ลด (VO)",
+    "purchase_request": "ใบขอซื้อ",
+    "rfq": "ขอใบเสนอราคาผู้ขาย",
+    "purchase_order": "ใบสั่งซื้อ",
+    "goods_receipt": "ใบรับของ",
+    "supplier_bill": "บิลผู้ขาย",
+    "payment_voucher": "ใบสำคัญจ่าย",
+    "wht_certificate": "หนังสือรับรองหัก ณ ที่จ่าย (50 ทวิ)",
+    "handover": "ส่งมอบงาน",
+    "warranty_claim": "เคลมประกัน"
   }
 }

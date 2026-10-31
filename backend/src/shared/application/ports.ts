@@ -4,7 +4,7 @@
 import type {
     AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDeletedEvent, ProjectDocDto, ProjectUpdatedEvent, Role,
 } from '@contrack/contract';
-import type { ApprovalDecision, ApprovalStatus, ApprovalSubject, FileDto, FilePurpose, ModuleId } from '@contrack/contract';
+import type { ApprovalDecision, ApprovalStatus, ApprovalSubject, DocType, FileDto, FilePurpose, ModuleId } from '@contrack/contract';
 import type { DomainError } from '../domain/domain-error';
 import type { ProjectId, RateCardId, UserId, WorkspaceId } from '../domain/ids';
 import type { Result } from '../domain/result';
@@ -419,4 +419,91 @@ export interface AuditEntry {
 /** Provided by audit: append-only trail of money / status actions. Call inside the same `uow.run` as the change. */
 export abstract class AuditLog {
     abstract record(e: AuditEntry): Promise<void>;
+}
+
+// ─── Running document numbers and deletion guards (ERP foundation, docs/erp/01-architecture.md §8, §11). DocumentNumbering
+// is implemented by src/modules/numbering; the guard registries live in core. ───
+
+export interface IssueNumberInput {
+    workspaceId: WorkspaceId;
+    docType: DocType;
+    /** Business date `YYYY-MM-DD` of the document: picks the counter period (never the server time). */
+    issueDate: string;
+    /** e.g. `quotation`, `ar_invoice`. */
+    subjectType: string;
+    /** The document's id (uuid); one number per (docType, subjectId). */
+    subjectId: string;
+    projectId: ProjectId | null;
+    issuedBy: UserId;
+}
+
+export interface IssuedNumber {
+    number: string;
+    seq: number;
+    periodKey: string;
+    issuedDocumentId: string;
+}
+
+export interface VoidNumberInput {
+    workspaceId: WorkspaceId;
+    docType: DocType;
+    subjectId: string;
+    reason: string;
+    by: UserId;
+}
+
+/**
+ * Provided by numbering. Call `issue` inside the same `uow.run` that marks the document issued: a rollback leaves the
+ * number unused (no gap). Errors: conflict `already_issued` (the subject has a number), unprocessable
+ * `date_before_last_issued` (tax_invoice / receipt / credit_note dated before the series' latest), validation for a
+ * bad date. Audited (`issued_document` / `issue` | `void`). No module check: the calling module checked its own.
+ */
+export abstract class DocumentNumbering {
+    abstract issue(input: IssueNumberInput): Promise<Result<IssuedNumber, DomainError>>;
+    /** The number stays (status `voided`); not found when the subject has no number, conflict `already_voided`. */
+    abstract void(input: VoidNumberInput): Promise<Result<void, DomainError>>;
+    /** Number the next document dated `issueDate` would get; reserves nothing. */
+    abstract preview(workspaceId: WorkspaceId, docType: DocType, issueDate: string): Promise<string>;
+}
+
+/** Why a delete is refused, e.g. `{ reason: 'document_issued_exists', count: 3 }`. */
+export interface DeletionBlocker {
+    reason: string;
+    count: number;
+}
+
+export type ProjectDeletionGuard = (workspaceId: WorkspaceId, projectId: ProjectId) => Promise<DeletionBlocker[]>;
+export type WorkspaceDeletionGuard = (workspaceId: WorkspaceId) => Promise<DeletionBlocker[]>;
+
+/**
+ * Provided by core: reasons a project may not be deleted. DeleteProjectUseCase asks inside its transaction, after
+ * locking the project; any blocker → conflict with the first blocker's reason. Registered once in `onModuleInit`.
+ */
+export class ProjectDeletionGuards {
+    private readonly guards: ProjectDeletionGuard[] = [];
+
+    register(guard: ProjectDeletionGuard): void {
+        this.guards.push(guard);
+    }
+
+    async blockers(workspaceId: WorkspaceId, projectId: ProjectId): Promise<DeletionBlocker[]> {
+        const out: DeletionBlocker[] = [];
+        for (const guard of this.guards) out.push(...await guard(workspaceId, projectId));
+        return out;
+    }
+}
+
+/** Provided by core: reasons a workspace may not be deleted (asked by DeleteWorkspaceUseCase inside its transaction). */
+export class WorkspaceDeletionGuards {
+    private readonly guards: WorkspaceDeletionGuard[] = [];
+
+    register(guard: WorkspaceDeletionGuard): void {
+        this.guards.push(guard);
+    }
+
+    async blockers(workspaceId: WorkspaceId): Promise<DeletionBlocker[]> {
+        const out: DeletionBlocker[] = [];
+        for (const guard of this.guards) out.push(...await guard(workspaceId));
+        return out;
+    }
 }

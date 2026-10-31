@@ -8,6 +8,7 @@
   "entitlements": "สิทธิ์ใช้งานโมดูล",
   "approvals": "กล่องอนุมัติ",
   "approvalPolicies": "นโยบายการอนุมัติ",
+  "numbering": "เลขที่เอกสาร",
   "groups": {
     "sales": "การขาย",
     "purchasing": "จัดซื้อ",

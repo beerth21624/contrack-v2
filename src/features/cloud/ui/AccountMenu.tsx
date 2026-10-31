@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import { App, Avatar, Button, Dropdown, type MenuProps } from 'antd';
 import {
-    AppstoreOutlined, AuditOutlined, CheckOutlined, SafetyCertificateOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, ScheduleOutlined, TeamOutlined, ToolOutlined,
+    AppstoreOutlined, AuditOutlined, CheckOutlined, SafetyCertificateOutlined, FolderOpenOutlined, LoginOutlined, LogoutOutlined, NumberOutlined, ScheduleOutlined, TeamOutlined, ToolOutlined,
 } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
@@ -84,6 +84,7 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
         ...(offersModules ? [{ key: 'modules', icon: <AppstoreOutlined />, label: 'โมดูลเสริม' }] : []),
         ...(hubOn ? [{ key: 'approvals', icon: <AuditOutlined />, label: tNav('approvals') }] : []),
         ...(hubOn && can(workspace?.role, 'company.manage') ? [{ key: 'approval-policies', icon: <AuditOutlined />, label: tNav('approvalPolicies') }] : []),
+        ...(hubOn && can(workspace?.role, 'company.read') ? [{ key: 'numbering', icon: <NumberOutlined />, label: tNav('numbering') }] : []),
         ...(platformAdmin ? [{ key: 'admin-entitlements', icon: <SafetyCertificateOutlined />, label: tAdmin('menuLink') }] : []),
         // Business module: the entry exists only while the platform offers it.
         ...(workforceOn ? [
@@ -128,6 +129,8 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
             router.push('/approvals');
         } else if (key === 'approval-policies') {
             router.push('/workspace/approval-policies');
+        } else if (key === 'numbering') {
+            router.push('/workspace/numbering');
         } else if (key === 'admin-entitlements') {
             router.push('/admin/entitlements');
         } else if (key === 'crews') {

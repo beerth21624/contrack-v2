@@ -1,0 +1,52 @@
+{
+  "title": "Document numbering",
+  "subtitle": "Set the running-number format of each document type. A document gets its number only when it is issued, and an issued number is never reused.",
+  "series": "Numbering series",
+  "previewHint": "\"Next number\" is what a document issued today would get; nothing is reserved.",
+  "readOnly": "You can view only. Only members who manage the company can change these settings.",
+  "loadFailed": "Could not load the numbering settings",
+  "retry": "Try again",
+  "isDefault": "Default",
+  "edit": "Edit",
+  "locked": "Locked",
+  "lockedHint": "Numbers were already issued in this period, so the format can change from the next period.",
+  "periodHint": "Numbers issued in period {period}",
+  "history": "Numbering settings history",
+  "editTitle": "Numbering: {docType}",
+  "save": "Save",
+  "cancel": "Cancel",
+  "sample": "First number of a period",
+  "invalid": "The pattern is not valid yet",
+  "prefixHint": "Up to 12 letters, digits and . _ / -",
+  "patternHint": "Click a tag to add it: '{prefix}' prefix, '{yyyy}' 4-digit year, '{yy}' 2-digit year, '{mm}' month, '{seq:4}' running number of 4 digits (3–6)",
+  "columns": {
+    "docType": "Document type",
+    "prefix": "Prefix",
+    "pattern": "Pattern",
+    "reset": "Restart numbering",
+    "yearStyle": "Year",
+    "next": "Next number",
+    "issued": "Issued this period"
+  },
+  "reset": {
+    "yearly": "Every year",
+    "monthly": "Every month",
+    "never": "Never"
+  },
+  "yearStyle": {
+    "ce": "Christian era (CE)",
+    "be": "Buddhist era (BE)"
+  },
+  "problems": {
+    "seq_missing": "Add one running number '{seq:N}'",
+    "seq_repeated": "Use the running number '{seq:N}' only once",
+    "seq_width": "The running number needs 3–6 digits",
+    "unknown_token": "There is an unknown token or a stray brace",
+    "month_required": "Monthly numbering needs '{mm}'",
+    "year_required": "Yearly or monthly numbering needs a year: '{yyyy}' or '{yy}'",
+    "too_long": "The pattern is longer than 64 characters"
+  },
+  "messages": {
+    "saved": "Numbering settings saved"
+  }
+}

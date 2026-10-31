@@ -38,6 +38,9 @@
     "already_entitled": "This workspace is already entitled to this module.",
     "entitlement_revoked": "The entitlement to this module was revoked. Contact the administrator.",
     "no_trial": "This module has no trial.",
-    "approval_pending": "This document is waiting for approval"
+    "approval_pending": "This document is waiting for approval",
+    "date_before_last_issued": "The document date cannot be before the latest number of the same series.",
+    "invalid_pattern": "The number pattern is not valid.",
+    "already_voided": "This number is already voided."
   }
 }

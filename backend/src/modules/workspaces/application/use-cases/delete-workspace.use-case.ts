@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { UnitOfWork } from '../../../../shared/application/ports';
-import type { DomainError } from '../../../../shared/domain/domain-error';
+import { UnitOfWork, WorkspaceDeletionGuards } from '../../../../shared/application/ports';
+import { DomainError } from '../../../../shared/domain/domain-error';
 import type { UserId, WorkspaceId } from '../../../../shared/domain/ids';
 import { type Result, err, okVoid } from '../../../../shared/domain/result';
 import { checkWorkspaceDeletion } from '../../domain/policies/workspace-deletion.policy';
@@ -22,6 +22,8 @@ export class DeleteWorkspaceUseCase {
         private readonly memberships: MembershipRepository,
         private readonly invitations: InvitationRepository,
         private readonly uow: UnitOfWork,
+        // Default for unit tests built by hand; Nest injects the core registry.
+        private readonly guards: WorkspaceDeletionGuards = new WorkspaceDeletionGuards(),
     ) {}
 
     async execute(input: DeleteWorkspaceInput): Promise<Result<undefined, DomainError>> {
@@ -32,11 +34,17 @@ export class DeleteWorkspaceUseCase {
         const allowed = checkWorkspaceDeletion({ kind: workspace.kind, role: membership.role });
         if (!allowed.ok) return allowed;
         // Postgres cascades from workspaces; deleting explicitly keeps the in-memory adapters consistent too.
-        await this.uow.run(async () => {
+        return this.uow.run(async (): Promise<Result<undefined, DomainError>> => {
+            // ERP modules refuse while the workspace has issued documents (none registered / no rows in release 1).
+            const blockers = await this.guards.blockers(workspace.id);
+            const first = blockers[0];
+            if (first !== undefined) {
+                return err(DomainError.conflict('The workspace has issued documents and cannot be deleted', { reason: first.reason, blockers }));
+            }
             await this.invitations.deleteAllOfWorkspace(workspace.id);
             await this.memberships.deleteAllOfWorkspace(workspace.id);
             await this.workspaces.delete(workspace.id);
+            return okVoid();
         });
-        return okVoid();
     }
 }

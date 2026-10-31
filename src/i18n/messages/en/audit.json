@@ -12,11 +12,15 @@
     "approved": "Approved",
     "rejected": "Rejected",
     "cancelled": "Request cancelled",
-    "set": "Changed"
+    "set": "Changed",
+    "issue": "Number issued",
+    "void": "Number voided"
   },
   "entities": {
     "approval_request": "Approval request",
     "approval_policy": "Approval policy",
-    "entitlement": "Module entitlement"
+    "entitlement": "Module entitlement",
+    "numbering_series": "Numbering series",
+    "issued_document": "Document number"
   }
 }
