@@ -10,6 +10,7 @@ import { readLocaleCookie, writeLocaleCookie } from '@/i18n/locale-cookie';
 import { onNotice } from '@/store/notices';
 import { useProjectStore } from '@/store/project-store';
 import { bootstrapSession, useSession } from './auth/session';
+import { forgetVariationSandbox, resumeVariationSandbox } from '@/features/erp/variations/sandbox';
 import { closeCloudProject, resumeRememberedProject } from './projects/controller';
 import { useMe } from './query/hooks';
 import { useRealtime } from './realtime/useRealtime';
@@ -36,12 +37,14 @@ export function CloudRuntime() {
         if (status === 'signed-in' && userId !== prevUser.current) {
             if (prevUser.current !== null) qc.clear();
             prevUser.current = userId;
-            void resumeRememberedProject(qc);
+            // A VO sandbox open before the reload comes back first (it remembers the project to return to).
+            void resumeVariationSandbox(qc).then(resumed => { if (!resumed) void resumeRememberedProject(qc); });
         }
         if (status === 'guest') {
             const wasSignedIn = prevUser.current !== null;
             prevUser.current = null;
-            if (useProjectStore.getState().binding.kind === 'cloud') {
+            forgetVariationSandbox();
+            if (useProjectStore.getState().binding.kind !== 'guest') {
                 void closeCloudProject().then(() => {
                     if (wasSignedIn) void message.info('ออกจากระบบแล้ว — กลับมาใช้โครงการในเครื่องนี้');
                 });

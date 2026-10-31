@@ -23,6 +23,7 @@ import priceReference from './priceReference.json';
 import quotations from './quotations.json';
 import contracts from './contracts.json';
 import billing from './billing.json';
+import variations from './variations.json';
 
 const messages = {
   common,
@@ -50,6 +51,7 @@ const messages = {
   quotations,
   contracts,
   billing,
+  variations,
 };
 
 export default messages;

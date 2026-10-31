@@ -27,7 +27,8 @@
     "versions": "ประวัติ BOQ",
     "quotations": "ใบเสนอราคา",
     "contract": "สัญญา",
-    "billing": "วางบิล"
+    "billing": "วางบิล",
+    "variations": "งานเพิ่ม-ลด"
   },
   "receivables": "ลูกหนี้"
 }

@@ -196,5 +196,31 @@
     "31_60": "31-60 days overdue",
     "61_90": "61-90 days overdue",
     "over_90": "Over 90 days overdue"
+  },
+  "variationStatus": {
+    "draft": "Draft",
+    "pending_approval": "Pending approval",
+    "submitted": "Sent, waiting for customer",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "withdrawn": "Withdrawn",
+    "cancelled": "Cancelled"
+  },
+  "variationReason": {
+    "owner_request": "Owner request",
+    "design_change": "Design change",
+    "site_condition": "Site condition",
+    "omission": "Omission",
+    "other": "Other"
+  },
+  "variationBilling": {
+    "next_claim": "In the next progress claim",
+    "spread": "Spread over the remaining milestones",
+    "separate_milestone": "As a separate milestone"
+  },
+  "variationEvidenceKind": {
+    "photo": "Photo",
+    "note": "Note",
+    "document": "Document"
   }
 }

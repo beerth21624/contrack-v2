@@ -155,6 +155,15 @@ export async function openCloudProject(queryClient: QueryClient, projectId: stri
     }
 }
 
+/**
+ * Stop syncing the open cloud project without closing it in the store (a VO sandbox replaces the working copy next).
+ * The tab still remembers the project: a reload reopens it.
+ */
+export async function suspendCloudProject(): Promise<void> {
+    await stopEngine();
+    useCloud.setState({ project: null, presence: [], syncStatus: SAVED_STATUS });
+}
+
 /** Back to the guest project of this browser. */
 export async function closeCloudProject(): Promise<void> {
     await stopEngine();

@@ -56,7 +56,8 @@ export class VariationHandlers {
         if (v?.workspaceId !== workspaceId || HIDDEN_FROM_LINKS.has(v.status)) return undefined;
         const contract = await this.workflow.contractOf(v);
         const payload: VariationLinkPayload = {
-            variation: await this.views.detail(v, { seesCost: false, canEdit: false }),
+            // The sandbox holds calculator inputs and BOQ unit costs: never sent to the customer.
+            variation: { ...(await this.views.detail(v, { seesCost: false, canEdit: false })), sandbox: { calculators: {}, boqOverrides: {} } },
             projectName: await this.workflow.projectName(workspaceId, v.projectId),
             contractNumber: contract?.number ?? null,
         };

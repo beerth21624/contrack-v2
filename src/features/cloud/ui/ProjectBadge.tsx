@@ -34,6 +34,9 @@ export function ProjectBadge({ compact = false }: { compact?: boolean }) {
     const label = compact ? 'hidden' : 'hidden md:block truncate min-w-0';
     const pill = 'flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 h-10 md:h-8 min-w-0 text-[12px] text-white/85 max-w-[260px] xl:max-[1439px]:max-w-[220px]';
 
+    // A VO sandbox (WP-34) has its own banner above the page; it is neither the local nor a synced project.
+    if (binding.kind === 'sandbox') return null;
+
     if (binding.kind === 'guest') {
         const body = (
             <span className={pill}>

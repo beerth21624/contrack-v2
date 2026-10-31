@@ -29,11 +29,28 @@ export interface CloudBinding {
 }
 
 /**
+ * A VO pricing sandbox (WP-34): the baseline snapshot of a cloud project with the VO's calculator inputs / BOQ edits laid
+ * over it. Held in memory only: never saved to localStorage, never synced (the sync engine only follows `cloud`); the
+ * VO page saves it to the variation itself.
+ */
+export interface SandboxBinding {
+    kind: 'sandbox';
+    variationId: string;
+    projectId: string;
+    workspaceId: string;
+    /** What the banner shows (the VO number, else its title). */
+    label: string;
+    /** The cloud project that was open before (reopened when the sandbox closes), null = the guest project. */
+    returnProjectId: string | null;
+}
+
+/**
  * Where the working copy in `project` belongs:
  * - guest: the project of this browser, saved to localStorage (`contrack-project`) as before;
- * - cloud: a workspace project, held in memory only and saved to the server by the sync engine.
+ * - cloud: a workspace project, held in memory only and saved to the server by the sync engine;
+ * - sandbox: a VO's pricing copy, held in memory only (saved by the VO page).
  */
-export type ProjectBinding = { kind: 'guest' } | CloudBinding;
+export type ProjectBinding = { kind: 'guest' } | CloudBinding | SandboxBinding;
 
 const GUEST: ProjectBinding = { kind: 'guest' };
 
@@ -66,8 +83,10 @@ interface ProjectState {
     openCloudProject: (binding: Omit<CloudBinding, 'kind'>, project: Project) => void;
     /** The open cloud project's BOQ was locked / unlocked by a baseline. */
     setCloudLocked: (locked: boolean) => void;
-    /** Back to the guest project of this browser. */
+    /** Back to the guest project of this browser (from a cloud project or a sandbox). */
     closeCloudProject: () => void;
+    /** Make a VO sandbox the working copy (the guest project is kept aside, as for a cloud project). */
+    openSandbox: (binding: Omit<SandboxBinding, 'kind'>, project: Project) => void;
     /** Replace the working copy without the edit checks (the sync engine: remote docs, conflicts, reverts). */
     replaceProject: (project: Project) => void;
     /** The user's role in the open cloud project's workspace changed. */
@@ -155,7 +174,7 @@ export const useProjectStore = create<ProjectState>()(
                 editAny(fn);
             };
             const startOver = (start: ProjectStart | undefined) => {
-                if (get().binding.kind === 'cloud') {
+                if (get().binding.kind !== 'guest') {
                     emitNotice({ level: 'warning', text: CLOUD_NEW_PROJECT_TEXT, key: 'cloud-new-project' });
                     return;
                 }
@@ -212,6 +231,14 @@ export const useProjectStore = create<ProjectState>()(
                         binding: { kind: 'cloud', ...binding },
                         project,
                         // Switching from one cloud project to another keeps the guest project that was set aside first.
+                        guestProject: s.binding.kind === 'guest' ? s.project : s.guestProject,
+                    }));
+                },
+                openSandbox: (binding, project) => {
+                    writesSuspended = true;
+                    set(s => ({
+                        binding: { kind: 'sandbox', ...binding },
+                        project,
                         guestProject: s.binding.kind === 'guest' ? s.project : s.guestProject,
                     }));
                 },

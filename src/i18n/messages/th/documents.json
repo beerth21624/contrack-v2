@@ -204,5 +204,47 @@
     "notCertified": "ยังไม่ได้ตรวจรับ",
     "noLines": "ไม่มีรายการงาน",
     "lineNote": "หมายเหตุ"
+  },
+  "variation": {
+    "title": "ใบงานเพิ่ม-ลด (VO)",
+    "contractNo": "สัญญาเลขที่",
+    "client": "ผู้ว่าจ้าง",
+    "project": "โครงการ",
+    "subject": "เรื่อง",
+    "reason": "เหตุผล",
+    "requestedBy": "ผู้ขอ",
+    "requestedOn": "เมื่อ",
+    "code": "รหัส",
+    "item": "รายการ",
+    "qty": "ปริมาณ",
+    "unit": "หน่วย",
+    "unitPrice": "ราคา/หน่วย",
+    "amount": "จำนวนเงิน",
+    "noLines": "ไม่มีรายการ",
+    "sellTotal": "มูลค่างานเพิ่ม-ลด (ไม่รวมภาษี)",
+    "vat": "ภาษีมูลค่าเพิ่ม",
+    "grandTotal": "รวมทั้งสิ้น",
+    "schedule": "ผลต่อระยะเวลา:",
+    "noScheduleImpact": "ไม่กระทบระยะเวลา",
+    "extendDays": "ขยายเวลา {days} วัน",
+    "shortenDays": "ลดเวลา {days} วัน",
+    "billingLabel": "การเบิกเงิน:",
+    "billing": {
+      "next_claim": "รวมในงวดเบิกถัดไป",
+      "spread": "กระจายในงวดที่เหลือ",
+      "separate_milestone": "แยกเป็นงวดใหม่"
+    },
+    "reasons": {
+      "owner_request": "ผู้ว่าจ้างขอเปลี่ยน",
+      "design_change": "แก้แบบ",
+      "site_condition": "สภาพหน้างาน",
+      "omission": "รายการตกหล่น",
+      "other": "อื่น ๆ"
+    },
+    "evidence": "หลักฐานประกอบ",
+    "acceptedBy": "ยอมรับโดย",
+    "rejectedBy": "ปฏิเสธโดย",
+    "approvedBy": "ผู้ว่าจ้างอนุมัติ",
+    "proposedBy": "ผู้รับจ้างเสนอ"
   }
 }

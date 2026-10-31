@@ -1,0 +1,156 @@
+{
+  "loadFailed": "Could not load the variation",
+  "retry": "Try again",
+  "seq": "VO no. {no}",
+  "print": "Print",
+  "backToList": "← All variations",
+  "contract": "Contract {number}",
+  "pendingApproval": "Waiting for internal approval before it goes to the customer",
+  "openApprovals": "Open approvals",
+  "waitingCustomer": "Sent, waiting for the customer — share the link or record an answer received another way",
+  "responseBanner": {
+    "accepted": "Accepted by the customer ({name})",
+    "rejected": "Rejected by the customer ({name})"
+  },
+  "languages": {
+    "th": "Thai",
+    "en": "English"
+  },
+  "fields": {
+    "title": "Variation title",
+    "titlePlaceholder": "e.g. Add a storeroom on the ground floor",
+    "requestedByName": "Requested by",
+    "reason": "Reason",
+    "requestedDate": "Requested on",
+    "billing": "Billing",
+    "billingDefault": "By the contract (default)",
+    "scheduleImpactDays": "Schedule impact (days)",
+    "language": "Document language"
+  },
+  "create": {
+    "title": "New variation",
+    "submit": "Create",
+    "done": "Variation created"
+  },
+  "list": {
+    "title": "Variations (VO)",
+    "create": "New variation",
+    "needsContract": "Sign the main contract first to create variations",
+    "empty": {
+      "title": "No variations yet",
+      "hint": "When the customer asks for a change after signing, create a variation here"
+    },
+    "columns": {
+      "seq": "No.",
+      "title": "Title",
+      "number": "Number",
+      "status": "Status",
+      "sellTotal": "Value (excl. VAT)",
+      "days": "Days",
+      "updatedAt": "Last updated"
+    }
+  },
+  "details": {
+    "title": "Details",
+    "save": "Save details",
+    "saved": "Details saved",
+    "days": "{days} days"
+  },
+  "lines": {
+    "title": "Variation lines",
+    "empty": "No lines yet",
+    "newItem": "New item",
+    "source": {
+      "manual": "Manual",
+      "calculator": "Calculator"
+    },
+    "columns": {
+      "code": "Code",
+      "costCode": "Cost code",
+      "desc": "Item",
+      "section": "Section",
+      "unit": "Unit",
+      "qtyDelta": "Qty change",
+      "costMatUnit": "Material cost/unit",
+      "costLabUnit": "Labour cost/unit",
+      "costAmount": "Cost",
+      "sellUnit": "Sell price/unit",
+      "sellAmount": "Sell amount"
+    },
+    "descTh": "Item (Thai)",
+    "descEn": "Item (English)",
+    "remove": "Remove line",
+    "manualTitle": "Manual lines",
+    "manualHint": "Pick an existing cost code, or leave it empty for a new item. A negative quantity removes work; sell prices are computed by the system",
+    "manualEmpty": "No manual lines yet",
+    "add": "Add line",
+    "save": "Save lines",
+    "saved": "Lines saved",
+    "unsaved": "Not saved"
+  },
+  "evidence": {
+    "title": "Evidence",
+    "empty": "No evidence yet — at least one item (or an answer through the link) is needed before recording an acceptance",
+    "upload": "Attach photo/document",
+    "notePlaceholder": "Write a note, e.g. a summary of the talk with the customer",
+    "addNote": "Add note",
+    "remove": "Remove evidence",
+    "removeConfirm": "Remove this evidence?"
+  },
+  "sandbox": {
+    "title": "Price with the calculators",
+    "hint": "Opens the calculators and the BOQ on the project's baseline. Change only what the variation changes, then save to let the system build the variation lines — the real project is not changed",
+    "summary": "Calculators changed {calculators} · BOQ lines edited {edits} · lines from the calculators {lines}",
+    "open": "Open the calculators",
+    "problems": {
+      "baseline_not_locked": "The BOQ baseline is not locked, so the calculators cannot price this variation",
+      "not_draft": "Only a draft variation can be changed"
+    },
+    "bannerTitle": "Pricing {label}",
+    "bannerHint": "Use the calculators and the BOQ as usual; nothing is saved to the project. Press \"Save\" to compute the variation lines",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "Variation lines computed",
+    "cancelConfirm": "Leave without saving the calculator changes?",
+    "cancelOk": "Leave without saving"
+  },
+  "totals": {
+    "title": "Totals",
+    "cost": "Cost",
+    "sell": "Value (excl. VAT)",
+    "vat": "VAT",
+    "grand": "Grand total",
+    "days": "Schedule impact"
+  },
+  "response": {
+    "button": "Record customer answer",
+    "title": "Record the customer's answer",
+    "hint": "For an answer given another way (phone, e-mail, signed copy). An acceptance needs at least one evidence item",
+    "action": "Answer",
+    "actions": {
+      "accept": "Accept",
+      "reject": "Reject"
+    },
+    "name": "Answered by",
+    "note": "Note",
+    "submit": "Save",
+    "done": "Answer recorded"
+  },
+  "withdraw": {
+    "button": "Withdraw",
+    "confirm": "Withdraw this variation?",
+    "done": "Withdrawn"
+  },
+  "cancel": {
+    "button": "Cancel",
+    "confirm": "Cancel this variation?",
+    "done": "Cancelled"
+  },
+  "submit": {
+    "button": "Send to customer",
+    "confirm": "Send this variation?",
+    "hint": "The VO number is issued (or internal approval is asked first) and the lines can no longer be changed",
+    "done": "Sent, VO number issued",
+    "pending": "Sent for internal approval"
+  }
+}

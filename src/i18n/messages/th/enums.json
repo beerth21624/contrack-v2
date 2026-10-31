@@ -196,5 +196,31 @@
     "31_60": "เกิน 31-60 วัน",
     "61_90": "เกิน 61-90 วัน",
     "over_90": "เกิน 90 วัน"
+  },
+  "variationStatus": {
+    "draft": "ฉบับร่าง",
+    "pending_approval": "รออนุมัติ",
+    "submitted": "ส่งแล้ว รอลูกค้า",
+    "accepted": "ลูกค้ายอมรับ",
+    "rejected": "ลูกค้าปฏิเสธ",
+    "withdrawn": "ถอนกลับ",
+    "cancelled": "ยกเลิก"
+  },
+  "variationReason": {
+    "owner_request": "เจ้าของงานขอเปลี่ยน",
+    "design_change": "แก้แบบ",
+    "site_condition": "สภาพหน้างาน",
+    "omission": "รายการตกหล่น",
+    "other": "อื่น ๆ"
+  },
+  "variationBilling": {
+    "next_claim": "รวมในงวดเบิกถัดไป",
+    "spread": "กระจายในงวดที่เหลือ",
+    "separate_milestone": "แยกเป็นงวดใหม่"
+  },
+  "variationEvidenceKind": {
+    "photo": "รูปถ่าย",
+    "note": "บันทึก",
+    "document": "เอกสาร"
   }
 }

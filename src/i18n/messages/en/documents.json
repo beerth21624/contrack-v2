@@ -204,5 +204,47 @@
     "notCertified": "Not certified yet",
     "noLines": "No work items",
     "lineNote": "Note"
+  },
+  "variation": {
+    "title": "Variation Order (VO)",
+    "contractNo": "Contract no.",
+    "client": "Client",
+    "project": "Project",
+    "subject": "Subject",
+    "reason": "Reason",
+    "requestedBy": "Requested by",
+    "requestedOn": "on",
+    "code": "Code",
+    "item": "Item",
+    "qty": "Qty",
+    "unit": "Unit",
+    "unitPrice": "Unit price",
+    "amount": "Amount",
+    "noLines": "No items",
+    "sellTotal": "Variation value (excl. VAT)",
+    "vat": "VAT",
+    "grandTotal": "Grand total",
+    "schedule": "Schedule impact:",
+    "noScheduleImpact": "No change to the schedule",
+    "extendDays": "Extension of {days} days",
+    "shortenDays": "Reduction of {days} days",
+    "billingLabel": "Billing:",
+    "billing": {
+      "next_claim": "In the next progress claim",
+      "spread": "Spread over the remaining milestones",
+      "separate_milestone": "As a separate milestone"
+    },
+    "reasons": {
+      "owner_request": "Client request",
+      "design_change": "Design change",
+      "site_condition": "Site condition",
+      "omission": "Omission",
+      "other": "Other"
+    },
+    "evidence": "Supporting evidence",
+    "acceptedBy": "Accepted by",
+    "rejectedBy": "Rejected by",
+    "approvedBy": "Approved by the client",
+    "proposedBy": "Proposed by the contractor"
   }
 }
