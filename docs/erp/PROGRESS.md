@@ -19,7 +19,7 @@
 | WP-05 | บทบาทและสิทธิ์ ERP | opus | done | a299d97 | migration `0008_wp05_roles`; matrix ย้ายไป `src/shared/contract/permissions.ts` (backend + เว็บ re-export); namespace `roles`; D-77…D-81 |
 | WP-06 | ERP web foundation: UI kit, nav registry, กรอบพิมพ์ | opus | done | 0e7571f | ไม่มี migration; UI kit `src/features/erp/shared/` + README, `nav-registry.ts` (ว่าง), `(print)` layout + `PrintFrame`; namespace `erp`, `documents.common.*`; POST `/files` รับ `workspaceId` (D-82…D-87) |
 | WP-07 | Platform admin: ให้สิทธิ์โมดูล (backend + web) | sonnet | done | 45ee602 | ไม่มี migration; `PlatformAdminAccess`, `/platform/admin/{status,workspaces,…/entitlements/:module}`, `WorkspaceDirectory.search`; หน้า `/admin/entitlements` + namespace `admin`; D-89…D-93 |
-| WP-08 | Workflow อนุมัติ + audit log (backend) | opus | done | (see Handoff) | migration `0009_wp08_approvals_audit`; โมดูล `approvals` + `audit`, `schema-erp-core.ts`, ports `Approvals`/`ApprovalHandlers`/`AuditLog`, `WorkspaceDirectory.members`; audit ของ `SetEntitlementUseCase`; D-94…D-103 |
+| WP-08 | Workflow อนุมัติ + audit log (backend) | opus | done | 765869e | migration `0009_wp08_approvals_audit`; โมดูล `approvals` + `audit`, `schema-erp-core.ts`, ports `Approvals`/`ApprovalHandlers`/`AuditLog`, `WorkspaceDirectory.members`; audit ของ `SetEntitlementUseCase`; D-94…D-103 |
 | WP-09 | หน้าอนุมัติ นโยบาย และ audit (web) | sonnet | todo | | |
 | WP-10 | การแจ้งเตือน: channel, ภาษาผู้รับ, sweep | opus | todo | | |
 | WP-11 | บริการเลขเอกสาร + guard การลบ | opus | todo | | |
@@ -331,7 +331,7 @@
   - `WorkspaceDirectory` มี abstract method ใหม่ `search` — fake/adapter อื่นที่ `extends WorkspaceDirectory` ต้อง implement
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend + web) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `cd backend && npx jest src/modules/platform src/modules/workspaces` 1717 ผ่าน (เคสใหม่: `platform-admin.use-cases.spec.ts` 7 เคส, admin HTTP 2 เคสใน `platform-http.spec.ts`); `npx vitest run src/features/erp src/i18n` ผ่าน; ยังไม่ได้ทดสอบหน้า admin ในเบราว์เซอร์
 
-### WP-08 — Workflow อนุมัติ + audit log (backend) (COMMIT_HASH)
+### WP-08 — Workflow อนุมัติ + audit log (backend) (765869e)
 - สร้าง (contract): `src/shared/contract/erp/approvals.ts` (`APPROVAL_SUBJECTS`, `APPROVAL_STATUSES`, `APPROVAL_AUTO_REASONS`, `APPROVAL_STEP_STATUSES`, `APPROVAL_DECISIONS`, `ApprovalPolicy`, `APPROVAL_SUBJECT_DEFAULTS` (`{module, policy}` ต่อ subject ตาม §6.1), `approvalPolicyDtoSchema`/`approvalPoliciesDtoSchema`, `putApprovalPolicyRequestSchema`, `approvalRequestDtoSchema`, `approvalListQuerySchema`, `approvalListDtoSchema`, `decideApprovalRequestSchema`), `erp/audit.ts` (`auditEventDtoSchema`, `auditListQuerySchema`, `auditListDtoSchema`); export ใน `erp/index.ts`
 - schema: `backend/src/shared/infrastructure/database/schema-erp-core.ts` (`approval_policies`, `approval_requests`, `approval_steps`, `audit_events`; `erpCoreTables`) + `database.ts` + `drizzle.config.ts`; WP-11/12/13/14/21 เพิ่มตารางต่อในไฟล์นี้และใน `erpCoreTables`
 - ports (`ports.ts`): `ApprovalRequestInput`, `ApprovalTicket`, `Approvals` (`request` → `Result`, `cancel`, `statusOf`), `ApprovalDecidedEvent`, `ApprovalHandler`, `ApprovalHandlers` (core registry, provide/export ใน `CoreModule`; ลงทะเบียนซ้ำ subject เดิม → throw), `AuditEntry`, `AuditLog`; `WorkspaceDirectory.members(ws)` → `WorkspaceMember[]` (`{userId, role}`) + `RepositoryWorkspaceDirectory` + `FakeWorkspaceDirectory`
