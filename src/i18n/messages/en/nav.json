@@ -29,7 +29,8 @@
     "contract": "Contract",
     "billing": "Billing",
     "variations": "Variations",
-    "procurement": "Purchasing"
+    "procurement": "Purchasing",
+    "siteDiary": "Site diary"
   },
   "receivables": "Receivables",
   "suppliers": "Suppliers",

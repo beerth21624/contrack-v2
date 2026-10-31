@@ -294,5 +294,33 @@
     "draft": "Draft",
     "confirmed": "Confirmed",
     "cancelled": "Cancelled"
+  },
+  "siteReportStatus": {
+    "draft": "Draft",
+    "submitted": "Submitted"
+  },
+  "siteWeather": {
+    "sunny": "Sunny",
+    "cloudy": "Cloudy",
+    "rain": "Rain",
+    "storm": "Storm"
+  },
+  "siteIssueKind": {
+    "delay": "Delay",
+    "safety": "Safety",
+    "quality": "Quality",
+    "material": "Material",
+    "weather": "Weather",
+    "customer": "Customer",
+    "other": "Other"
+  },
+  "siteIssueSeverity": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High"
+  },
+  "siteIssueStatus": {
+    "open": "Open",
+    "resolved": "Resolved"
   }
 }

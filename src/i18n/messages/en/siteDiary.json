@@ -1,0 +1,110 @@
+{
+  "title": "Site diary",
+  "subtitle": "The daily site log: weather, workers, work done, photos and problems",
+  "today": "Today",
+  "retry": "Try again",
+  "cancel": "Cancel",
+  "pickDate": "Pick a date",
+  "writeToday": "Write today's report",
+  "openToday": "Open today's report",
+  "reports": {
+    "title": "Past reports",
+    "empty": "No reports yet",
+    "emptyHint": "Press \"Write today's report\" to start",
+    "columns": {
+      "date": "Date",
+      "status": "Status",
+      "weather": "Weather",
+      "people": "People",
+      "work": "Work",
+      "photos": "Photos",
+      "issues": "Open issues"
+    }
+  },
+  "progress": {
+    "title": "Cumulative progress (S-curve)",
+    "actual": "Actual (from reports)",
+    "planned": "Planned",
+    "empty": "No progress yet. Submit a report with work done to see the chart"
+  },
+  "issues": {
+    "title": "Open issues",
+    "empty": "No open issues",
+    "resolve": "Mark resolved",
+    "resolved": "Issue closed"
+  },
+  "report": {
+    "title": "Daily report",
+    "subtitle": "Save a draft any time; submit when it is complete",
+    "prev": "Previous day",
+    "next": "Next day",
+    "future": "A report cannot be written for a day that has not come yet",
+    "locked": "This report is submitted. Press \"Reopen\" to change it",
+    "notAllowed": "You cannot edit this report",
+    "unsaved": "You have unsaved changes",
+    "saveDraft": "Save draft",
+    "saved": "Saved",
+    "submit": "Submit report",
+    "submitConfirm": "Submit this day's report?",
+    "submitHint": "Submitting records the progress of the work items on their cost codes",
+    "submitted": "Report submitted",
+    "reopen": "Reopen",
+    "reopenConfirm": "Reopen this report to edit it?",
+    "reopenHint": "The progress and estimated labour cost from this report are reversed until you submit it again",
+    "reopened": "Report reopened"
+  },
+  "weather": {
+    "title": "Weather",
+    "morning": "Morning",
+    "afternoon": "Afternoon",
+    "rainHours": "Rain (hours)",
+    "placeholder": "Choose"
+  },
+  "summary": {
+    "title": "Daily summary",
+    "placeholder": "What happened on site today"
+  },
+  "manpower": {
+    "title": "Manpower",
+    "add": "Add crew / subcontractor",
+    "empty": "No manpower entered",
+    "crew": "Crew",
+    "crewPlaceholder": "Pick a crew (or type a name)",
+    "name": "Crew / subcontractor",
+    "trade": "Trade",
+    "skilled": "Skilled (people)",
+    "labourer": "Labourers (people)",
+    "hours": "Hours worked",
+    "costCode": "Cost code",
+    "note": "Note",
+    "remove": "Remove",
+    "total": "{count} people in total"
+  },
+  "work": {
+    "title": "Work done today",
+    "empty": "No work items yet",
+    "addPlaceholder": "Add work: search a cost code or name",
+    "duplicate": "This cost code is already in the list",
+    "after": "Cumulative progress at end of day (%)",
+    "before": "Before today {pct}%",
+    "qty": "Quantity done today",
+    "note": "Note",
+    "remove": "Remove"
+  },
+  "photos": {
+    "title": "Site photos",
+    "add": "Take / choose photos",
+    "empty": "No photos yet",
+    "caption": "Caption",
+    "remove": "Remove photo"
+  },
+  "issuesForm": {
+    "title": "Problems found",
+    "add": "Add problem",
+    "empty": "No problems found",
+    "kind": "Type",
+    "severity": "Severity",
+    "description": "Details",
+    "remove": "Remove"
+  }
+}

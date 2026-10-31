@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-42 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-43 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -54,7 +54,7 @@
 | WP-40 | PR/RFQ web | sonnet | done | 5f88435 | ไม่มี migration; `src/features/erp/procurement/*`, routes `/p/[id]/procurement`, `…/procurement/rfqs/[rfqId]`, แท็บ nav `procurement`; i18n `procurement` + enums; D-292…D-295 |
 | WP-41 | PO/รับของ web + พิมพ์ PO/RFQ | sonnet | done | 4b1b0be | ไม่มี migration; `PurchaseOrderPage`, `GoodsReceiptDialog`, `PurchasingPage`, พิมพ์ PO/RFQ, ประวัติราคาผู้ขาย; routes `…/procurement/orders/[orderId]`, `/purchasing`, `/print/purchase-order/[id]`, `/print/rfq/[id]`; D-296…D-299 |
 | WP-42 | รายงานประจำวัน backend | opus | done | edc7d7c | migration `0028_wp42_site_diary`; โมดูล `backend/src/modules/site-diary/`, port `CrewDailyCost` (workforce), `CostCodeLookup.listByProjects`; D-300…D-305 |
-| WP-43 | รายงานประจำวัน web | sonnet | todo | | |
+| WP-43 | รายงานประจำวัน web | sonnet | done | HASH43 | ไม่มี migration; `src/features/erp/site-diary/*`; routes `/p/<id>/site-diary` และ `/p/<id>/site-diary/<date>`; แท็บ `site-diary`; D-306…D-308 |
 | WP-44 | ใบลงเวลา งวดค่าแรง 15 วัน เบิกล่วงหน้า backend | opus | todo | | |
 | WP-45 | ค่าแรง web | sonnet | todo | | |
 | WP-46 | Job cost backend: ต้นทุน กำไร แจ้งเตือน | opus | todo | | |
@@ -402,6 +402,9 @@
 | D-303 | 2026-11-01 | (WP-42) hub `progressPct` อ่านจาก `project_cost_codes.reported_progress` (ซึ่ง site diary เป็นผู้เขียนคนเดียว) ด้วยเมธอดใหม่ `CostCodeLookup.listByProjects(ws, projectIds)` (+ `CostCodeRepository.listByProjects`) query เดียวต่อชุด; โครงการที่ไม่มีงบไม่ส่งค่า (null) | กฎห้าม N+1 ของ hub (02 §12) |
 | D-304 | 2026-11-01 | (WP-42) port `CrewDailyCost.dailyCostOf(ws, crewIds) → Map<crewId, {crewId, name, trade, dailyCost}>` (workforce, `WorkforceCrewDailyCost` ใช้ `CrewPricing`; crew ที่เก็บเข้าคลังก็คืน) — PUT ใช้ตรวจ crew (ไม่เจอ → 404) และเติม `crewName`/`trade` เมื่อเว้นว่าง; ค่าแรงจากรายงาน: ข้ามแถวที่ไม่มี crew/cost code, ฿/วัน null หรือ ≤ 0, ชั่วโมง 0; `entryDate` = วันที่รายงาน, `sourceLineId` = แถว manpower, `note` = ชื่อทีม; reverse ตอน reopen ลงวันที่วันนี้ | §8.1 |
 | D-305 | 2026-11-01 | (WP-42) portal task ใหม่ `site_report_missing` (`params.date`, href `/p/<id>/site-diary`, ลงทะเบียนด้วยสิทธิ์ `site.report`): โครงการที่ hub status `in_progress` (อ่าน `ProjectLifecycle.hubFields` ทีละโครงการ = N queries ยอมรับได้แบบ D-264) และยังไม่มีรายงาน **submitted** ของวันนี้; audit entity `site_report` (`create`/`submit`/`reopen`) และ `site_issue` (`status_change`); ไม่ audit การแก้ฉบับร่าง | ป้ายใหม่ใน `audit.actions.reopen`, `audit.entities.site_report|site_issue` |
+| D-306 | 2026-11-01 | (WP-43) route/แท็บใช้ `site-diary` (ไม่ใช่ `diary` ตามแผน) เพื่อตรงกับ href ของ portal task `site_report_missing` (`/p/<id>/site-diary`) และ module id; หน้าแรก = รายการรายงาน + S-curve + ปัญหาค้าง (`DiaryCalendarPage` เป็นตารางรายการ + DatePicker ไม่ใช่ปฏิทินกริด), `/site-diary/<date>` = ฟอร์มวันนั้น | ส่งของก่อน; พฤติกรรมครบตาม acceptance |
+| D-307 | 2026-11-01 | (WP-43) ฟอร์มรายงานเก็บสำเนาในเครื่องแล้ว `PUT` ทั้งก้อน; ปุ่ม "ส่งรายงาน" = PUT แล้ว `submit` (ยืนยันก่อน); manpower/work items เป็นการ์ดต่อแถว (ไม่ใช่ตาราง) เพื่อใช้บนมือถือ 375px; ทีมช่างเลือกจาก `useCrews` (ถ้า workforce ปิด = พิมพ์ชื่อเอง) และเติมชื่อ/ประเภท/จำนวนช่างคนงานจากทีม; งานใหม่เลือกจาก `CostCodePicker` เริ่มที่ `reportedProgress` ปัจจุบัน | ตาม Handoff WP-42 |
+| D-308 | 2026-11-01 | (WP-43) S-curve เป็น SVG เอง (`ProgressChart`, แบบเดียวกับ `CashOutlookChart`) แกนวันที่จริง เส้นจริง (จุดต่อวันที่มีรายงาน) + เส้นแผนประ; ปัญหาค้างข้ามวันแสดงในหน้ารายการพร้อมปุ่ม "แก้ไขแล้ว" (`site.report`); ไม่เพิ่ม subject ใน `numbering-search` (ไม่มีเลขเอกสาร) | 02 §8.1 |
 
 ## Handoff notes
 
@@ -989,3 +992,9 @@
   - WP-44 (labour): เมื่อ `labour` active site diary ไม่โพสต์ค่าแรง (`postLabour` เช็ก `ModuleFlags.isEnabled(ws,'labour')` ตอน submit) — รายงานที่ submit ก่อนเปิด labour ยังมีแถว `site_diary` ใน ledger (reopen จะ reverse ให้); ใบลงเวลา `source='site_diary'` อ่านแถว manpower ได้ผ่าน port ที่ WP-44 ต้องเพิ่มเอง (ยังไม่มี port ออกจาก site-diary); `PeopleDirectory` ยังไม่มี
   - WP-46 (job cost): `reported_progress` ถูกตั้งตอน submit/reopen เท่านั้น; ใช้ `CostCodeLookup.listByProjects` สำหรับ batch ได้
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้/สร้าง (backend + contract/domain/web) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `cd backend && npx jest src/modules/workforce src/modules/boq-control src/modules/portal src/modules/platform` 317 ผ่าน; e2e `workforce` + `projects` 53 ผ่าน; `npx vitest run src/shared/contract src/i18n` 623 ผ่าน; smoke e2e ชั่วคราว (memory, ลบแล้ว): cost code R58 (งบ 30,000) + R16 (10,000), ทีม ฿1,600/วัน → GET/PUT วันพรุ่งนี้ 422 `future_date`; GET วันนี้ได้ `id: null`; PUT (ทีม 4 ชม. → R58, R58 40%, issue safety) ชื่อทีมเติมให้ → submit → R58 `reported_progress` 0.4, ledger actual R58 800; PUT หลัง submit 409; reopen → 0 → PUT 50% + R16 100% (issue id เดิมคงอยู่) → submit → 0.5 และ actual R58 ยัง 800 (ไม่ซ้ำ); รายงานย้อนหลัง 2026-02-27 R58 20% submit → ยัง 0.5; progress actual `[{02-27, 0.15}, {03-01, 0.625}]` (ถ่วงงบ 2 cost code ถูก), planned 48 สัปดาห์; `progressBefore` ของ 03-01 = 0.2; list `?from=` ถูก; issues open 1 → PATCH resolved (`resolvedBy`); hub `progressPct` 0.625; portal (status `in_progress`, รายงานวันนี้ถูก reopen) → task `site_report_missing`; cost code ซ้ำ → 422; ยังไม่ได้ทดสอบบน PostgreSQL จริง (join/sum ของ counts, `::int`)
+
+### WP-43 — รายงานประจำวัน web (HASH43)
+- สร้าง `src/features/erp/site-diary/{api,hooks,form,DiaryCalendarPage,DailyReportPage,WeatherPicker,ManpowerTable,WorkItemsTable,PhotoGrid,IssuesPanel,ProgressChart}`; routes `src/app/(app)/p/[projectId]/site-diary/page.tsx` และ `…/site-diary/[date]/page.tsx`; แท็บ `site-diary` ใน `PROJECT_TABS` (module `site-diary`, สิทธิ์ `site.read`); i18n `siteDiary` (th+en), `enums.siteReportStatus|siteWeather|siteIssueKind|siteIssueSeverity|siteIssueStatus`, `nav.tabs.siteDiary`
+- เบี่ยงจากแผน: D-306 … D-308; ไม่เขียนเทสต์ใหม่ (คำสั่งเจ้าของ: ส่งของก่อน); ยังไม่ได้ลองกดใน browser
+- WP ถัดไปต้องรู้: `diaryHref(projectId, date?)` ใน `site-diary/form.ts` ใช้ลิงก์ไปรายงาน; `bangkokToday()` ใน `form.ts` ใช้เทียบวันที่ฝั่งเว็บ; WP-45 (ใบลงเวลา) prefill จาก manpower ที่มี `crewId` ต้องใช้ port ฝั่ง backend (WP-44) ไม่ใช่เว็บ
+- ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/features/erp/site-diary`, `nav-registry.ts`, routes ใหม่ ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/features/erp/hub` ผ่าน

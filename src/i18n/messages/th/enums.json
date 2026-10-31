@@ -294,5 +294,33 @@
     "draft": "ฉบับร่าง",
     "confirmed": "ยืนยันแล้ว",
     "cancelled": "ยกเลิก"
+  },
+  "siteReportStatus": {
+    "draft": "ฉบับร่าง",
+    "submitted": "ส่งแล้ว"
+  },
+  "siteWeather": {
+    "sunny": "แจ่มใส",
+    "cloudy": "มีเมฆ",
+    "rain": "ฝนตก",
+    "storm": "พายุ"
+  },
+  "siteIssueKind": {
+    "delay": "งานล่าช้า",
+    "safety": "ความปลอดภัย",
+    "quality": "คุณภาพงาน",
+    "material": "วัสดุ",
+    "weather": "สภาพอากาศ",
+    "customer": "ลูกค้า",
+    "other": "อื่น ๆ"
+  },
+  "siteIssueSeverity": {
+    "low": "ต่ำ",
+    "medium": "ปานกลาง",
+    "high": "สูง"
+  },
+  "siteIssueStatus": {
+    "open": "ยังค้างอยู่",
+    "resolved": "แก้ไขแล้ว"
   }
 }
