@@ -1,6 +1,8 @@
 // ─── Locale-aware formatting of numbers, money and dates (docs/erp/03-i18n.md §5). Pure: the locale is a parameter ───
 // ERP code formats through these (or useFormat()), never with toLocaleString / Intl directly.
 // The UI always shows the Christian-era year; the Buddhist year is only for Thai printed documents (formatDocumentDate).
+import { amountInWordsEn } from '../domain/money/amount-in-words';
+import { bahtText } from '../features/export/baht-text';
 import type { Locale } from './config';
 
 const NUMBER_LOCALE: Record<Locale, string> = { th: 'th-TH-u-nu-latn', en: 'en-US' };
@@ -53,6 +55,11 @@ export function formatBaht(value: number, locale: Locale): string {
     const amount = formatMoney(value, locale);
     if (amount === '') return '';
     return locale === 'th' ? `${amount} บาท` : `THB ${amount}`;
+}
+
+/** Amount in words for printed documents: Thai `bahtText` (`…บาทถ้วน`) or English (`… baht only`). */
+export function amountInWords(value: number, locale: Locale): string {
+    return locale === 'th' ? bahtText(value) : amountInWordsEn(value);
 }
 
 /** Quantity: up to four decimals, trailing zeros dropped (`12.5`). */

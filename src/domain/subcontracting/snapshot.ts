@@ -5,6 +5,7 @@
 // material (when the subcontractor supplies it) on the BOQ material quantity (J = I×H, or I×E).
 import type { MaterialBy, SupplyMode } from '../../shared/contract/subcontracting/common';
 import type { BoqItemRow, BoqResult } from '../boq/types';
+import { round2 } from '../money/money';
 import { tradeOfRow } from './trades';
 
 export interface SnapshotLine {
@@ -54,14 +55,8 @@ export interface Snapshot {
 
 export const CUSTOM_SECTION_TITLE = 'งานเพิ่มเติม (นอก BOQ)';
 
-/**
- * Rounds money to satang, half away from zero, on the decimal value people see (512.565 → 512.57): the 1e-7 nudge
- * absorbs binary representation error (512.565 is stored as 512.56499…). Used by the server and every preview.
- */
-export function round2(v: number): number {
-    const sign = v < 0 ? -1 : 1;
-    return (sign * Math.round(Math.abs(v) * 100 + 1e-7)) / 100;
-}
+// round2 lives in the shared money library now; re-exported here under its old name for existing importers.
+export { round2 };
 
 export interface IndexedBoqRow {
     row: BoqItemRow;

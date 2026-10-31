@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-10-31 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 done)**
+อัปเดตล่าสุด: 2026-10-31 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01, WP-02 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -13,7 +13,7 @@
 | WP | Title | Model | Status | Commit | Notes |
 |---|---|---|---|---|---|
 | WP-01 | i18n foundation (locale, format, parity, lint) | opus | done | 3adace6 | migration `0006_wp01_user_locale`; `amountInWords` เลื่อนไป WP-02 (D-52) |
-| WP-02 | ไลบรารีเงิน ภาษี วันที่ | opus | todo | | |
+| WP-02 | ไลบรารีเงิน ภาษี วันที่ | opus | done | COMMIT_HASH | ไม่มี migration; `round2` ย้ายไป `src/domain/money/money.ts`; `amountInWords(v, locale)` ใน `src/i18n/format.ts` (D-52) |
 | WP-03 | Module registry, flag 4 ชั้น, entitlement, ModuleAccess (backend + contract) | opus | todo | | |
 | WP-04 | หน้าโมดูลและทดลองใช้ (web) | sonnet | todo | | |
 | WP-05 | บทบาทและสิทธิ์ ERP | opus | todo | | |
@@ -149,6 +149,10 @@
 | D-55 | 2026-10-31 | (WP-01) ผลข้างเคียงที่ยอมรับ: `<html lang>` เป็น `th` เมื่อไม่มี cookie (เดิม hard-code `en`); `VendorShell` ได้ antd locale ไทย (เดิมไม่ได้ตั้ง จึงเป็นอังกฤษของ antd เช่น `OK`/`No data`) | ตามขอบเขต WP-01 ที่ระบุให้ใส่ `useAntdLocale()` ใน vendor shell; ข้อความที่ผู้ใช้เห็นของหน้าจอเดิมไม่เปลี่ยน (ปุ่มยืนยันใน vendor ตั้ง `okText`/`cancelText` เองอยู่แล้ว) |
 | D-56 | 2026-10-31 | (WP-01) ปุ่มสลับภาษาใน vendor shell และหน้า login/register (03-i18n §2 ข้อ 8) ยังไม่ทำ — WP-01 ทำเฉพาะ AccountMenu ตามขอบเขต | ขอบเขตของ WP-01 ระบุแค่ AccountMenu; vendor/login เป็นหน้าจอเดิมที่ยังเป็นไทยทั้งหมด ให้ track I (I-01, I-14) เพิ่มพร้อมย้ายข้อความ ด้วย `useAppLocale().setLocale` |
 | D-57 | 2026-10-31 | (WP-01 review) `setLocale` ขณะล็อกอิน: บันทึก `PATCH /me/preferences` ก่อน แล้วจึงเขียน cookie + `router.refresh()`; บันทึกไม่สำเร็จ → ไม่เปลี่ยนอะไรเลย (คืน `false`, เมนูแสดง `account.languageSaveFailed`) | 03 §2 ข้อ 4 เรียง cookie → PATCH → refresh แต่โปรไฟล์ชนะ cookie (`CloudRuntime`) จึงทำให้ภาษาที่บันทึกไม่สำเร็จเด้งกลับเองในการโหลดครั้งถัดไป ขณะที่ข้อความเดิมบอกว่า "ใช้ได้เฉพาะเครื่องนี้" |
+| D-58 | 2026-10-31 | (WP-02) `allocate(total, weights)` ปัด `total` ด้วย `round2` ก่อนแบ่ง (ผลรวม = `round2(total)` เสมอ); weight ติดลบหรือไม่ใช่ตัวเลขจำกัด → `RangeError`; `splitVatInclusive`/`vatOf` มี `rate` ค่าเริ่มต้น `THAI_VAT_RATE` และ `splitVatInclusive` ปัด gross ก่อน | เงินที่เก็บต้องผ่าน round2 อยู่แล้ว (§12.1) และ weight ติดลบเป็นบั๊กของผู้เรียก ไม่ใช่ข้อมูลผู้ใช้ |
+| D-59 | 2026-10-31 | (WP-02) `addMonthsToDate` ใน `src/domain/subcontracting/claims.ts` ไม่ถูกแก้ (ไม่ delegate ไป `addMonths`); `addMonths` ใช้สูตรเดียวกันแต่ตรวจวันที่เข้มกว่า (`2026-02-30` → `RangeError`, เดิม clamp ไป 28 ก.พ.) และ `months` ต้องเป็นจำนวนเต็ม | ห้ามเปลี่ยนพฤติกรรมโมดูลจ้างช่วงเดิม (README §2 ข้อ 11) — เทสต์เทียบผลสองตัวไว้ |
+| D-60 | 2026-10-31 | (WP-02) `roundQty` ใช้ `toPrecision(15)` ก่อนปัด (แบบ `bahtText`) แทน nudge `1e-7` ของ `round2`; `round2` คงสูตรเดิมตรงตัว | nudge ขนาดคงที่ไม่พอเมื่อปริมาณ ×10⁴ ใหญ่ (ulp > 1e-7) ส่วน `round2` ต้องไม่เปลี่ยนพฤติกรรม |
+| D-61 | 2026-10-31 | (WP-02) `amountInWordsEn`: ไม่มีคำว่า "and" ระหว่างหลักร้อยกับหลักสิบ (ตามเกณฑ์ `… two hundred fifty …`), เลข 21–99 ใช้ขีด (`twenty-one`), ค่าติดลบ `Minus one hundred baht only` (คำถัดจาก Minus เป็นตัวเล็ก), มีแต่สตางค์ → `Twenty-five satang only`, ไม่ใช่ตัวเลขจำกัด → `''` (เหมือน `bahtText`) | เอกสารระบุแค่ตัวอย่างหลัก; เลือกรูปแบบเช็คธนาคารอังกฤษที่พบบ่อย |
 
 ### คำถามค้างถึงเจ้าของ
 1. ตาราง Factor F ทางการ (กรมบัญชีกลาง) ฉบับที่ต้องการใช้ (D-12)
@@ -190,3 +194,17 @@
   - สภาพเครื่อง: `node_modules` ที่ root ไม่ตรง lockfile (zod 4.3.6, ไม่มี vitest) และ `backend/node_modules` ไม่มีเลย จึงรัน `npm ci` (root) และ `npm ci --ignore-scripts` (backend) จาก lockfile เดิม ไม่มีไฟล์ที่ track เปลี่ยน; `tsc -p tsconfig.json` ยังรายงาน error ใน `.next/types/validator.ts` / `.next/dev/types/validator.ts` (ไฟล์ generate เก่าที่ชี้หน้าที่ถูกลบไปแล้ว ไม่เกี่ยวกับโค้ด) — กรองด้วย `grep -v '^\.next/'` หรือลบโฟลเดอร์ `.next` ก่อนตรวจ
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน (นอกจาก `.next/*` เก่า); eslint ไฟล์ที่แก้ทั้ง backend/web ผ่าน 0 error; `node scripts/i18n/check-parity.mjs` exit 0 (ลบคีย์ en หนึ่งตัวในสำเนา → exit 1); `npx vitest run src/i18n src/features/cloud/api` 16 ผ่าน; `cd backend && npx jest src/modules/identity` 188 ผ่าน; `npx jest --config test/jest-e2e.config.js test/e2e/auth.e2e-spec.ts` 21 ผ่าน; `next dev` ชั่วคราว: ไม่มี cookie → `<html lang="th">` + title/เมนู/footer ไทยเดิม; `NEXT_LOCALE=en` → `<html lang="en">`, title และเมนู `nav` อังกฤษ (ปิด server แล้ว)
 - review (fix(erp): WP-01 review fixes): `setLocale` บันทึกโปรไฟล์ก่อน ไม่สำเร็จ = ไม่เปลี่ยน (D-57) + ข้อความ `account.languageSaveFailed` ใหม่; `shell.openMenu` ("เปิดเมนู" ไม่มีในโค้ดเดิม) → `shell.menu` = `เมนู` ตรงกับ `aria-label` เดิมที่ Robot ใช้เป็น locator; `formatDate` en แสดง `Sep` เสมอ (ICU ≥ 72 ของ en-GB ให้ `Sept`) — ตรวจ: tsc ทั้งสองฝั่งผ่าน, eslint ผ่าน, parity ผ่าน, vitest `src/i18n src/features/cloud/api` 16 ผ่าน, `next build` ผ่าน (ทุก route เป็น dynamic ตามคาด; `.next` ถูกสร้างใหม่ error `.next/types` เก่าหายแล้ว), ลอง probe ไฟล์ใต้ `(app)/hub`, `(print)`, `(app)/workspace/numbering` → eslint จับไทยครบ (ลบ probe แล้ว)
+
+### WP-02 — ไลบรารีเงิน ภาษี วันที่ (COMMIT_HASH)
+- สร้าง: `src/domain/money/money.ts` (`MONEY_MAX`, `round2`, `roundQty`, `sumMoney`, `pctOf`, `allocate`), `tax.ts` (`THAI_VAT_RATE`, `vatOf`, `splitVatInclusive` → `VatSplit`, `whtOf`, `WHT_PRESETS`, `WhtPresetKey`, `WHT_PRESET_KEYS`), `amount-in-words.ts` (`amountInWordsEn`), `index.ts`; `src/domain/dates/business-date.ts` (`bangkokToday`, `isBusinessDate`, `addDays`, `addMonths`, `daysBetween`, `compareDates`, `payPeriodOf`, type `PayPeriod`); `src/domain/erp/tax-id.ts` (`isThaiTaxId`); `amountInWords(value, locale)` ใน `src/i18n/format.ts` (th = `bahtText`, en = `amountInWordsEn`) ตาม D-52
+- `src/domain/subcontracting/snapshot.ts` import + re-export `round2` จาก `../money/money` (สูตรเดิมตรงตัว; เทสต์ยืนยันว่าเป็นฟังก์ชันเดียวกัน)
+- เทสต์: `src/domain/money/__tests__/{money,tax,amount-in-words}.test.ts`, `src/domain/dates/__tests__/business-date.test.ts`, `src/domain/erp/__tests__/tax-id.test.ts`, เพิ่มเคส `amountInWords` ใน `src/i18n/__tests__/format.test.ts`
+- migration: ไม่มี (WP ถัดไปที่แก้ schema ยังได้ `0007_*`)
+- เบี่ยงจากแผน: D-58, D-59, D-60, D-61
+- WP ถัดไปต้องรู้:
+  - backend import ผ่าน alias `@contrack/domain/money` / `@contrack/domain/dates/business-date` / `@contrack/domain/erp/tax-id` (มีใน `backend/tsconfig.json` และ jest `moduleNameMapper` แล้ว); ไฟล์เหล่านี้ pure ไม่มี dependency
+  - ฟังก์ชันวันที่ทุกตัว (ยกเว้น `isBusinessDate`/`bangkokToday`) โยน `RangeError` เมื่อวันที่ไม่ถูกต้อง — ตรวจ input ด้วย `businessDateSchema` ก่อนเรียก; `daysBetween(a, b)` = b − a (บวกเมื่อ b หลัง a); `compareDates` ใช้เป็น comparator ของ `sort` ได้
+  - `addDays`/`addMonths` รับจำนวนเต็มเท่านั้น
+  - `WHT_PRESETS` เป็น `as const` ใช้ `WHT_PRESET_KEYS` ทำ `z.enum` ได้
+  - `amountInWords` ยังไม่อยู่ใน `useFormat()` (เอกสารพิมพ์ใช้ภาษาเอกสาร ไม่ใช่ภาษา UI — เรียก `amountInWords(v, doc.language)` ตรง ๆ)
+- ตรวจแล้ว: `npx vitest run src/domain/money src/domain/dates src/domain/erp src/domain/subcontracting src/i18n` 100 ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ผ่าน; `cd backend && npx jest src/modules/subcontracting/contracts` 106 ผ่าน

@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
-    formatBaht, formatDate, formatDateLong, formatDateTime, formatDocumentDate, formatMoney, formatPercent, formatQty,
+    amountInWords, formatBaht, formatDate, formatDateLong, formatDateTime, formatDocumentDate, formatMoney, formatPercent, formatQty,
     pickLocalized,
 } from '../format';
 
 describe('format', () => {
+    it('amount in words follows the document language', () => {
+        expect(amountInWords(21, 'th')).toBe('ยี่สิบเอ็ดบาทถ้วน');
+        expect(amountInWords(21, 'en')).toBe('Twenty-one baht only');
+    });
+
     it('dates: Christian-era year in the UI, Buddhist year only on Thai documents that ask for it', () => {
         expect(formatDate('2026-10-31', 'th')).toBe('31 ต.ค. 2026');
         expect(formatDate('2026-10-31', 'en')).toBe('31 Oct 2026');
