@@ -16,5 +16,6 @@ describe('amountInWordsEn', () => {
         expect(amountInWordsEn(-100)).toBe('Minus one hundred baht only');
         expect(amountInWordsEn(-0.001)).toBe('Zero baht only');
         expect(amountInWordsEn(Number.NaN)).toBe('');
+        expect(amountInWordsEn(1e21)).toBe('');
     });
 });

@@ -21,7 +21,9 @@ export function round2(v: number): number {
 export function roundQty(v: number): number {
     if (!Number.isFinite(v)) return v;
     const sign = v < 0 ? -1 : 1;
-    return (sign * Math.round(Number((Math.abs(v) * 10_000).toPrecision(15)))) / 10_000;
+    const scaled = Math.abs(v) * 10_000;
+    // From 1e15 up a float64 has no fraction digits left to correct, and 15 significant digits would drop real ones.
+    return (sign * Math.round(scaled < 1e15 ? Number(scaled.toPrecision(15)) : scaled)) / 10_000;
 }
 
 /** Total of amounts: each one rounded to satang, then the sum rounded (no float drift such as 0.1 + 0.2). */
@@ -40,14 +42,17 @@ export function pctOf(amount: number, rate: number): number {
  * Splits `total` (rounded to satang first; may be negative) by `weights` (each ≥ 0) so the parts add up to it exactly:
  * part i = round2(total × wᵢ / Σw) for all but the last, the last takes the remainder (like installmentAmounts).
  * All weights 0 → equal parts. No weights → []. A negative or non-finite weight is a programming error and throws.
+ * When rounding the earlier parts up would leave the last part with the opposite sign (0.02 over 4 equal weights →
+ * 0.01 × 3 and −0.01), the parts are taken from the rounded running total instead, so no part has the wrong sign (D-62).
  */
 export function allocate(total: number, weights: readonly number[]): number[] {
     if (weights.length === 0) return [];
     if (weights.some(w => !Number.isFinite(w) || w < 0)) throw new RangeError('allocate: weights must be finite and ≥ 0');
     const amount = round2(total);
-    const sumW = weights.reduce((s, w) => s + w, 0);
-    const shares = sumW > 0 ? weights : weights.map(() => 1);
-    const divisor = sumW > 0 ? sumW : weights.length;
+    // Scale by the largest weight so Σw stays finite (weights near Number.MAX_VALUE would sum to Infinity).
+    const maxW = Math.max(...weights);
+    const shares = maxW > 0 ? weights.map(w => w / maxW) : weights.map(() => 1);
+    const divisor = shares.reduce((s, w) => s + w, 0);
     const parts: number[] = [];
     let earlier = 0;
     shares.forEach((w, i) => {
@@ -59,5 +64,18 @@ export function allocate(total: number, weights: readonly number[]): number[] {
         parts.push(part);
         earlier = round2(earlier + part);
     });
-    return parts;
+    const last = parts[parts.length - 1] ?? 0;
+    if (last * amount >= 0) return parts;
+    // Cumulative split: part i = round2(total × cumᵢ / Σw) − round2(total × cumᵢ₋₁ / Σw); monotone, so every part has
+    // the sign of the total, and the last still makes the sum exact.
+    const cumulative: number[] = [];
+    let cumW = 0;
+    let before = 0;
+    shares.forEach((w, i) => {
+        cumW += w;
+        const upTo = i === shares.length - 1 ? amount : round2((amount * cumW) / divisor);
+        cumulative.push(round2(upTo - before));
+        before = upTo;
+    });
+    return cumulative;
 }

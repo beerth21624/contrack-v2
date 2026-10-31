@@ -18,6 +18,7 @@ describe('round2 / roundQty', () => {
         expect(roundQty(-1.00005)).toBe(-1.0001);
         expect(roundQty(12.34564)).toBe(12.3456);
         expect(roundQty(1_234_567.12345)).toBe(1_234_567.1235);
+        expect(roundQty(123_456_789_012.3456)).toBe(123_456_789_012.3456);
     });
 
     it('sums and takes percentages to the satang', () => {
@@ -46,6 +47,15 @@ describe('allocate', () => {
         for (const [total, weights] of [[100, [1, 1, 1]], [-0.05, [1, 1, 1]], [123_456.78, [3, 7, 11, 13]], [0.01, [1, 1]]] as const) {
             expect(sum(allocate(total, weights))).toBe(round2(total));
         }
+    });
+
+    it('never gives a part the opposite sign of the total', () => {
+        expect(allocate(0.02, [1, 1, 1, 1])).toEqual([0.01, 0, 0.01, 0]);
+        expect(allocate(-0.02, [1, 1, 1, 1])).toEqual([-0.01, 0, -0.01, 0]);
+        const many = allocate(1, Array<number>(200).fill(1));
+        expect(many.every(p => p >= 0)).toBe(true);
+        expect(sum(many)).toBe(1);
+        expect(allocate(100, [Number.MAX_VALUE, Number.MAX_VALUE])).toEqual([50, 50]);
     });
 
     it('rejects negative weights', () => {

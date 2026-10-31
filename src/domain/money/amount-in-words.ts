@@ -44,12 +44,14 @@ const capitalize = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
 /**
  * e.g. 1250.5 → "One thousand two hundred fifty baht and fifty satang only"; 0 → "Zero baht only";
  * 0.25 → "Twenty-five satang only"; −100 → "Minus one hundred baht only". Rounded to satang first (round2).
- * Not a finite number → empty text.
+ * Not a finite number, or too large to be exact to the satang → empty text.
  */
 export function amountInWordsEn(amount: number): string {
     if (!Number.isFinite(amount)) return '';
     const rounded = round2(amount);
     const satangTotal = Math.round(Math.abs(rounded) * 100);
+    // Past 2^53 satang (≈ 9e13 baht, far above MONEY_MAX) float64 cannot hold every satang: no words rather than wrong ones.
+    if (!Number.isSafeInteger(satangTotal)) return '';
     const baht = Math.floor(satangTotal / 100);
     const satang = satangTotal % 100;
     let text: string;
