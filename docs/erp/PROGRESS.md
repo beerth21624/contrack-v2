@@ -12,7 +12,7 @@
 
 | WP | Title | Model | Status | Commit | Notes |
 |---|---|---|---|---|---|
-| WP-01 | i18n foundation (locale, format, parity, lint) | opus | done | (see Handoff) | migration `0006_wp01_user_locale`; `amountInWords` เลื่อนไป WP-02 (D-52) |
+| WP-01 | i18n foundation (locale, format, parity, lint) | opus | done | 3adace6 | migration `0006_wp01_user_locale`; `amountInWords` เลื่อนไป WP-02 (D-52) |
 | WP-02 | ไลบรารีเงิน ภาษี วันที่ | opus | todo | | |
 | WP-03 | Module registry, flag 4 ชั้น, entitlement, ModuleAccess (backend + contract) | opus | todo | | |
 | WP-04 | หน้าโมดูลและทดลองใช้ (web) | sonnet | todo | | |
@@ -167,7 +167,7 @@
 - ตรวจแล้ว: <คำสั่งที่รันและผล>
 ```
 
-### WP-01 — i18n foundation (locale, format, parity, lint) (commit: ดูบรรทัดถัดไปใน ledger / `git log --grep 'WP-01'`)
+### WP-01 — i18n foundation (locale, format, parity, lint) (3adace6)
 - สร้าง (web): `src/i18n/request.ts` (cookie `NEXT_LOCALE` → locale), `config.ts` (`resolveLocale`, `isLocale`, `LOCALE_COOKIE`), `locale-cookie.ts` (`readLocaleCookie`/`writeLocaleCookie`), `global.d.ts` (คีย์ข้อความ type-safe), `LocaleProvider.tsx` (`useAppLocale()` → `{locale, setLocale}` โดย `setLocale` คืน `Promise<boolean>` = บันทึกโปรไฟล์สำเร็จไหม; `useAntdLocale()`), `format.ts`, `useFormat.ts`, `document-translator.ts`, `src/features/cloud/api/error-message.ts` (`useErrorMessage()`, `errorMessage(t, e)`, `errorReason(details)`, type `ErrorsTranslator`)
 - namespace ใหม่: `errors` (`unknown`, `codes.*` ครบทุก `ERROR_CODES` + `network_error`/`invalid_response` — ไทยตรงกับ `thaiErrorMessage`, `reasons.*` 10 ตัวจาก 01 §1.5), `enums` `{}`, `shell`, `account` (สำเนาข้อความไทยเดิมของเมนูบัญชีแบบตรงตัว เตรียมให้ I-01 ใช้ + `account.language`, `account.languageSaveFailed`), `documents` `{}`; `app` เพิ่ม `metaTitle`/`metaDescription`/`vendorMetaTitle`/`vendorMetaDescription`
 - root layout: async, `<html lang={locale}>`, `NextIntlClientProvider` (server) ครอบ `LocaleProvider`, `generateMetadata`; `(vendor)/layout.tsx` ใช้ `generateMetadata`; `next.config.ts` ครอบ `createNextIntlPlugin`
