@@ -284,5 +284,15 @@
     "received": "รับของครบ",
     "closed": "ปิดแล้ว",
     "cancelled": "ยกเลิก"
+  },
+  "receiptCondition": {
+    "ok": "ปกติ",
+    "damaged": "เสียหาย",
+    "short": "ส่งขาด"
+  },
+  "goodsReceiptStatus": {
+    "draft": "ฉบับร่าง",
+    "confirmed": "ยืนยันแล้ว",
+    "cancelled": "ยกเลิก"
   }
 }

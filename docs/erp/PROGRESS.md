@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-40 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-41 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -52,7 +52,7 @@
 | WP-38 | PR + RFQ backend | opus | done | 09b3448 | migration `0026_wp38_pr_rfq`; โมดูล `backend/src/modules/procurement/` (PR/RFQ); D-278…D-283 |
 | WP-39 | PO + รับของ + 3-way match backend | opus | done | dd27f4f | migration `0027_wp39_po_gr`; PO/GR ในโมดูล procurement; port `PurchaseOrders`; D-284…D-291 |
 | WP-40 | PR/RFQ web | sonnet | done | 5f88435 | ไม่มี migration; `src/features/erp/procurement/*`, routes `/p/[id]/procurement`, `…/procurement/rfqs/[rfqId]`, แท็บ nav `procurement`; i18n `procurement` + enums; D-292…D-295 |
-| WP-41 | PO/รับของ web + พิมพ์ PO/RFQ | sonnet | todo | | |
+| WP-41 | PO/รับของ web + พิมพ์ PO/RFQ | sonnet | done | HASH41 | ไม่มี migration; `PurchaseOrderPage`, `GoodsReceiptDialog`, `PurchasingPage`, พิมพ์ PO/RFQ, ประวัติราคาผู้ขาย; routes `…/procurement/orders/[orderId]`, `/purchasing`, `/print/purchase-order/[id]`, `/print/rfq/[id]`; D-296…D-299 |
 | WP-42 | รายงานประจำวัน backend | opus | todo | | |
 | WP-43 | รายงานประจำวัน web | sonnet | todo | | |
 | WP-44 | ใบลงเวลา งวดค่าแรง 15 วัน เบิกล่วงหน้า backend | opus | todo | | |
@@ -392,6 +392,10 @@
 | D-293 | 2026-11-01 | (WP-40) PR: ฟอร์มสั้นมือถือ = วันที่ต้องการ + บรรทัด (รายการ ปริมาณ หน่วย ราคาประมาณ รหัสต้นทุน) → "บันทึกฉบับร่าง" หรือ "ส่งขออนุมัติ" (สร้างแล้ว submit ต่อทันที); ถ้า submit ล้มเหลว (เช่น `override_reason_required`) ฉบับร่างที่สร้างแล้วถูกเปิดต่อในโหมดแก้ไข พร้อมคำเตือน (`budgetWarnings` ที่เซิร์ฟเวอร์คำนวณตอนบันทึก) และช่องเหตุผล; จาก BOQ = ตารางเลือก cost code (หลายรายการ) → สร้าง `source:'boq'` แล้วเปิดแก้ปริมาณ; ยกเลิก PR ทำได้ใน dialog (draft/pending_approval/approved) | ตาม Handoff WP-38 |
 | D-294 | 2026-11-01 | (WP-40) RFQ: สร้างจากบรรทัด PR ที่ approved/partially_ordered (คงเหลือ = qty − orderedQty > 0) แล้วไปหน้า RFQ; เชิญผู้ขายทีละรายด้วย `SupplierPicker` (PUT ชุดเต็ม), กรอกราคา (ราคาว่าง = ไม่เสนอ, สวิตช์ "ราคารวม VAT", แนบไฟล์ `supplier_quote`, ปุ่ม "ผู้ขายไม่เสนอราคา" เมื่อยังไม่มี quote), เทียบราคาแสดงเมื่อมี quote (ตาราง HTML เลื่อนแนวนอน; ช่องต่ำสุดเขียว, ยอดรวมเทียบเท่า), award (ยืนยันก่อน) เฉพาะ RFQ `sent` + `procurement.manage` แล้วไปแท็บใบสั่งซื้อ (หน้า PO draft จริงเป็นของ WP-41) | ตาม acceptance |
 | D-295 | 2026-11-01 | (WP-40) เพิ่ม subject `purchase_request` (→ `/p/<id>/procurement`) และ `rfq` (→ `/p/<id>/procurement/rfqs/<id>`) ใน `ROUTES` ของ `numbering-search.ts` (ค้นหาเลขเอกสารจาก portal); `enums.purchaseOrderStatus` ถูกเพิ่มแล้วตั้งแต่ WP นี้ (ใช้ในแท็บ PO) | ตาม Handoff WP-38 |
+| D-296 | 2026-11-01 | (WP-41) รับของ = ฟอร์มเดียว: เว็บเรียก `POST …/receipts` แล้ว `POST /goods-receipts/:id/confirm` ต่อกัน (ถ้า confirm ล้มเหลว ยกเลิกฉบับร่างนั้นทิ้ง); บรรทัด "รับครบถ้วน (ใช้ได้)" = `qtyReceived`, "ของเสีย/ตีกลับ" = `qtyRejected`, สภาพของเว้นว่าง = ให้เซิร์ฟเวอร์เลือก (`damaged` เมื่อมีตีกลับ); รูปใบส่งของ (`delivery_note_photo`) และรูปของ (`goods_photo`) ใช้ `<input capture="environment">` และ `takenAt` จาก `File.lastModified` | ตาม Handoff WP-39 |
+| D-297 | 2026-11-01 | (WP-41) หน้า PO: draft ที่ `canEdit` แก้ได้ทั้งหัวเอกสาร/บรรทัด (ส่ง PATCH ชุดเต็ม; ราคา/ปริมาณ/รหัสต้นทุน/เพิ่มบรรทัดพิมพ์เอง) ปุ่ม "ออกใบสั่งซื้อ" บันทึกก่อนถ้ามีการแก้ แล้ว `issue`; คำเตือนงบใช้ `BudgetWarnings` ซ้ำ (422 `override_reason_required` → แสดง `details.warnings` + ช่องเหตุผล); ผลเป็น `pending_approval` ได้ (ข้อความ "ส่งขออนุมัติแล้ว"); ยกเลิกได้ draft/pending/issued ที่ยังไม่รับของ, ปิดได้ issued/partially/received (ต้องมี `procurement.manage`); แท็บ "รับของ" แยกไม่ทำ — ประวัติรับของอยู่ในหน้า PO; แท็บใบสั่งซื้อของโครงการเพิ่มปุ่ม "สร้างใบสั่งซื้อ" (เลือกผู้ขาย → PO ว่าง); award ไปหน้า PO draft | เกณฑ์ WP-41 + D-292 |
+| D-298 | 2026-11-01 | (WP-41) พิมพ์: ใช้ข้อมูลบริษัทสดจาก profile (PO ไม่มี company snapshot), ผู้ขายใช้ `supplierSnapshot` เมื่อออกแล้วไม่งั้นข้อมูลสด; watermark draft/void ตามสถานะ; RFQ พิมพ์ `/print/rfq/<id>?supplier=<id>` ระบุผู้ขายที่ได้รับเชิญ (ไม่ใส่ = เว้นช่อง "ผู้ขาย ____" ไม่เปิดเผยชื่อคู่แข่ง); ข้อความเอกสาร `documents.purchaseOrder.*` / `documents.rfq.*` ตามภาษาของเอกสาร | 03-i18n §6 |
+| D-299 | 2026-11-01 | (WP-41) เมนู `purchasing` (หน้า `/purchasing`, PO ข้ามโครงการ ตัวกรอง รอรับของ/รออนุมัติ/ร่าง/จบแล้ว/ทั้งหมด, สิทธิ์ `procurement.read`) ใน `WORKSPACE_NAV` กลุ่ม purchasing; การ์ดประวัติราคาในหน้า supplier (ไม่ใช่แท็บ); `numbering-search.ts` เพิ่ม subject `purchase_order` (ไม่เพิ่ม `goods_receipt` เพราะ subjectId เป็น id ของ GR ไม่ใช่ PO จึงสร้างลิงก์หน้าไม่ได้) | เกณฑ์ WP-41 |
 
 ## Handoff notes
 
@@ -958,3 +962,10 @@
 - เบี่ยงจากแผน: D-292 … D-295; ไม่เขียนเทสต์ใหม่ (คำสั่งเจ้าของ: ส่งของก่อน); ไม่มี migration; ยังไม่ได้ลองกดใน browser
 - WP-41 ต้องรู้: ลิงก์ `orderHref(projectId, orderId)` (`/p/<id>/procurement/orders/<id>`) ใน `status.ts` ถูกใช้ในแท็บ PO แล้ว แต่หน้ายังไม่มีจนกว่า WP-41 สร้าง route; หลัง award เว็บพาไป `procurementHref(projectId,'orders')` — เปลี่ยนเป็น `orderHref` ได้เมื่อมีหน้า PO (`useAwardRfq` คืน `orderId` ใน `RfqAwardDto`); แท็บ "รับของ" ยังไม่มี; ใช้ `BudgetWarnings` ซ้ำกับ `issue` (422 `override_reason_required`); เพิ่ม subject `purchase_order`/`goods_receipt` ใน `ROUTES` ของ `numbering-search.ts`; ปุ่มพิมพ์ RFQ (`/print/rfq/<id>`) ยังไม่มีใน `RfqEditorPage`
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` และ `-p backend/tsconfig.json` ผ่าน; eslint `src/features/erp/procurement`, routes, `nav-registry.ts`, `numbering-search.ts` ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n` ผ่าน
+
+### WP-41 — PO/รับของ web + พิมพ์ PO/RFQ (HASH41)
+- สร้าง `src/features/erp/procurement/`: `PurchaseOrderPage` (แก้ draft / ออก / ยกเลิก / ปิด / พิมพ์ / ประวัติรับของ), `OrderLinesTable` (`OrderLinesEditor`, `OrderLinesTable`), `GoodsReceiptDialog`, `PurchasingPage`, `SupplierPriceHistory`, `print-model.ts`, `PurchaseOrderPrintDocument/Page`, `RfqPrintDocument/Page`; ขยาย `api.ts`/`hooks.ts` (PO, GR, price history, workspace PO list); routes `(app)/p/[projectId]/procurement/orders/[orderId]`, `(app)/purchasing`, `(print)/print/purchase-order/[orderId]`, `(print)/print/rfq/[rfqId]`; เมนู `purchasing` ใน `nav-registry.ts`; `RfqEditorPage` มีปุ่มพิมพ์ RFQ (ทั้งใบ / ต่อผู้ขาย) และ award ไปหน้า PO draft; `ProcurementPage` แท็บ PO มีปุ่มสร้าง
+- i18n (th+en): `procurement.order|receipt|purchasing|newOrder|priceHistory` (+ `orders.create`, `rfq.print`, `rfq.suppliers.print`), `enums.receiptCondition|goodsReceiptStatus`, `documents.purchaseOrder|rfq`, `nav.purchasing`; backend `numbering-search.ts` เพิ่ม subject `purchase_order`
+- เบี่ยงจากแผน: D-296 … D-299; ไม่เขียนเทสต์ใหม่ (คำสั่งเจ้าของ: ส่งของก่อน); ไม่มี migration; ยังไม่ได้ลองกดใน browser
+- WP ถัดไปต้องรู้: `useReceiveGoods`/`GoodsReceiptDialog` รับ `PurchaseOrderDto`; WP-49 ควรลิงก์จากบิลผู้ขายมาที่ `orderHref(projectId, orderId)`; คะแนนผู้ขายหลังรับของยังไม่มี UI (ใช้ endpoint ratings เดิม `sourceType 'goods_receipt'`); PO ที่ได้รับอนุมัติจาก inbox ทำให้สถานะเปลี่ยนที่เซิร์ฟเวอร์ — หน้า PO โหลดสดทุกครั้ง (`staleTime: 0`)
+- ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` และ `-p backend/tsconfig.json` ผ่าน; eslint `src/features/erp/procurement`, `SupplierDetailPage.tsx`, `nav-registry.ts`, routes ใหม่, `numbering-search.ts` ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/features/erp/hub` ผ่าน

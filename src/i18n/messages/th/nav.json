@@ -32,5 +32,6 @@
     "procurement": "จัดซื้อ"
   },
   "receivables": "ลูกหนี้",
-  "suppliers": "ผู้ขาย"
+  "suppliers": "ผู้ขาย",
+  "purchasing": "ใบสั่งซื้อ"
 }

@@ -128,7 +128,8 @@
       "status": "Status",
       "orderDate": "Order date",
       "total": "Total"
-    }
+    },
+    "create": "New purchase order"
   },
   "rfq": {
     "untitled": "RFQ",
@@ -184,14 +185,16 @@
         "name": "Supplier",
         "contact": "Contact",
         "status": "Status"
-      }
+      },
+      "print": "Print"
     },
     "compare": {
       "title": "Compare quotes"
     },
     "award": {
       "done": "Supplier chosen, a draft purchase order was made"
-    }
+    },
+    "print": "Print RFQ"
   },
   "quote": {
     "title": "Prices from {name}",
@@ -236,5 +239,155 @@
     "awardHint": "A draft purchase order is made from the quoted prices; you can check it before issuing",
     "noQuotes": "No supplier has quoted yet",
     "budgetTotal": "Budget total"
+  },
+  "order": {
+    "title": "Purchase order (PO)",
+    "loadFailed": "Could not load the purchase order",
+    "retry": "Retry",
+    "saved": "Saved",
+    "issued": "Purchase order issued",
+    "submitted": "Sent for approval",
+    "backToList": "Back to purchasing",
+    "print": "Print PO",
+    "pendingHint": "This purchase order is waiting for approval. Once approved it gets its number and commits the budget.",
+    "fromRfq": "Draft purchase order from the RFQ award. Check prices and quantities, then issue it.",
+    "receive": "Receive goods",
+    "save": "Save",
+    "issue": "Issue PO",
+    "days": "{count} days",
+    "languages": {
+      "th": "Thai",
+      "en": "English"
+    },
+    "details": {
+      "title": "Details"
+    },
+    "fields": {
+      "supplier": "Supplier",
+      "orderDate": "Order date",
+      "deliveryDate": "Delivery date",
+      "deliveryAddress": "Delivery address",
+      "language": "Document language",
+      "paymentTermDays": "Credit (days)",
+      "discount": "Discount",
+      "vat": "Add VAT 7%",
+      "terms": "Terms",
+      "supplierTaxId": "Supplier tax ID",
+      "supplierContact": "Contact"
+    },
+    "lines": {
+      "title": "Items ordered",
+      "costCode": "Cost code",
+      "desc": "Item",
+      "descPlaceholder": "Item name",
+      "qty": "Quantity",
+      "unit": "Unit",
+      "unitPrice": "Unit price (excl. VAT)",
+      "amount": "Amount",
+      "remove": "Remove item",
+      "add": "Add item",
+      "received": "Received",
+      "billed": "Billed"
+    },
+    "totals": {
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "vat": "VAT",
+      "total": "Total"
+    },
+    "cancel": {
+      "button": "Cancel PO",
+      "confirm": "Cancel this purchase order?",
+      "done": "Purchase order cancelled"
+    },
+    "close": {
+      "button": "Close PO",
+      "confirm": "Close this purchase order?",
+      "hint": "What was not received is released from committed cost and nothing more can be received.",
+      "done": "Purchase order closed"
+    },
+    "receipts": {
+      "title": "Goods received",
+      "empty": "Nothing received yet",
+      "cancelDraft": "Cancel draft",
+      "rejected": "Rejected",
+      "columns": {
+        "number": "No.",
+        "date": "Received on",
+        "deliveryNoteNo": "Delivery note no.",
+        "status": "Status",
+        "amount": "Value"
+      }
+    }
+  },
+  "receipt": {
+    "title": "Receive goods {number}",
+    "confirm": "Confirm receipt",
+    "done": "Goods receipt recorded",
+    "deliveryNote": "Delivery note",
+    "takePhoto": "Take / choose photo",
+    "removePhoto": "Remove photo",
+    "fields": {
+      "deliveryNoteNo": "Delivery note no.",
+      "receivedDate": "Received on (empty = today)",
+      "note": "Note"
+    },
+    "lines": {
+      "remaining": "Remaining",
+      "received": "Accepted quantity",
+      "rejected": "Rejected / damaged",
+      "condition": "Condition",
+      "conditionAuto": "Automatic",
+      "notePlaceholder": "Note, e.g. broken, short delivery"
+    },
+    "photos": {
+      "deliveryNote": "Delivery note photos",
+      "goods": "Photos of the goods"
+    }
+  },
+  "purchasing": {
+    "title": "Purchase orders, all projects",
+    "subtitle": "Follow orders waiting for goods or approval, and finished ones",
+    "loadFailed": "Could not load the list",
+    "retry": "Retry",
+    "filters": {
+      "open": "Waiting for goods",
+      "pending": "Waiting for approval",
+      "draft": "Drafts",
+      "closed": "Finished",
+      "all": "All"
+    },
+    "columns": {
+      "number": "No.",
+      "project": "Project",
+      "supplier": "Supplier",
+      "status": "Status",
+      "orderDate": "Order date",
+      "deliveryDate": "Delivery date",
+      "total": "Total"
+    },
+    "empty": {
+      "title": "No purchase orders in this group",
+      "hint": "Pick another group, or make a purchase order from a project's purchasing page"
+    }
+  },
+  "newOrder": {
+    "title": "New purchase order",
+    "hint": "Pick the supplier, then add the items on the purchase order page",
+    "submit": "Create"
+  },
+  "priceHistory": {
+    "title": "Price history",
+    "search": "Search items",
+    "loadFailed": "Could not load the price history",
+    "retry": "Retry",
+    "empty": "No price history yet",
+    "columns": {
+      "item": "Item",
+      "unitPrice": "Unit price",
+      "qty": "Quantity",
+      "date": "Order date",
+      "order": "Purchase order"
+    }
   }
 }

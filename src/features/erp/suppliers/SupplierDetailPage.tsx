@@ -1,7 +1,6 @@
 'use client';
 
 // ─── One supplier: edit the details, archive / restore, ratings, history ───
-// The price-history tab (procurement, WP-39) is not shown yet.
 import { useEffect, useState } from 'react';
 import { Alert, App, Button, Input, Rate, Result, Skeleton, Tag } from 'antd';
 import { useTranslations } from 'next-intl';
@@ -14,6 +13,7 @@ import { EmptyState } from '../shared/EmptyState';
 import { ErpPage } from '../shared/ErpPage';
 import { SectionCard } from '../shared/SectionCard';
 import { useErpWorkspace } from '../shared/useErpWorkspace';
+import { SupplierPriceHistory } from '../procurement/SupplierPriceHistory';
 import { SupplierForm } from './SupplierForm';
 import { usePatchSupplier, useRateSupplier, useSetSupplierArchived, useSupplier, useSupplierRatings } from './hooks';
 
@@ -149,6 +149,7 @@ export function SupplierDetailPage({ supplierId }: { supplierId: string }) {
                     void message.success(t('saved'));
                 }}
             />
+            <SupplierPriceHistory supplierId={s.id} />
             <SupplierRatings supplierId={s.id} mayRate={mayManage && !archived} />
             <AuditTimeline workspaceId={s.workspaceId} entityType="supplier" entityId={s.id} />
         </ErpPage>

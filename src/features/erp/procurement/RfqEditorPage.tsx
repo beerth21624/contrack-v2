@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Alert, App, Button, Input, Select, Skeleton, Table } from 'antd';
-import { SendOutlined } from '@ant-design/icons';
+import { PrinterOutlined, SendOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useTranslations } from 'next-intl';
 import { DOC_LANGUAGES, can, type DocLanguage, type PatchRfqRequest, type RfqDto, type RfqLineDto, type RfqSupplierDto } from '@/shared/contract';
@@ -23,7 +23,7 @@ import { useErpWorkspace } from '../shared/useErpWorkspace';
 import { useAwardRfq, useCancelRfq, usePatchRfq, usePutRfqSuppliers, useRfq, useRfqCompare, useSendRfq } from './hooks';
 import { QuoteEntryDialog } from './QuoteEntryDialog';
 import { RfqCompareTable } from './RfqCompareTable';
-import { RFQ_STATUS_TONES, procurementHref } from './status';
+import { RFQ_STATUS_TONES, orderHref, procurementHref } from './status';
 
 const supplierName = (s: { nameTh: string; nameEn: string }): string => (s.nameTh !== '' ? s.nameTh : s.nameEn);
 
@@ -161,6 +161,9 @@ function SuppliersCard({ rfq, canManage, workspaceId }: { rfq: RfqDto; canManage
             key: 'actions', title: '', align: 'right',
             render: (_, s) => (
                 <div className="flex justify-end gap-2">
+                    <Link href={`/print/rfq/${encodeURIComponent(rfq.id)}?supplier=${encodeURIComponent(s.supplierId)}`} target="_blank">
+                        <Button size="small" icon={<PrinterOutlined />}>{t('suppliers.print')}</Button>
+                    </Link>
                     {rfq.status === 'sent' && canManage && (
                         <Button size="small" type={s.status === 'invited' ? 'primary' : 'default'} onClick={() => setQuoteFor(s)}>
                             {s.status === 'quoted' ? t('suppliers.editQuote') : t('suppliers.enterQuote')}
@@ -218,6 +221,7 @@ function Editor({ rfq }: { rfq: RfqDto }) {
                 )}
                 extra={canManage && (
                     <div className="flex flex-wrap items-center gap-2">
+                        <Link href={`/print/rfq/${encodeURIComponent(rfq.id)}`} target="_blank"><Button icon={<PrinterOutlined />}>{t('print')}</Button></Link>
                         {(rfq.status === 'draft' || rfq.status === 'sent') && (
                             <ConfirmAction danger title={t('cancel.confirm')} onConfirm={async () => { await cancel.mutateAsync(); void message.success(t('cancel.done')); }}>
                                 {t('cancel.button')}
@@ -260,10 +264,10 @@ function Editor({ rfq }: { rfq: RfqDto }) {
                     {compare.data !== undefined && (
                         <RfqCompareTable compare={compare.data} canAward={canManage && rfq.status === 'sent'}
                             onAward={async (supplierId) => {
-                                await award.mutateAsync({ supplierId });
+                                const awarded = await award.mutateAsync({ supplierId });
                                 void message.success(t('award.done'));
-                                // The PO draft is made; until the PO screen (WP-41) it is listed on the project's orders tab.
-                                router.push(procurementHref(rfq.projectId, 'orders'));
+                                // The PO draft is made: open it.
+                                router.push(orderHref(rfq.projectId, awarded.orderId));
                             }} />
                     )}
                 </SectionCard>

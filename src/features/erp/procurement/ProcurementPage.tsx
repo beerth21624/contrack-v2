@@ -1,6 +1,6 @@
 'use client';
 
-// ─── /p/[projectId]/procurement: purchase requests, RFQs and purchase orders of a project (PO screens: WP-41) ───
+// ─── /p/[projectId]/procurement: purchase requests, RFQs and purchase orders of a project ───
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -21,10 +21,11 @@ import { MoneyText } from '../shared/MoneyText';
 import { QtyText } from '../shared/QtyText';
 import { SectionCard } from '../shared/SectionCard';
 import { StatusTag } from '../shared/StatusTag';
+import { SupplierPicker } from '../shared/SupplierPicker';
 import { useErpWorkspace } from '../shared/useErpWorkspace';
 import { FromBoqPicker } from './FromBoqPicker';
 import {
-    useCreatePurchaseRequest, useCreateRfq, usePurchaseOrders, usePurchaseRequestDetails, usePurchaseRequests, useRfqs,
+    useCreatePurchaseOrder, useCreatePurchaseRequest, useCreateRfq, usePurchaseOrders, usePurchaseRequestDetails, usePurchaseRequests, useRfqs,
 } from './hooks';
 import { PurchaseRequestEditor } from './PurchaseRequestEditor';
 import { ORDER_STATUS_TONES, REQUEST_STATUS_TONES, RFQ_STATUS_TONES, orderHref, rfqHref } from './status';
@@ -214,10 +215,41 @@ function RfqsTab({ projectId, canManage }: { projectId: string; canManage: boole
     );
 }
 
-function OrdersTab({ projectId }: { projectId: string }) {
+function NewOrderDialog({ projectId, workspaceId, onClose }: { projectId: string; workspaceId: string | undefined; onClose: () => void }) {
+    const t = useTranslations('procurement.newOrder');
+    const toText = useErrorMessage();
+    const { message } = App.useApp();
+    const router = useRouter();
+    const create = useCreatePurchaseOrder(projectId);
+    const [supplierId, setSupplierId] = useState<string | null>(null);
+
+    const submit = async () => {
+        if (supplierId === null) return;
+        try {
+            const o = await create.mutateAsync({ supplierId });
+            onClose();
+            router.push(orderHref(projectId, o.id));
+        } catch (e) {
+            void message.error(toText(e));
+        }
+    };
+
+    return (
+        <Modal open title={t('title')} okText={t('submit')} confirmLoading={create.isPending} okButtonProps={{ disabled: supplierId === null }}
+            onCancel={onClose} onOk={() => { void submit(); }} destroyOnHidden>
+            <div className="flex min-w-0 flex-col gap-3">
+                <div className="text-[13px] text-gray-500">{t('hint')}</div>
+                <SupplierPicker value={supplierId} workspaceId={workspaceId} allowClear={false} onChange={setSupplierId} />
+            </div>
+        </Modal>
+    );
+}
+
+function OrdersTab({ projectId, canManage, workspaceId }: { projectId: string; canManage: boolean; workspaceId: string | undefined }) {
     const t = useTranslations('procurement');
     const toText = useErrorMessage();
     const list = usePurchaseOrders(projectId);
+    const [dialog, setDialog] = useState(false);
 
     if (list.isLoading) return <Skeleton active />;
     if (list.isError) {
@@ -237,15 +269,21 @@ function OrdersTab({ projectId }: { projectId: string }) {
         { key: 'date', title: t('orders.columns.orderDate'), render: (_, o) => <DateText value={o.orderDate} /> },
         { key: 'total', title: t('orders.columns.total'), align: 'right', render: (_, o) => <MoneyText value={o.total} className="font-semibold" /> },
     ];
+    const create = canManage
+        ? <Button type="primary" icon={<PlusOutlined />} onClick={() => setDialog(true)}>{t('orders.create')}</Button>
+        : undefined;
     return (
-        <SectionCard title={t('orders.title')}>
-            {rows.length === 0 ? (
-                <EmptyState title={t('orders.empty.title')} hint={t('orders.empty.hint')} />
-            ) : (
-                <Table<PurchaseOrderSummaryDto> size="small" rowKey="id" columns={columns} dataSource={rows}
-                    pagination={rows.length > 20 ? { pageSize: 20, showSizeChanger: false } : false} scroll={{ x: 'max-content' }} />
-            )}
-        </SectionCard>
+        <>
+            <SectionCard title={t('orders.title')} extra={create}>
+                {rows.length === 0 ? (
+                    <EmptyState title={t('orders.empty.title')} hint={t('orders.empty.hint')} action={create} />
+                ) : (
+                    <Table<PurchaseOrderSummaryDto> size="small" rowKey="id" columns={columns} dataSource={rows}
+                        pagination={rows.length > 20 ? { pageSize: 20, showSizeChanger: false } : false} scroll={{ x: 'max-content' }} />
+                )}
+            </SectionCard>
+            {dialog && <NewOrderDialog projectId={projectId} workspaceId={workspaceId} onClose={() => setDialog(false)} />}
+        </>
     );
 }
 
@@ -264,7 +302,7 @@ function ProcurementTabs({ projectId }: { projectId: string }) {
             items={[
                 { key: 'requests', label: t('tabs.requests'), children: <RequestsTab projectId={projectId} canRequest={can(ws.role, 'procurement.request')} /> },
                 { key: 'rfqs', label: t('tabs.rfqs'), children: <RfqsTab projectId={projectId} canManage={can(ws.role, 'procurement.manage')} /> },
-                { key: 'orders', label: t('tabs.orders'), children: <OrdersTab projectId={projectId} /> },
+                { key: 'orders', label: t('tabs.orders'), children: <OrdersTab projectId={projectId} canManage={can(ws.role, 'procurement.manage')} workspaceId={ws.workspaceId} /> },
             ]}
         />
     );

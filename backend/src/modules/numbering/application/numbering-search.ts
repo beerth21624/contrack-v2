@@ -24,6 +24,7 @@ const ROUTES: Readonly<Record<string, SubjectRoute>> = {
     variation: { module: 'variations', permission: 'variations.read', href: d => `/p/${d.projectId}/variations/${d.subjectId}` },
     purchase_request: { module: 'procurement', permission: 'procurement.read', href: d => `/p/${d.projectId}/procurement` },
     rfq: { module: 'procurement', permission: 'procurement.read', href: d => `/p/${d.projectId}/procurement/rfqs/${d.subjectId}` },
+    purchase_order: { module: 'procurement', permission: 'procurement.read', href: d => `/p/${d.projectId}/procurement/orders/${d.subjectId}` },
 };
 
 @Injectable()

@@ -284,5 +284,15 @@
     "received": "Fully received",
     "closed": "Closed",
     "cancelled": "Cancelled"
+  },
+  "receiptCondition": {
+    "ok": "OK",
+    "damaged": "Damaged",
+    "short": "Short"
+  },
+  "goodsReceiptStatus": {
+    "draft": "Draft",
+    "confirmed": "Confirmed",
+    "cancelled": "Cancelled"
   }
 }

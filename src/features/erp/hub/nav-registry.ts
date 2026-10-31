@@ -76,6 +76,7 @@ export const WORKSPACE_NAV: readonly ErpNavGroup[] = [
     {
         groupKey: 'purchasing',
         items: [
+            { key: 'purchasing', labelKey: 'purchasing', href: '/purchasing', module: 'procurement', permission: 'procurement.read', match: p => p.startsWith('/purchasing') },
             { key: 'suppliers', labelKey: 'suppliers', href: '/suppliers', module: 'procurement', permission: 'suppliers.read', match: p => p.startsWith('/suppliers') },
         ],
     },

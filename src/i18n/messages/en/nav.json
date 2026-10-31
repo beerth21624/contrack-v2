@@ -32,5 +32,6 @@
     "procurement": "Purchasing"
   },
   "receivables": "Receivables",
-  "suppliers": "Suppliers"
+  "suppliers": "Suppliers",
+  "purchasing": "Purchase orders"
 }
