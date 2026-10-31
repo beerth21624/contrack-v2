@@ -33,6 +33,10 @@
     "over_budget": "The amount is over budget.",
     "document_issued_exists": "This cannot be done because issued documents exist.",
     "period_has_documents": "This period already has documents.",
-    "project_archived": "This project is archived."
+    "project_archived": "This project is archived.",
+    "trial_used": "This workspace has already used the trial of this module. A trial can only be used once.",
+    "already_entitled": "This workspace is already entitled to this module.",
+    "entitlement_revoked": "The entitlement to this module was revoked. Contact the administrator.",
+    "no_trial": "This module has no trial."
   }
 }

@@ -1,0 +1,141 @@
+{
+  "page": {
+    "title": "Add-on modules",
+    "subtitle": "Switch on only what you use. Switching off keeps your data and only hides the module's screens.",
+    "workspaceLabel": "Workspace",
+    "mayNotManage": "Only the owner or an admin of the workspace can switch modules on or off",
+    "empty": "No modules",
+    "columnModule": "Module",
+    "columnState": "Status"
+  },
+  "groups": {
+    "legacy": "Existing modules",
+    "erp": "ERP"
+  },
+  "status": {
+    "unavailable": "Not available yet",
+    "off": "Off",
+    "on": "On",
+    "since": "since {date}",
+    "missing": "Switch on first: {modules}"
+  },
+  "entitlement": {
+    "trial": "Trial, expires {date}",
+    "beta": "Beta",
+    "purchased": "Purchased",
+    "purchasedUntil": "Purchased, expires {date}",
+    "betaUntil": "Beta, expires {date}",
+    "none": "Not entitled yet",
+    "expired": "Entitlement expired",
+    "revoked": "Entitlement revoked"
+  },
+  "actions": {
+    "startTrial": "Try free for {days} days"
+  },
+  "messages": {
+    "switchedOn": "{module} is on",
+    "switchedOff": "{module} is off",
+    "trialStarted": "Trial of {module} started",
+    "trialStartedMore": "Trial of {module} and {others} started"
+  },
+  "confirmOff": {
+    "title": "Switch off {module}?",
+    "content": "The module's menus and buttons disappear for everyone in this workspace. Your data stays, and comes back whenever you switch it on again.",
+    "ok": "Switch off",
+    "cancel": "Cancel"
+  },
+  "activeSubcontracts": {
+    "title": "{count, plural, one {# contract is still running} other {# contracts are still running}}",
+    "content": "If you switch it off now, your team will not see the subcontracting menu and crews can only view their contracts (no claims or edits) until you switch it on again. Nothing is lost.",
+    "ok": "Switch off anyway"
+  },
+  "cascade": {
+    "title": "Switch off {module}?",
+    "dependents": "These modules depend on {module} and will be switched off too",
+    "work": "Work still in progress (nothing is deleted, but it is out of reach until you switch it on again)",
+    "ok": "Switch all off"
+  },
+  "work": {
+    "activeSubcontracts": "{count} running subcontracts"
+  },
+  "gate": {
+    "title": "{module} is switched off",
+    "subTitle": "This workspace is used for BOQ estimation only",
+    "notEntitled": "This workspace is not entitled to this module yet",
+    "missingDependencies": "Switch on the required modules first: {modules}",
+    "enable": "Switch on in settings",
+    "backToBoq": "Back to BOQ"
+  },
+  "subcontracting": {
+    "label": "Subcontracting (find subcontractors)",
+    "hint": "Send work from the BOQ to crews for quotes, compare prices, sign contracts and track payment installments"
+  },
+  "materials": {
+    "label": "Material price requests",
+    "hint": "Request material prices from shops"
+  },
+  "owner-leads": {
+    "label": "Owners looking for contractors",
+    "hint": "Homeowners looking for contractors"
+  },
+  "ai-assist": {
+    "label": "AI assistant (BOQ review, item matching)",
+    "hint": "A decision model helps review the BOQ before sending and matches typed items to the catalogue; it never calculates numbers"
+  },
+  "workforce": {
+    "label": "Crews and staffing",
+    "hint": "The company's crews and people, scheduling crews to planned work, and a cross-project staffing board with crew move suggestions"
+  },
+  "project-hub": {
+    "label": "Project hub",
+    "hint": "Every project at a glance: budget, documents and tasks in one place"
+  },
+  "portal": {
+    "label": "Role-based home",
+    "hint": "A home page showing what each person has to do for their role"
+  },
+  "boq-control": {
+    "label": "BOQ history and baseline",
+    "hint": "Keep BOQ history, compare versions and lock a baseline as the project budget"
+  },
+  "quotations": {
+    "label": "Quotations",
+    "hint": "Bilingual quotations built from the BOQ, with version comparison, ready to send to customers"
+  },
+  "contracts": {
+    "label": "Main contracts and milestones",
+    "hint": "Main contracts with owners, milestones, advance payments, retention and contract guarantees"
+  },
+  "billing": {
+    "label": "Billing and receipts",
+    "hint": "Progress claims, invoices, tax invoices, receipts and receivables tracking"
+  },
+  "variations": {
+    "label": "Variation orders",
+    "hint": "Variation orders that adjust the project budget when approved"
+  },
+  "procurement": {
+    "label": "Procurement",
+    "hint": "Purchase requests, supplier quotations, purchase orders, goods receipts and 3-way matching"
+  },
+  "site-diary": {
+    "label": "Daily site reports",
+    "hint": "Daily site reports with photos, weather and headcount"
+  },
+  "labour": {
+    "label": "Daily labour",
+    "hint": "Timesheets, daily wages, 15-day pay periods and wage advances"
+  },
+  "job-cost": {
+    "label": "Job costing",
+    "hint": "Actual cost against budget, project profit and over-budget alerts"
+  },
+  "payables": {
+    "label": "Payables and payments",
+    "hint": "Supplier bills, payment runs and withholding tax certificates"
+  },
+  "handover": {
+    "label": "Handover and warranty",
+    "hint": "Handover, as-built drawings, warranty and project closeout"
+  }
+}

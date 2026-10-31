@@ -1,13 +1,15 @@
 'use client';
 
-// ─── Page guard of a business module: sign-in → module on for the workspace → the page ───
+// ─── Page guard of a business module: sign-in → module active for the workspace → the page ───
 import Link from 'next/link';
-import { Button, Result } from 'antd';
-import { MODULE_LABEL, type ModuleId } from '@/shared/contract';
+import { App, Button, Result } from 'antd';
+import { useTranslations } from 'next-intl';
+import { MODULE_LABEL, MODULE_REGISTRY, type ModuleId } from '@/shared/contract';
 import { RequireSignIn, spinner } from '@/features/cloud/ui/common';
 import { useCurrentWorkspace } from '@/features/cloud/query/hooks';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { can } from '@/features/cloud/permissions';
-import { useModuleEnabled } from './modules';
+import { useModuleState, useStartTrial } from './modules';
 
 export function ModuleGate({ module, next, children }: { module: ModuleId; next: string; children: React.ReactNode }) {
     return (
@@ -18,20 +20,58 @@ export function ModuleGate({ module, next, children }: { module: ModuleId; next:
 }
 
 function Gate({ module, children }: { module: ModuleId; children: React.ReactNode }) {
-    const { enabled, loading } = useModuleEnabled(module);
+    const { state, loading, workspaceId } = useModuleState(module);
     const role = useCurrentWorkspace().workspace?.role;
     if (loading) return spinner;
-    if (!enabled) {
-        return (
-            <Result
-                status="info"
-                title={`${MODULE_LABEL[module]} ปิดใช้งานอยู่`}
-                subTitle="พื้นที่ทำงานนี้ใช้เฉพาะการประมาณราคา BOQ"
-                extra={can(role, 'modules.manage')
-                    ? <Link href="/workspace/modules"><Button type="primary">เปิดใช้งานในตั้งค่า</Button></Link>
-                    : <Link href="/journey"><Button>กลับไปที่ BOQ</Button></Link>}
-            />
-        );
+    if (state?.active !== true) {
+        return <Inactive module={module} state={state} workspaceId={workspaceId} mayManage={can(role, 'modules.manage')} />;
     }
     return <>{children}</>;
+}
+
+function Inactive({ module, state, workspaceId, mayManage }: {
+    module: ModuleId;
+    state: ReturnType<typeof useModuleState>['state'];
+    workspaceId: string | undefined;
+    mayManage: boolean;
+}) {
+    const t = useTranslations('modules');
+    const { message } = App.useApp();
+    const toText = useErrorMessage();
+    const trial = useStartTrial(workspaceId ?? '');
+    const label = t(`${module}.label`);
+
+    const entitlement = state?.entitlement.status;
+    const notEntitled = entitlement === 'none' || entitlement === 'expired' || entitlement === 'revoked';
+    const missing = state?.enabled === true ? (state.missingDependencies) : [];
+    const subTitle = missing.length > 0
+        ? t('gate.missingDependencies', { modules: missing.map(m => t(`${m}.label`)).join(', ') })
+        : notEntitled && MODULE_REGISTRY[module].kind === 'erp' ? t('gate.notEntitled') : t('gate.subTitle');
+
+    const startTrial = async () => {
+        try {
+            await trial.mutateAsync(module);
+            void message.success(t('messages.trialStarted', { module: label }));
+        } catch (e) { void message.error(toText(e)); }
+    };
+
+    return (
+        <Result
+            status="info"
+            title={t('gate.title', { module: label })}
+            subTitle={subTitle}
+            extra={mayManage
+                ? (
+                    <div className="flex flex-wrap gap-2 justify-center">
+                        {state?.trialAvailable === true && workspaceId !== undefined && (
+                            <Button type="primary" loading={trial.isPending} onClick={() => void startTrial()}>
+                                {t('actions.startTrial', { days: MODULE_REGISTRY[module].trialDays })}
+                            </Button>
+                        )}
+                        <Link href="/workspace/modules"><Button type={state?.trialAvailable === true ? 'default' : 'primary'}>{t('gate.enable')}</Button></Link>
+                    </div>
+                )
+                : <Link href="/journey"><Button>{t('gate.backToBoq')}</Button></Link>}
+        />
+    );
 }

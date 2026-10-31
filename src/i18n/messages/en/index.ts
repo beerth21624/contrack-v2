@@ -7,6 +7,7 @@ import enums from './enums.json';
 import shell from './shell.json';
 import account from './account.json';
 import documents from './documents.json';
+import modules from './modules.json';
 
 const messages = {
   common,
@@ -18,6 +19,7 @@ const messages = {
   shell,
   account,
   documents,
+  modules,
 };
 
 export default messages;
