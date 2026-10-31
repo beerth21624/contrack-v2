@@ -21,7 +21,9 @@
     "restore": "นำออกจากคลัง",
     "share": "สร้างลิงก์ลูกค้า",
     "revoke": "ยกเลิกลิงก์",
-    "respond": "ลูกค้าตอบกลับ"
+    "respond": "ลูกค้าตอบกลับ",
+    "status_change": "เปลี่ยนสถานะโครงการ",
+    "hub_update": "แก้ข้อมูลโครงการ"
   },
   "entities": {
     "approval_request": "คำขออนุมัติ",
@@ -31,6 +33,7 @@
     "issued_document": "เลขเอกสาร",
     "company_profile": "ข้อมูลบริษัท",
     "customer": "ลูกค้า",
-    "customer_link": "ลิงก์ลูกค้า"
+    "customer_link": "ลิงก์ลูกค้า",
+    "project": "โครงการ"
   }
 }

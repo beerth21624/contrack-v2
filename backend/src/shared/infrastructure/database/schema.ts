@@ -5,7 +5,7 @@ import {
     bigserial, check, date, foreignKey, index, integer, jsonb, pgTable, primaryKey, text, timestamp, unique, uniqueIndex, uuid,
 } from 'drizzle-orm/pg-core';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
-import type { ProjectSummary } from '@contrack/contract';
+import type { HubProjectStatus, ProjectSettingsOverride, ProjectSummary, ProjectType } from '@contrack/contract';
 
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 
@@ -94,8 +94,25 @@ export const projects = pgTable('projects', {
     createdAt: createdAt(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     archivedAt: timestamp('archived_at', { withTimezone: true }),
+    // ── Project Hub columns (docs/erp/02-domain-model.md §1.9): read and written only by the hub module ──
+    code: text('code'),
+    status: text('status').$type<HubProjectStatus>().notNull().default('estimating'),
+    projectType: text('project_type').$type<ProjectType>(),
+    /** No FK (customers lives in schema-erp-core.ts); the hub checks it through CustomerLookup. */
+    customerId: uuid('customer_id'),
+    siteAddress: text('site_address').notNull().default(''),
+    plannedStart: date('planned_start', { mode: 'string' }),
+    plannedFinish: date('planned_finish', { mode: 'string' }),
+    actualStart: date('actual_start', { mode: 'string' }),
+    actualFinish: date('actual_finish', { mode: 'string' }),
+    managerUserId: uuid('manager_user_id'),
+    settings: jsonb('settings').$type<ProjectSettingsOverride>().notNull().default({}),
+    description: text('description').notNull().default(''),
 }, t => [
     index('projects_workspace_idx').on(t.workspaceId, t.archivedAt),
+    uniqueIndex('projects_workspace_code_key').on(t.workspaceId, t.code).where(sql`${t.code} is not null`),
+    check('projects_status_check', sql`${t.status} in ('lead', 'estimating', 'quoted', 'won', 'in_progress', 'handover', 'warranty', 'closed', 'lost', 'cancelled')`),
+    check('projects_project_type_check', sql`${t.projectType} in ('residential_new', 'residential_renovation', 'government', 'commercial')`),
     // Target of the (project_id, workspace_id) foreign keys: a child row can only name its project's own workspace.
     // A table constraint (not just an index): it is created with the table, before the foreign keys that use it.
     unique('projects_id_workspace_key').on(t.id, t.workspaceId),

@@ -21,7 +21,9 @@
     "restore": "Restored",
     "share": "Customer link created",
     "revoke": "Link cancelled",
-    "respond": "Customer answered"
+    "respond": "Customer answered",
+    "status_change": "Project status changed",
+    "hub_update": "Project details edited"
   },
   "entities": {
     "approval_request": "Approval request",
@@ -31,6 +33,7 @@
     "issued_document": "Document number",
     "company_profile": "Company profile",
     "customer": "Customer",
-    "customer_link": "Customer link"
+    "customer_link": "Customer link",
+    "project": "Project"
   }
 }

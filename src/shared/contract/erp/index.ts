@@ -6,3 +6,4 @@ export * from './numbering';
 export * from './company';
 export * from './customers';
 export * from './customer-links';
+export * from './hub';

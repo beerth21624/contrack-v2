@@ -7,6 +7,8 @@ import { ENGINE_VERSION, Project } from '../../domain/entities/project.entity';
 import { ProjectName } from '../../domain/value-objects/project-name.value-object';
 
 type ProjectRow = typeof projects.$inferSelect;
+/** Only the release-1 columns: the Project Hub columns keep their defaults (written by the hub module alone). */
+type ProjectInsertRow = typeof projects.$inferInsert;
 
 function toEntity(row: ProjectRow): Project {
     if (row.engineVersion !== ENGINE_VERSION) {
@@ -30,7 +32,7 @@ function toEntity(row: ProjectRow): Project {
     });
 }
 
-function toRow(project: Project): ProjectRow {
+function toRow(project: Project): ProjectInsertRow & { id: string; workspaceId: string } {
     const p = project.toProps();
     return {
         id: p.id,

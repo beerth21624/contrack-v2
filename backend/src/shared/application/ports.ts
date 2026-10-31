@@ -2,11 +2,11 @@
 // Abstract classes double as Nest DI tokens (type-safe, no string tokens). A module depends only on these
 // abstractions; the module that owns the data provides the implementation (exported from its Nest module).
 import type {
-    AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDeletedEvent, ProjectDocDto, ProjectUpdatedEvent, Role,
+    AssignmentUpdatedEvent, DocUpdatedEvent, ProjectDeletedEvent, ProjectDocDto, ProjectDto, ProjectUpdatedEvent, Role,
 } from '@contrack/contract';
 import type {
     ApprovalDecision, ApprovalStatus, ApprovalSubject, BankAccount, BusinessProfile, CompanyDefaults, CustomerLinkAction, CustomerLinkSubject,
-    DocLanguage, DocType, FileDto, FilePurpose, ModuleId, Permission, ProjectType,
+    DocLanguage, DocType, FileDto, FilePurpose, HubProjectStatus, ModuleId, Permission, ProjectRollup, ProjectType,
 } from '@contrack/contract';
 import type { DomainError } from '../domain/domain-error';
 import type { ProjectId, RateCardId, UserId, WorkspaceId } from '../domain/ids';
@@ -68,6 +68,16 @@ export abstract class UserDirectory {
 /** Provided by projects: which workspace a project belongs to (undefined when it does not exist / is deleted). */
 export abstract class ProjectDirectory {
     abstract workspaceOf(projectId: ProjectId): Promise<WorkspaceId | undefined>;
+}
+
+/**
+ * Provided by projects: the release-1 project DTOs of a workspace in one read (the Project Hub lists them next to its
+ * own columns). Ordered like GET /workspaces/:id/projects (updatedAt, newest first). Callers check access themselves.
+ */
+export abstract class ProjectCatalog {
+    abstract list(workspaceId: WorkspaceId, filter: { archived: boolean }): Promise<ProjectDto[]>;
+    /** undefined when the project does not exist in that workspace. */
+    abstract find(workspaceId: WorkspaceId, projectId: ProjectId): Promise<ProjectDto | undefined>;
 }
 
 /** What another module needs to know about a project before it attaches rows to it. */
@@ -689,5 +699,41 @@ export class CustomerLinkHandlers {
 
     handlerOf(subjectType: CustomerLinkSubject): CustomerLinkHandler | undefined {
         return this.handlers.get(subjectType);
+    }
+}
+
+// ─── Project Hub (docs/erp/02-domain-model.md §1.9, §12). ProjectLifecycle is implemented by src/modules/hub; the
+// roll-up registry lives in core and every module that has figures per project registers in `onModuleInit`. ───
+
+/**
+ * Provided by hub: automatic project status changes from document events (quotation issued → `quoted`, accepted → `won`,
+ * contract signed → `in_progress`, …). Forward only along `lead < estimating < quoted < won < in_progress < handover <
+ * warranty < closed`: a project already at or past `to`, or `lost` / `cancelled`, is left as it is. Call inside the
+ * caller's `uow.run` (locks the project row; audited when it changes). No module check: the calling module checked its own.
+ */
+export abstract class ProjectLifecycle {
+    /** The status after the call; undefined when the project does not exist in that workspace. */
+    abstract advance(workspaceId: WorkspaceId, projectId: ProjectId, to: HubProjectStatus, by: UserId | null): Promise<HubProjectStatus | undefined>;
+}
+
+/**
+ * Figures of many projects of one workspace in one go (a constant number of queries, never one per project). Only the
+ * fields the module owns; projects without figures may be left out of the map.
+ */
+export type HubRollupSource = (workspaceId: WorkspaceId, projectIds: readonly ProjectId[]) => Promise<Map<ProjectId, Partial<ProjectRollup>>>;
+
+/**
+ * Provided by core: one roll-up source per module. The hub calls only the sources whose module is active for the
+ * workspace (the others' fields stay null); a source should still return an empty map when its module is off.
+ */
+export class HubRollups {
+    private readonly entries: { module: ModuleId; source: HubRollupSource }[] = [];
+
+    register(module: ModuleId, source: HubRollupSource): void {
+        this.entries.push({ module, source });
+    }
+
+    sources(): readonly { module: ModuleId; source: HubRollupSource }[] {
+        return this.entries;
     }
 }

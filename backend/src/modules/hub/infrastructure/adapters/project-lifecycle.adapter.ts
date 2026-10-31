@@ -1,0 +1,35 @@
+import { Injectable } from '@nestjs/common';
+import type { HubProjectStatus } from '@contrack/contract';
+import { AuditLog, ProjectCatalog, ProjectLifecycle, UnitOfWork } from '../../../../shared/application/ports';
+import type { ProjectId, UserId, WorkspaceId } from '../../../../shared/domain/ids';
+import { HubProjectRepository } from '../../application/ports/hub-project.repository';
+import { advancedStatus } from '../../domain/hub-state';
+
+/** `ProjectLifecycle` over the hub columns: forward-only status changes from other modules' events. */
+@Injectable()
+export class HubProjectLifecycle extends ProjectLifecycle {
+    constructor(
+        private readonly repo: HubProjectRepository,
+        private readonly catalog: ProjectCatalog,
+        private readonly audit: AuditLog,
+        private readonly uow: UnitOfWork,
+    ) {
+        super();
+    }
+
+    advance(workspaceId: WorkspaceId, projectId: ProjectId, to: HubProjectStatus, by: UserId | null): Promise<HubProjectStatus | undefined> {
+        return this.uow.run(async () => {
+            if ((await this.catalog.find(workspaceId, projectId)) === undefined) return undefined;
+            const before = await this.repo.lockForUpdate(workspaceId, projectId);
+            if (before === undefined) return undefined;
+            const next = advancedStatus(before.status, to);
+            if (next === before.status) return next;
+            await this.repo.save(workspaceId, projectId, { ...before, status: next });
+            await this.audit.record({
+                workspaceId, projectId, actor: by, entityType: 'project', entityId: projectId, action: 'status_change',
+                data: { status: [before.status, next], automatic: true },
+            });
+            return next;
+        });
+    }
+}

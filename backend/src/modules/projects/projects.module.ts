@@ -3,7 +3,7 @@
 // ProjectDocLookup, ProjectStatusLookup and MemberAssignmentCleanup to the others (runs ProjectDependents on delete).
 import { Global, Module } from '@nestjs/common';
 import {
-    MemberAssignmentCleanup, ProjectDirectory, ProjectDocLookup, ProjectReader, ProjectStatusLookup,
+    MemberAssignmentCleanup, ProjectCatalog, ProjectDirectory, ProjectDocLookup, ProjectReader, ProjectStatusLookup,
 } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
 import { ActivityRepository } from './application/ports/activity.repository';
@@ -39,7 +39,7 @@ import { InMemoryProjectRepository } from './infrastructure/adapters/in-memory-p
 import { InMemoryRevisionRepository } from './infrastructure/adapters/in-memory-revision.repository';
 import { ProjectsMemberAssignmentCleanup } from './infrastructure/adapters/member-assignment-cleanup.adapter';
 import {
-    RepositoryProjectDirectory, RepositoryProjectDocLookup, RepositoryProjectStatusLookup,
+    RepositoryProjectCatalog, RepositoryProjectDirectory, RepositoryProjectDocLookup, RepositoryProjectStatusLookup,
 } from './infrastructure/adapters/project-directory.adapter';
 import { RepositoryProjectReader } from './infrastructure/adapters/project-reader.adapter';
 import { ProjectsController } from './presentation/projects.controller';
@@ -75,7 +75,8 @@ import { WorkspaceProjectsController } from './presentation/workspace-projects.c
         { provide: ProjectStatusLookup, useClass: RepositoryProjectStatusLookup },
         { provide: MemberAssignmentCleanup, useClass: ProjectsMemberAssignmentCleanup },
         { provide: ProjectReader, useClass: RepositoryProjectReader },
+        { provide: ProjectCatalog, useClass: RepositoryProjectCatalog },
     ],
-    exports: [ProjectDirectory, ProjectDocLookup, ProjectStatusLookup, MemberAssignmentCleanup, ProjectReader],
+    exports: [ProjectDirectory, ProjectDocLookup, ProjectStatusLookup, MemberAssignmentCleanup, ProjectReader, ProjectCatalog],
 })
 export class ProjectsModule {}

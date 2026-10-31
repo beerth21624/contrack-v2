@@ -47,6 +47,8 @@
     "customer_archived": "This customer is archived; restore it before editing",
     "already_responded": "This link has already been answered",
     "respond_not_supported": "This document cannot be answered from a link",
-    "action_not_supported": "This document does not take that answer"
+    "action_not_supported": "This document does not take that answer",
+    "project_code_exists": "This project already has a code",
+    "duplicate_project_code": "Another project already uses this code"
   }
 }

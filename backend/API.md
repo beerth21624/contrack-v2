@@ -232,3 +232,14 @@ Schemas: `../src/shared/contract/erp/customer-links.ts`. Registry `CustomerLinkH
 | POST | `/customer-links/:linkId/revoke` | → `CustomerLinkDto` | idempotent; handler permission; audited `customer_link` / `share\|revoke\|respond` |
 | GET | `/public/links/:token` | → `CustomerLinkViewDto` | **no auth**; wrong / expired / revoked token, `project-hub` not active, no handler or subject gone → the same 404; counts the view; 30 requests / 10 min per token + IP → 429 |
 | POST | `/public/links/:token/respond` | `RespondRequest` `{action, name, note}` → `CustomerLinkViewDto` | **no auth**; view-only subject → 422 `respond_not_supported`; action the subject does not take → 422 `action_not_supported`; answered already → 409 `already_responded`; document no longer answerable → 409 `invalid_transition`; stores name, note, IP, user agent, time |
+
+## project hub (module `project-hub`; WP-15)
+Schemas: `../src/shared/contract/erp/hub.ts`. The hub columns live on `projects` but only the hub module reads/writes them; `ProjectDto` and the `/projects` routes are unchanged. Registry `HubRollups` (core): a module registers `(workspaceId, projectIds) => Map<projectId, Partial<ProjectRollup>>`; only sources of active modules are called. Port `ProjectLifecycle.advance(ws, projectId, to, by)` moves a status forward only.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/workspaces/:workspaceId/hub/projects?status=a,b&q=&customerId=&type=&archived=` | → `HubProjectDto[]` | `projects.read`; batch (constant number of queries); `type` matches the effective type (project's or company default); `q` matches name, code, customer, site address |
+| GET | `/workspaces/:workspaceId/hub/summary` | → `HubSummaryDto` | `projects.read`; active projects; money totals null while no module supplies them |
+| GET | `/projects/:projectId/hub` | → `HubProjectDetailDto` | `projects.read`; + effective type/settings, manager name, `canEdit`, `nextStatuses` |
+| PATCH | `/projects/:projectId/hub` | `UpdateHubProjectRequest` → `HubProjectDetailDto` | `projects.edit`; archived → 409 `project_archived`; customer of another workspace → 404; manager not a member → 400; off-table status → 409 `invalid_transition`; `closed → warranty` owner only (403); code in use → 409 `duplicate_project_code`; `settings` merged, `settingsReset` removes keys; audited `project` / `status_change\|hub_update` |
+| POST | `/projects/:projectId/hub/code` | → `HubProjectDetailDto` | `projects.edit`; next `project` number (DocumentNumbering, dated today in Bangkok); has a code → 409 `project_code_exists` |
