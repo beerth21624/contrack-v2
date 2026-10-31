@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-36 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-37 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -48,7 +48,7 @@
 | WP-34 | VO web + ราคาด้วยเครื่องคำนวณ (sandbox) | opus | done | 5371542 | ไม่มี migration; `src/features/erp/variations/*`, binding `sandbox` ใน project-store, routes `/p/[id]/variations[/[variationId]]` + `/print/variation/[id]`, แท็บ nav, renderer ลิงก์ `variation`; i18n `variations`; D-257…D-262 |
 | WP-35 | Portal backend + ค้นหา | opus | done | 0363f2f | ไม่มี migration; โมดูล `portal` (`GET …/portal`, `GET …/search?q=`), registries `PortalSources`/`SearchSources` (core), port `ModuleStatesLookup` (platform), contract `erp/portal.ts`; D-263…D-268 |
 | WP-36 | Portal web | sonnet | done | 0ac39c3 | หน้า `/home`, ค้นหา Ctrl/⌘+K, slot `HEADER_EXTRAS` ใน nav registry; ไม่มี migration; D-269…D-271 |
-| WP-37 | ทะเบียนผู้ขาย | opus | todo | | |
+| WP-37 | ทะเบียนผู้ขาย | opus | done | (hash) | migration `0025_wp37_suppliers`; โมดูล `suppliers` (gate `procurement`), ports `ScVendorDirectory` (subcontracting) / `SupplierLookup`, หน้า `/suppliers`, `SupplierPicker`; D-272…D-277 |
 | WP-38 | PR + RFQ backend | opus | todo | | |
 | WP-39 | PO + รับของ + 3-way match backend | opus | todo | | |
 | WP-40 | PR/RFQ web | sonnet | todo | | |
@@ -368,6 +368,12 @@
 | D-269 | 2026-11-01 | (WP-36) `ModuleTiles` ซ่อนโมดูลที่ `available = false` (server ไม่เปิดให้) ที่เหลือแสดง 3 สถานะ: active (+ ป้าย "ทดลองใช้ เหลือ n วัน" จาก `expiresAt` เทียบ `generatedAt`), ทดลองได้ (ปุ่มเริ่มทดลองเมื่อมี `modules.manage` ไม่งั้นเป็นป้าย), ยังไม่เปิดใช้ | ไม่ให้หน้าแรกเต็มไปด้วยโมดูลที่ซื้อ/เปิดไม่ได้ |
 | D-270 | 2026-11-01 | (WP-36) slot header: `HEADER_EXTRAS` + `ErpHeaderExtras()` ใน `nav-registry.ts` (gate เหมือน `ErpNavGate`) และ `AppLayoutUI` เรนเดอร์ก่อนกระดิ่ง; ปุ่มค้นหาอยู่ใน `GlobalSearch` (modal, debounce 250ms, ↑↓ Enter, Ctrl/⌘+K สลับเปิด/ปิด) | ตามแผน WP-36 |
 | D-271 | 2026-11-01 | (WP-36) ข้อความ task แปลที่เว็บด้วย `portal.tasks.<kind>`; `approval_pending` แปล `subject` ด้วย `enums.approvalSubject`, `milestone_claimable` เลือก `labelTh/labelEn` ตามภาษา; `CashOutlookChart` แสดงเมื่อ `cashOutlook` ไม่ว่าง (ยังเป็น null จนกว่า WP-47) | D-263…D-266 |
+| D-272 | 2026-11-01 | (WP-37) `sup_suppliers.bank_accounts` ใช้ `bankAccountSchema` เดิมของ company (`{bankCode, bankName, accountName, accountNo, branch}`) ไม่เกิน 5 บัญชี; `default_wht_preset` = คีย์ของ `WHT_PRESETS` (`SUPPLIER_WHT_PRESETS` + `SUPPLIER_WHT_PRESET_RATE` ใน contract เพราะ contract ไม่ import `src/domain`) — DTO มี `whtRate`; check constraint ของ kind/preset/ชื่อ | 02 §7.1 ไม่ระบุรูปร่าง jsonb |
+| D-273 | 2026-11-01 | (WP-37) import-sc: `ScVendorDirectory.listEntries(ws)` คืนเฉพาะรายการที่ไม่ซ่อน และคืน `[]` เมื่อ subcontracting ไม่ active (adapter เช็ก `ModuleFlags` เอง) → endpoint ได้ `created: 0`; supplier ที่สร้าง: kind `subcontractor`, `nameTh = displayName`, เบอร์ `+66…` → `0…`, `addressTh = province`, `note = privateNote`, `isJuristic=false`, `vatRegistered=false`, `defaultWhtPreset='service'` (3%); idempotent ด้วยชุด `sc_vendor_list_entry_id` ที่ผูกแล้ว (รวม supplier ที่เก็บเข้าคลัง) + partial unique; ต้องการแค่ `suppliers.manage` (ไม่ต้อง `sc.read`) | เกณฑ์ WP-37 |
+| D-274 | 2026-11-01 | (WP-37) rating: `POST /suppliers/:id/ratings` ต้อง `suppliers.manage`, ห้ามกับ supplier ที่เก็บเข้าคลัง (409 `supplier_archived`), `projectId` ต้องเป็นโครงการใน workspace เดียวกัน (ไม่งั้น 404), `source_type ∈ manual/purchase_order/goods_receipt/subcontract`; `rating` = ค่าเฉลี่ยทุกคะแนนปัด 2 ตำแหน่ง คำนวณใหม่ทุกครั้งใน transaction เดียวกับการเพิ่ม; ไม่ขยับ `updated_at` (ฟอร์มแก้ไขใช้เป็น key); เพิ่ม `GET /suppliers/:id/ratings` สำหรับหน้า detail | แผนไม่ระบุสิทธิ์/รายการคะแนน |
+| D-275 | 2026-11-01 | (WP-37) audit action ของผู้ขายใช้ `create_supplier` / `update_supplier` / `rate` / `import_sc` (+ `archive`/`restore` เดิม) เพราะป้าย `audit.actions.create|update` เดิมเขียนว่า "สร้าง/แก้ไขลูกค้า"; entity `supplier` | ป้ายเดิมผูกกับลูกค้า |
+| D-276 | 2026-11-01 | (WP-37) ป้ายหมวดงานช่าง `enums.trade.<TradeId>` (th ตรงกับ `src/domain/subcontracting/trades.ts`, en ใหม่) — ไม่แตะ label เดิมของ release 1; ค้นหา supplier ลงทะเบียน `SearchSources.register('procurement', 'suppliers.read', …)` (href `/suppliers/<id>`) | i18n ห้าม hard-code |
+| D-277 | 2026-11-01 | (WP-37) หน้าเว็บ: ปุ่ม "นำเข้าจากรายชื่อผู้รับเหมาช่วง" แสดงเมื่อมี `suppliers.manage` **และ** `subcontracting` active; หน้า detail ยังไม่มีแท็บประวัติราคา (WP-39 เพิ่ม); `SupplierPicker` รับ `kind`/`trade` เพื่อกรองและเป็นค่าเริ่มต้นของผู้ขายใหม่ | เกณฑ์ WP-37 |
 
 ## Handoff notes
 
@@ -881,3 +887,19 @@
 - เบี่ยงจากแผน: D-269 … D-271; ไม่เขียนเทสต์ใหม่; ไม่มี migration
 - WP ถัดไปต้องรู้: task kind ใหม่ต้องเพิ่มข้อความ `portal.tasks.<kind>` (th+en) และ case ใน `taskText` (`TasksList.tsx`); ช่องค้นหาเพิ่ม type ใหม่ต้องมี `portal.search.types.<type>`; ตัวควบคุมใหม่บน header เพิ่มใน `HEADER_EXTRAS`
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้/สร้างผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/features/erp/hub src/i18n` ผ่าน; **ยังไม่ได้ทดสอบมือใน browser** (โหลด `/home`, Ctrl+K, เริ่ม trial จาก tile; กราฟ cash ต้องรอ WP-47)
+
+### WP-37 — ทะเบียนผู้ขาย ((hash))
+- สร้าง (contract): `src/shared/contract/erp/suppliers.ts` (`SUPPLIER_KINDS`, `SUPPLIER_WHT_PRESETS`, `SUPPLIER_WHT_PRESET_RATE`, `SUPPLIER_BANK_ACCOUNTS_MAX`, `supplierDtoSchema`, `createSupplierRequestSchema`, `patchSupplierRequestSchema`, `supplierListQuerySchema`, `SUPPLIER_RATING_SOURCES`, `createSupplierRatingRequestSchema`, `supplierRatingDtoSchema`, `supplierRatedDtoSchema`, `importScSuppliersDtoSchema`, `supplierSnapshotSchema`/`SupplierSnapshot`)
+- schema: ไฟล์ใหม่ `schema-procurement.ts` (`sup_suppliers`, `sup_ratings`; `procurementTables`) + `database.ts` + `drizzle.config.ts`; partial unique `(workspace_id, tax_id, branch_code) where tax_id <> '' and archived_at is null` และ `(workspace_id, sc_vendor_list_entry_id) where not null`; migration `0025_wp37_suppliers` (ตรงตามคาด ไม่ถาม interactive) → WP ถัดไปที่แก้ schema ได้ `0026_*` — **ตาราง `pc_*` ของ WP-38…41 ใส่ไฟล์เดียวกันนี้และ `procurementTables`** (FK ไป `sup_suppliers` ได้)
+- ports (`ports.ts`): `ScVendorDirectory` + `ScVendorDirectoryEntry` (provide โดย subcontracting: `SourcingScVendorDirectory` ใน `sourcing.parts.ts`, export แล้ว), `SupplierLookup` (`find`/`findMany`/`snapshot(ws, id, language)`/`locate`) + `Supplier`
+- backend `backend/src/modules/suppliers/` (`@Global`, controller `@RequiresModule('procurement')`, use cases ผ่าน `ModuleAccess(..., 'procurement', 'suppliers.*')`); `app.module.ts`; `backend/API.md`
+- web: `src/features/erp/suppliers/{api.ts,hooks.ts,SuppliersPage.tsx,SupplierDetailPage.tsx,SupplierForm.tsx}`, `src/features/erp/shared/SupplierPicker.tsx`, routes `/suppliers`, `/suppliers/[supplierId]` (`ModuleGate procurement`), เมนูกลุ่ม `purchasing` → `suppliers`
+- i18n (th+en): namespace `suppliers`, `enums.supplierKind`, `enums.whtPreset`, `enums.trade`, `nav.suppliers`, `audit.actions.create_supplier|update_supplier|rate|import_sc`, `audit.entities.supplier`, `errors.reasons.duplicate_supplier|supplier_archived`
+- เบี่ยงจากแผน: D-272 … D-277; ไม่เขียนเทสต์ใหม่
+- WP ถัดไปต้องรู้:
+  - procurement (WP-38/39): ตรวจผู้ขาย `await supplierLookup.find(ws, supplierId)` (undefined = ไม่มี/คนละ workspace; คืนที่เก็บเข้าคลังด้วย — ห้ามออกเอกสารใหม่ให้ `archivedAt !== null` เอง); `pc_orders.supplier_snapshot = await supplierLookup.snapshot(ws, id, language)` (มี `whtPreset`/`whtRate`/`isJuristic`/`vatRegistered`/`creditTermDays`); `pc_rfq_suppliers`/`pc_orders.supplier_id` FK ไป `supSuppliers.id` ได้ (ไฟล์เดียวกัน)
+  - ประวัติราคา (WP-39): endpoint `GET /suppliers/:supplierId/price-history?q=` อยู่ในโมดูล procurement; เพิ่มแท็บ/การ์ดใน `SupplierDetailPage.tsx` (ตอนนี้ไม่มี)
+  - คะแนนหลังรับของ (WP-40) เรียก endpoint เดิมหรือเพิ่มเมธอดใน port ได้ (`source_type = 'goods_receipt'`, `source_id` = GR) — ตอนนี้ไม่มีเมธอดเขียนคะแนนใน `SupplierLookup`
+  - payables (WP-49): `form = pnd53` เมื่อ `isJuristic` ไม่งั้น `pnd3`
+  - เว็บ: `<SupplierPicker value={id} onChange={(id, s) => …} kind? trade? />`; `useSuppliers(ws, {q, kind, trade, archived})`, `useSupplier(id)`, `supplierKeys`; `supplierHref(id)` ใน `SuppliersPage.tsx`
+- ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (web + backend) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/features/erp src/shared/contract` ผ่าน; `cd backend && npx jest src/modules/subcontracting/sourcing src/modules/portal` ผ่าน; smoke e2e ชั่วคราว (memory, ลบแล้ว): procurement ปิด → 404 `module_disabled`; import ตอน subcontracting ปิด → `created 0`; เปิดแล้วเพิ่มทีมช่าง 1 ราย → import `created 1` (ผูก `scVendorListEntryId`, เบอร์ `0812345678`), รันซ้ำ → `created 0, skipped 1`; tax id ซ้ำ → 409; viewer สร้าง → 403; คะแนน 5 + 2 → `rating 3.5, ratingCount 2`; กรอง `trade` ได้; archive แล้ว PATCH → 409; ค้นหา portal เจอ supplier; ปิด subcontracting แล้ว import → 0; ยังไม่ได้ทดสอบหน้าในเบราว์เซอร์ / PostgreSQL จริง

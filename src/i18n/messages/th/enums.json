@@ -222,5 +222,36 @@
     "photo": "รูปถ่าย",
     "note": "บันทึก",
     "document": "เอกสาร"
+  },
+  "supplierKind": {
+    "material": "ร้านวัสดุ",
+    "subcontractor": "ผู้รับเหมาช่วง",
+    "service": "ผู้ให้บริการ",
+    "equipment_rental": "เช่าเครื่องจักร/อุปกรณ์",
+    "other": "อื่น ๆ"
+  },
+  "whtPreset": {
+    "none": "ไม่หัก",
+    "government": "หน่วยงานราชการ",
+    "transport": "ค่าขนส่ง",
+    "advertising": "ค่าโฆษณา",
+    "service": "ค่าจ้างทำของ/บริการ",
+    "rent": "ค่าเช่า"
+  },
+  "trade": {
+    "site-prep": "เตรียมพื้นที่ / รื้อถอน / ถมดิน / วางผัง",
+    "temp-utilities": "น้ำ-ไฟชั่วคราว",
+    "piling": "เสาเข็ม",
+    "structure": "โครงสร้าง ค.ส.ล.",
+    "roof-structure": "โครงหลังคา",
+    "roofing": "มุงหลังคา",
+    "masonry": "ก่ออิฐ-ฉาบปูน",
+    "electrical": "ไฟฟ้า",
+    "plumbing": "ประปา-สุขาภิบาล-สุขภัณฑ์",
+    "ceiling": "ฝ้าเพดาน",
+    "tiling": "ปูกระเบื้อง / ตกแต่งผนัง",
+    "painting": "ทาสี",
+    "doors-windows": "ประตู-หน้าต่าง",
+    "misc": "เบ็ดเตล็ด"
   }
 }

@@ -73,7 +73,12 @@ export const WORKSPACE_NAV: readonly ErpNavGroup[] = [
             { key: 'receivables', labelKey: 'receivables', href: '/receivables', module: 'billing', permission: 'billing.read', match: p => p.startsWith('/receivables') },
         ],
     },
-    { groupKey: 'purchasing', items: [] },
+    {
+        groupKey: 'purchasing',
+        items: [
+            { key: 'suppliers', labelKey: 'suppliers', href: '/suppliers', module: 'procurement', permission: 'suppliers.read', match: p => p.startsWith('/suppliers') },
+        ],
+    },
     { groupKey: 'finance', items: [] },
     {
         groupKey: 'settings',

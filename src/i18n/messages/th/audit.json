@@ -45,7 +45,11 @@
     "withdraw": "ถอนเอกสาร",
     "compute": "คำนวณจากเครื่องคำนวณ",
     "add_evidence": "เพิ่มหลักฐาน",
-    "remove_evidence": "ลบหลักฐาน"
+    "remove_evidence": "ลบหลักฐาน",
+    "create_supplier": "สร้างผู้ขาย",
+    "update_supplier": "แก้ไขผู้ขาย",
+    "rate": "ให้คะแนน",
+    "import_sc": "นำเข้าจากรายชื่อผู้รับเหมาช่วง"
   },
   "entities": {
     "approval_request": "คำขออนุมัติ",
@@ -62,6 +66,7 @@
     "ar_claim": "งวดเบิก",
     "ar_invoice": "ใบแจ้งหนี้",
     "ar_receipt": "ใบเสร็จรับเงิน",
-    "variation": "งานเพิ่ม-ลด (VO)"
+    "variation": "งานเพิ่ม-ลด (VO)",
+    "supplier": "ผู้ขาย"
   }
 }

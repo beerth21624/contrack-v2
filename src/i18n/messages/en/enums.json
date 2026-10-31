@@ -222,5 +222,36 @@
     "photo": "Photo",
     "note": "Note",
     "document": "Document"
+  },
+  "supplierKind": {
+    "material": "Material supplier",
+    "subcontractor": "Subcontractor",
+    "service": "Service provider",
+    "equipment_rental": "Equipment rental",
+    "other": "Other"
+  },
+  "whtPreset": {
+    "none": "None",
+    "government": "Government agency",
+    "transport": "Transport",
+    "advertising": "Advertising",
+    "service": "Hire of work / services",
+    "rent": "Rent"
+  },
+  "trade": {
+    "site-prep": "Site preparation / demolition / fill / setting out",
+    "temp-utilities": "Temporary water & power",
+    "piling": "Piling",
+    "structure": "Reinforced concrete structure",
+    "roof-structure": "Roof structure",
+    "roofing": "Roofing",
+    "masonry": "Masonry & plastering",
+    "electrical": "Electrical",
+    "plumbing": "Plumbing & sanitary",
+    "ceiling": "Ceiling",
+    "tiling": "Tiling / wall finishes",
+    "painting": "Painting",
+    "doors-windows": "Doors & windows",
+    "misc": "Miscellaneous"
   }
 }

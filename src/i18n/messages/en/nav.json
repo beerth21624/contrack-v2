@@ -30,5 +30,6 @@
     "billing": "Billing",
     "variations": "Variations"
   },
-  "receivables": "Receivables"
+  "receivables": "Receivables",
+  "suppliers": "Suppliers"
 }

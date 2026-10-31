@@ -45,7 +45,11 @@
     "withdraw": "Withdrawn",
     "compute": "Computed from the calculators",
     "add_evidence": "Evidence added",
-    "remove_evidence": "Evidence removed"
+    "remove_evidence": "Evidence removed",
+    "create_supplier": "Supplier created",
+    "update_supplier": "Supplier edited",
+    "rate": "Rated",
+    "import_sc": "Imported from subcontractor list"
   },
   "entities": {
     "approval_request": "Approval request",
@@ -62,6 +66,7 @@
     "ar_claim": "Progress claim",
     "ar_invoice": "Invoice",
     "ar_receipt": "Receipt",
-    "variation": "Variation order"
+    "variation": "Variation order",
+    "supplier": "Supplier"
   }
 }

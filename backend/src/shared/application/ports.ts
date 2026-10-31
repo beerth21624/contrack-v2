@@ -10,6 +10,7 @@ import type {
     FilePurpose, FinCounterpartyType, FinDirection, FinEventType, HubProjectFields, HubProjectStatus, ModuleId, Permission, ProjectRollup, ProjectType,
 } from '@contrack/contract';
 import type { EntitlementStatus, PortalTaskKind, SearchHit } from '@contrack/contract';
+import type { SupplierKind, SupplierSnapshot, SupplierWhtPreset, TradeId } from '@contrack/contract';
 import type {
     ContractMilestoneKind, ContractMilestoneSource, ContractMilestoneStatus, ContractMilestoneTrigger, ContractVariationBilling,
     MainContractBillingMode, MainContractStatus, MainContractTerms, MilestoneTemplateItem,
@@ -1400,4 +1401,66 @@ export interface ProjectBillingTotals {
 /** Provided by billing. No module check (the caller checked its own); filters by workspace. */
 export abstract class BillingTotals {
     abstract totalsByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<ProjectBillingTotals>;
+}
+
+// ── Suppliers (WP-37, docs/erp/02-domain-model.md §7.1) ──
+
+/** One entry of a buyer workspace's subcontracting vendor list (ทะเบียนทีมช่าง), as the supplier register imports it. */
+export interface ScVendorDirectoryEntry {
+    id: string;
+    displayName: string;
+    /** As stored by subcontracting (E.164, e.g. `+66812345678`). */
+    phone: string;
+    lineId: string;
+    trades: TradeId[];
+    province: string;
+    privateNote: string;
+    vendorWorkspaceId: WorkspaceId | null;
+}
+
+/** Provided by subcontracting: the visible (not hidden) vendor-list entries; [] while subcontracting is not active. */
+export abstract class ScVendorDirectory {
+    abstract listEntries(workspaceId: WorkspaceId): Promise<ScVendorDirectoryEntry[]>;
+}
+
+/** A supplier of the register (`sup_suppliers` row). */
+export interface Supplier {
+    id: string;
+    workspaceId: WorkspaceId;
+    kind: SupplierKind;
+    nameTh: string;
+    nameEn: string;
+    taxId: string;
+    branchCode: string;
+    isJuristic: boolean;
+    vatRegistered: boolean;
+    addressTh: string;
+    addressEn: string;
+    contactName: string;
+    phone: string;
+    email: string;
+    lineId: string;
+    creditTermDays: number;
+    defaultWhtPreset: SupplierWhtPreset;
+    bankAccounts: BankAccount[];
+    trades: TradeId[];
+    scVendorListEntryId: string | null;
+    vendorWorkspaceId: WorkspaceId | null;
+    rating: number | null;
+    ratingCount: number;
+    note: string;
+    archivedAt: Date | null;
+    createdBy: UserId | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/** Provided by suppliers. No module check: the calling module checked its own. Every method filters by workspace. */
+export abstract class SupplierLookup {
+    /** Archived suppliers too (old documents must still read). */
+    abstract find(workspaceId: WorkspaceId, supplierId: string): Promise<Supplier | undefined>;
+    abstract findMany(workspaceId: WorkspaceId, supplierIds: readonly string[]): Promise<Supplier[]>;
+    abstract snapshot(workspaceId: WorkspaceId, supplierId: string, language: DocLanguage): Promise<SupplierSnapshot | undefined>;
+    /** Workspace of a supplier by id alone (the caller authorizes on that workspace next); undefined when unknown. */
+    abstract locate(supplierId: string): Promise<WorkspaceId | undefined>;
 }

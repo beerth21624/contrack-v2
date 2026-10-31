@@ -30,5 +30,6 @@
     "billing": "วางบิล",
     "variations": "งานเพิ่ม-ลด"
   },
-  "receivables": "ลูกหนี้"
+  "receivables": "ลูกหนี้",
+  "suppliers": "ผู้ขาย"
 }

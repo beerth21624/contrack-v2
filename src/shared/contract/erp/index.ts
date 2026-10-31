@@ -15,3 +15,4 @@ export * from './main-contracts';
 export * from './billing';
 export * from './variations';
 export * from './portal';
+export * from './suppliers';

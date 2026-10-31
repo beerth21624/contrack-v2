@@ -2,7 +2,7 @@
 // Owned by the sourcing work stream: list every controller and provider of this stream here. Providers of the ports this
 // stream implements (see ../shared/ports.ts) must be registered here too, and listed in the exports.
 import type { Provider, Type } from '@nestjs/common';
-import { Clock, PhoneSignInHook } from '../../../shared/application/ports';
+import { Clock, PhoneSignInHook, ScVendorDirectory } from '../../../shared/application/ports';
 import { persistence } from '../../../shared/infrastructure/core.module';
 import { PackageDirectory, VendorDirectory } from '../shared/ports';
 import {
@@ -61,6 +61,7 @@ import { SourcingPackageDirectory } from './infrastructure/adapters/package-dire
 import { InMemorySmsRateLimiter } from './infrastructure/adapters/in-memory-sms-rate-limiter.adapter';
 import { SourcingPhoneSignInHook } from './infrastructure/adapters/phone-sign-in-hook.adapter';
 import { SourcingSweepRunner } from './infrastructure/adapters/sourcing-sweep.runner';
+import { SourcingScVendorDirectory } from './infrastructure/adapters/sc-vendor-directory.adapter';
 import { SourcingVendorDirectory } from './infrastructure/adapters/vendor-directory.adapter';
 import { GuestController } from './presentation/guest.controller';
 import { PackagesController } from './presentation/packages.controller';
@@ -102,8 +103,11 @@ export const SOURCING_PROVIDERS: Provider[] = [
     { provide: PackageDirectory, useClass: SourcingPackageDirectory },
     { provide: VendorDirectory, useClass: SourcingVendorDirectory },
     { provide: PhoneSignInHook, useClass: SourcingPhoneSignInHook },
+    { provide: ScVendorDirectory, useClass: SourcingScVendorDirectory },
     SourcingSweepRunner,
 ];
 
 /** Ports from ../shared/ports.ts (or shared/application/ports.ts) this stream provides to the others. */
-export const SOURCING_EXPORTS: (abstract new (...args: never[]) => unknown)[] = [PackageDirectory, VendorDirectory, PhoneSignInHook];
+export const SOURCING_EXPORTS: (abstract new (...args: never[]) => unknown)[] = [
+    PackageDirectory, VendorDirectory, PhoneSignInHook, ScVendorDirectory,
+];

@@ -176,6 +176,13 @@
       "when": 1793482369301,
       "tag": "0024_wp33_variations",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793485022879,
+      "tag": "0025_wp37_suppliers",
+      "breakpoints": true
     }
   ]
 }

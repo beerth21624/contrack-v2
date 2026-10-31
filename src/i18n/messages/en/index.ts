@@ -25,6 +25,7 @@ import contracts from './contracts.json';
 import billing from './billing.json';
 import variations from './variations.json';
 import portal from './portal.json';
+import suppliers from './suppliers.json';
 
 const messages = {
   common,
@@ -54,6 +55,7 @@ const messages = {
   billing,
   variations,
   portal,
+  suppliers,
 };
 
 export default messages;

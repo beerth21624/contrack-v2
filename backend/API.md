@@ -361,3 +361,17 @@ Schemas: `../src/shared/contract/erp/variations.ts`; pricing `../src/domain/vari
 | POST | `/variations/:variationId/record-response` | `{action: accept\|reject, name, note?, at?}` → `VariationOrderDto` (200) | submitted only |
 | POST | `/variations/:variationId/withdraw` | → `VariationOrderDto` (200) | submitted → withdrawn; pending_approval → draft |
 | POST | `/variations/:variationId/cancel` | → `VariationOrderDto` (200) | draft / pending_approval → cancelled |
+
+## Suppliers (module `procurement`; WP-37)
+Schemas: `../src/shared/contract/erp/suppliers.ts`. Port `SupplierLookup` (`find`, `findMany`, `snapshot(ws, id, language)`, `locate`) for procurement / payables; subcontracting provides `ScVendorDirectory` (`listEntries(ws)`, [] while subcontracting is off). Global search lists suppliers (`suppliers.read`). Price history is procurement's (WP-39).
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/workspaces/:workspaceId/suppliers?q=&kind=&trade=&archived=&limit=` | → `SupplierDto[]` | `suppliers.read`; `q` matches names, tax id, contact, phone, email, LINE id; active unless `archived=true`; sorted by name |
+| POST | `/workspaces/:workspaceId/suppliers` | `CreateSupplierRequest` → `SupplierDto` | `suppliers.manage`; no name → 400; same tax id + branch as an active supplier → 409 `duplicate_supplier` |
+| POST | `/workspaces/:workspaceId/suppliers/import-sc` | → `ImportScSuppliersDto` (200) | `suppliers.manage`; one `subcontractor` supplier per visible vendor-list entry not linked yet (`scVendorListEntryId`); re-running creates nothing; subcontracting off → `created: 0` |
+| GET | `/suppliers/:supplierId` | → `SupplierDto` | `suppliers.read`; another workspace's supplier → 404 |
+| PATCH | `/suppliers/:supplierId` | `PatchSupplierRequest` → `SupplierDto` | `suppliers.manage`; archived → 409 `supplier_archived` |
+| POST | `/suppliers/:supplierId/archive` · `/restore` | → `SupplierDto` (200) | `suppliers.manage`; idempotent; restore onto a taken tax id + branch → 409 `duplicate_supplier` |
+| GET | `/suppliers/:supplierId/ratings` | → `SupplierRatingDto[]` | `suppliers.read`; newest first (100) |
+| POST | `/suppliers/:supplierId/ratings` | `{score 1–5, note?, projectId?, sourceType?, sourceId?}` → `SupplierRatedDto` (201) | `suppliers.manage`; `rating` (average, 2 decimals) / `ratingCount` recomputed from every score; audited `supplier` / `create_supplier\|update_supplier\|archive\|restore\|rate\|import_sc` |

@@ -118,6 +118,8 @@
     "promptpay_not_set": "PromptPay is not set up in the company profile.",
     "promptpay_invalid": "The PromptPay number in the company profile is not valid.",
     "invalid_range": "The start date must not be after the end date.",
-    "evidence_required": "The variation cannot be accepted without who asked for it, when, and the customer's link answer or at least one piece of evidence"
+    "evidence_required": "The variation cannot be accepted without who asked for it, when, and the customer's link answer or at least one piece of evidence",
+    "duplicate_supplier": "An active supplier already uses this tax id and branch",
+    "supplier_archived": "This supplier is archived; restore it before editing"
   }
 }
