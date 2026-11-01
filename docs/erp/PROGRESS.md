@@ -73,7 +73,7 @@
 
 | WP | Title | Status | Commit | Notes |
 |---|---|---|---|---|
-| I-01 | เปลือกแอป บัญชี ล็อกอิน error | done | HASH | ไม่มี migration; namespace `auth` ใหม่ + `shell.*` เพิ่ม; ESLint glob เพิ่ม; D-367…D-370 |
+| I-01 | เปลือกแอป บัญชี ล็อกอิน error | done | 9c5133f | ไม่มี migration; namespace `auth` ใหม่ + `shell.*` เพิ่ม; ESLint glob เพิ่ม; D-367…D-370 |
 | I-02 | components/sheet | todo | | |
 | I-03 | components/sheet/journey | todo | | |
 | I-04 | boq-home + journey | todo | | |
@@ -1197,7 +1197,7 @@
 - WP ถัดไปต้องรู้: ไม่มี WP ถัดไปในสายหลัก; ถ้าจะ seed ส่งมอบ/ปิดโครงการให้ทำกับโครงการแยก (D-365)
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; eslint `seed-erp.ts` + `seed-showcase.ts` ผ่าน; ทดสอบด้วย jest e2e ชั่วคราว (ลบแล้ว) แบบ `PERSISTENCE=memory` + `ENTITLEMENTS=enforce` + ทุกโมดูล ERP: ทุกขั้นสำเร็จ, รันซ้ำ → "already seeded"; `MODULES_ENABLED=workforce` → "erp: skipped"; `project-hub,quotations,contracts` (ไม่มี boq-control) → เปิดได้แค่ project-hub ไม่ล้ม; ยังไม่ได้รัน `npm run db:seed:showcase` บน PostgreSQL จริง
 
-### I-01 — เปลือกแอป บัญชี ล็อกอิน error (HASH)
+### I-01 — เปลือกแอป บัญชี ล็อกอิน error (9c5133f)
 - ย้ายข้อความไทยตรงตัวเข้า `shell.*` (เพิ่ม vendorWork, localProject, sync.*, readOnly*, requireSignIn.* ฯลฯ), namespace ใหม่ `auth` (login/register/rules), ใช้ `account`/`roles`/`errors` ที่มีอยู่ — th+en ครบ `check-parity` ผ่าน
 - ไฟล์: `AppLayoutUI.tsx`, `cloud/ui/*` (AccountMenu, ProjectBadge, ReadOnlyBanner, common), `cloud/auth/*` (AuthPages, form-rules, use-rules ใหม่), `modules/ModuleGate.tsx`, `notifications/NotificationBell.tsx`, `store/project-store.ts` + `store/notice-texts.ts`, `cloud/api/errors.ts`, `app/(app)/calc/[id]/page.tsx`
 - ESLint ห้ามไทยครอบไฟล์เหล่านี้แล้ว (ห้ามเติมไทยกลับ); `formatDateTime` ใน `cloud/ui/common.tsx` ยังใช้ `th-TH` (มีเทสต์เดิม; ผู้ใช้ภายนอกคือ I-10)
