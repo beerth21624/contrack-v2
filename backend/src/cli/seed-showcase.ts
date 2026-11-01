@@ -5,7 +5,8 @@
 // Idempotent: a project with the showcase name is updated in place (its documents replaced, missing revisions and
 // assignments added). With the `workforce` module on, crews, people, crew assignments, the site supervisor and two
 // waiting-window overrides (ช่วงรอ: 1.5 ฐานราก 10 days, 5.1 ฉาบปูน 21 days) are added too (./seed-workforce.ts), matched by
-// name / task, so a re-run creates no duplicates. Nothing else in the database is touched.
+// name / task, so a re-run creates no duplicates. With the ERP modules in MODULES_ENABLED the ERP sample data is added
+// as well (./seed-erp.ts). Nothing else in the database is touched.
 //   --api <url>      a running backend (default: $CONTRACK_API_URL or http://localhost:4000)
 //   --in-process     start the API in this process on $DATABASE_URL instead (like db:seed)
 //   --recreate       delete the showcase project first and build it again (fresh revisions and activity)
@@ -18,6 +19,7 @@ import {
 import { createApp } from '../bootstrap';
 import { loadEnv } from '../shared/infrastructure/config/env';
 import { ACCOUNTS, DEMO_PASSWORD } from './seed-demo';
+import { seedErp } from './seed-erp';
 import { seedWorkforce } from './seed-workforce';
 
 const COMPANY = 'บริษัท ตัวอย่างก่อสร้าง จำกัด';
@@ -188,6 +190,14 @@ async function main(): Promise<void> {
 
         // Crews and people (module `workforce`; skipped when the server does not offer it).
         await seedWorkforce({ call, tokens, workspaceId: company.id, projectId, project: current, today });
+
+        // ERP sample data (needs `project-hub` in MODULES_ENABLED; prints "erp: skipped" otherwise). A failure here must not
+        // undo the showcase above, so it is reported and the script goes on.
+        try {
+            await seedErp({ call, tokens, workspaceId: company.id, today });
+        } catch (e) {
+            console.warn(`erp: failed (${e instanceof Error ? e.message : String(e)}) — the showcase above is complete; delete the ERP sample project and run again`);
+        }
 
         const detail = await call<Detail>('GET', `/projects/${projectId}`, undefined, tokens.owner);
         const s = detail.project.summary;

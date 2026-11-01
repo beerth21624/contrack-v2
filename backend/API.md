@@ -525,3 +525,17 @@ Closeout reads need `handover.read` + `cost.read`; writes `handover.manage` + `c
 | PATCH | `/projects/:projectId/closeout` | `{lessons}` → `CloseoutDto` | draft only (409 `invalid_transition` when final) |
 | POST | `/projects/:projectId/closeout/finalize` | `{lessons?, asOf?}` → `CloseoutDto` (200) | |
 | GET | `/workspaces/:workspaceId/unit-rates?lineKeys=a,b` | → `UnitRatesDto` `{items: {lineKey, descTh, unit, matUnit, labUnit, projectCount, lastObservedDate}[]}` | `cost.read`, module `handover` (controller in job-cost); per line key the mean of the latest 3 projects by observed date; no `lineKeys` = every line key with a history |
+
+## Other routes of the ERP foundation (portal, search, files, notifications, preferences, price reference)
+Schemas: `../src/shared/contract/erp/portal.ts`, `files.ts`, `notifications.ts`, `erp/price-reference.ts`. Registries `PortalSources` / `HubRollups` / `DailySweeps` (core) are filled by the modules above.
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/workspaces/:workspaceId/portal` | → `PortalDto` `{tasks, riskyProjects, cashOutlook, tiles, quickActions}` | module `portal`; tasks come from the `PortalSources` of the active modules and are filtered by the caller's permissions; `cashOutlook` null until `job-cost` supplies a plan |
+| GET | `/workspaces/:workspaceId/search?q=` | → `SearchHit[]` | module `portal`; global search over projects, customers, suppliers, documents the caller may read (`q` 1–`SEARCH_QUERY_MAX` characters) |
+| POST | `/files` | multipart `file` + `purpose` (+ `workspaceId` for ERP uploads) → `FileDto` (201) | any signed-in user; max `MAX_FILE_BYTES` (20 MB); JPEG / PNG / WebP / HEIC / PDF; `purpose` ∈ `FILE_PURPOSES` (logo, site photos, scans, supplier quotes, payment slips, handover documents, …); a file is attached to a document by passing its id and must be uploaded by the caller |
+| GET | `/files/:id/content?exp=&sig=` **public** | → bytes | signed link made by the API (`FileDto.url`); expired or wrong signature → 404 |
+| GET | `/notifications?limit=` | → `NotificationListDto` | the caller's notifications, newest first (`limit` 1–100, default 30); written by the modules' `Notices` and the daily sweeps |
+| POST | `/notifications/read` | `{ids?, all?}` → 204 | marks the caller's notifications read |
+| PATCH | `/me/preferences` | `UpdatePreferencesRequest` → `UserPreferences` | the caller's UI language (`th` / `en`) |
+| GET | `/workspaces/:workspaceId/price-reference/items?q=&category=&limit=` | → `PriceReferenceItemDto[]` | module `project-hub`; read-only government price list used as a hint when pricing quotation lines |

@@ -62,3 +62,25 @@ Re-running matches rate cards, people and crews by name and assignments by (proj
 plan days are updated in place. The waits are matched by task: the seed's two tasks are set back to the seed's values,
 any other override someone added to the showcase is kept, and nothing is written when they already match (PUT
 `/task-lags` replaces the whole list, so the seed reads it first and sends the merged list).
+
+### ERP sample data (modules `project-hub` …)
+
+When `MODULES_ENABLED` lists the ERP modules (`project-hub,portal,boq-control,quotations,contracts,billing,variations,procurement,site-diary,labour,job-cost,payables,handover`;
+`--in-process` honours `MODULES_ENABLED` from the environment, default `workforce` = no ERP data), the same script also runs `src/cli/seed-erp.ts`.
+Without `project-hub` it prints "erp: skipped" and the rest of the showcase is exactly as before. The ERP step switches the modules on for the
+company with the 30-day trials (`POST /workspaces/:id/modules/:module/trial`, no platform admin needed; falls back to the plain switch when the
+server runs with `ENTITLEMENTS=open`) and then goes through the HTTP API as the owner:
+- **Company profile** (บริษัท ตัวอย่างก่อสร้าง จำกัด: tax id, head-office branch, address, VAT 7 %, bank account, PromptPay, BE document years).
+- **3 customers**: คุณมานะ ตั้งใจ (individual), บริษัท รุ่งเรืองพัฒนา จำกัด (juristic), เทศบาลตำบลศาลายา (government). Matched by Thai name.
+- **Project "บ้านพักอาศัย ERP ตัวอย่าง – คุณมานะ ตั้งใจ"** (the Excel v5 sample house, its own project so the showcase house stays editable):
+  hub fields + project code → quotation issued and accepted (this locks the baseline and the cost codes) → main contract (progress billing, advance 10 %,
+  retention 5 %, 12 months warranty) signed → advance invoice paid → claim 1 (30 %, certified, invoiced, **paid**) and claim 2 (55 %, invoiced, **open**) →
+  one accepted variation order (sliding door) → 2 suppliers, a site purchase request, an RFQ with 2 quotes, the award, a PO issued and a goods receipt →
+  5 submitted daily reports with weather, manpower, progress and an issue → timesheets of the same days, a wage advance and a paid pay period →
+  a supplier bill from the PO and a service bill with 3 % withholding, approved and paid in one payment run (voucher + 50 ทวิ).
+- Not seeded: handover and closeout (accepting the handover moves the project to the warranty phase and completes the contract, which would end the
+  live demo of claims and costs) — do those on the screen in front of the customer.
+- Idempotent at project level: once the ERP project exists the step prints "erp: already seeded" and creates nothing. A run that failed half-way
+  leaves a partial project (the showcase itself is complete; the failure is printed as a warning): delete that project in the app (or archive it)
+  and run again. A project with posted money events cannot be deleted (409 `financial_events_exist`), so archive it (the seed only looks at active projects).
+- The server clock decides the document dates; the script plans relative to `--today`, so use it on a server whose clock agrees (the default).
