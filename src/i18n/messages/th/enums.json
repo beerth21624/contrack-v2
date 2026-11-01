@@ -322,5 +322,26 @@
   "siteIssueStatus": {
     "open": "ยังค้างอยู่",
     "resolved": "แก้ไขแล้ว"
+  },
+  "timesheetStatus": {
+    "draft": "ฉบับร่าง",
+    "approved": "อนุมัติแล้ว",
+    "paid": "จ่ายแล้ว"
+  },
+  "payPeriodStatus": {
+    "open": "เปิดอยู่",
+    "pending_approval": "รออนุมัติ",
+    "approved": "อนุมัติแล้ว",
+    "paid": "จ่ายแล้ว"
+  },
+  "wageAdvanceStatus": {
+    "open": "ค้างหัก",
+    "partially_recovered": "หักบางส่วน",
+    "recovered": "หักครบแล้ว",
+    "written_off": "ตัดหนี้สูญ"
+  },
+  "labourPaymentMethod": {
+    "cash": "เงินสด",
+    "transfer": "โอนเงิน"
   }
 }

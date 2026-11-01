@@ -15,7 +15,7 @@ import { LabourRepository } from './ports/labour.repository';
 
 export const PAY_PERIOD_READY_SWEEP = 'labour.pay-period-ready';
 
-export const payPeriodHref = (periodKey: string): string => `/labour/pay-periods/${periodKey}`;
+export const payPeriodHref = (periodKey: string): string => `/workspace/pay-periods/${periodKey}`;
 
 @Injectable()
 export class LabourHandlers {

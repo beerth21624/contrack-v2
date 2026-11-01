@@ -80,7 +80,12 @@ export const WORKSPACE_NAV: readonly ErpNavGroup[] = [
             { key: 'suppliers', labelKey: 'suppliers', href: '/suppliers', module: 'procurement', permission: 'suppliers.read', match: p => p.startsWith('/suppliers') },
         ],
     },
-    { groupKey: 'finance', items: [] },
+    {
+        groupKey: 'finance',
+        items: [
+            { key: 'pay-periods', labelKey: 'payPeriods', href: '/workspace/pay-periods', module: 'labour', permission: 'labour.read', match: p => p.startsWith('/workspace/pay-periods') },
+        ],
+    },
     {
         groupKey: 'settings',
         items: [
@@ -110,6 +115,7 @@ export const PROJECT_TABS: readonly ErpProjectTab[] = [
     { key: 'billing', labelKey: 'tabs.billing', href: id => `/p/${encodeURIComponent(id)}/billing`, module: 'billing', permission: 'billing.read', match: p => /^\/p\/[^/]+\/billing/.test(p) },
     { key: 'procurement', labelKey: 'tabs.procurement', href: id => `/p/${encodeURIComponent(id)}/procurement`, module: 'procurement', permission: 'procurement.read', match: p => /^\/p\/[^/]+\/procurement/.test(p) },
     { key: 'site-diary', labelKey: 'tabs.siteDiary', href: id => `/p/${encodeURIComponent(id)}/site-diary`, module: 'site-diary', permission: 'site.read', match: p => /^\/p\/[^/]+\/site-diary/.test(p) },
+    { key: 'labour', labelKey: 'tabs.labour', href: id => `/p/${encodeURIComponent(id)}/labour`, module: 'labour', permission: 'labour.read', match: p => /^\/p\/[^/]+\/labour/.test(p) },
 ];
 
 /** Header slot: small controls next to the notification bell (global search, …); each shows when its gate passes. */

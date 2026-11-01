@@ -28,6 +28,7 @@ import portal from './portal.json';
 import suppliers from './suppliers.json';
 import procurement from './procurement.json';
 import siteDiary from './siteDiary.json';
+import labour from './labour.json';
 
 const messages = {
   common,
@@ -60,6 +61,7 @@ const messages = {
   suppliers,
   procurement,
   siteDiary,
+  labour,
 };
 
 export default messages;

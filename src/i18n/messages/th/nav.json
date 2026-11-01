@@ -30,9 +30,11 @@
     "billing": "วางบิล",
     "variations": "งานเพิ่ม-ลด",
     "procurement": "จัดซื้อ",
-    "siteDiary": "รายงานประจำวัน"
+    "siteDiary": "รายงานประจำวัน",
+    "labour": "ค่าแรง"
   },
   "receivables": "ลูกหนี้",
   "suppliers": "ผู้ขาย",
-  "purchasing": "ใบสั่งซื้อ"
+  "purchasing": "ใบสั่งซื้อ",
+  "payPeriods": "งวดค่าแรง"
 }

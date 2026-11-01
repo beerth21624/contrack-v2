@@ -30,9 +30,11 @@
     "billing": "Billing",
     "variations": "Variations",
     "procurement": "Purchasing",
-    "siteDiary": "Site diary"
+    "siteDiary": "Site diary",
+    "labour": "Labour"
   },
   "receivables": "Receivables",
   "suppliers": "Suppliers",
-  "purchasing": "Purchase orders"
+  "purchasing": "Purchase orders",
+  "payPeriods": "Pay periods"
 }

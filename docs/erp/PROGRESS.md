@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-44 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-45 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -56,7 +56,7 @@
 | WP-42 | รายงานประจำวัน backend | opus | done | edc7d7c | migration `0028_wp42_site_diary`; โมดูล `backend/src/modules/site-diary/`, port `CrewDailyCost` (workforce), `CostCodeLookup.listByProjects`; D-300…D-305 |
 | WP-43 | รายงานประจำวัน web | sonnet | done | 96534e5 | ไม่มี migration; `src/features/erp/site-diary/*`; routes `/p/<id>/site-diary` และ `/p/<id>/site-diary/<date>`; แท็บ `site-diary`; D-306…D-308 |
 | WP-44 | ใบลงเวลา งวดค่าแรง 15 วัน เบิกล่วงหน้า backend | opus | done | beadd7c | migration `0029_wp44_labour`; โมดูล `backend/src/modules/labour/`, ports `PeopleDirectory` (workforce), `SiteDiaryManpower` (site-diary), registry `PayPeriodBillChecks` (core); D-309…D-316 |
-| WP-45 | ค่าแรง web | sonnet | todo | | |
+| WP-45 | ค่าแรง web | sonnet | done | HASH | route `/p/<id>/labour`, `/workspace/pay-periods[/<key>]`, `/print/pay-period/<id>`; D-317 … D-319 |
 | WP-46 | Job cost backend: ต้นทุน กำไร แจ้งเตือน | opus | todo | | |
 | WP-47 | กระแสเงินสดจริงข้ามโครงการ (backend) | opus | todo | | |
 | WP-48 | Job cost + กระแสเงินสด web | sonnet | todo | | |
@@ -413,6 +413,9 @@
 | D-314 | 2026-11-01 | (WP-44) เงินเบิกล่วงหน้า: หักเฉพาะที่ "จ่ายแล้ว" (`paid_at` ไม่ null) ลงวันที่ ≤ วันสิ้นงวด และไม่ถูกตัดหนี้สูญ เรียง `advance_date` แล้ว `created_at` หักได้ไม่เกิน gross ของคนนั้น; `recovered_amount`/สถานะนับรวม recovery ของงวดที่ยัง open ด้วย (สร้างงวดใหม่จะคืนให้); สร้างพร้อม `paymentMethod` = จ่ายทันที (`lb.advance_paid` วันที่ = `advanceDate`, projectId null) หรือ PATCH `paymentMethod` ภายหลัง; แก้วันที่/ยอดได้เฉพาะยังไม่จ่าย (409 `advance_paid`); `status:'written_off'` หยุดหัก; ไม่มี DELETE (ใช้ written_off); เขียนต้องมี `labour.pay` + `workforce.seeWages` อ่าน `labour.read` (ยอดซ่อนถ้าไม่เห็นค่าแรง) | 04 "advances CRUD + paid" |
 | D-315 | 2026-11-01 | (WP-44) จ่ายงวด: `lb.wages_paid` ต่อโครงการ `net` = ยอดค่าแรงของโครงการ (gross), `cash` = net ของงวด `allocate` ตามสัดส่วน gross (Σ cash = net งวด), `counterpartyType:'worker'`, `counterpartyName:''`; `lb.advance_recovered` ต่อคนที่ถูกหัก (`direction:'none'`, cash 0, projectId null); `source_type` `pay_period` / `wage_advance`; ใบลงเวลา → `paid`, lines `paid=true`; ledger ต้นทุนลงตอนอนุมัติใบลงเวลา (ไม่ลงซ้ำตอนจ่าย); registry `PayPeriodBillChecks.register(fn)` ใน core (`hasBill` = มีตัวใดตอบ true) | 04 WP-44 |
 | D-316 | 2026-11-01 | (WP-44) portal task ใหม่ `pay_period_ready` (`params.periodKey`, `projectId: null`, สิทธิ์ `labour.pay`, งวด `approved`) href `/labour/pay-periods/<periodKey>` (WP-45 ต้องทำ route นี้); sweep `labour.pay-period-ready` วันที่ 15 และวันสุดท้ายของเดือน ถึงสมาชิกที่มี `labour.pay` ของ workspace ที่มีใบลงเวลา (ยังไม่ paid) ในงวด ครั้งเดียวต่อ `ws:periodKey` payload `{title: periodKey, amount (net ที่ build แล้ว หรือ Σ approved), date: วันสิ้นงวด, href}`; audit entity `timesheet`/`pay_period`/`wage_advance` actions ใหม่ `build`/`pay`/`create_advance`/`write_off`; ไม่เขียนเทสต์ใหม่ (คำสั่งเจ้าของ) | 04 WP-44 |
+| D-317 | 2026-11-01 | (WP-45) portal href ของงาน `pay_period_ready` เปลี่ยนเป็น `/workspace/pay-periods/<periodKey>` (แก้ `payPeriodHref` ใน `labour-handlers.ts`) แทน `/labour/pay-periods/…` ที่ WP-44 วางไว้ — หน้ารายละเอียดงวดอยู่ใต้เมนูการเงิน (`finance.payPeriods`) | 04 WP-45 route |
+| D-318 | 2026-11-01 | (WP-45) ใบลงเวลาเป็น grid คน × 7 วัน (สัปดาห์จันทร์–อาทิตย์): คลิกช่อง = เต็มวัน → ครึ่งวัน → ว่าง, OT ชม. ใต้ช่อง, บันทึกทีละวันที่แก้ (PUT ต่อวัน ส่งเฉพาะ draft; approved/paid แสดงล็อก), วันที่มี `pendingApproval` หรืองวดล็อกแก้ไม่ได้; ค่าแรง/วันของคนที่ยังไม่มีใน workforce กรอกในแถวคน (ส่งเฉพาะรายการใหม่); ปุ่ม "ส่งอนุมัติสัปดาห์นี้" ใช้ช่วงสัปดาห์ที่แสดง (ถึงวันนี้) | 04 WP-45 |
+| D-319 | 2026-11-01 | (WP-45) เงินเบิกล่วงหน้า (AdvancesTable) อยู่ในหน้า `/workspace/pay-periods` ใต้ตารางงวด; ปุ่ม "จ่าย" ของงวดซ่อนเมื่อ `payables` active แล้วแสดงลิงก์ "สร้างบิลเพื่อจ่าย" ไป `/payables` (หน้านี้ WP-49 ต้องทำหรือแก้ลิงก์); ใบสรุปจ่ายใช้ภาษาตาม UI locale (ไม่มี `documents.json` ของใบนี้); ไม่เขียนเทสต์ใหม่ (คำสั่งเจ้าของ) | 04 WP-45 + คำสั่งเจ้าของ |
 
 ## Handoff notes
 
@@ -1020,3 +1023,9 @@
   - WP-49/50 (payables): ลงทะเบียน `PayPeriodBillChecks.register((ws, periodId) => มีบิล kind labour ของงวดนี้)`; ยังไม่มี `PayPeriodPayments.markPaid` (WP-50 เพิ่มใน labour: ทำแบบเดียวกับ `PayPayPeriodUseCase` — entries → paid, lines paid, fin events)
   - WP-46 (job cost): ค่าแรงจริงจากใบลงเวลาอยู่ใน `cost_ledger_entries` `source_type='timesheet'`, category `labour`, ref = entry id (cost code null = overhead)
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้/สร้าง (backend + contract/domain/web) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `cd backend && npx jest src/modules/workforce src/modules/portal src/modules/platform src/modules/site-diary` 317 ผ่าน; e2e `workforce` + `approvals` + `projects` 56 ผ่าน; `npx vitest run src/shared/contract src/i18n src/features/erp/portal` 623 ผ่าน; smoke e2e ชั่วคราว (memory, ลบแล้ว): คน ฿600/วัน → PUT A 02-10 1 วัน amount 600; PUT B 02-10 0.5 วัน → 422 `over_one_day` (1.5); คนไม่มีค่าแรง → 422 `daily_wage_required`; 02-16 1 วัน + OT 2 ชม. → 825 (OT 112.5); estimator เห็น `dailyWage/amount` null + `wagesHidden`; วันที่อนาคต → 422; รายงานประจำวันมีทีม (หัวหน้า+สมาชิก, 10 ชม.) → suggestions 2 คน days 1 OT 2; เบิก 1,000 (จ่ายสด) → approve ใบลงเวลา 02-01…02-28 (อนุมัติทันที, ledger actual 600 + 825) → build `2026-02-A` gross 600 หัก 600 net 0 เบิกคงเหลือ 400 (`partially_recovered`) → approve (auto) → PUT 02-11 → 409 `period_locked` → pay → fin `lb.wages_paid` (net 600 cash 0) + `lb.advance_recovered` 600 → build `2026-02-B` gross 825 หัก 400 net 425 เบิก `recovered`; portal task `pay_period_ready` 2026-02-B ฿425; sweep 2026-02-28 แจ้งครั้งเดียว (ซ้ำ/วันอื่นไม่แจ้ง); ยังไม่ได้ทดสอบบน PostgreSQL จริง (advisory lock, `on conflict do nothing`, sum ของ numeric) และยังไม่ได้ลองทางรออนุมัติ (pending) จริงผ่าน HTTP
+
+### WP-45 — ค่าแรง web (HASH)
+- สร้าง `src/features/erp/labour/{api,hooks,form,LabourPage,TimesheetGrid,PayPeriodsPage,PayPeriodDetail,AdvancesTable,PaySlipPrint}`; routes `p/[projectId]/labour`, `workspace/pay-periods` + `[periodKey]`, `(print)/print/pay-period/[periodId]`; แท็บ `labour` (สิทธิ์ `labour.read`) และเมนู `finance.payPeriods` ใน `nav-registry.ts`; i18n `labour` (th+en), `enums.timesheetStatus|payPeriodStatus|wageAdvanceStatus|labourPaymentMethod`, `nav.tabs.labour`, `nav.payPeriods`
+- เบี่ยงจากแผน: D-317 … D-319; ไม่เขียนเทสต์ใหม่; ยังไม่ได้ลองกดใน browser
+- WP ถัดไปต้องรู้: งวดที่ยังไม่ build (`id: null`) เปิดหน้ารายละเอียดได้ด้วยรหัสงวดและกด "สร้างงวด"; WP-49/50 (payables) ต้องมีหน้า `/payables` (ลิงก์ "สร้างบิลเพื่อจ่าย" ชี้มาที่นี่) และเมื่อ payables active ปุ่มจ่ายของงวดจะซ่อน
+- ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/features/erp/labour`, `nav-registry.ts`, routes ใหม่ ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/features/erp/hub` ผ่าน

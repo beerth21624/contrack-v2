@@ -322,5 +322,26 @@
   "siteIssueStatus": {
     "open": "Open",
     "resolved": "Resolved"
+  },
+  "timesheetStatus": {
+    "draft": "Draft",
+    "approved": "Approved",
+    "paid": "Paid"
+  },
+  "payPeriodStatus": {
+    "open": "Open",
+    "pending_approval": "Pending approval",
+    "approved": "Approved",
+    "paid": "Paid"
+  },
+  "wageAdvanceStatus": {
+    "open": "Outstanding",
+    "partially_recovered": "Partly recovered",
+    "recovered": "Fully recovered",
+    "written_off": "Written off"
+  },
+  "labourPaymentMethod": {
+    "cash": "Cash",
+    "transfer": "Bank transfer"
   }
 }
