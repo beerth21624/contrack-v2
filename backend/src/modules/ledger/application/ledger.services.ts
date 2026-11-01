@@ -123,6 +123,16 @@ export class LedgerService extends CostLedger {
         return out;
     }
 
+    async listByProject(workspaceId: WorkspaceId, projectId: ProjectId, costCodeId?: string): Promise<CostLedgerEntry[]> {
+        return this.repo.listByProject(workspaceId, projectId, costCodeId?.toLowerCase());
+    }
+
+    async totalsByProjectCostCode(
+        workspaceId: WorkspaceId, projectIds: readonly ProjectId[],
+    ): Promise<(CostLedgerCodeTotals & { projectId: ProjectId })[]> {
+        return this.repo.totalsByProjectCostCode(workspaceId, projectIds);
+    }
+
     /** Reversal rows (negated amount / qty) for originals that are neither reversals nor reversed yet. */
     private async writeReversals(
         workspaceId: WorkspaceId, originals: readonly CostLedgerEntry[], input: CostLedgerReverseInput,

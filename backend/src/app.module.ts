@@ -33,6 +33,7 @@ import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { ProcurementModule } from './modules/procurement/procurement.module';
 import { SiteDiaryModule } from './modules/site-diary/site-diary.module';
 import { LabourModule } from './modules/labour/labour.module';
+import { JobCostModule } from './modules/job-cost/job-cost.module';
 
 @Module({})
 export class AppModule {
@@ -61,6 +62,7 @@ export class AppModule {
                 ProcurementModule,
                 SiteDiaryModule,
                 LabourModule,
+                JobCostModule,
             ],
             controllers: [HealthController],
             providers: [

@@ -3,6 +3,7 @@
 // stream implements (see ../shared/ports.ts) must be registered here too, and listed in the exports.
 import type { Provider, Type } from '@nestjs/common';
 import { persistence } from '../../../shared/infrastructure/core.module';
+import { SubcontractCommitments } from '../../../shared/application/ports';
 import { SubcontractCreator, SubcontractingSettingsReader, VendorLinkListener, VendorStats } from '../shared/ports';
 import { ContractAccess } from './application/contract-access';
 import { ContractNotices } from './application/contract-notices';
@@ -49,6 +50,7 @@ import { InMemoryRetentionRepository } from './infrastructure/adapters/in-memory
 import { InMemoryScSettingsRepository } from './infrastructure/adapters/in-memory-sc-settings.repository';
 import { InMemorySubcontractRepository } from './infrastructure/adapters/in-memory-subcontract.repository';
 import { InMemoryVariationRepository } from './infrastructure/adapters/in-memory-variation.repository';
+import { RepositorySubcontractCommitments } from './infrastructure/adapters/subcontract-commitments.adapter';
 import {
     ProjectContractsController, SubcontractsController, VendorContractsController, WorkspaceContractsController,
 } from './presentation/contracts.controller';
@@ -71,6 +73,7 @@ export const CONTRACTS_PROVIDERS: Provider[] = [
     { provide: SubcontractCreator, useClass: CreateSubcontractUseCase },
     { provide: VendorStats, useClass: RepositoryVendorStats },
     { provide: VendorLinkListener, useClass: RepositoryVendorLinkListener },
+    { provide: SubcontractCommitments, useClass: RepositorySubcontractCommitments },
     // registers the running-work counter of the module in ModuleWorkRegistry (onModuleInit)
     RepositoryModuleUsage,
     // application services
@@ -89,5 +92,5 @@ export const CONTRACTS_PROVIDERS: Provider[] = [
 
 /** Ports from ../shared/ports.ts (or shared/application/ports.ts) this stream provides to the others. */
 export const CONTRACTS_EXPORTS: (abstract new (...args: never[]) => unknown)[] = [
-    SubcontractCreator, SubcontractingSettingsReader, VendorStats, VendorLinkListener,
+    SubcontractCreator, SubcontractingSettingsReader, VendorStats, VendorLinkListener, SubcontractCommitments,
 ];

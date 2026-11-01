@@ -11,6 +11,7 @@ import type {
 } from '@contrack/contract';
 import type { EntitlementStatus, PortalTaskKind, SearchHit } from '@contrack/contract';
 import type { PurchaseOrderStatus, SupplierKind, SupplierSnapshot, SupplierWhtPreset, TradeId } from '@contrack/contract';
+import type { SubcontractStatus } from '@contrack/contract';
 import type {
     ContractMilestoneKind, ContractMilestoneSource, ContractMilestoneStatus, ContractMilestoneTrigger, ContractVariationBilling,
     MainContractBillingMode, MainContractStatus, MainContractTerms, MilestoneTemplateItem,
@@ -1192,6 +1193,12 @@ export abstract class CostLedger {
     abstract entriesBySource(workspaceId: WorkspaceId, sourceType: string, sourceId: string): Promise<CostLedgerEntry[]>;
     /** Open amount (Σ commit + Σ commit_release) per commitment ref; refs without rows are absent. */
     abstract openCommitments(workspaceId: WorkspaceId, refs: readonly string[]): Promise<Map<string, number>>;
+    /** Every row of a project, oldest first (entry date, creation); only one cost code when given (WP-46). */
+    abstract listByProject(workspaceId: WorkspaceId, projectId: ProjectId, costCodeId?: string): Promise<CostLedgerEntry[]>;
+    /** Totals per (project, cost code) of many projects in one query (job-cost roll-ups, WP-46). */
+    abstract totalsByProjectCostCode(
+        workspaceId: WorkspaceId, projectIds: readonly ProjectId[],
+    ): Promise<(CostLedgerCodeTotals & { projectId: ProjectId })[]>;
 }
 
 /** One money event to post (amounts signed, rounded to 2 places on write). */
@@ -1588,4 +1595,48 @@ export class PayPeriodBillChecks {
         for (const check of this.checks) if (await check(workspaceId, periodId)) return true;
         return false;
     }
+}
+
+// ── Subcontract commitments (WP-46, docs/erp/02-domain-model.md §12): what job-cost posts to the cost ledger ──
+
+/** One line of a subcontract (the BOQ line key it came from, null for a typed line). */
+export interface SubcontractCommitmentLine {
+    lineKey: string | null;
+    /** Line total without VAT. */
+    total: number;
+}
+
+/** An approved (or paid) progress claim of a subcontract. */
+export interface SubcontractCommitmentClaim {
+    claimId: string;
+    installmentNo: number;
+    /** Work value of the claim before retention / WHT / VAT. */
+    gross: number;
+    /** Bangkok business date of the approval. */
+    approvedOn: string;
+    approvedBy: UserId;
+}
+
+export interface SubcontractCommitment {
+    subcontractId: string;
+    projectId: ProjectId;
+    status: SubcontractStatus;
+    title: string;
+    vendorName: string;
+    /** Current contract value without VAT (base + accepted variations). */
+    total: number;
+    /** Bangkok business date the vendor accepted (activated) the contract; null when not known. */
+    activatedOn: string | null;
+    createdBy: UserId;
+    lines: SubcontractCommitmentLine[];
+    /** Approved / paid claims, installment order. */
+    claims: SubcontractCommitmentClaim[];
+}
+
+/**
+ * Provided by subcontracting: the project's subcontracts that hold a commitment (active, completed, closed,
+ * terminated) with their approved claims. Empty when `subcontracting` is not active for the workspace.
+ */
+export abstract class SubcontractCommitments {
+    abstract forProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<SubcontractCommitment[]>;
 }

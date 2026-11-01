@@ -86,6 +86,7 @@
     "site_issue": "ปัญหาหน้างาน",
     "timesheet": "ใบลงเวลา",
     "pay_period": "งวดค่าแรง",
-    "wage_advance": "เบิกล่วงหน้า"
+    "wage_advance": "เบิกล่วงหน้า",
+    "cost_forecast": "ประมาณการต้นทุน"
   }
 }

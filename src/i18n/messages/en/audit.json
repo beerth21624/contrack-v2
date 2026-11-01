@@ -86,6 +86,7 @@
     "site_issue": "Site issue",
     "timesheet": "Timesheet",
     "pay_period": "Pay period",
-    "wage_advance": "Wage advance"
+    "wage_advance": "Wage advance",
+    "cost_forecast": "Cost forecast"
   }
 }

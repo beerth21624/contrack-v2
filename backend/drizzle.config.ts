@@ -19,6 +19,7 @@ export default defineConfig({
         './src/shared/infrastructure/database/schema-variations.ts',
         './src/shared/infrastructure/database/schema-procurement.ts',
         './src/shared/infrastructure/database/schema-site.ts',
+        './src/shared/infrastructure/database/schema-job-cost.ts',
     ],
     out: './drizzle',
     dbCredentials: { url: process.env.DATABASE_URL ?? 'postgres://contrack:contrack@localhost:5432/contrack' },

@@ -119,7 +119,22 @@ export class DrizzleCostLedgerRepository extends CostLedgerRepository {
         return new Map(rows.map(r => [asProjectId(r.projectId), totalsOf(r)]));
     }
 
-    async countByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<number> {
+    async totalsByProjectCostCode(
+        workspaceId: WorkspaceId, projectIds: readonly ProjectId[],
+    ): Promise<(CostLedgerTotals & { projectId: ProjectId; costCodeId: string | null })[]> {
+        if (projectIds.length === 0) return [];
+        const rows = await this.ctx.executor
+            .select({
+                projectId: costLedgerEntries.projectId, costCodeId: costLedgerEntries.costCodeId,
+                committed: sumOf('commit'), released: sumOf('commit_release'), actual: sumOf('actual'),
+            })
+            .from(costLedgerEntries)
+            .where(and(eq(costLedgerEntries.workspaceId, workspaceId), inArray(costLedgerEntries.projectId, [...projectIds])))
+            .groupBy(costLedgerEntries.projectId, costLedgerEntries.costCodeId);
+        return rows.map(r => ({ projectId: asProjectId(r.projectId), costCodeId: r.costCodeId, ...totalsOf(r) }));
+    }
+
+        async countByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<number> {
         const [row] = await this.ctx.executor.select({ n: count() }).from(costLedgerEntries)
             .where(and(eq(costLedgerEntries.workspaceId, workspaceId), eq(costLedgerEntries.projectId, projectId)));
         return row?.n ?? 0;

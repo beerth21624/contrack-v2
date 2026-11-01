@@ -211,6 +211,13 @@
       "when": 1793490936433,
       "tag": "0029_wp44_labour",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793492343357,
+      "tag": "0030_wp46_job_cost",
+      "breakpoints": true
     }
   ]
 }

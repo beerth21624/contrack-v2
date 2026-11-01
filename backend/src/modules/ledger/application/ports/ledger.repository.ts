@@ -20,6 +20,9 @@ export abstract class CostLedgerRepository {
     abstract bySource(workspaceId: WorkspaceId, sourceType: string, sourceId: string, forUpdate?: boolean): Promise<CostLedgerEntry[]>;
     abstract totalsByCostCode(workspaceId: WorkspaceId, projectId: ProjectId): Promise<(CostLedgerTotals & { costCodeId: string | null })[]>;
     abstract totalsByProject(workspaceId: WorkspaceId, projectIds: readonly ProjectId[]): Promise<Map<ProjectId, CostLedgerTotals>>;
+    abstract totalsByProjectCostCode(
+        workspaceId: WorkspaceId, projectIds: readonly ProjectId[],
+    ): Promise<(CostLedgerTotals & { projectId: ProjectId; costCodeId: string | null })[]>;
     abstract countByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<number>;
     /** Memory adapter only (PostgreSQL cascades from projects). */
     abstract deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void>;

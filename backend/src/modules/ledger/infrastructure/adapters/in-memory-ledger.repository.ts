@@ -88,7 +88,15 @@ export class InMemoryCostLedgerRepository extends CostLedgerRepository {
         return Promise.resolve(out);
     }
 
-    countByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<number> {
+    totalsByProjectCostCode(
+        workspaceId: WorkspaceId, projectIds: readonly ProjectId[],
+    ): Promise<(CostLedgerTotals & { projectId: ProjectId; costCodeId: string | null })[]> {
+        const entries = this.inWorkspace(workspaceId);
+        return Promise.resolve([...new Set(projectIds)].flatMap(projectId =>
+            totalsByCode(entries.filter(e => e.projectId === projectId)).map(t => ({ projectId, ...t }))));
+    }
+
+        countByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<number> {
         return Promise.resolve(this.inWorkspace(workspaceId).filter(e => e.projectId === projectId).length);
     }
 
