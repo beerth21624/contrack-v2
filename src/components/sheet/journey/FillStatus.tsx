@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { CheckCircleFilled, ExclamationCircleFilled } from '@ant-design/icons';
 
 /**
@@ -29,7 +30,8 @@ export const fillTone = (state: FillState): string =>
 
 /** The round marker in front of a card or row: a number while empty, a green tick when done, red "!" when missing. */
 export function FillBadge({ state, index }: { state: FillState; index?: number }) {
-    const label = state === 'done' ? 'กรอกครบแล้ว' : state === 'missing' ? 'ยังกรอกไม่ครบ' : 'ยังไม่ได้กรอก';
+    const t = useTranslations('journeyUi.fill');
+    const label = state === 'done' ? t('done') : state === 'missing' ? t('partial') : t('empty');
     return (
         <span role="img" aria-label={label} title={label}
             className={`shrink-0 w-6 h-6 rounded-full text-[12px] font-semibold flex items-center justify-center
@@ -43,7 +45,7 @@ export function FillBadge({ state, index }: { state: FillState; index?: number }
  * "กรอกแล้ว 6 / 9 ช่องเปิด · ยังขาดค่าจากแบบ 2 รายการ" with a thin progress bar (like the checklist progress).
  * `done` counts complete elements, `missing` the half-filled ones.
  */
-export function FillProgress({ done, total, noun, missing = 0, verb = 'กรอกแล้ว', doneText }: {
+export function FillProgress({ done, total, noun, missing = 0, verb, doneText }: {
     done: number;
     total: number;
     /** What is counted, e.g. "ช่องเปิด", "ผนัง", "วงจร". */
@@ -53,14 +55,15 @@ export function FillProgress({ done, total, noun, missing = 0, verb = 'กรอ
     /** Shown in green when everything is done (default "· ครบแล้ว"). */
     doneText?: string;
 }) {
+    const t = useTranslations('journeyUi.fill');
     if (total === 0) return null;
     const pct = Math.round((done / total) * 100);
     return (
         <div className="flex flex-wrap items-center gap-3">
             <div className="text-[13px] text-gray-700">
-                {verb} <b className="tabular-nums">{done}</b> / {total} {noun}
-                {missing > 0 && <span className="ml-2 text-red-600">· ยังขาดค่าจากแบบ {missing} รายการ</span>}
-                {done === total && <span className="ml-2 text-green-700">· {doneText ?? 'ครบแล้ว'}</span>}
+                {verb ?? t('verb')} <b className="tabular-nums">{done}</b> / {total} {noun}
+                {missing > 0 && <span className="ml-2 text-red-600">{t('missingFromPlan', { count: missing })}</span>}
+                {done === total && <span className="ml-2 text-green-700">· {doneText ?? t('allDone')}</span>}
             </div>
             <div className="flex-1 min-w-[120px] h-1.5 rounded-full bg-gray-100 overflow-hidden" aria-hidden>
                 <div className={`h-full ${missing > 0 ? 'bg-red-400' : 'bg-green-500'}`} style={{ width: `${String(pct)}%` }} />

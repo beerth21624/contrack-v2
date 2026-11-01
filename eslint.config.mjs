@@ -88,6 +88,8 @@ const eslintConfig = defineConfig([
       "src/app/(app)/{login,register,invite,calc}/**/*.{ts,tsx}",
       // Track I-02: sheet components (journey/ is I-03)
       "src/components/sheet/*.{ts,tsx}",
+      // Track I-03: journey components
+      "src/components/sheet/journey/*.{ts,tsx}",
     ],
     rules: {
       "no-restricted-syntax": [

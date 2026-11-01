@@ -75,7 +75,7 @@
 |---|---|---|---|---|
 | I-01 | เปลือกแอป บัญชี ล็อกอิน error | done | 9c5133f | ไม่มี migration; namespace `auth` ใหม่ + `shell.*` เพิ่ม; ESLint glob เพิ่ม; D-367…D-370 |
 | I-02 | components/sheet | done | ac13bef | ไม่มี migration; namespace `sheet` ใหม่; ESLint glob เพิ่ม; D-371 |
-| I-03 | components/sheet/journey | todo | | |
+| I-03 | components/sheet/journey | done | HASH | ไม่มี migration; namespace `journeyUi` ใหม่; ESLint glob เพิ่ม; D-372 |
 | I-04 | boq-home + journey | todo | | |
 | I-05 | export (BOQ print/xlsx) | todo | | |
 | I-06 | calculators กลุ่ม 1 | todo | | |
@@ -468,6 +468,7 @@
 | D-369 | 2026-11-01 | (I-01) `READ_ONLY_TEXT`/`CLOUD_NEW_PROJECT_TEXT` เปลี่ยนเป็น `readOnlyText()`/`cloudNewProjectText()` ใน `src/store/notice-texts.ts` (createTranslator + คุกกี้ภาษา แบบ `baseline-locked-text.ts`); เทสต์ store 2 ไฟล์แก้ให้เรียกฟังก์ชันใหม่; `LOCAL_PROJECT_TEXT` ถูกลบ; `syncStatusText` ใน `cloud/state.ts` ไม่มีผู้ใช้แล้ว (ProjectBadge ใช้ `shell.sync.*`) ให้ I-10 ลบ | store ไม่มี React |
 | D-370 | 2026-11-01 | (I-01) `NotificationBell` ใช้ `useFormat().dateTime` (ไทย `26 ต.ค. 2026 11:17` แทน `26 ต.ค. 26 11:17`); ชื่อโมดูลใน `ModuleGate` ใช้ `modules.<id>.label` (ไทยเท่า `MODULE_LABEL`); ป้ายบทบาทใน AccountMenu ใช้ `roles.<role>.label`; ปุ่มสลับภาษาหน้า login/register ยังไม่ทำ (D-56) | |
 | D-371 | 2026-11-01 | (I-02) `NEGATIVE_VALUE_WARNING` (const ไทย) → hook `useNegativeValueWarning()` ใน NumberCell.tsx; `journey/Fields.tsx` (JNumber) แก้เฉพาะจุดเรียกใช้ (I-03 ย้ายที่เหลือ); `addLabel` ของ EditableTable/StructureTable เป็น optional ค่า default มาจาก `sheet.table.*` | ไม่มีไทยในไฟล์ใน glob |
+| D-372 | 2026-11-01 | (I-03) ฟังก์ชัน pure ที่ไม่ใช่ hook (`planChecks`, `outOfRange`, `rebarSummaryItem`) อ่านข้อความผ่าน `journeyText()` (`journey/text.ts`, createTranslator + คุกกี้ภาษา แบบ notice-texts); default prop ไทย (`amountUnit`, `verb`, `label`, `placeholder`) กลายเป็น optional ที่เติมค่าจาก `journeyUi.*`; `levelTitle` ยังคืนชื่อไทยจาก domain (I-08 overlay) | ผู้เรียกใน calculators ไม่ต้องแก้ |
 
 ## Handoff notes
 
@@ -1208,4 +1209,9 @@
 ### I-02 — components/sheet (ac13bef)
 - ย้ายไทยตรงตัวของ `src/components/sheet/*.tsx` เข้า `sheet.json` (th+en, parity ผ่าน); ESLint glob `src/components/sheet/*.{ts,tsx}` เพิ่ม
 - WP ถัดไปต้องรู้: ผู้เรียกที่ส่ง `addLabel`/`title`/`hint` เองยังเป็นไทยจนกว่า I-06…I-08; `NEGATIVE_VALUE_WARNING` ถูกลบ ใช้ `useNegativeValueWarning()`
+- ตรวจแล้ว: tsc web, eslint, vitest `src/i18n src/components/sheet` ผ่าน; ไม่เขียนเทสต์ใหม่
+
+### I-03 — components/sheet/journey (HASH)
+- ย้ายไทยตรงตัวของ `src/components/sheet/journey/*` เข้า `journeyUi.json` (th+en, parity ผ่าน); ESLint glob `src/components/sheet/journey/*.{ts,tsx}` เพิ่ม
+- WP ถัดไปต้องรู้: ชื่อ level มาจาก domain (ไทยจนกว่า I-08); ผู้เรียกที่ส่ง label/unit/hint เอง (เช่น `'ม.'` ใน `outOfRange`) ยังเป็นไทยจนกว่า I-06…I-08; I-04 ใช้ namespace `journeyUi` ต่อได้
 - ตรวจแล้ว: tsc web, eslint, vitest `src/i18n src/components/sheet` ผ่าน; ไม่เขียนเทสต์ใหม่

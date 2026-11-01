@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Button } from 'antd';
 import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons';
 import { levelHref, levelTitle } from './levelRef';
@@ -25,6 +26,7 @@ export function EmptyState({ text, note, addLabel, onAdd, actions = [], goToLeve
     goToLevel?: string;
     children?: ReactNode;
 }) {
+    const t = useTranslations('journeyUi.level');
     const buttons: EmptyAction[] = [...(addLabel !== undefined && onAdd ? [{ label: addLabel, onClick: onAdd }] : []), ...actions];
     // After a failed confirm on a step that needs its first item, the thin missing ring.
     const needed = useRequiredAdd() && buttons.length > 0;
@@ -44,7 +46,7 @@ export function EmptyState({ text, note, addLabel, onAdd, actions = [], goToLeve
                     {goToLevel !== undefined && (
                         <Link href={levelHref(goToLevel)}>
                             <Button type={buttons.length === 0 ? 'primary' : 'default'} size="large" icon={<ArrowLeftOutlined />}>
-                                ไปที่ขั้นตอน{levelTitle(goToLevel)}
+                                {t('goTo', { title: levelTitle(goToLevel) })}
                             </Button>
                         </Link>
                     )}

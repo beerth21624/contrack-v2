@@ -1,7 +1,9 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { ExclamationCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { journeyText } from './text';
 
 /**
  * A small set of options as buttons (instead of a dropdown) — for 2–5 choices the user should see at once,
@@ -52,8 +54,9 @@ export function PresetChips({ values, current, onPick, format = sameDecimals(val
     format?: (v: number) => string;
     label?: string;
 }) {
+    const t = useTranslations('journeyUi.choices');
     return (
-        <div className="flex flex-wrap items-center gap-1" aria-label={label ?? 'ค่าที่ใช้บ่อย'}>
+        <div className="flex flex-wrap items-center gap-1" aria-label={label ?? t('commonValues')}>
             {label !== undefined && <span className="text-[12px] text-gray-400 mr-0.5">{label}</span>}
             {values.map(v => (
                 <button key={v} type="button" onClick={() => onPick(v)}
@@ -82,8 +85,9 @@ export function FieldNote({ tone = 'warn', children }: { tone?: 'warn' | 'info';
  */
 export function outOfRange(value: number, min: number, max: number, unit: string): string | undefined {
     if (!Number.isFinite(value) || value === 0) return undefined;
-    if (value < 0) return 'ค่าติดลบ — กรุณาตรวจสอบ';
-    if (value < min) return `น้อยกว่าปกติ (ปกติ ${String(min)}–${String(max)} ${unit}) — กรุณาตรวจสอบหน่วย`;
-    if (value > max) return `มากกว่าปกติ (ปกติ ${String(min)}–${String(max)} ${unit}) — กรุณาตรวจสอบหน่วย`;
+    const t = journeyText();
+    if (value < 0) return t('choices.range.negative');
+    if (value < min) return t('choices.range.low', { min: String(min), max: String(max), unit });
+    if (value > max) return t('choices.range.high', { min: String(min), max: String(max), unit });
     return undefined;
 }

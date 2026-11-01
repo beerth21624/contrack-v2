@@ -1,0 +1,90 @@
+{
+  "checklist": {
+    "yes": "Yes",
+    "no": "No",
+    "clear": "Clear answer",
+    "answerGroup": "Answer to item {index}",
+    "noteLabel": "Note for item {index}",
+    "notePlaceholderOpen": "Answer",
+    "notePlaceholderProblem": "Describe the problem found and what must be fixed before work starts",
+    "notePlaceholderDefault": "Note (optional)",
+    "problemRequired": "Please describe the problem found so it can be followed up before work starts",
+    "checked": "Checked <b>{done}</b> / {total} items",
+    "problems": "· {problems} items need fixing",
+    "ready": "· Ready to start"
+  },
+  "level": {
+    "step": "{title} step",
+    "goTo": "Go to {title} step",
+    "from": "From {title} step"
+  },
+  "fill": {
+    "done": "Completely filled in",
+    "partial": "Not completely filled in",
+    "empty": "Not filled in yet",
+    "verb": "Filled in",
+    "missingFromPlan": "· {count} items still missing values from the drawing",
+    "allDone": "Complete"
+  },
+  "planChecks": {
+    "missing": "Still missing: {list}",
+    "more": "{list} and {count} more fields"
+  },
+  "planCard": {
+    "deleteTitle": "Delete this item?",
+    "deleteDesc": "The values entered in this item will be lost",
+    "ok": "Delete",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "duplicateTitle": "Duplicate this item",
+    "duplicate": "Duplicate"
+  },
+  "fields": {
+    "size": "Size",
+    "sizeAria": "{label} size",
+    "strand": "bars",
+    "barSizeAria": "{label} bar size"
+  },
+  "choices": {
+    "commonValues": "Common values",
+    "range": {
+      "negative": "Negative value — please check",
+      "low": "Lower than usual (usually {min}–{max} {unit}) — please check the unit",
+      "high": "Higher than usual (usually {min}–{max} {unit}) — please check the unit"
+    }
+  },
+  "stepper": {
+    "decrease": "Decrease {label}",
+    "increase": "Increase {label}"
+  },
+  "missingPrices": {
+    "title": "Unit price (no standard price, enter your own)",
+    "hintMissing": "Enter the material and/or labour price per unit, otherwise this item counts as 0 baht",
+    "hintOk": "Editable here or on the BOQ page (same value)",
+    "qty": "({qty} {unit})",
+    "qtyWithWaste": "(incl. waste {qty} {unit})",
+    "matLabel": "Material/{unit} (baht)",
+    "labLabel": "Labour/{unit} (baht)",
+    "matAria": "{desc} material cost",
+    "labAria": "{desc} labour cost"
+  },
+  "suggested": {
+    "empty": "empty",
+    "none": "The {title} step has no value for this yet — enter it yourself",
+    "usedFrom": "Using the value from the {title} step (was {previous})",
+    "matches": "Matches the {title} step",
+    "offers": "The {title} step has a value to use",
+    "now": "Now {value}",
+    "undo": "Undo",
+    "use": "Use this value"
+  },
+  "required": "(required)",
+  "summary": {
+    "title": "Summary of this step",
+    "empty": "Fill in the values from the drawing above; the quantities will be summarised here",
+    "rebar": "Reinforcement",
+    "kg": "kg"
+  },
+  "sumPlaceholder": "e.g. 9.5+7+2",
+  "quickAdd": "Quick add"
+}

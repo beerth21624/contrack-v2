@@ -1,0 +1,90 @@
+{
+  "checklist": {
+    "yes": "ใช่",
+    "no": "ไม่ใช่",
+    "clear": "ล้างคำตอบ",
+    "answerGroup": "คำตอบข้อ {index}",
+    "noteLabel": "บันทึกข้อ {index}",
+    "notePlaceholderOpen": "คำตอบ",
+    "notePlaceholderProblem": "ระบุปัญหาที่พบ และสิ่งที่ต้องแก้ไขก่อนเริ่มงาน",
+    "notePlaceholderDefault": "หมายเหตุ (ถ้ามี)",
+    "problemRequired": "กรุณาระบุปัญหาที่พบ เพื่อใช้ติดตามก่อนเริ่มงาน",
+    "checked": "ตรวจแล้ว <b>{done}</b> / {total} ข้อ",
+    "problems": "· พบประเด็นที่ต้องแก้ไข {problems} ข้อ",
+    "ready": "· พร้อมเริ่มงาน"
+  },
+  "level": {
+    "step": "ขั้นตอน{title}",
+    "goTo": "ไปที่ขั้นตอน{title}",
+    "from": "จากขั้นตอน{title}"
+  },
+  "fill": {
+    "done": "กรอกครบแล้ว",
+    "partial": "ยังกรอกไม่ครบ",
+    "empty": "ยังไม่ได้กรอก",
+    "verb": "กรอกแล้ว",
+    "missingFromPlan": "· ยังขาดค่าจากแบบ {count} รายการ",
+    "allDone": "ครบแล้ว"
+  },
+  "planChecks": {
+    "missing": "ยังขาด: {list}",
+    "more": "{list} และอีก {count} ช่อง"
+  },
+  "planCard": {
+    "deleteTitle": "ลบรายการนี้?",
+    "deleteDesc": "ค่าที่กรอกไว้ในรายการนี้จะหายไป",
+    "ok": "ลบ",
+    "cancel": "ยกเลิก",
+    "delete": "ลบ",
+    "duplicateTitle": "ทำซ้ำรายการนี้",
+    "duplicate": "ทำซ้ำ"
+  },
+  "fields": {
+    "size": "ขนาด",
+    "sizeAria": "{label} ขนาด",
+    "strand": "เส้น",
+    "barSizeAria": "{label} ขนาดเหล็ก"
+  },
+  "choices": {
+    "commonValues": "ค่าที่ใช้บ่อย",
+    "range": {
+      "negative": "ค่าติดลบ — กรุณาตรวจสอบ",
+      "low": "น้อยกว่าปกติ (ปกติ {min}–{max} {unit}) — กรุณาตรวจสอบหน่วย",
+      "high": "มากกว่าปกติ (ปกติ {min}–{max} {unit}) — กรุณาตรวจสอบหน่วย"
+    }
+  },
+  "stepper": {
+    "decrease": "ลด {label}",
+    "increase": "เพิ่ม {label}"
+  },
+  "missingPrices": {
+    "title": "ราคาต่อหน่วย (ไม่มีราคามาตรฐาน ใส่เอง)",
+    "hintMissing": "ใส่ราคาวัสดุและ/หรือค่าแรงต่อหน่วย ไม่อย่างนั้นรายการนี้จะคิดเป็น 0 บาท",
+    "hintOk": "แก้ได้ที่นี่หรือในหน้า BOQ (ค่าเดียวกัน)",
+    "qty": "({qty} {unit})",
+    "qtyWithWaste": "(รวมเผื่อ {qty} {unit})",
+    "matLabel": "ค่าวัสดุ/{unit} (บาท)",
+    "labLabel": "ค่าแรง/{unit} (บาท)",
+    "matAria": "{desc} ค่าวัสดุ",
+    "labAria": "{desc} ค่าแรง"
+  },
+  "suggested": {
+    "empty": "ยังว่าง",
+    "none": "ขั้นตอน{title}ยังไม่มีค่านี้ — กรอกเองได้",
+    "usedFrom": "ใช้ค่าจากขั้นตอน{title}แล้ว (เดิม {previous})",
+    "matches": "ตรงกับขั้นตอน{title}แล้ว",
+    "offers": "ขั้นตอน{title}มีค่าให้ใช้",
+    "now": "ตอนนี้ {value}",
+    "undo": "เลิกทำ",
+    "use": "ใช้ค่านี้"
+  },
+  "required": "(จำเป็น)",
+  "summary": {
+    "title": "สรุปผลขั้นตอนนี้",
+    "empty": "กรอกค่าจากแบบด้านบน ระบบจะสรุปปริมาณให้ที่นี่",
+    "rebar": "เหล็กเสริม",
+    "kg": "กก."
+  },
+  "sumPlaceholder": "เช่น 9.5+7+2",
+  "quickAdd": "เพิ่มด่วน"
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button, Popconfirm } from 'antd';
 import { CopyOutlined, DeleteOutlined } from '@ant-design/icons';
 import { FillBadge, fillTone, type FillState } from './FillStatus';
@@ -33,6 +34,7 @@ export function PlanCard({
     scope?: RowScope;
     children?: ReactNode;
 }) {
+    const t = useTranslations('journeyUi.planCard');
     const req = useRequiredCard(scope);
     // Red only after the user tried to confirm the step (req.highlighted). Before that a half-filled card stays
     // neutral and its "ยังขาด" line is a quiet grey note — nothing turns red while someone is still typing.
@@ -40,12 +42,12 @@ export function PlanCard({
     const shown: FillState = alert ? 'missing' : state === 'missing' ? 'empty' : state;
     const del = onDelete && (hasData
         ? (
-            <Popconfirm title={deleteTitle ?? 'ลบรายการนี้?'} description="ค่าที่กรอกไว้ในรายการนี้จะหายไป"
-                okText="ลบ" cancelText="ยกเลิก" okButtonProps={{ danger: true }} onConfirm={onDelete}>
-                <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label="ลบ" title="ลบ" />
+            <Popconfirm title={deleteTitle ?? t('deleteTitle')} description={t('deleteDesc')}
+                okText={t('ok')} cancelText={t('cancel')} okButtonProps={{ danger: true }} onConfirm={onDelete}>
+                <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label={t('delete')} title={t('delete')} />
             </Popconfirm>
         )
-        : <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label="ลบ" title="ลบ" onClick={onDelete} />);
+        : <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label={t('delete')} title={t('delete')} onClick={onDelete} />);
 
     return (
         <div className={`rounded-[10px] border transition-colors scroll-mt-24 ${fillTone(shown)}`} data-req-card={req.targetId}>
@@ -60,8 +62,8 @@ export function PlanCard({
                 {(onDuplicate !== undefined || del !== undefined) && (
                     <div className="flex items-center gap-0.5">
                         {onDuplicate && (
-                            <Button type="text" size="small" icon={<CopyOutlined />} onClick={onDuplicate} title="ทำซ้ำรายการนี้">
-                                <span className="hidden sm:inline">ทำซ้ำ</span>
+                            <Button type="text" size="small" icon={<CopyOutlined />} onClick={onDuplicate} title={t('duplicateTitle')}>
+                                <span className="hidden sm:inline">{t('duplicate')}</span>
                             </Button>
                         )}
                         {del}

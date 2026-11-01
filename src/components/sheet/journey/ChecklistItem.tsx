@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { CheckCircleFilled, CloseCircleFilled, ExclamationCircleFilled, UndoOutlined } from '@ant-design/icons';
 import { TextCell } from '../NumberCell';
 
@@ -24,6 +25,7 @@ export function ChecklistItem({ index, question, hint, kind, problemIf = 'no', v
     value: ChecklistValue;
     onChange: (patch: Partial<ChecklistValue>) => void;
 }) {
+    const t = useTranslations('journeyUi.checklist');
     const isProblem = kind === 'yesno' && value.answer !== undefined && value.answer === problemIf;
     const answeredOk = kind === 'yesno' ? value.answer !== undefined && !isProblem : value.note.trim() !== '';
     // An answer saved before yes / no existed (only "checked") still shows as checked.
@@ -63,11 +65,11 @@ export function ChecklistItem({ index, question, hint, kind, problemIf = 'no', v
                     {hint !== undefined && <div className="text-[12px] text-gray-500 mt-0.5">{hint}</div>}
                 </div>
                 {kind === 'yesno' && (
-                    <div className="flex items-center gap-2 shrink-0" role="group" aria-label={`คำตอบข้อ ${String(index)}`}>
-                        {choice('yes', 'ใช่')}
-                        {choice('no', 'ไม่ใช่')}
+                    <div className="flex items-center gap-2 shrink-0" role="group" aria-label={t('answerGroup', { index })}>
+                        {choice('yes', t('yes'))}
+                        {choice('no', t('no'))}
                         {(value.answer !== undefined || legacyChecked) && (
-                            <button type="button" aria-label="ล้างคำตอบ" title="ล้างคำตอบ"
+                            <button type="button" aria-label={t('clear')} title={t('clear')}
                                 onClick={() => onChange({ answer: undefined, done: false })}
                                 className="min-h-[36px] px-2 text-gray-400 hover:text-gray-600 bg-transparent border-0 cursor-pointer">
                                 <UndoOutlined />
@@ -79,8 +81,8 @@ export function ChecklistItem({ index, question, hint, kind, problemIf = 'no', v
             <div className={`mt-2 ml-9 rounded-md border px-2 ${isProblem ? 'border-red-300 bg-white' : 'border-gray-200 bg-white'}`}>
                 <TextCell
                     value={value.note}
-                    ariaLabel={`บันทึกข้อ ${String(index)}`}
-                    placeholder={kind === 'open' ? 'คำตอบ' : isProblem ? 'ระบุปัญหาที่พบ และสิ่งที่ต้องแก้ไขก่อนเริ่มงาน' : 'หมายเหตุ (ถ้ามี)'}
+                    ariaLabel={t('noteLabel', { index })}
+                    placeholder={kind === 'open' ? t('notePlaceholderOpen') : isProblem ? t('notePlaceholderProblem') : t('notePlaceholderDefault')}
                     onCommit={v => {
                         const note = v ?? '';
                         onChange(kind === 'open' ? { note, done: note.trim() !== '' } : { note });
@@ -88,7 +90,7 @@ export function ChecklistItem({ index, question, hint, kind, problemIf = 'no', v
                 />
             </div>
             {isProblem && value.note.trim() === '' && (
-                <div className="mt-1 ml-9 text-[12px] text-red-600">กรุณาระบุปัญหาที่พบ เพื่อใช้ติดตามก่อนเริ่มงาน</div>
+                <div className="mt-1 ml-9 text-[12px] text-red-600">{t('problemRequired')}</div>
             )}
         </div>
     );
@@ -96,13 +98,14 @@ export function ChecklistItem({ index, question, hint, kind, problemIf = 'no', v
 
 /** "ตรวจแล้ว 3 / 5 ข้อ · พบประเด็น 1 ข้อ" with a thin progress bar. */
 export function ChecklistProgress({ done, total, problems }: { done: number; total: number; problems: number }) {
+    const t = useTranslations('journeyUi.checklist');
     const pct = total === 0 ? 0 : Math.round((done / total) * 100);
     return (
         <div className="flex flex-wrap items-center gap-3">
             <div className="text-[13px] text-gray-700">
-                ตรวจแล้ว <b className="tabular-nums">{done}</b> / {total} ข้อ
-                {problems > 0 && <span className="ml-2 text-red-600">· พบประเด็นที่ต้องแก้ไข {problems} ข้อ</span>}
-                {done === total && problems === 0 && <span className="ml-2 text-green-700">· พร้อมเริ่มงาน</span>}
+                {t.rich('checked', { done, total, b: chunks => <b className="tabular-nums">{chunks}</b> })}
+                {problems > 0 && <span className="ml-2 text-red-600">{t('problems', { problems })}</span>}
+                {done === total && problems === 0 && <span className="ml-2 text-green-700">{t('ready')}</span>}
             </div>
             <div className="flex-1 min-w-[120px] h-1.5 rounded-full bg-gray-100 overflow-hidden" aria-hidden>
                 <div className={`h-full ${problems > 0 ? 'bg-red-400' : 'bg-green-500'}`} style={{ width: `${String(pct)}%` }} />

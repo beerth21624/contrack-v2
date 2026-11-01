@@ -1,5 +1,6 @@
 // Required plan values of one element card → its fill state (see FillStatus) and one "ยังขาด: …" line.
 // Pure, so every card page states its required values the same way.
+import { journeyText } from './text';
 import { fillState, type FillState } from './FillStatus';
 
 /** One required plan value of an element. */
@@ -25,8 +26,9 @@ export interface CheckResult {
  * (a standard bar size, a value copied from the previous element). Default: any check passes.
  */
 export function planChecks(checks: readonly PlanCheck[], started: boolean = checks.some(c => c.ok)): CheckResult {
+    const t = journeyText();
     const state = fillState(checks.map(c => c.ok), started);
     const missing = checks.filter(c => !c.ok).map(c => c.label);
-    const shown = missing.length <= 4 ? missing.join(', ') : `${missing.slice(0, 4).join(', ')} และอีก ${String(missing.length - 4)} ช่อง`;
-    return { state, missingText: state === 'missing' ? `ยังขาด: ${shown}` : undefined, hasData: started };
+    const shown = missing.length <= 4 ? missing.join(', ') : t('planChecks.more', { list: missing.slice(0, 4).join(', '), count: missing.length - 4 });
+    return { state, missingText: state === 'missing' ? t('planChecks.missing', { list: shown }) : undefined, hasData: started };
 }

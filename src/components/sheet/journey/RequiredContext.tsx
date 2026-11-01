@@ -3,6 +3,7 @@
 // The current step's required fields (`*` on their labels) and, after a failed "ยืนยัน", the fields to ring.
 // Set once by the journey level page; a card scopes its fields to its row with `RequiredScope` (PlanCard does it).
 import { createContext, useContext, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { NO_TARGETS, cardTargetId, fieldTargetId, type HighlightTargets, type RowScope } from './required';
 
 export interface RequiredState {
@@ -69,11 +70,12 @@ export function RequiredArea({ className, children }: { className?: string; chil
 
 /** The quiet `*` after a required label. */
 export function RequiredMark({ required }: { required: boolean }) {
+    const t = useTranslations('journeyUi');
     if (!required) return null;
     return (
         <>
             <span aria-hidden className="ml-0.5 text-gray-400">*</span>
-            <span className="sr-only"> (จำเป็น)</span>
+            <span className="sr-only"> {t('required')}</span>
         </>
     );
 }

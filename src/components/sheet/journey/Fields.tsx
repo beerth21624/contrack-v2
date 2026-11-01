@@ -3,6 +3,7 @@
 // Labelled fields and element cards of the card-style journey pages (one card per element type read off the
 // plan: F1, C1, GB1 …): plain labels above yellow inputs, a short result line per card.
 import type { ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button, Popconfirm, Select } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { REBAR_SIZES } from '@/domain/boq/slots';
@@ -72,17 +73,19 @@ export function JSelect<V extends string | number>({ label, value, onChange, opt
 const sizeOptions = REBAR_SIZES.map(s => ({ value: s as string }));
 
 /** A bar group as written on a detail drawing: count and size (e.g. 5 เส้น DB12), or size and spacing. */
-export function JBar({ label, size, onSize, amount, onAmount, amountUnit = 'เส้น', amountDigits = 0, hint }: {
+export function JBar({ label, size, onSize, amount, onAmount, amountUnit: amountUnitProp, amountDigits = 0, hint }: {
     label: string; size: string; onSize: (v: string) => void; amount: number; onAmount: (v: number) => void;
     amountUnit?: string; amountDigits?: number; hint?: ReactNode;
 }) {
+    const t = useTranslations('journeyUi.fields');
+    const amountUnit = amountUnitProp ?? t('strand');
     return (
         <div className="flex flex-col gap-1 min-w-0">
             <span className={labelCls}>{label}</span>
             <span className="flex items-center gap-1.5">
                 <span className="w-[84px] shrink-0" style={{ background: SHEET_COLORS.input, borderRadius: 3 }}>
-                    <Select<string> size="small" variant="borderless" style={{ width: '100%' }} aria-label={`${label} ขนาด`}
-                        placeholder="ขนาด" value={size === '' ? undefined : size} options={sizeOptions} onChange={v => onSize(v)} />
+                    <Select<string> size="small" variant="borderless" style={{ width: '100%' }} aria-label={t('sizeAria', { label })}
+                        placeholder={t('size')} value={size === '' ? undefined : size} options={sizeOptions} onChange={v => onSize(v)} />
                 </span>
                 <span className="w-[64px] shrink-0">
                     <NumberCell value={amount} digits={amountDigits} ariaLabel={`${label} ${amountUnit}`} blankZero
@@ -109,13 +112,14 @@ export function JGroup({ title, children }: { title: string; children: ReactNode
 export function ElementCard({ title, onDelete, deleteTitle, result, warning, children }: {
     title: ReactNode; onDelete?: () => void; deleteTitle?: string; result?: ReactNode; warning?: ReactNode; children: ReactNode;
 }) {
+    const t = useTranslations('journeyUi.planCard');
     return (
         <div className="bg-white border border-gray-200 rounded-card shadow-card">
             <div className="flex items-center gap-2 min-h-[44px] px-4 sm:px-5 py-2 border-b border-gray-100">
                 <span className="font-semibold text-[14px] leading-snug text-gray-800">{title}</span>
                 {onDelete && (
-                    <Popconfirm title={deleteTitle ?? 'ลบรายการนี้?'} okText="ลบ" cancelText="ยกเลิก" onConfirm={onDelete}>
-                        <Button className="ml-auto" type="text" size="small" danger icon={<DeleteOutlined />} aria-label="ลบ" />
+                    <Popconfirm title={deleteTitle ?? t('deleteTitle')} okText={t('ok')} cancelText={t('cancel')} onConfirm={onDelete}>
+                        <Button className="ml-auto" type="text" size="small" danger icon={<DeleteOutlined />} aria-label={t('delete')} />
                     </Popconfirm>
                 )}
             </div>
