@@ -31,6 +31,7 @@ import siteDiary from './siteDiary.json';
 import labour from './labour.json';
 import jobCost from './jobCost.json';
 import payables from './payables.json';
+import taxReports from './taxReports.json';
 
 const messages = {
   common,
@@ -66,6 +67,7 @@ const messages = {
   labour,
   jobCost,
   payables,
+  taxReports,
 };
 
 export default messages;

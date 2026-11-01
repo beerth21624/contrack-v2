@@ -84,6 +84,7 @@ export const WORKSPACE_NAV: readonly ErpNavGroup[] = [
         groupKey: 'finance',
         items: [
             { key: 'payables', labelKey: 'payables', href: '/payables', module: 'payables', permission: 'payables.read', match: p => p.startsWith('/payables') },
+            { key: 'tax-reports', labelKey: 'taxReports', href: '/tax-reports', module: 'payables', permission: 'tax.reports', match: p => p.startsWith('/tax-reports') },
             { key: 'pay-periods', labelKey: 'payPeriods', href: '/workspace/pay-periods', module: 'labour', permission: 'labour.read', match: p => p.startsWith('/workspace/pay-periods') },
             { key: 'finance-cashflow', labelKey: 'companyCashFlow', href: '/finance/cashflow', module: 'job-cost', permission: 'cost.read', match: p => p.startsWith('/finance/cashflow') },
         ],

@@ -1,0 +1,84 @@
+{
+  "title": "Tax reports",
+  "subtitle": "Monthly output VAT, input VAT, PND 3, PND 53 and withholding tax received, for the accountant",
+  "month": "Tax month",
+  "export": "Download Excel",
+  "fileName": "tax-reports_{month}",
+  "loadFailed": "Could not load the report",
+  "retry": "Retry",
+  "noPermission": "You do not have permission to view tax reports",
+  "empty": {
+    "title": "Nothing in this month",
+    "hint": "Rows appear once documents are issued or paid in the selected month"
+  },
+  "tabs": {
+    "summary": "Summary",
+    "outputVat": "Output VAT",
+    "inputVat": "Input VAT",
+    "pnd3": "PND 3",
+    "pnd53": "PND 53",
+    "whtReceived": "WHT received"
+  },
+  "hints": {
+    "outputVat": "Tax invoices and credit notes issued in the month (by document date)",
+    "inputVat": "Supplier bills with a full tax invoice and claimable input VAT (by tax invoice date)",
+    "pnd3": "Withholding tax certificates of individual payees (by payment date)",
+    "pnd53": "Withholding tax certificates of juristic payees (by payment date)",
+    "whtReceived": "Tax withheld by customers when they paid (by receipt date)"
+  },
+  "summary": {
+    "report": "Report",
+    "count": "Rows",
+    "base": "Base / value",
+    "vat": "VAT",
+    "wht": "Withholding tax",
+    "vatPayable": "VAT payable",
+    "vatCredit": "Input VAT exceeds output VAT (carry forward / refund)",
+    "whtToRemit": "Withholding tax to remit",
+    "open": "View rows"
+  },
+  "columns": {
+    "no": "No.",
+    "date": "Date",
+    "docNumber": {
+      "outputVat": "Tax invoice no.",
+      "inputVat": "Tax invoice no.",
+      "pnd3": "Certificate no.",
+      "pnd53": "Certificate no.",
+      "whtReceived": "Receipt no."
+    },
+    "reference": {
+      "outputVat": "Reference",
+      "inputVat": "Bill no.",
+      "pnd3": "Payment voucher",
+      "pnd53": "Payment voucher",
+      "whtReceived": "Invoice / certificate no."
+    },
+    "counterparty": {
+      "outputVat": "Buyer",
+      "inputVat": "Seller",
+      "pnd3": "Payee",
+      "pnd53": "Payee",
+      "whtReceived": "Payer (customer)"
+    },
+    "taxId": "Tax ID",
+    "branch": "Branch",
+    "type": "Type",
+    "net": "Value of goods / services",
+    "base": "Amount paid",
+    "vat": "VAT",
+    "wht": "Tax withheld",
+    "rate": "Rate",
+    "incomeType": "Income type",
+    "status": "Note"
+  },
+  "rowType": {
+    "taxInvoice": "Tax invoice",
+    "creditNote": "Credit note"
+  },
+  "headOffice": "Head office",
+  "reversal": "Reversal",
+  "reversed": "Cancelled",
+  "total": "Total",
+  "print50": "Open certificate"
+}

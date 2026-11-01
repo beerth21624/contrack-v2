@@ -485,3 +485,14 @@ Read `payables.read`; create / edit / approve / cancel `payables.manage`; pay `p
 | POST | `/payment-runs/:runId/cancel` | `{reason?}` → `PaymentRunDto` (200) | pending: the approval request is withdrawn |
 | GET | `/payments/:paymentId` | → `ApPaymentDto` | voucher + allocations (`settled = cash + wht` per bill) |
 | GET | `/wht-certificates/:certificateId` | → `WhtCertificateDto` | the 50 ทวิ as issued |
+
+### Tax reports (WP-52)
+Permission `tax.reports` (accounting / owner / admin), module `payables`. Read `fin_events` only; `?month=YYYY-MM` required (400 otherwise). Rows signed as they count (credit notes and reversal rows negative); a reversal in the same month follows its original (`reversesId`, original `reversed: true`).
+
+| Method | Path | Response | Notes |
+|---|---|---|---|
+| GET | `/workspaces/:workspaceId/tax-reports/output-vat?month=` | `TaxReportDto` | `ar.tax_invoiced` − `ar.credit_noted` by event date |
+| GET | `/workspaces/:workspaceId/tax-reports/input-vat?month=` | `TaxReportDto` | `ap.bill_posted` with `inputVatClaimable` + tax invoice no., by `data.taxInvoiceDate` (fallback doc date) |
+| GET | `/workspaces/:workspaceId/tax-reports/pnd3?month=` · `pnd53` | `TaxReportDto` | `ap.wht_withheld` by `data.form`, by pay date |
+| GET | `/workspaces/:workspaceId/tax-reports/wht-received?month=` | `TaxReportDto` | `ar.wht_withheld_by_customer` by receipt date (base not recorded: `net` 0) |
+| GET | `/workspaces/:workspaceId/tax-reports/summary?month=` | `TaxReportSummaryDto` | totals of the five + `vatPayable` = output − input VAT |

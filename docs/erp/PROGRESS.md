@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-51 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-52 done)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -63,7 +63,7 @@
 | WP-49 | เจ้าหนี้: บิลผู้ขาย / งวดจ้างช่วง / ค่าแรง + 3-way match (backend) | opus | done | b5a5bd5 | migration `0031_wp49_payables_bills`; ports `PayPeriodPayments`, `SubcontractPayables`, `PurchaseOrders.locate`, `SupplierLookup.findByScVendorEntry` (D-332…D-338) |
 | WP-50 | รอบจ่าย ใบสำคัญจ่าย และ 50 ทวิ (backend) | opus | done | ec17402 | migration `0032_wp50_payment_runs`; ports `PayPeriodPayments.markPaid`, `SubcontractClaimPayer`; endpoints payment-runs/payments/wht-certificates; job-cost cash sign by direction; D-339…D-344 |
 | WP-51 | เจ้าหนี้ web + พิมพ์ 50 ทวิ / ใบสำคัญจ่าย | sonnet | done | 6878ac1 | `src/features/erp/payables/*`, routes `/payables`, `/payables/bills/<id>`, `/payables/runs/<id>`, `/print/wht-certificate/<id>`, `/print/payment-voucher/<id>`; nav `finance.payables`; i18n `payables` + enums + documents; D-345…D-348 |
-| WP-52 | รายงานภาษี + Excel ให้นักบัญชี | opus | todo | | |
+| WP-52 | รายงานภาษี + Excel ให้นักบัญชี | opus | done | | contract `erp/tax-reports.ts`; backend `payables` `tax-reports.ts` + `TaxReportsController` (6 endpoints, `tax.reports`, อ่าน fin_events เท่านั้น); web `src/features/erp/tax-reports/*`, route `/tax-reports`, nav `finance.taxReports`; i18n `taxReports` + `nav.taxReports`; ไม่มี migration; D-349…D-353 |
 | WP-53 | ส่งมอบ + รับประกัน backend | opus | todo | | |
 | WP-54 | ส่งมอบ + รับประกัน web | sonnet | todo | | |
 | WP-55 | ปิดโครงการ + ราคาจริงกลับสู่ BOQ | opus | todo | | |
@@ -445,6 +445,11 @@
 | D-346 | 2026-11-01 | (WP-51) แก้บิลฉบับร่างส่งเฉพาะฟิลด์ที่เปลี่ยน (diff กับ DTO): `vat` ส่งเมื่อแก้ตัวเลข VAT เองและไม่ได้สลับสวิตช์ VAT; แก้บรรทัด/ส่วนลด/อัตรา VAT โดยไม่แตะ `vat` = ให้ backend คำนวณใหม่; บิล subcontract/labour แก้ได้เฉพาะหัวบิล (ไม่ส่ง `lines`); 3-way match อัปเดตหลังบันทึกเท่านั้น (แสดงข้อความเตือนเมื่อมีการแก้ที่ยังไม่บันทึก); หมายเหตุของบิลส่งเป็น note ตอน approve ด้วย | 02 §10 + D-338 |
 | D-347 | 2026-11-01 | (WP-51) 50 ทวิ และใบสำคัญจ่ายพิมพ์เป็นภาษาไทย ปี พ.ศ. เสมอ (แบบของกรมสรรพากร ไม่ตามภาษาเอกสาร); 50 ทวิ ใช้ snapshot ผู้จ่าย/ผู้ถูกหักบนใบ, ประเภทเงินได้ทั้งหมดลงบรรทัด 6 "อื่น ๆ (ระบุ)" พร้อมชื่อประเภท + `incomeDesc`; ช่องแบบ ภ.ง.ด. ติ๊กตาม `form` (pnd3/pnd53) และช่อง "ผู้จ่ายเงิน" ตาม `condition`; ลายเซ็น/ตราประทับมาจากโปรไฟล์บริษัทปัจจุบัน; i18n ฝั่งเอกสารอยู่ `documents.whtCertificate|paymentVoucher` (มี en ครบ แต่ใช้ th) | 04 WP-51 |
 | D-348 | 2026-11-01 | (WP-51) ไม่ทำ UI แนบสแกนบิล (`supplier_bill_scan`) และไม่เขียนเทสต์ใหม่ (คำสั่งเจ้าของ: ส่งของก่อน) — DTO มีแค่ `fileIds` ไม่มีรายการไฟล์ให้แสดง; เพิ่มได้ภายหลังโดยใช้ `FileAttachments` | คำสั่งเจ้าของ |
+| D-349 | 2026-11-01 | (WP-52) เดือนภาษี: `event_date`/`data.taxInvoiceDate` เป็น business date (ปฏิทินกรุงเทพ) อยู่แล้ว จึงตัดเดือนด้วยสตริง `YYYY-MM-01`…วันสุดท้าย ไม่แปลงโซนเวลาซ้ำ; `month` บังคับ (400 ถ้าไม่ส่ง); หน้าเว็บตั้งค่าเริ่มต้น = เดือนก่อนหน้า (เดือนที่ยื่นภาษีในเดือนนี้) | 04 WP-52 |
+| D-350 | 2026-11-01 | (WP-52) ภาษีขาย = `ar.tax_invoiced` (+) และ `ar.credit_noted` (event โพสต์ค่าบวก → รายงานกลับเป็นลบ) เท่านั้น — ไม่นับ `ar.invoiced`/`ar.advance_invoiced` (ใบแจ้งหนี้ไม่ใช่ใบกำกับภาษี); ภาษีซื้อ = `ap.bill_posted` ที่ `data.inputVatClaimable === true` + มี `data.taxInvoiceNo` + VAT ≠ 0, เดือนตาม `data.taxInvoiceDate` (ไม่มี → `doc_date` → `event_date`) และอ่านบิลทุกวันที่ (ใบกำกับอาจก่อนวันบิล); ภาษีถูกหัก (`ar.wht_withheld_by_customer`) ไม่มีฐานเงินได้ใน event → `net` 0 และไม่แสดงคอลัมน์ฐาน | event ที่มีอยู่ (D-238, D-342) |
+| D-351 | 2026-11-01 | (WP-52) แถวกลับรายการ: reversal คัดลอก `data` ของต้นฉบับจึงผ่านตัวกรองเดียวกัน; อ่าน event ตั้งแต่วันแรกของเดือนไม่มีขอบบน เพื่อให้ต้นฉบับรู้ว่าถูกกลับรายการภายหลัง (`reversed: true`); reversal ในเดือนเดียวกันแสดงต่อท้ายต้นฉบับ, reversal ข้ามเดือนแสดงในเดือนของมันเอง; `totals.count` = ต้นฉบับ − แถวกลับรายการ | 04 WP-52 "แสดงคู่กับแถวกลับรายการ" |
+| D-352 | 2026-11-01 | (WP-52) endpoint อยู่ใน module `payables` (`@RequiresModule('payables')`, `tax.reports` ผ่าน `ModuleAccess.inWorkspace`) — เมนู `finance.taxReports` แสดงเมื่อเปิด `payables` และมีสิทธิ์ `tax.reports`; ไม่มีตาราง/migration ใหม่; summary = totals ของ 5 รายงาน + `vatPayable` (output − input, ติดลบ = ยกไป/ขอคืน) | 04 WP-52 |
+| D-353 | 2026-11-01 | (WP-52) Excel: ไฟล์เดียว 6 ชีตตามลำดับใน 04 (ภาษีขาย ภาษีซื้อ ภ.ง.ด.3 ภ.ง.ด.53 ภาษีถูกหัก สรุป) หัวคอลัมน์/ชื่อชีต/ป้ายตามภาษา UI (`useTaxLabels` ใช้ร่วมกับตารางบนจอ), ตัวเลขเป็น number + numFmt, วันที่เป็นสตริง `YYYY-MM-DD`, เลขภาษีจัดรูป 13 หลัก; ExcelJS/file-saver โหลดตอนกดดาวน์โหลด; ไม่ใช่รูปแบบอัปโหลดกรมสรรพากร (out of scope); ไม่เขียนเทสต์ใหม่ (คำสั่งเจ้าของ) | 04 WP-52 + คำสั่งเจ้าของ |
 
 ## Handoff notes
 
@@ -1128,3 +1133,12 @@
 - WP ถัดไปต้องรู้:
   - WP-52 (ภาษี): หน้าจอรายงานภาษีควรลิงก์เลข 50 ทวิ ไปที่ `whtCertificatePrintHref(id)` (`/print/wht-certificate/<id>`) ใน `payables/status.ts`; `formatTaxId` ใน `payables/print-model.ts` จัดรูปเลขภาษี 13 หลักได้
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/features/erp/payables` + routes + nav-registry ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/features/erp/hub` ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์ (ไม่เปิด dev server ตามกติกา)
+
+### WP-52 — รายงานภาษี + Excel ให้นักบัญชี (commit: ดู ledger)
+- contract `src/shared/contract/erp/tax-reports.ts` (export ใน `erp/index.ts`): `TAX_REPORT_KINDS`, `taxMonthSchema`, `taxReportQuerySchema`, `taxReportRowDtoSchema`, `taxReportTotalsDtoSchema`, `taxReportDtoSchema`, `taxReportSummaryDtoSchema`, `taxMonthRange(month)`
+- backend `backend/src/modules/payables/`: `application/tax-reports.ts` (pure `buildTaxReport(kind, month, events)`, `REPORT_EVENT_TYPES`, `READS_ALL_DATES`, `reportTotals`), `application/use-cases/tax-reports.use-cases.ts` (`TaxReportsUseCase.report/summary`, อ่าน `FinancialEvents.list` เท่านั้น), `presentation/tax-reports.controller.ts` (`GET /workspaces/:ws/tax-reports/{output-vat,input-vat,pnd3,pnd53,wht-received,summary}?month=YYYY-MM`); ลงทะเบียนใน `payables.module.ts`; `backend/API.md` หัวข้อ "Tax reports (WP-52)"
+- web `src/features/erp/tax-reports/`: `api.ts`, `hooks.ts` (`useTaxReport`, `useTaxSummary`, key `['tax-reports', …]`), `ReportTable.tsx` (`ReportTable`, `useTaxLabels`, `KIND_KEY`; เลข 50 ทวิ ลิงก์ไป `/print/wht-certificate/<id>`), `TaxReportsPage.tsx` (เลือกเดือน, แท็บ สรุป + 5 รายงาน, ปุ่มดาวน์โหลด Excel), `xlsx.ts` (`REPORT_COLUMNS`, `taxXlsxBuffer`, `downloadTaxXlsx`); route `(app)/tax-reports/page.tsx` (ModuleGate `payables`); nav `finance` → `tax-reports` (`tax.reports`)
+- i18n (th+en): ไฟล์ใหม่ `taxReports.json` (+ `index.ts`), `nav.taxReports`
+- เบี่ยงจากแผน: D-349 … D-353; ไม่มี migration (WP ถัดไปที่แก้ schema ยังได้ `0033_*`); ไม่เขียนเทสต์ใหม่ (คำสั่งเจ้าของ)
+- WP ถัดไปต้องรู้: รายงานอ่านเฉพาะ event ที่โมดูลโพสต์ — ถ้าเพิ่มเอกสารภาษีชนิดใหม่ (เช่น ใบลดหนี้ผู้ขาย) ต้องเพิ่ม event type ใน `REPORT_EVENT_TYPES` และตัวกรองใน `tax-reports.ts`; ภาษีขายนับเฉพาะ TI/CN (ใบแจ้งหนี้ไม่นับ)
+- ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้/สร้าง (backend + root) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; smoke jest ชั่วคราว (ลบแล้ว): TI 70 + TI 35 (ถูกกลับรายการในเดือน) + CN 7 → VAT 63 = TI − CN, reversal แสดงต่อจากต้นฉบับ, TI เดือนถัดไปไม่นับ; ภาษีซื้อ: บิลไม่มีใบกำกับไม่แสดง, บิลวันที่ 2 เม.ย. ใบกำกับ 31 มี.ค. → อยู่เดือนมีนาคม; ยังไม่ได้เปิดหน้าจริง/เปิดไฟล์ Excel จริง (ไม่เปิด dev server ตามกติกา) และยังไม่ได้ทดสอบบน PostgreSQL จริง

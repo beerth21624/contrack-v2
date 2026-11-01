@@ -4,7 +4,8 @@
 // posted: number `AP`, fin_events `ap.bill_posted`, cost ledger (price differences, bills without a PO), PO billed
 // quantities. Payment runs (WP-50): approved bills → scheduled → approval `payment_run.approve` → paid: vouchers `PV` per
 // supplier, 50 ทวิ `WHT`, fin_events `ap.payment` / `ap.wht_withheld`, subcontract claims and pay periods marked paid
-// through SubcontractClaimPayer / PayPeriodPayments. Registers ApprovalHandlers, PayPeriodBillChecks (labour refuses to pay a billed period), CashPlanSources
+// through SubcontractClaimPayer / PayPeriodPayments. Tax reports (WP-52): output / input VAT, ภ.ง.ด.3 / 53, WHT received
+// and the month summary, read from fin_events only. Registers ApprovalHandlers, PayPeriodBillChecks (labour refuses to pay a billed period), CashPlanSources
 // (bills to pay), PortalSources (bills due within 7 days), DailySweeps (`payables.due`) and ProjectDependents.
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
 import {
@@ -24,14 +25,16 @@ import {
     ApprovePaymentRunUseCase, CancelPaymentRunUseCase, CreatePaymentRunUseCase, GetPaymentRunUseCase, GetPaymentUseCase,
     GetWhtCertificateUseCase, ListPaymentRunsUseCase, PatchPaymentRunUseCase, PayPaymentRunUseCase, RunAccess,
 } from './application/use-cases/payment-runs.use-cases';
+import { TaxReportsUseCase } from './application/use-cases/tax-reports.use-cases';
 import { DrizzlePayablesRepository } from './infrastructure/adapters/drizzle-payables.repository';
 import { InMemoryPayablesRepository } from './infrastructure/adapters/in-memory-payables.repository';
 import { PayablesController } from './presentation/payables.controller';
 import { PaymentRunsController } from './presentation/payment-runs.controller';
+import { TaxReportsController } from './presentation/tax-reports.controller';
 
 @Global()
 @Module({
-    controllers: [PayablesController, PaymentRunsController],
+    controllers: [PayablesController, PaymentRunsController, TaxReportsController],
     providers: [
         persistence(PayablesRepository, () => new InMemoryPayablesRepository(), ctx => new DrizzlePayablesRepository(ctx)),
         PayablesAccess,
@@ -62,6 +65,7 @@ import { PaymentRunsController } from './presentation/payment-runs.controller';
         ApprovePaymentRunUseCase,
         PayPaymentRunUseCase,
         CancelPaymentRunUseCase,
+        TaxReportsUseCase,
     ],
 })
 export class PayablesModule implements OnModuleInit {
