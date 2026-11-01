@@ -74,7 +74,7 @@
 | WP | Title | Status | Commit | Notes |
 |---|---|---|---|---|
 | I-01 | เปลือกแอป บัญชี ล็อกอิน error | done | 9c5133f | ไม่มี migration; namespace `auth` ใหม่ + `shell.*` เพิ่ม; ESLint glob เพิ่ม; D-367…D-370 |
-| I-02 | components/sheet | done | HASH | ไม่มี migration; namespace `sheet` ใหม่; ESLint glob เพิ่ม; D-371 |
+| I-02 | components/sheet | done | ac13bef | ไม่มี migration; namespace `sheet` ใหม่; ESLint glob เพิ่ม; D-371 |
 | I-03 | components/sheet/journey | todo | | |
 | I-04 | boq-home + journey | todo | | |
 | I-05 | export (BOQ print/xlsx) | todo | | |
@@ -1205,7 +1205,7 @@
 - WP ถัดไปต้องรู้: ผู้เรียก `thaiErrorMessage`/`RULES` (cloud/projects, workspaces, revisions, workforce, planning, subcontracting, vendor) ยังเป็นไทยจนกว่า track I ของกลุ่มนั้นเปลี่ยนเป็น `useErrorMessage()`/`useRules()`
 - ตรวจแล้ว: tsc web ผ่าน; eslint ไฟล์ที่แก้ผ่าน; vitest `src/store src/i18n src/features/cloud/ui src/features/cloud/api` ผ่าน; ไม่เขียนเทสต์ใหม่
 
-### I-02 — components/sheet (HASH)
+### I-02 — components/sheet (ac13bef)
 - ย้ายไทยตรงตัวของ `src/components/sheet/*.tsx` เข้า `sheet.json` (th+en, parity ผ่าน); ESLint glob `src/components/sheet/*.{ts,tsx}` เพิ่ม
 - WP ถัดไปต้องรู้: ผู้เรียกที่ส่ง `addLabel`/`title`/`hint` เองยังเป็นไทยจนกว่า I-06…I-08; `NEGATIVE_VALUE_WARNING` ถูกลบ ใช้ `useNegativeValueWarning()`
 - ตรวจแล้ว: tsc web, eslint, vitest `src/i18n src/components/sheet` ผ่าน; ไม่เขียนเทสต์ใหม่
