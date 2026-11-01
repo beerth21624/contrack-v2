@@ -79,7 +79,7 @@
 | I-04 | boq-home + journey | done | 0b518b0 | ไม่มี migration; namespaces `boqHome`/`journeyUi` ขยาย; ESLint glob เพิ่ม; D-373, D-374 |
 | I-05 | export (BOQ print/xlsx) | done | 143319f | ไม่มี migration; namespace `export` ใหม่ (`buttons/print/sheet/summary/schedule`); ESLint glob เพิ่ม; D-375…D-377 |
 | I-06 | calculators กลุ่ม 1 | done | b524ea7 | ไม่มี migration; namespace `calculators` ใหม่ (th+en 861 ข้อความ); ESLint glob เพิ่ม; D-378…D-380 |
-| I-07 | calculators กลุ่ม 2 | done | HASH | ไม่มี migration; namespace `calculators` เพิ่มกลุ่ม `roofSlab…waterPipe` + `common.*` เพิ่ม; ESLint glob เพิ่ม; D-381, D-382 |
+| I-07 | calculators กลุ่ม 2 | done | 9a0b6d0 | ไม่มี migration; namespace `calculators` เพิ่มกลุ่ม `roofSlab…waterPipe` + `common.*` เพิ่ม; ESLint glob เพิ่ม; D-381, D-382 |
 | I-08 | calculators กลุ่ม 3 + overlay domain | todo | | หลังข้อนี้เปิดปุ่มภาษาทั่วไป |
 | I-09 | planning | todo | | |
 | I-10 | cloud ที่เหลือ | todo | | |
@@ -1241,7 +1241,7 @@
 - WP ถัดไป (I-07, I-08) ต้องรู้: ใช้ namespace `calculators` ต่อ โดยใส่กลุ่มของโฟลเดอร์ตัวเอง (`roofSlab.*` ฯลฯ) หรือ `common.*` ถ้าใช้ซ้ำ; ตัวช่วยที่รับ `t: CalcT` ไม่ต้องเรียก hook; `wallPartChoices(t)`/`wallPartHints(t)` แทน `WALL_PART_CHOICES`/`WALL_PART_HINTS` (ถ้าไฟล์ในกลุ่ม 2/3 นำเข้า); ค่าข้อมูลโดเมนที่เป็นไทย (D-380) รอ overlay ของ I-08; หัวตาราง/ป้ายที่มาจาก domain ยังเป็นไทย
 - ตรวจแล้ว: tsc web, eslint ไฟล์ที่แก้, `check-parity`, vitest `src/i18n src/features/calculators` ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์; ไม่เขียนเทสต์ใหม่
 
-### I-07 — calculators กลุ่ม 2 (HASH)
+### I-07 — calculators กลุ่ม 2 (9a0b6d0)
 - ย้ายไทยตรงตัวของโฟลเดอร์ `roof-slab … water-pipe` (14 โฟลเดอร์ ดูรายชื่อใน D-381) เข้า `calculators.json` (th+en, parity ผ่าน); ESLint glob เพิ่มแล้ว (ห้ามเติมไทยกลับ)
 - WP ถัดไป (I-08) ต้องรู้: เหลือ `shared/`, `pages.ts`, `useCalculator.ts` (ไม่มีไทยที่เป็นข้อความ UI) + overlay domain (ชื่อ/ตัวเลือก/หน่วย/หัวตารางที่มาจาก domain ยังเป็นไทย, D-382); หลัง I-08 เปิดปุ่มภาษาทั่วไป
 - ตรวจแล้ว: tsc web, eslint ไฟล์ที่แก้, `check-parity`, vitest `src/i18n src/features/calculators` ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์; ไม่เขียนเทสต์ใหม่
