@@ -2,13 +2,14 @@
 
 // Building blocks shared by the three planning pages (Man-Day, S-Curve, CashFlow).
 import { useMemo, useState, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Alert, Button, Collapse, DatePicker, Popconfirm, Tag, Typography } from 'antd';
 import { RightOutlined, UndoOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useProjectStore } from '@/store/project-store';
 import { computeProject, projectPlanningInput } from '@/domain/project';
-import { type WeekBucket } from '@/domain/planning';
+import { monthLabelIn, type WeekBucket } from '@/domain/planning';
 import { SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
 import { useProjectWorkforceState } from '@/features/workforce/project-team/project-workforce';
 import { formatDate, formatDayMonth } from './planning-format';
@@ -26,9 +27,9 @@ export function usePlanning() {
     return { project, result, planning: result.planning, input, stored: project.planning ?? {}, setPlanning };
 }
 
-/** "W3 มี.ค.-26". */
-export function bucketLabel(b: WeekBucket | undefined): string {
-    return b ? `${b.weekLabel} ${b.monthLabel}` : '';
+/** "W3 Mar-26" (Thai: "W3 มี.ค.-26"). */
+export function bucketLabel(b: WeekBucket | undefined, locale = 'th'): string {
+    return b ? `${b.weekLabel} ${monthLabelIn(b.monthLabel, locale)}` : '';
 }
 
 /** "16/03–22/03/2026". */
@@ -38,28 +39,30 @@ export function bucketRange(b: WeekBucket | undefined): string {
 
 export const money = (v: number | null | undefined) => formatNumber(v, 0);
 
-/** Week buckets as Select options ("W1 ม.ค.-26 · 01/01–07/01/2026"). */
-export function bucketOptions(buckets: WeekBucket[]): { value: string; label: string }[] {
-    return buckets.map(b => ({ value: String(b.index), label: `${bucketLabel(b)} · ${bucketRange(b)}` }));
+/** Week buckets as Select options ("W1 Jan-26 · 01/01–07/01/2026"). */
+export function bucketOptions(buckets: WeekBucket[], locale = 'th'): { value: string; label: string }[] {
+    return buckets.map(b => ({ value: String(b.index), label: `${bucketLabel(b, locale)} · ${bucketRange(b)}` }));
 }
 
 const STEPS = [
-    { href: '/man-day', label: '1. คน-วัน (Man-Day)' },
-    { href: '/schedule', label: '2. แผนงาน (S-Curve)' },
-    { href: '/cashflow', label: '3. กระแสเงินสด (Cash Flow)' },
+    { href: '/man-day', key: 'steps.manDay' },
+    { href: '/schedule', key: 'steps.schedule' },
+    { href: '/cashflow', key: 'steps.cashflow' },
 ] as const;
 
 /** The workforce module's step: shown only for a cloud project while the module is on. */
-const TEAM_STEP = { href: '/team', label: '4. ทีมงาน' } as const;
+const TEAM_STEP = { href: '/team', key: 'steps.team' } as const;
 
 export type PlanningStepHref = (typeof STEPS)[number]['href'] | typeof TEAM_STEP.href;
 
-/** The planning steps: Man-Day → S-Curve → Cash Flow, then ทีมงาน when the workforce module applies to the project. */
+/** The planning steps: Man-Day → S-Curve → Cash Flow, then the Crews step when the workforce module applies to the project. */
 export function PlanningSteps({ current }: { current: PlanningStepHref }) {
+    const t = useTranslations('planning');
     const team = useProjectWorkforceState() === 'on';
-    const steps: readonly { href: PlanningStepHref; label: string }[] = team ? [...STEPS, TEAM_STEP] : STEPS;
+    const steps: readonly { href: PlanningStepHref; label: string }[] = (team ? [...STEPS, TEAM_STEP] : STEPS)
+        .map(s => ({ href: s.href, label: t(s.key) }));
     return (
-        <nav aria-label="ขั้นตอนวางแผน" className="flex flex-wrap items-center gap-1 text-[12px]">
+        <nav aria-label={t('steps.aria')} className="flex flex-wrap items-center gap-1 text-[12px]">
             {steps.map((s, i) => (
                 <span key={s.href} className="flex items-center gap-1">
                     {i > 0 && <RightOutlined className="text-gray-300 text-[10px]" />}
@@ -80,20 +83,21 @@ export function PlanningHeader({ current, title, sheetName, isDefault, onReset }
     isDefault: boolean;
     onReset: () => void;
 }) {
+    const t = useTranslations('planning');
     return (
         <div className="bg-white border border-gray-200 rounded-card p-4 shadow-card flex flex-col gap-3">
             <PlanningSteps current={current} />
             <div className="flex flex-wrap items-center gap-3">
                 <div className="min-w-0">
                     <Title level={4} style={{ margin: 0 }}>{title}</Title>
-                    <Text type="secondary" className="text-[12px] [overflow-wrap:anywhere]">แบบฟอร์ม: {sheetName}</Text>
+                    <Text type="secondary" className="text-[12px] [overflow-wrap:anywhere]">{t('header.form', { sheet: sheetName })}</Text>
                 </div>
                 <div className="ml-auto">
                     {isDefault
-                        ? <Tag>ค่าตัวอย่างจากเทมเพลต</Tag>
+                        ? <Tag>{t('header.sample')}</Tag>
                         : (
-                            <Popconfirm title="คืนค่าตัวอย่างจากเทมเพลตของหน้านี้?" okText="คืนค่า" cancelText="ยกเลิก" onConfirm={onReset}>
-                                <Button icon={<UndoOutlined />}>คืนค่าตัวอย่าง</Button>
+                            <Popconfirm title={t('header.resetTitle')} okText={t('header.resetOk')} cancelText={t('header.cancel')} onConfirm={onReset}>
+                                <Button icon={<UndoOutlined />}>{t('header.reset')}</Button>
                             </Popconfirm>
                         )}
                 </div>
@@ -107,13 +111,14 @@ export function PlanningHeader({ current, title, sheetName, isDefault, onReset }
  * numbers stay 0 until the BOQ steps are filled. Nothing is shown once there is a construction total.
  */
 export function NoBoqYet({ constructionTotal }: { constructionTotal: number }) {
+    const t = useTranslations('planning');
     if (constructionTotal !== 0) return null;
     return (
-        <Alert type="info" showIcon title="ยังไม่มีมูลค่างานใน BOQ"
+        <Alert type="info" showIcon title={t('noBoq.title')}
             description={(
                 <span>
-                    หน้านี้คำนวณจากค่าแรงและราคาใน BOQ — กรอกขั้นตอนจัดทำ BOQ ก่อน แล้วตัวเลขจะขึ้นให้เอง{' '}
-                    <Link href="/journey" className="text-blue-600 hover:underline">ไปที่ขั้นตอนจัดทำ BOQ</Link>
+                    {t('noBoq.description')}{' '}
+                    <Link href="/journey" className="text-blue-600 hover:underline">{t('noBoq.link')}</Link>
                 </span>
             )} />
     );
@@ -145,16 +150,17 @@ export function StatTile({ label, value, unit, hint, tone = 'default' }: {
     );
 }
 
-/** Folded section for the big Excel grids ("ดูตารางละเอียด"). */
-export function DetailSection({ label = 'ดูตารางละเอียด', extra, children, defaultOpen = false }: {
+/** Folded section for the big Excel grids ("Show detailed table"). */
+export function DetailSection({ label, extra, children, defaultOpen = false }: {
     label?: ReactNode; extra?: ReactNode; children: ReactNode; defaultOpen?: boolean;
 }) {
+    const t = useTranslations('planning');
     return (
         <Collapse
             size="small"
             className="bg-white"
             defaultActiveKey={defaultOpen ? ['d'] : []}
-            items={[{ key: 'd', label: <span className="text-[13px] font-medium text-gray-700">{label}</span>, extra, children }]}
+            items={[{ key: 'd', label: <span className="text-[13px] font-medium text-gray-700">{label ?? t('detail.default')}</span>, extra, children }]}
         />
     );
 }

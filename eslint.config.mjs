@@ -105,6 +105,8 @@ const eslintConfig = defineConfig([
       "src/features/calculators/{pages,useCalculator,domainText}.ts",
       "src/features/journey/useLevelText.ts",
       "src/features/boq-home/useBoqText.ts",
+      // Track I-09: planning (Man-Day, S-Curve, CashFlow pages; calendar-grid and the pace readings included)
+      "src/features/planning/**/*.{ts,tsx}",
     ],
     ignores: ["**/__tests__/**", "src/features/export/baht-text.ts"],
     rules: {

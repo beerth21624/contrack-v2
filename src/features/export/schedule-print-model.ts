@@ -12,7 +12,7 @@
 // estimates below (millimetres) only decide how many task chips a day cell shows and the type scale.
 
 import {
-    INSTALLMENTS, bucketIndexOf, computeCrewCalendar, isoToSerial,
+    INSTALLMENTS, bucketIndexOf, computeCrewCalendar, installmentLabelIn, isoToSerial, monthLabelIn, sampleTextIn, taskNameIn,
     type CrewCalendarDay, type CrewCalendarResult, type CrewCalendarTask, type ManDayResult, type ScheduleResult,
 } from '@/domain/planning';
 import { crewNamesInRange, crewNamesOnDay, crewNamesText, type TaskCrewMap } from '@/domain/workforce';
@@ -128,7 +128,7 @@ export function buildGanttPrintModel(
     const spans = months.map(m => {
         const a = Math.max(from, isoToSerial(m.start) ?? from);
         const b = Math.min(to, isoToSerial(m.end) ?? to);
-        return { label: m.label, left: (a - from) / days, width: Math.max(0, b - a + 1) / days };
+        return { label: monthLabelIn(m.label, locale), left: (a - from) / days, width: Math.max(0, b - a + 1) / days };
     });
     const timelineMonths: TimelineMonth[] = spans.map((m, i) => ({
         ...m,
@@ -139,7 +139,7 @@ export function buildGanttPrintModel(
     const byId = new Map(s.tasks.map(t => [t.id, t]));
     const installments: GanttPrintInstallment[] = s.installments.map(inst => ({
         no: inst.no,
-        label: inst.label,
+        label: installmentLabelIn(inst.label, locale),
         finish: formatDate(inst.finish),
         budget: fmtMoney(inst.budget, locale),
         weight: pct(inst.weight),
@@ -149,7 +149,7 @@ export function buildGanttPrintModel(
             return [{
                 id: t.id,
                 installment: t.installment,
-                name: t.name,
+                name: taskNameIn(t.id, t.name, locale),
                 duration: durationText(t.duration, locale),
                 start: formatDate(t.start),
                 finish: formatDate(t.finish),
@@ -161,7 +161,7 @@ export function buildGanttPrintModel(
         }),
     }));
 
-    const projectName = s.projectName.trim() || fallbackName.trim();
+    const projectName = sampleTextIn(s.projectName.trim(), locale) || fallbackName.trim();
     return {
         locale,
         projectName,
@@ -176,7 +176,7 @@ export function buildGanttPrintModel(
             { label: T.printedOn, value: formatDate(printedOn) },
         ],
         scurve: {
-            buckets: buckets.map(b => ({ weekLabel: b.weekLabel, monthLabel: b.monthLabel, week: b.week })),
+            buckets: buckets.map(b => ({ weekLabel: b.weekLabel, monthLabel: monthLabelIn(b.monthLabel, locale), week: b.week })),
             plan: s.planCumulative.slice(0, count),
             actual: actualUntil >= 0 ? s.actualCumulative.slice(0, actualUntil + 1) : [],
         },
@@ -259,10 +259,10 @@ const valueToKey = (v: string): number | null => {
 };
 
 /** Every month from the plan's first start to its last finish (none when nothing is dated). */
-export function calendarMonthOptions(cal: CrewCalendarResult): CalendarMonthOption[] {
+export function calendarMonthOptions(cal: CrewCalendarResult, locale: Locale = 'th'): CalendarMonthOption[] {
     if (cal.start === null || cal.finish === null) return [];
     const out: CalendarMonthOption[] = [];
-    for (let k = monthKey(cal.start); k <= monthKey(cal.finish); k++) out.push({ value: monthValue(k), label: monthTitle(k) });
+    for (let k = monthKey(cal.start); k <= monthKey(cal.finish); k++) out.push({ value: monthValue(k), label: monthTitle(k, locale) });
     return out;
 }
 
@@ -353,8 +353,9 @@ export function buildCalendarPrintModel(
     locale: Locale = 'th',
 ): CalendarPrintModel {
     const cal = computeCrewCalendar(schedule, manday);
-    const projectName = schedule.projectName.trim() || fallbackName.trim();
-    const legend = INSTALLMENTS.map(i => ({ no: i.no, label: i.label }));
+    const projectName = sampleTextIn(schedule.projectName.trim(), locale) || fallbackName.trim();
+    const legend = INSTALLMENTS.map(i => ({ no: i.no, label: installmentLabelIn(i.label, locale) }));
+    const localTask = (t: CrewCalendarTask): CrewCalendarTask => (locale === 'th' ? t : { ...t, name: taskNameIn(t.id, t.name, locale) });
     const hasCrews = crews !== undefined && [...crews.values()].some(list => list.length > 0);
     if (cal.start === null || cal.finish === null) return { locale, projectName, start: null, finish: null, months: [], legend, hasCrews };
     const { start, finish } = cal;
@@ -381,7 +382,7 @@ export function buildCalendarPrintModel(
         const toCell = (c: { iso: string; inMonth: boolean }): CalendarPrintCell => {
             const d = c.inMonth ? byDate.get(c.iso) : undefined;
             const tasks = d?.tasks ?? [];
-            const chips = tasks.slice(0, fit.chipLimit);
+            const chips = tasks.slice(0, fit.chipLimit).map(localTask);
             return {
                 iso: c.iso,
                 day: parts(c.iso).d,
@@ -404,7 +405,7 @@ export function buildCalendarPrintModel(
         const first = peakDays[0];
         return {
             value: monthValue(key),
-            title: monthTitle(key),
+            title: monthTitle(key, locale),
             weeks,
             chipLimit: fit.chipLimit,
             scale: fit.scale,
@@ -413,7 +414,7 @@ export function buildCalendarPrintModel(
                 date: first.date, total: first.total, skilled: first.skilled, labourers: first.labourers,
                 moreDays: peakDays.length - 1,
             },
-            overflow: fit.overflow,
+            overflow: fit.overflow.map(localTask),
             overflowCrews: crewRecord(fit.overflow.map(t => t.id), monthCrews),
             overflowColumns: overflowColumnsFor(fit.overflow.length),
         };
@@ -429,7 +430,7 @@ export function monthSummaryText(m: CalendarPrintMonth, locale: Locale = 'th'): 
     const tasks = `${T.tasksInMonth} ${m.taskCount} ${T.tasksUnit}`;
     if (m.peak === null) return `${tasks} · ${T.noCrew}`;
     const more = m.peak.moreDays > 0 ? ` ${T.andMore} ${m.peak.moreDays} ${T.days}` : '';
-    return `${tasks} · ${T.peak} ${m.peak.total} ${T.people} (${crewText(m.peak.skilled, m.peak.labourers)}) `
+    return `${tasks} · ${T.peak} ${m.peak.total} ${T.people} (${crewText(m.peak.skilled, m.peak.labourers, locale)}) `
         + `${T.onDay} ${formatDate(m.peak.date)}${more}`;
 }
 

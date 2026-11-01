@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 import { Segmented, Tag, Tooltip } from 'antd';
 import { CheckCircleOutlined, ClockCircleOutlined, RiseOutlined } from '@ant-design/icons';
 import { InputTextField, SheetCard } from '@/components/sheet/SheetFields';
+import { usePlanningText } from '../usePlanningText';
 import { bucketIndexOf, isoToSerial, paceFromSchedule, serialToIso, type ScheduleInput, type ScheduleTaskInput } from '@/domain/planning';
 import { SCurveChart } from '../shared/charts';
 import {
@@ -20,6 +21,7 @@ import { SchedulePrintButton } from './SchedulePrintButton';
 
 export function SchedulePage() {
     const { project, planning, input, stored, setPlanning, result } = usePlanning();
+    const { t: tr, sample } = usePlanningText();
     const [view, setView] = useState<'table' | 'calendar'>('table');
     const sc = input.schedule;
     const s = planning.schedule;
@@ -46,52 +48,54 @@ export function SchedulePage() {
     const actualCount = s.tasks.filter(t => t.actual.finish !== null).length;
     const delayTone = status.delayStatus === 'late' ? 'bad' : status.delayStatus === null ? 'default' : 'good';
     const pace = useMemo(() => paceFromSchedule(s), [s]);
+    const delayText = status.delayDays === null ? ''
+        : status.delayDays > 0 ? tr('schedule.delayAhead', { n: status.delayDays })
+            : status.delayDays < 0 ? tr('schedule.delayLate', { n: -status.delayDays }) : tr('schedule.delayOnTime');
 
     return (
         <div className="flex flex-col gap-4">
-            <PlanningHeader current="/schedule" title="แผนงาน S-Curve" sheetName="S-Curve_Plan_Basic"
+            <PlanningHeader current="/schedule" title={tr('schedule.title')} sheetName="S-Curve_Plan_Basic"
                 isDefault={stored.schedule === undefined} onReset={() => setPlanning({ schedule: undefined })} />
             <NoBoqYet constructionTotal={result.boq.constructionTotal} />
 
             <SummaryBanner headline={s.start && s.finish
-                ? <>ใช้เวลา {s.durationDays} วัน เริ่ม {formatDate(s.start)} เสร็จ {formatDate(s.finish)}</>
-                : <>ยังไม่ได้กำหนดวันเริ่มงาน</>}>
+                ? <>{tr('schedule.headline', { days: s.durationDays, start: formatDate(s.start), finish: formatDate(s.finish) })}</>
+                : <>{tr('schedule.noStart')}</>}>
                 {/* Progress, spending and delay are the tiles below: not repeated here. */}
-                <span>งบประมาณโครงการ {money(s.budget)} บาท · {s.tasks.length} งาน ใน {s.installments.length} งวด</span>
+                <span>{tr('schedule.summary', { budget: money(s.budget), tasks: s.tasks.length, installments: s.installments.length })}</span>
             </SummaryBanner>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <SheetCard title="ข้อมูลโครงการ" className="h-full">
-                    <InputTextField label="ชื่อโครงการ" value={sc.projectName} onChange={v => save({ ...sc, projectName: v })} />
+                <SheetCard title={tr('schedule.projectInfo')} className="h-full">
+                    <InputTextField label={tr('schedule.projectName')} value={sample(sc.projectName)} onChange={v => save({ ...sc, projectName: v })} />
                     <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-center gap-2 py-1">
-                        <span className="text-[13px] text-gray-700">วันที่โครงการเริ่ม</span>
-                        <Tooltip title="เปลี่ยนวันเริ่ม = เลื่อนวันเริ่มของทุกงานไปเท่ากัน">
-                            <div><DateCell value={s.start} allowClear={false} ariaLabel="วันที่โครงการเริ่ม" onCommit={shiftStart} /></div>
+                        <span className="text-[13px] text-gray-700">{tr('schedule.projectStart')}</span>
+                        <Tooltip title={tr('schedule.shiftHint')}>
+                            <div><DateCell value={s.start} allowClear={false} ariaLabel={tr('schedule.projectStart')} onCommit={shiftStart} /></div>
                         </Tooltip>
                     </div>
                     <div className="text-[12px] text-gray-500 mt-1">
-                        เปลี่ยนวันเริ่มโครงการ ระบบเลื่อนทุกงานให้ · แก้วันเริ่มรายงานได้ในตารางด้านล่าง ·
-                        จำนวนวันมาจากหน้า Man-Day
+                        {tr('schedule.startNote')}
                     </div>
                 </SheetCard>
                 <div className="lg:col-span-2 grid grid-cols-2 gap-4 auto-rows-fr">
-                    <StatTile label="บันทึกผลงานล่าสุด" value={status.lastUpdate ? formatDate(status.lastUpdate) : '–'}
-                        hint={actualCount ? `บันทึกผลงานแล้ว ${actualCount} งาน` : 'กรอกในส่วนบันทึกผลงานจริง'} />
-                    <StatTile label={<Tooltip title="งบประมาณตามแผน คิดจาก % คืบหน้า × น้ำหนักงาน × งบ (มูลค่างานที่ทำได้)">
-                        <span className="underline decoration-dotted">งบประมาณตามแผน</span></Tooltip>}
-                    value={money(status.earnedValue)} unit="บาท" hint="จาก % คืบหน้า" />
-                    <StatTile label="งบที่ใช้ไป" value={status.spent === null ? '–' : money(status.spent)} unit={status.spent === null ? undefined : 'บาท'} />
-                    <StatTile label="วันล่าช้า" tone={delayTone}
-                        value={status.delayText === null ? '–'
+                    <StatTile label={tr('schedule.lastUpdate')} value={status.lastUpdate ? formatDate(status.lastUpdate) : '–'}
+                        hint={actualCount ? tr('schedule.recordedTasks', { n: actualCount }) : tr('schedule.fillActuals')} />
+                    <StatTile label={<Tooltip title={tr('schedule.plannedBudgetHint')}>
+                        <span className="underline decoration-dotted">{tr('schedule.plannedBudget')}</span></Tooltip>}
+                    value={money(status.earnedValue)} unit={tr('unit.baht')} hint={tr('schedule.fromProgress')} />
+                    <StatTile label={tr('schedule.spent')} value={status.spent === null ? '–' : money(status.spent)} unit={status.spent === null ? undefined : tr('unit.baht')} />
+                    <StatTile label={tr('schedule.delay')} tone={delayTone}
+                        value={status.delayDays === null ? '–'
                             : <span className="flex items-center gap-1">
                                 {status.delayStatus === 'late' ? <ClockCircleOutlined /> : status.delayStatus === 'ahead' ? <RiseOutlined /> : <CheckCircleOutlined />}
-                                <span>{status.delayText}</span>
+                                <span>{delayText}</span>
                             </span>} />
                 </div>
             </div>
 
             {/* The pace gauge lives inside the S-curve card (no section of its own): gauge left, curve right. */}
-            <SheetCard title="S-Curve แผนงานเทียบผลงาน (สะสม)" collapsible extra={<PaceStatusChip pace={pace} />}>
+            <SheetCard title={tr('schedule.scurveTitle')} collapsible extra={<PaceStatusChip pace={pace} />}>
                 <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] gap-4 lg:gap-6 items-center">
                     <div className="lg:border-r lg:border-gray-100 lg:pr-6">
                         <PaceGaugePanel pace={pace} />
@@ -102,15 +106,15 @@ export function SchedulePage() {
                 </div>
             </SheetCard>
 
-            <SheetCard title="กำหนดการ" extra={(
+            <SheetCard title={tr('schedule.timeline')} extra={(
                 <span className="flex flex-wrap items-center justify-end gap-2 text-[12px] text-gray-500">
                     {view === 'table' && (
                         <span className="hidden sm:flex items-center">
-                            <Tag color="blue" variant="filled">แผน</Tag><Tag color="orange" variant="filled">ผลงานจริง</Tag>
+                            <Tag color="blue" variant="filled">{tr('schedule.grid.planShort')}</Tag><Tag color="orange" variant="filled">{tr('schedule.actualWork')}</Tag>
                         </span>
                     )}
                     <Segmented size="small" value={view} onChange={v => setView(v === 'calendar' ? 'calendar' : 'table')}
-                        options={[{ label: 'ตารางงาน', value: 'table' }, { label: 'ปฏิทิน', value: 'calendar' }]} />
+                        options={[{ label: tr('schedule.viewTable'), value: 'table' }, { label: tr('schedule.viewCalendar'), value: 'calendar' }]} />
                     <SchedulePrintButton schedule={s} manday={planning.manday} fallbackName={project.meta.projectName} />
                 </span>
             )}>
@@ -118,26 +122,25 @@ export function SchedulePage() {
                     ? <>
                         <GanttTable schedule={s} tasks={sc.tasks} count={count} onTask={setTask} />
                         <div className="text-[12px] text-gray-500 mt-2">
-                            วันเสร็จ = วันเริ่ม + ระยะเวลา − 1 (นับวันปฏิทิน ไม่เว้นวันหยุด) · 1 เดือนแบ่ง 4 ช่วง: 1–7, 8–15, 16–22, 23–สิ้นเดือน
+                            {tr('schedule.tableNote')}
                         </div>
                     </>
                     : <>
                         <CrewCalendar schedule={s} manday={planning.manday} />
                         <div className="text-[12px] text-gray-500 mt-3">
-                            แสดงงานตามวันเริ่ม–วันเสร็จตามแผน นับทุกวันปฏิทิน (ไม่เว้นวันหยุด) · จำนวนช่างและคนงานมาจากหน้า Man-Day ·
-                            แก้วันได้ในมุมมองตารางงาน
+                            {tr('schedule.calendarNote')}
                         </div>
                     </>}
             </SheetCard>
 
-            <DetailSection label={`บันทึกผลงานจริงและ % คืบหน้า${actualCount ? ` — บันทึกแล้ว ${actualCount} งาน` : ''}`}>
+            <DetailSection label={`${tr('schedule.actualSection')}${actualCount ? tr('schedule.actualSectionCount', { n: actualCount }) : ''}`}>
                 <ActualTable schedule={s} tasks={sc.tasks} onTask={setTask} />
                 <div className="text-[12px] text-gray-500 mt-2">
-                    ผลงานจริงถ่วงน้ำหนักด้วยค่าใช้จ่ายจริง ÷ งบโครงการ · % คืบหน้าใช้คำนวณ &quot;งบประมาณตามแผน&quot;
+                    {tr('schedule.actualNote')}
                 </div>
             </DetailSection>
 
-            <DetailSection label="ดูตารางละเอียด (ตาราง S-Curve รายสัปดาห์)">
+            <DetailSection label={tr('schedule.detailSection')}>
                 <ScheduleDetailGrid schedule={s} />
             </DetailSection>
         </div>

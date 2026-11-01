@@ -3,9 +3,9 @@
 // The project-pace speedometer that sits beside the S-curve: one glance at how fast the project really
 // moves against its plan. Plain SVG, no chart library. Numbers from src/domain/planning/pace.ts; colours
 // from the planning charts (plan blue) plus the state colours.
-import {
-    PACE_STATUS_LABEL, PACE_THRESHOLDS, ageText, paceText, type PaceStatus, type SchedulePace,
-} from '@/domain/planning';
+import { PACE_THRESHOLDS, type PaceStatus, type SchedulePace } from '@/domain/planning';
+import { usePlanningText } from '../usePlanningText';
+import { ageReading, paceReading, paceStatusLabel } from './pace-text';
 
 /** Calm state colours: red (behind / stalled), amber (slightly behind), green (on track), blue (ahead = plan blue). */
 const ZONE = { red: '#d6605a', amber: '#e3a63a', green: '#4a9d6a', blue: '#2a78d6', muted: '#c3c2b7', ink: '#0b0b0b', ink2: '#52514e' } as const;
@@ -50,6 +50,7 @@ const ZONES: { from: number; to: number; color: string }[] = [
 export function PaceGauge({ pace, status, headline, caption }: {
     pace: number | null; status: PaceStatus; headline: string; caption: string;
 }) {
+    const { t: tr } = usePlanningText();
     const value = pace ?? 0;
     const deg = (Math.min(G.max, Math.max(0, value)) / G.max) * 180;   // rotation of a needle drawn pointing left (0×)
     const color = STATUS_COLOR[status];
@@ -69,7 +70,7 @@ export function PaceGauge({ pace, status, headline, caption }: {
     };
     return (
         <svg viewBox={`0 0 ${G.w} ${G.h}`} width="100%" role="img"
-            aria-label={`มาตรวัดความเร็วโครงการ ${headline} ${caption}`} className="block max-w-[280px] mx-auto">
+            aria-label={tr('pace.gaugeAria', { headline, caption })} className="block max-w-[280px] mx-auto">
             {ZONES.map(z => (
                 <path key={z.color} d={arcPath(z.from, z.to, G.r)} fill="none" stroke={z.color} strokeWidth={G.stroke}
                     strokeLinecap="butt" opacity={dim ? 0.25 : 0.9} />
@@ -94,12 +95,13 @@ export function PaceGauge({ pace, status, headline, caption }: {
 
 /** Status chip for the card header: "ณ W2 ม.ค.-26 · ช้ากว่าแผน". */
 export function PaceStatusChip({ pace }: { pace: SchedulePace }) {
+    const { t: tr, month } = usePlanningText();
     const started = pace.status !== 'not-started';
     return (
         <span className="flex items-center gap-2 text-[12px] text-gray-500 whitespace-nowrap">
-            {started && pace.labels.latestReported && <span className="hidden sm:inline">ณ {pace.labels.latestReported}</span>}
+            {started && pace.labels.latestReported && <span className="hidden sm:inline">{tr('pace.asOf', { label: month(pace.labels.latestReported) })}</span>}
             <span className={`px-2 py-0.5 rounded-full border text-[12px] font-medium ${STATUS_BG[pace.status]} ${STATUS_TEXT[pace.status]}`}>
-                {PACE_STATUS_LABEL[pace.status]}
+                {paceStatusLabel(pace.status, tr)}
             </span>
         </span>
     );
@@ -107,11 +109,12 @@ export function PaceStatusChip({ pace }: { pace: SchedulePace }) {
 
 /** The gauge with two quiet lines under it: cumulative actual vs plan, and the project age in weeks. */
 export function PaceGaugePanel({ pace }: { pace: SchedulePace }) {
+    const { t: tr } = usePlanningText();
     const p = pace;
     const started = p.status !== 'not-started';
     // Gauge reading: the pace ratio, or the plan's required pace before the first report.
     const headline = started ? (p.pace === null ? '–' : ratio(p.pace)) : p.planPace === null ? '–' : pct(p.planPace);
-    const caption = started ? paceText(p.pace) : 'ต่อสัปดาห์ ที่แผนต้องการ';
+    const caption = started ? paceReading(p.pace, tr) : tr('pace.planNeedsPerWeek');
     const age = p.ageWeeks === null ? 0 : Math.round(p.ageWeeks);
     const ageColor = age > 0 ? 'text-red-600' : age < 0 ? 'text-green-700' : 'text-gray-700';
     return (
@@ -119,11 +122,11 @@ export function PaceGaugePanel({ pace }: { pace: SchedulePace }) {
             <PaceGauge pace={started ? p.pace : null} status={p.status} headline={headline} caption={caption} />
             <div className="text-[12px] text-gray-400 text-center leading-tight mt-1">
                 {started
-                    ? <>ผลงานสะสม {pct(p.actualPct)} เทียบแผน {pct(p.planPct)}</>
-                    : <>เข็มจะขยับเมื่อบันทึกผลงานจริงสัปดาห์แรก</>}
+                    ? <>{tr('pace.cumulativeVsPlan', { actual: pct(p.actualPct), plan: pct(p.planPct) })}</>
+                    : <>{tr('pace.needleHint')}</>}
             </div>
             {started && p.ageWeeks !== null && (
-                <div className={`text-[13px] font-medium text-center leading-tight mt-1 ${ageColor}`}>{ageText(p.ageWeeks)}</div>
+                <div className={`text-[13px] font-medium text-center leading-tight mt-1 ${ageColor}`}>{ageReading(p.ageWeeks, tr)}</div>
             )}
         </div>
     );

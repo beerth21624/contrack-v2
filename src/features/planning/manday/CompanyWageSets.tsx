@@ -10,11 +10,13 @@ import { DeleteOutlined } from '@ant-design/icons';
 import { formatNumber } from '@/components/sheet/NumberCell';
 import type { WageSet } from '@/domain/planning';
 import type { RateCardDto, Role } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import {
     rateCardAbilities, rateCardConflictMessage, useArchiveRateCard, useCreateRateCard, useRateCards,
 } from '@/features/cloud/api/rate-cards';
 import { useProjectStore } from '@/store/project-store';
+import type { PlanningT } from '../text';
+import { usePlanningText } from '../usePlanningText';
 import { cardToWageSet, findCardOfSet, findSetOfCard, wageSetToCard } from './company-wage-sets';
 
 export interface CompanyLibrary { workspaceId: string; role: Role }
@@ -26,12 +28,15 @@ export function useCompanyLibrary(): CompanyLibrary | undefined {
     return workspaceId === undefined || role === undefined ? undefined : { workspaceId, role };
 }
 
-const rates = (skilled: number, labourer: number) => `ช่าง ${formatNumber(skilled, 0)} · คนงาน ${formatNumber(labourer, 0)} บาท/วัน`;
+const rates = (tr: PlanningT, skilled: number, labourer: number) =>
+    tr('companyWageSets.rates', { skilled: formatNumber(skilled, 0), labourer: formatNumber(labourer, 0) });
 
 function CardRow({ card, inProject, canArchive, workspaceId, onPick }: {
     card: RateCardDto; inProject: WageSet | undefined; canArchive: boolean; workspaceId: string; onPick: () => void;
 }) {
     const { message } = App.useApp();
+    const { t: tr } = usePlanningText();
+    const toText = useErrorMessage();
     const archive = useArchiveRateCard(workspaceId);
     return (
         <li className="flex items-center gap-1">
@@ -39,19 +44,19 @@ function CardRow({ card, inProject, canArchive, workspaceId, onPick }: {
                 className="min-w-0 flex-1 text-left rounded-control px-2 py-1.5 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand">
                 <div className="truncate text-[14px] text-gray-900">{card.name}</div>
                 <div className="text-[12px] text-gray-500 tabular-nums">
-                    {rates(card.skilledRate, card.labourerRate)}
-                    {inProject !== undefined && <span className="text-gray-400"> · มีแล้ว (ชุด {inProject.id})</span>}
+                    {rates(tr, card.skilledRate, card.labourerRate)}
+                    {inProject !== undefined && <span className="text-gray-400">{tr('companyWageSets.inProject', { id: inProject.id })}</span>}
                 </div>
             </button>
             {canArchive && (
-                <Popconfirm title={`เก็บถาวร "${card.name}"?`} description="ไม่แสดงในรายการอีก โครงการที่ใช้อยู่ไม่เปลี่ยน"
-                    okText="เก็บถาวร" cancelText="ยกเลิก" okButtonProps={{ danger: true, loading: archive.isPending }}
+                <Popconfirm title={tr('companyWageSets.archiveTitle', { name: card.name })} description={tr('companyWageSets.archiveDescription')}
+                    okText={tr('companyWageSets.archive')} cancelText={tr('header.cancel')} okButtonProps={{ danger: true, loading: archive.isPending }}
                     onConfirm={() => archive.mutateAsync(card.id).then(
-                        () => { void message.success(`เก็บถาวร "${card.name}" แล้ว`); },
-                        (e: unknown) => { void message.error(thaiErrorMessage(e)); },
+                        () => { void message.success(tr('companyWageSets.archived', { name: card.name })); },
+                        (e: unknown) => { void message.error(toText(e)); },
                     )}>
                     <Button type="text" size="small" className="shrink-0 text-gray-400" icon={<DeleteOutlined />}
-                        aria-label={`เก็บถาวรชุดของบริษัท ${card.name}`} />
+                        aria-label={tr('companyWageSets.archiveAria', { name: card.name })} />
                 </Popconfirm>
             )}
         </li>
@@ -63,6 +68,8 @@ export function PickCompanyWageSet({ library, sets, onAdd }: {
     library: CompanyLibrary; sets: readonly WageSet[]; onAdd: (init: Omit<WageSet, 'id'>) => WageSet['id'];
 }) {
     const { message } = App.useApp();
+    const { t: tr } = usePlanningText();
+    const toText = useErrorMessage();
     const [open, setOpen] = useState(false);
     const cards = useRateCards(library.workspaceId);
     const abilities = rateCardAbilities(library.role);
@@ -70,12 +77,12 @@ export function PickCompanyWageSet({ library, sets, onAdd }: {
     const pick = (card: RateCardDto) => {
         const existing = findSetOfCard(sets, card);
         if (existing !== undefined) {
-            void message.info(`โครงการนี้มี "${card.name}" อยู่แล้ว (ชุด ${existing.id}) ไม่ได้เพิ่มซ้ำ`);
+            void message.info(tr('companyWageSets.alreadyHave', { name: card.name, id: existing.id }));
             return;
         }
         const id = onAdd(cardToWageSet(card));
         setOpen(false);
-        void message.success(`เพิ่ม "${card.name}" เป็นชุด ${id}`);
+        void message.success(tr('companyWageSets.added', { name: card.name, id }));
     };
 
     const list = cards.data ?? [];
@@ -84,11 +91,11 @@ export function PickCompanyWageSet({ library, sets, onAdd }: {
             {cards.isLoading ? (
                 <div className="py-3 text-center"><Spin size="small" /></div>
             ) : cards.isError ? (
-                <div className="text-[13px] text-red-600 py-1">{thaiErrorMessage(cards.error)}</div>
+                <div className="text-[13px] text-red-600 py-1">{toText(cards.error)}</div>
             ) : list.length === 0 ? (
                 <div className="text-[13px] text-gray-600 py-1">
-                    ยังไม่มีชุดค่าแรงของบริษัท
-                    {abilities.create && <> — กด &quot;บันทึกเป็นชุดของบริษัท&quot; ที่ชุดที่เพิ่มเอง เพื่อใช้ซ้ำในโครงการอื่น</>}
+                    {tr('companyWageSets.empty')}
+                    {abilities.create && <>{tr('companyWageSets.emptyHint')}</>}
                 </div>
             ) : (
                 <ul className="max-h-[320px] overflow-y-auto -mx-1 flex flex-col">
@@ -102,8 +109,8 @@ export function PickCompanyWageSet({ library, sets, onAdd }: {
     );
 
     return (
-        <Popover trigger="click" placement="bottomLeft" open={open} onOpenChange={setOpen} title="ชุดค่าแรงของบริษัท" content={content}>
-            <Button size="small">เลือกจากชุดของบริษัท</Button>
+        <Popover trigger="click" placement="bottomLeft" open={open} onOpenChange={setOpen} title={tr('companyWageSets.title')} content={content}>
+            <Button size="small">{tr('companyWageSets.pick')}</Button>
         </Popover>
     );
 }
@@ -111,12 +118,14 @@ export function PickCompanyWageSet({ library, sets, onAdd }: {
 /** "บันทึกเป็นชุดของบริษัท" on a user set (owner / admin / estimator); a note instead when the library has it already. */
 export function SaveWageSetToCompany({ library, set }: { library: CompanyLibrary; set: WageSet }) {
     const { message } = App.useApp();
+    const { t: tr } = usePlanningText();
+    const toText = useErrorMessage();
     const cards = useRateCards(library.workspaceId);
     const create = useCreateRateCard(library.workspaceId);
     if (!rateCardAbilities(library.role).create) return null;
 
     if (findCardOfSet(cards.data ?? [], set) !== undefined) {
-        return <span className="text-[12px] text-gray-400">อยู่ในชุดของบริษัทแล้ว</span>;
+        return <span className="text-[12px] text-gray-400">{tr('companyWageSets.inLibrary')}</span>;
     }
 
     const save = () => {
@@ -129,16 +138,16 @@ export function SaveWageSetToCompany({ library, set }: { library: CompanyLibrary
         create.mutate(req.body, {
             onSuccess: () => {
                 void message.success(req.rounded
-                    ? `บันทึก "${name}" เป็นชุดของบริษัทแล้ว (ปัดเป็นบาทเต็ม: ${rates(skilledRate, labourerRate)})`
-                    : `บันทึก "${name}" เป็นชุดของบริษัทแล้ว`);
+                    ? tr('companyWageSets.savedRounded', { name, rates: rates(tr, skilledRate, labourerRate) })
+                    : tr('companyWageSets.saved', { name }));
             },
-            onError: (e) => { void message.error(rateCardConflictMessage(e) ?? thaiErrorMessage(e)); },
+            onError: (e) => { void message.error(rateCardConflictMessage(e) ?? toText(e)); },
         });
     };
 
     return (
         <Button type="link" size="small" className="!px-0 !h-auto text-[12px]" loading={create.isPending} onClick={save}>
-            บันทึกเป็นชุดของบริษัท
+            {tr('companyWageSets.save')}
         </Button>
     );
 }

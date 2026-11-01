@@ -11,6 +11,7 @@ import {
     WAGE_SET_LIMITS, addWageSet, isBuiltInWageSet, removeWageSet, updateWageSet, wageSetUsage,
     type ManDayInput, type WageSet,
 } from '@/domain/planning';
+import { usePlanningText } from '../usePlanningText';
 import { PickCompanyWageSet, SaveWageSetToCompany, type CompanyLibrary } from './CompanyWageSets';
 
 const th = 'border border-gray-200 px-2 py-1 text-[12px] font-semibold text-gray-700 bg-gray-50 text-center';
@@ -22,6 +23,7 @@ export function WageSetTable({ md, save, library, readOnly }: {
     library: CompanyLibrary | undefined;
     readOnly: boolean;
 }) {
+    const { t: tr, sample } = usePlanningText();
     const set = (id: WageSet['id'], patch: Partial<Omit<WageSet, 'id'>>) => save(updateWageSet(md, id, patch));
     const addSet = (init: Omit<WageSet, 'id'>) => {
         const { input, id } = addWageSet(md, init);
@@ -34,7 +36,7 @@ export function WageSetTable({ md, save, library, readOnly }: {
         <div className="flex flex-col gap-3">
             {canAdd && (
                 <div className="flex flex-wrap items-center gap-2">
-                    <Button size="small" icon={<PlusOutlined />} onClick={() => save(addWageSet(md).input)}>เพิ่มชุดค่าแรง</Button>
+                    <Button size="small" icon={<PlusOutlined />} onClick={() => save(addWageSet(md).input)}>{tr('wageSets.add')}</Button>
                     {library !== undefined && !readOnly && <PickCompanyWageSet library={library} sets={md.wageSets} onAdd={addSet} />}
                 </div>
             )}
@@ -43,12 +45,12 @@ export function WageSetTable({ md, save, library, readOnly }: {
                 <table className="w-full border-collapse min-w-[800px]">
                     <thead>
                         <tr>
-                            <th className={th} style={{ width: 112 }}>ชุด</th>
-                            <th className={th} style={{ minWidth: 220 }}>ชื่อชุด</th>
-                            <th className={th} style={{ width: 112 }}>ช่าง<br /><span className="font-normal">(บาท/วัน)</span></th>
-                            <th className={th} style={{ width: 112 }}>คนงาน<br /><span className="font-normal">(บาท/วัน)</span></th>
-                            <th className={th} style={{ width: 80 }}>ใช้ใน</th>
-                            <th className={th} style={{ width: 176 }} aria-label="จัดการ" />
+                            <th className={th} style={{ width: 112 }}>{tr('wageSets.set')}</th>
+                            <th className={th} style={{ minWidth: 220 }}>{tr('wageSets.name')}</th>
+                            <th className={th} style={{ width: 112 }}>{tr('wageSets.skilled')}<br /><span className="font-normal">{tr('wageSets.perDay')}</span></th>
+                            <th className={th} style={{ width: 112 }}>{tr('wageSets.labourer')}<br /><span className="font-normal">{tr('wageSets.perDay')}</span></th>
+                            <th className={th} style={{ width: 80 }}>{tr('wageSets.usedIn')}</th>
+                            <th className={th} style={{ width: 176 }} aria-label={tr('wageSets.manage')} />
                         </tr>
                     </thead>
                     <tbody>
@@ -60,32 +62,32 @@ export function WageSetTable({ md, save, library, readOnly }: {
                                     <td className={`${td} bg-white px-2`}>
                                         <span className="flex items-center gap-1.5 whitespace-nowrap">
                                             <span className="font-medium text-gray-800">{s.id}</span>
-                                            {builtIn && <Tag className="!m-0 !text-[11px] !leading-[18px]">ค่าตั้งต้นของระบบ</Tag>}
+                                            {builtIn && <Tag className="!m-0 !text-[11px] !leading-[18px]">{tr('wageSets.builtIn')}</Tag>}
                                         </span>
                                     </td>
                                     <td className={td} style={{ background: SHEET_COLORS.input }}>
-                                        <TextCell value={s.name} placeholder="ตั้งชื่อชุด" ariaLabel={`ชื่อชุดค่าแรง ${s.id}`}
+                                        <TextCell value={sample(s.name)} placeholder={tr('wageSets.namePlaceholder')} ariaLabel={tr('wageSets.nameAria', { id: s.id })}
                                             onCommit={v => set(s.id, { name: (v ?? '').slice(0, WAGE_SET_LIMITS.maxNameLength) })} />
                                     </td>
                                     <td className={td}>
-                                        <NumberCell value={s.skilled} digits={0} ariaLabel={`ค่าแรงช่าง ชุด ${s.id}`}
+                                        <NumberCell value={s.skilled} digits={0} ariaLabel={tr('wageSets.skilledAria', { id: s.id })}
                                             onCommit={v => set(s.id, { skilled: v ?? 0 })} />
                                     </td>
                                     <td className={td}>
-                                        <NumberCell value={s.labourer} digits={0} ariaLabel={`ค่าแรงคนงาน ชุด ${s.id}`}
+                                        <NumberCell value={s.labourer} digits={0} ariaLabel={tr('wageSets.labourerAria', { id: s.id })}
                                             onCommit={v => set(s.id, { labourer: v ?? 0 })} />
                                     </td>
                                     <td className={`${td} bg-white px-2 text-right tabular-nums ${usedBy === 0 ? 'text-gray-400' : 'text-gray-700'}`}>
-                                        {usedBy === 0 ? '–' : `${String(usedBy)} งาน`}
+                                        {usedBy === 0 ? '–' : tr('wageSets.usedByN', { n: usedBy })}
                                     </td>
                                     <td className={`${td} bg-white px-2`}>
                                         {!builtIn && (
                                             <span className="flex items-center justify-end gap-1">
                                                 {library !== undefined && <SaveWageSetToCompany library={library} set={s} />}
-                                                <Popconfirm title={`ลบชุดค่าแรง ${s.id}?`} okText="ลบ" cancelText="ยกเลิก" okButtonProps={{ danger: true }}
-                                                    description={usedBy > 0 ? `มี ${String(usedBy)} งานใช้ชุดนี้ จะเปลี่ยนไปใช้ชุด A` : undefined}
+                                                <Popconfirm title={tr('wageSets.deleteTitle', { id: s.id })} okText={tr('wageSets.delete')} cancelText={tr('header.cancel')} okButtonProps={{ danger: true }}
+                                                    description={usedBy > 0 ? tr('wageSets.deleteInUse', { n: usedBy }) : undefined}
                                                     onConfirm={() => save(removeWageSet(md, s.id))}>
-                                                    <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label={`ลบชุดค่าแรง ${s.id}`} />
+                                                    <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label={tr('wageSets.deleteAria', { id: s.id })} />
                                                 </Popconfirm>
                                             </span>
                                         )}
@@ -99,11 +101,11 @@ export function WageSetTable({ md, save, library, readOnly }: {
 
             <div className="border-t border-gray-100 pt-2">
                 <div className="max-w-[440px]">
-                    <InputNumberField label="งานเหมา: ค่าแรง % ของยอดรวม" percent value={md.subcontractLabourShare}
+                    <InputNumberField label={tr('wageSets.shareLabel')} percent value={md.subcontractLabourShare}
                         onChange={v => save({ ...md, subcontractLabourShare: v })} />
                 </div>
                 <div className="text-[12px] text-gray-500">
-                    งานที่ BOQ ไม่แยกค่าแรง (งานเหมา) ใช้ % นี้ของยอดรวมเป็นค่าแรง เพื่อคำนวณวัน
+                    {tr('wageSets.shareNote')}
                 </div>
             </div>
         </div>

@@ -5,6 +5,7 @@
 // Picking a card copies its name and rates into the project (a snapshot): a later change to the card does not change
 // the project. Saving a project set creates a card; cards keep whole baht per day, so fractional rates are rounded.
 import { WAGE_SET_LIMITS, type WageSet } from '@/domain/planning';
+import { planningText } from '../text';
 import { RATE_CARD_NAME_MAX, RATE_CARD_RATE_MAX, type CreateRateCardRequest, type RateCardDto } from '@/shared/contract';
 
 /** Names compare trimmed and case-insensitive (as the server's unique name rule does). */
@@ -36,13 +37,14 @@ function wholeBaht(v: number): number | null {
  * Fractional rates are rounded to whole baht (`rounded` tells the caller to say so); the project set itself is unchanged.
  */
 export function wageSetToCard(set: Pick<WageSet, 'name' | 'skilled' | 'labourer'>): SetToCardResult {
+    const tr = planningText();
     const name = set.name.trim();
-    if (name === '') return { ok: false, message: 'ตั้งชื่อชุดก่อนบันทึกเป็นชุดของบริษัท' };
-    if (name.length > RATE_CARD_NAME_MAX) return { ok: false, message: `ชื่อชุดของบริษัทยาวได้ไม่เกิน ${String(RATE_CARD_NAME_MAX)} ตัวอักษร` };
+    if (name === '') return { ok: false, message: tr('companyWageSets.errNoName') };
+    if (name.length > RATE_CARD_NAME_MAX) return { ok: false, message: tr('companyWageSets.errNameTooLong', { max: String(RATE_CARD_NAME_MAX) }) };
     const skilledRate = wholeBaht(set.skilled);
     const labourerRate = wholeBaht(set.labourer);
     if (skilledRate === null || labourerRate === null) {
-        return { ok: false, message: `ค่าแรงต้องอยู่ระหว่าง 0 ถึง ${RATE_CARD_RATE_MAX.toLocaleString('th-TH')} บาท/วัน` };
+        return { ok: false, message: tr('companyWageSets.errRateRange', { max: RATE_CARD_RATE_MAX.toLocaleString('th-TH') }) };
     }
     return { ok: true, body: { name, skilledRate, labourerRate }, rounded: skilledRate !== set.skilled || labourerRate !== set.labourer };
 }

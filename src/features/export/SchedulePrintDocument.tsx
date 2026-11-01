@@ -23,7 +23,8 @@ import { createContext, useContext, type ReactNode } from 'react';
 import { PRINT_FONT_VAR } from './BoqPrintDocument';
 import { exportMessages, type ExportMessages } from './text';
 import { CHART_COLORS, formatDate, installmentColors } from '@/features/planning/shared/planning-format';
-import { WEEKDAYS, crewText } from '@/features/planning/schedule/calendar-grid';
+import { crewText, weekdayNames } from '@/features/planning/schedule/calendar-grid';
+import type { Locale } from '@/i18n/config';
 
 export const SCHEDULE_PRINT_ROOT_CLASS = 'schp-root';
 
@@ -388,7 +389,7 @@ export function GanttPrintDocument({ model }: { model: GanttPrintModel }) {
 const tint = (hex: string) => `${hex}2e`;
 export const OVERFLOW_COLS = 6;
 
-function DayCell({ c }: { c: CalendarPrintCell }) {
+function DayCell({ c, locale }: { c: CalendarPrintCell; locale: Locale }) {
     const T = useT();
     if (!c.inMonth) return <div className="schp-cell schp-out" />;
     return (
@@ -404,7 +405,7 @@ function DayCell({ c }: { c: CalendarPrintCell }) {
                 );
             })}
             {c.hidden > 0 && <span className="schp-more">+{c.hidden} {T.more}</span>}
-            {c.total > 0 && <span className="schp-crew">{crewText(c.skilled, c.labourers)}</span>}
+            {c.total > 0 && <span className="schp-crew">{crewText(c.skilled, c.labourers, locale)}</span>}
         </div>
     );
 }
@@ -476,8 +477,8 @@ function MonthPage({ m, model }: { m: CalendarPrintMonth; model: CalendarPrintMo
                 <div className="schp-mspan">{T.calendarNote}{model.hasCrews ? ` · ${T.calendarCrewNote}` : ''}</div>
             </header>
             <div className="schp-grid" style={{ gridTemplateRows: `auto repeat(${rows}, minmax(0, 1fr))` }}>
-                {WEEKDAYS.map(w => <div key={w} className="schp-wd">{w}</div>)}
-                {m.weeks.flat().map(c => <DayCell key={c.iso} c={c} />)}
+                {weekdayNames(model.locale).map(w => <div key={w} className="schp-wd">{w}</div>)}
+                {m.weeks.flat().map(c => <DayCell key={c.iso} c={c} locale={model.locale} />)}
             </div>
             {m.overflow.length > 0 && <OverflowTables m={m} />}
         </section>

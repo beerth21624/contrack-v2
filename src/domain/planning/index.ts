@@ -11,6 +11,7 @@ import { builtInWageSets, normaliseWageSets } from './wage-sets';
 export * from './calendar';
 export * from './cashflow';
 export * from './crew-calendar';
+export * from './labels.en';
 export * from './manday';
 export * from './pace';
 export * from './schedule';

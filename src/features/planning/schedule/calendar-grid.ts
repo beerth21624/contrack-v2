@@ -1,11 +1,37 @@
 // Month-grid helpers of the ปฏิทินงาน (pure): used by the on-screen CrewCalendar and the printed calendar.
 // Dates are ISO 'YYYY-MM-DD' and Excel serials (calendar.ts); the year stays Christian era like the rest of the app.
 import { isoToSerial, serialToIso } from '@/domain/planning/calendar';
+import type { Locale } from '@/i18n/config';
+import { planningTranslator } from '../text';
 
-export const MONTHS = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-/** Monday first. */
-export const WEEKDAYS_SHORT = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'];
-export const WEEKDAYS = ['วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์', 'วันอาทิตย์'];
+const MONTH_KEYS = [
+    'calendar.months.m1', 'calendar.months.m2', 'calendar.months.m3', 'calendar.months.m4', 'calendar.months.m5', 'calendar.months.m6',
+    'calendar.months.m7', 'calendar.months.m8', 'calendar.months.m9', 'calendar.months.m10', 'calendar.months.m11', 'calendar.months.m12',
+] as const;
+const WEEKDAY_SHORT_KEYS = [
+    'calendar.weekdaysShort.d1', 'calendar.weekdaysShort.d2', 'calendar.weekdaysShort.d3', 'calendar.weekdaysShort.d4',
+    'calendar.weekdaysShort.d5', 'calendar.weekdaysShort.d6', 'calendar.weekdaysShort.d7',
+] as const;
+const WEEKDAY_KEYS = [
+    'calendar.weekdays.d1', 'calendar.weekdays.d2', 'calendar.weekdays.d3', 'calendar.weekdays.d4',
+    'calendar.weekdays.d5', 'calendar.weekdays.d6', 'calendar.weekdays.d7',
+] as const;
+
+/** Month name (0-based) in the locale. */
+export const monthName = (m: number, locale: Locale = 'th'): string => {
+    const k = MONTH_KEYS[m];
+    return k === undefined ? '' : planningTranslator(locale)(k);
+};
+/** Monday-first short weekday names. */
+export const weekdaysShort = (locale: Locale = 'th'): string[] => {
+    const t = planningTranslator(locale);
+    return WEEKDAY_SHORT_KEYS.map(k => t(k));
+};
+/** Monday-first weekday names. */
+export const weekdayNames = (locale: Locale = 'th'): string[] => {
+    const t = planningTranslator(locale);
+    return WEEKDAY_KEYS.map(k => t(k));
+};
 
 export interface Ymd { y: number; m: number; d: number }
 
@@ -22,18 +48,21 @@ export const keyToIso = (key: number) => `${Math.floor(key / 12)}-${String((key 
 /** Monday = 0 … Sunday = 6. */
 export const weekdayOf = (serial: number) => (new Date(Date.UTC(1899, 11, 30 + serial)).getUTCDay() + 6) % 7;
 
-/** "กุมภาพันธ์ 2026" (same year as the dates elsewhere on the page). */
-export const monthTitle = (key: number) => `${MONTHS[key % 12] ?? ''} ${Math.floor(key / 12)}`;
+/** "February 2026" (same year as the dates elsewhere on the page). */
+export const monthTitle = (key: number, locale: Locale = 'th') => `${monthName(key % 12, locale)} ${Math.floor(key / 12)}`;
 
-/** "วันอังคารที่ 10 กุมภาพันธ์ 2026". */
-export function longDate(iso: string): string {
+/** "Tuesday, 10 February 2026" (Thai: "วันอังคารที่ 10 กุมภาพันธ์ 2026"). */
+export function longDate(iso: string, locale: Locale = 'th'): string {
+    const t = planningTranslator(locale);
     const p = parts(iso);
     const serial = isoToSerial(iso);
-    const wd = serial === null ? '' : `${WEEKDAYS[weekdayOf(serial)] ?? ''}ที่ `;
-    return `${wd}${p.d} ${MONTHS[p.m] ?? ''} ${p.y}`;
+    const base = { day: p.d, month: monthName(p.m, locale), year: p.y };
+    const k = serial === null ? undefined : WEEKDAY_KEYS[weekdayOf(serial)];
+    return k === undefined ? t('calendar.longDateNoWeekday', base) : t('calendar.longDate', { ...base, weekday: t(k) });
 }
 
-export const crewText = (skilled: number, labourers: number) => `ช่าง ${skilled} · คนงาน ${labourers}`;
+export const crewText = (skilled: number, labourers: number, locale: Locale = 'th') =>
+    planningTranslator(locale)('calendar.crew', { skilled, labourers });
 
 /** The days of a month grid, Monday first, padded with the neighbouring months' days to whole weeks. */
 export function monthCells(key: number): { iso: string; inMonth: boolean }[] {

@@ -3,7 +3,8 @@
 // Plain-SVG charts of the planning pages (the project has no chart library).
 // Colours: CHART_COLORS (planning-format.ts, shared with the print documents).
 import { useState, type ReactNode } from 'react';
-import type { WeekBucket } from '@/domain/planning';
+import { useLocale, useTranslations } from 'next-intl';
+import { monthLabelIn, type WeekBucket } from '@/domain/planning';
 import { formatNumber } from '@/components/sheet/NumberCell';
 import { CHART_COLORS } from './planning-format';
 import { bucketLabel, bucketRange } from './planning-ui';
@@ -13,7 +14,14 @@ export { CHART_COLORS };
 const W = 1000;
 const M = { left: 64, right: 20, top: 18, bottom: 40 };
 
-const compact = new Intl.NumberFormat('th-TH', { notation: 'compact', maximumFractionDigits: 1 });
+const compactFormats = new Map<string, Intl.NumberFormat>();
+/** Axis numbers (12K, 3.5M; Thai: ล้าน …) in the UI language. */
+function compactFormat(locale: string): Intl.NumberFormat {
+    const key = locale === 'th' ? 'th-TH' : 'en-US';
+    let f = compactFormats.get(key);
+    if (f === undefined) { f = new Intl.NumberFormat(key, { notation: 'compact', maximumFractionDigits: 1 }); compactFormats.set(key, f); }
+    return f;
+}
 const pct = (v: number | undefined, digits = 1) => (v === undefined ? '' : `${(v * 100).toFixed(digits)}%`);
 
 /** "Nice" tick values covering [lo, hi]. */
@@ -38,6 +46,7 @@ function frame(n: number, h: number): Frame {
 
 /** Month bands, W labels and month separators under the plot. */
 function MonthAxis({ f, buckets }: { f: Frame; buckets: WeekBucket[] }) {
+    const locale = useLocale();
     const base = f.h - M.bottom;
     return (
         <g>
@@ -49,7 +58,7 @@ function MonthAxis({ f, buckets }: { f: Frame; buckets: WeekBucket[] }) {
                     )}
                     {b.week === 1 && (
                         <text x={f.x(b.index) + 2 * f.bw} y={base + 31} fontSize={12} textAnchor="middle"
-                            fill={CHART_COLORS.ink2}>{b.monthLabel}</text>
+                            fill={CHART_COLORS.ink2}>{monthLabelIn(b.monthLabel, locale)}</text>
                     )}
                 </g>
             ))}
@@ -111,6 +120,8 @@ export function SCurveChart({ buckets, plan, actual, actualUntil, planWeekly }: 
     actualUntil: number;
     planWeekly: number[];
 }) {
+    const t = useTranslations('planning');
+    const locale = useLocale();
     const h = 300;
     const f = frame(buckets.length, h);
     const { hover, setHover } = useHover();
@@ -126,17 +137,17 @@ export function SCurveChart({ buckets, plan, actual, actualUntil, planWeekly }: 
     return (
         <div>
             <Legend items={[
-                { label: 'แผนงาน (สะสม)', color: CHART_COLORS.plan, kind: 'line' },
-                { label: 'ผลงานจริง (สะสม)', color: CHART_COLORS.actual, kind: 'line' },
+                { label: t('charts.planCumulative'), color: CHART_COLORS.plan, kind: 'line' },
+                { label: t('charts.actualCumulative'), color: CHART_COLORS.actual, kind: 'line' },
             ]} />
             <div className="overflow-x-auto">
                 <div className="relative min-w-[600px]">
-                    <svg viewBox={`0 0 ${W} ${h}`} width="100%" role="img" aria-label="กราฟ S-Curve แผนงานเทียบผลงานสะสม">
+                    <svg viewBox={`0 0 ${W} ${h}`} width="100%" role="img" aria-label={t('charts.scurveAria')}>
                         <rect x={0} y={0} width={W} height={h} fill={CHART_COLORS.surface} />
-                        {ticks.map(t => (
-                            <g key={t}>
-                                <line x1={M.left} x2={W - M.right} y1={y(t)} y2={y(t)} stroke={CHART_COLORS.grid} strokeWidth={1} />
-                                <text x={M.left - 8} y={y(t) + 4} fontSize={11} textAnchor="end" fill={CHART_COLORS.muted}>{pct(t, 0)}</text>
+                        {ticks.map(tick => (
+                            <g key={tick}>
+                                <line x1={M.left} x2={W - M.right} y1={y(tick)} y2={y(tick)} stroke={CHART_COLORS.grid} strokeWidth={1} />
+                                <text x={M.left - 8} y={y(tick) + 4} fontSize={11} textAnchor="end" fill={CHART_COLORS.muted}>{pct(tick, 0)}</text>
                             </g>
                         ))}
                         <MonthAxis f={f} buckets={buckets} />
@@ -151,7 +162,7 @@ export function SCurveChart({ buckets, plan, actual, actualUntil, planWeekly }: 
                         )}
                         {lastPlan >= 0 && (
                             <text x={f.x(lastPlan + 1) - 4} y={y(plan[lastPlan] ?? 0) - 8} fontSize={12} textAnchor="end" fill={CHART_COLORS.ink2}>
-                                แผน {pct(plan[lastPlan], 0)}
+                                {t('charts.planLabel', { pct: pct(plan[lastPlan], 0) })}
                             </text>
                         )}
                         {hover !== null && (
@@ -161,9 +172,9 @@ export function SCurveChart({ buckets, plan, actual, actualUntil, planWeekly }: 
                     </svg>
                     {hover !== null && hb && (
                         <Tooltip f={f} index={hover}>
-                            <div className="font-semibold">{bucketLabel(hb)} <span className="font-normal text-gray-500">{bucketRange(hb)}</span></div>
-                            <div>แผนงานสะสม <b>{pct(plan[hover], 2)}</b> <span className="text-gray-500">(สัปดาห์นี้ {pct(planWeekly[hover], 2)})</span></div>
-                            {hover <= actualUntil && <div>ผลงานสะสม <b>{pct(actual[hover], 2)}</b></div>}
+                            <div className="font-semibold">{bucketLabel(hb, locale)} <span className="font-normal text-gray-500">{bucketRange(hb)}</span></div>
+                            <div>{t('charts.planCumulativeTip')} <b>{pct(plan[hover], 2)}</b> <span className="text-gray-500">({t('charts.thisWeek', { pct: pct(planWeekly[hover], 2) })})</span></div>
+                            {hover <= actualUntil && <div>{t('charts.actualCumulativeTip')} <b>{pct(actual[hover], 2)}</b></div>}
                         </Tooltip>
                     )}
                 </div>
@@ -180,6 +191,9 @@ export function CashFlowChart({ buckets, income, outflow, cumulative, min }: {
     cumulative: number[];
     min: { value: number; bucket: number } | null;
 }) {
+    const t = useTranslations('planning');
+    const locale = useLocale();
+    const compact = compactFormat(locale);
     const h = 320;
     const f = frame(buckets.length, h);
     const { hover, setHover } = useHover();
@@ -198,19 +212,19 @@ export function CashFlowChart({ buckets, income, outflow, cumulative, min }: {
     return (
         <div>
             <Legend items={[
-                { label: 'รับเงินงวด', color: CHART_COLORS.income, kind: 'bar' },
-                { label: 'จ่ายค่าก่อสร้าง + ค่าดำเนินงาน', color: CHART_COLORS.outflow, kind: 'bar' },
-                { label: 'เงินสดสะสม (Cash FLOW)', color: CHART_COLORS.line, kind: 'line' },
+                { label: t('charts.incomeLegend'), color: CHART_COLORS.income, kind: 'bar' },
+                { label: t('charts.outflowLegend'), color: CHART_COLORS.outflow, kind: 'bar' },
+                { label: t('charts.cumulativeLegend'), color: CHART_COLORS.line, kind: 'line' },
             ]} />
             <div className="overflow-x-auto">
                 <div className="relative min-w-[600px]">
-                    <svg viewBox={`0 0 ${W} ${h}`} width="100%" role="img" aria-label="กราฟกระแสเงินสดรายสัปดาห์">
+                    <svg viewBox={`0 0 ${W} ${h}`} width="100%" role="img" aria-label={t('charts.cashflowAria')}>
                         <rect x={0} y={0} width={W} height={h} fill={CHART_COLORS.surface} />
-                        {ticks.map(t => (
-                            <g key={t}>
-                                <line x1={M.left} x2={W - M.right} y1={y(t)} y2={y(t)}
-                                    stroke={t === 0 ? CHART_COLORS.axis : CHART_COLORS.grid} strokeWidth={t === 0 ? 1.5 : 1} />
-                                <text x={M.left - 8} y={y(t) + 4} fontSize={11} textAnchor="end" fill={CHART_COLORS.muted}>{compact.format(t)}</text>
+                        {ticks.map(tick => (
+                            <g key={tick}>
+                                <line x1={M.left} x2={W - M.right} y1={y(tick)} y2={y(tick)}
+                                    stroke={tick === 0 ? CHART_COLORS.axis : CHART_COLORS.grid} strokeWidth={tick === 0 ? 1.5 : 1} />
+                                <text x={M.left - 8} y={y(tick) + 4} fontSize={11} textAnchor="end" fill={CHART_COLORS.muted}>{compact.format(tick)}</text>
                             </g>
                         ))}
                         <MonthAxis f={f} buckets={buckets} />
@@ -228,7 +242,7 @@ export function CashFlowChart({ buckets, income, outflow, cumulative, min }: {
                             <g>
                                 <circle cx={cx(min.bucket)} cy={y(min.value)} r={5} fill={CHART_COLORS.line} stroke={CHART_COLORS.surface} strokeWidth={2} />
                                 <text x={cx(min.bucket)} y={y(min.value) + 20} fontSize={12} textAnchor="middle" fill={CHART_COLORS.line} fontWeight={600}>
-                                    ติดลบสูงสุด {formatNumber(min.value, 0)}
+                                    {t('charts.lowest', { value: formatNumber(min.value, 0) })}
                                 </text>
                             </g>
                         )}
@@ -239,9 +253,9 @@ export function CashFlowChart({ buckets, income, outflow, cumulative, min }: {
                     </svg>
                     {hover !== null && hb && (
                         <Tooltip f={f} index={hover}>
-                            <div className="font-semibold">{bucketLabel(hb)} <span className="font-normal text-gray-500">{bucketRange(hb)}</span></div>
-                            <div>รับ <b>{formatNumber(income[hover], 0)}</b> · จ่าย <b>{formatNumber(outflow[hover], 0)}</b> บาท</div>
-                            <div>เงินสดสะสม <b className={(cumulative[hover] ?? 0) < 0 ? 'text-red-600' : ''}>{formatNumber(cumulative[hover], 0)}</b> บาท</div>
+                            <div className="font-semibold">{bucketLabel(hb, locale)} <span className="font-normal text-gray-500">{bucketRange(hb)}</span></div>
+                            <div>{t('charts.in')} <b>{formatNumber(income[hover], 0)}</b> · {t('charts.out')} <b>{formatNumber(outflow[hover], 0)}</b> {t('unit.baht')}</div>
+                            <div>{t('charts.cumulativeCash')} <b className={(cumulative[hover] ?? 0) < 0 ? 'text-red-600' : ''}>{formatNumber(cumulative[hover], 0)}</b> {t('unit.baht')}</div>
                         </Tooltip>
                     )}
                 </div>
