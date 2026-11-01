@@ -84,7 +84,7 @@
 | I-09 | planning | done | 3e1eda0 | ไม่มี migration; namespace `planning` ใหม่ (th+en 349 ข้อความ); overlay `domain/planning/labels.en.ts`; ESLint glob `src/features/planning/**` เพิ่ม; D-388…D-391 |
 | I-10 | cloud ที่เหลือ | done | befe58a | ไม่มี migration; namespace `cloud` ใหม่ (th+en 175 ข้อความ); ESLint glob `src/features/cloud/**` เพิ่ม; ลบ `ROLE_LABEL/ROLE_HINT/syncStatusText/RULES`; D-392…D-394 |
 | I-11 | workforce | done | 4c1f690 | ไม่มี migration; namespace `workforce` ใหม่ (th+en 360 ข้อความ); overlay domain: `domain/workforce/suggest-words.ts`, `lagReasonIn` (task-lags), `thaiDay/thaiDayRange/monthHeaders/weekHeaders` รับ `locale`; ESLint glob `src/features/workforce/**` เพิ่ม; ลบ `PAGE_TITLE/BOARD_TITLE/FIRST_CREW_HINT/UNKNOWN_CREW_NAME/ASSIGN_PROBLEM_TEXT/SUGGESTION_NOTE/SUGGESTION_KIND_LABEL/RULES` ภาษาไทย; D-395…D-398 |
-| I-12 | subcontracting buyer | done | COMMIT | ไม่มี migration; namespace `subcontracting` ใหม่ (th+en 693 ข้อความ ใต้ `buyer.*`); ย้ายไทยตรงตัวของ `src/features/subcontracting/buyer/**` ทุกไฟล์; ไฟล์ใหม่ `buyer/text.ts`, `domain/subcontracting/provinces.ts`, `domain/subcontracting/vendor-import-words.ts`; ESLint glob `src/features/subcontracting/buyer/**` เพิ่ม; ป้ายสถานะ `*_LABEL` กลายเป็นฟังก์ชัน; D-399…D-401 |
+| I-12 | subcontracting buyer | done | 914b88a | ไม่มี migration; namespace `subcontracting` ใหม่ (th+en 693 ข้อความ ใต้ `buyer.*`); ย้ายไทยตรงตัวของ `src/features/subcontracting/buyer/**` ทุกไฟล์; ไฟล์ใหม่ `buyer/text.ts`, `domain/subcontracting/provinces.ts`, `domain/subcontracting/vendor-import-words.ts`; ESLint glob `src/features/subcontracting/buyer/**` เพิ่ม; ป้ายสถานะ `*_LABEL` กลายเป็นฟังก์ชัน; D-399…D-401 |
 | I-13 | subcontracting contracts/shared + sc.* notification en | todo | | |
 | I-14 | vendor portal | todo | | |
 
@@ -1285,7 +1285,7 @@
 - WP ถัดไปต้องรู้: I-12…I-14 ยังเรียก `thaiErrorMessage` ได้; ปฏิทินงาน/พิมพ์ตารางงานที่แสดงชื่อทีม (`useProjectTaskCrews`) ได้ชื่อทีมที่เก็บถาวรแล้วตามภาษา UI; ชื่อทีม/โครงการ/บุคลากรที่ผู้ใช้พิมพ์ไม่แปล; วันที่ในหน้านี้เป็น dd/mm ทั้งสองภาษา; ไม่เขียนเทสต์ใหม่
 - ตรวจแล้ว: tsc web, eslint `src/features/workforce src/domain/workforce`, check-parity, vitest `src/features/workforce src/domain/workforce src/i18n` ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์
 
-### I-12 — subcontracting buyer (COMMIT)
+### I-12 — subcontracting buyer (914b88a)
 - ย้ายไทยตรงตัวของ `src/features/subcontracting/buyer/**` (ภาพรวม, ทะเบียนทีมช่าง + นำเข้า CSV/Excel, ตัวช่วยสร้างแพ็กเกจ 3 ขั้น + ตัวอย่างหน้าผู้รับ, หน้าแพ็กเกจ ทุกแท็บ/โมดัล, ตารางเทียบราคา + ตกลงจ้าง + ต่อรอง + ส่งออก Excel) เข้า `subcontracting.json` (th+en 693 ข้อความ, parity + ICU parse ผ่าน); ESLint glob เพิ่มแล้ว (ห้ามเติมไทยกลับ); ไฟล์ใหม่ `buyer/text.ts` (`scText`, `scLocale`, `scTranslator`, `ScT`); ใช้ `useErrorMessage()` แทน `thaiErrorMessage` ในไฟล์เหล่านี้
 - WP ถัดไปต้องรู้: I-13 ใช้ namespace `subcontracting` ต่อโดยเพิ่มกลุ่ม `contracts.*`/`shared.*` ข้าง `buyer.*` และเรียก `scText()`/`ScT` ได้; `features/subcontracting/contracts/ui` (`ModuleOffState`, `useBuyerRights`) ที่หน้า buyer ใช้ร่วมยังเป็นไทยจนกว่า I-13; ข้อมูลโดเมนที่ยังเป็นไทยตอนสลับ en (D-401): เช็คลิสต์/คำถามแนะนำต่อสายงาน, ข้อความ todo/problem จาก backend, ชื่องานนอก BOQ; ชื่อทีมช่าง/แพ็กเกจ/โครงการ ที่ผู้ใช้พิมพ์ไม่แปล; ไม่เขียนเทสต์ใหม่ (แก้เทสต์เดิม 1 จุดที่อ้าง `OUTDATED_NOTE`)
 - ตรวจแล้ว: tsc web, eslint `src/features/subcontracting/buyer` + `eslint.config.mjs`, check-parity, vitest `src/features/subcontracting src/i18n` ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์
