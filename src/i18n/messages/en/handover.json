@@ -1,0 +1,178 @@
+{
+  "loadFailed": "Could not load the handover",
+  "retry": "Try again",
+  "tabs": {
+    "handover": "Handover",
+    "warranty": "Warranty"
+  },
+  "languages": {
+    "th": "Thai",
+    "en": "English"
+  },
+  "empty": {
+    "title": "No handover yet",
+    "hint": "Once the contract is signed, start the handover, schedule the inspection and have the customer accept the work"
+  },
+  "create": {
+    "submit": "Start handover",
+    "done": "Handover created",
+    "needsContract": "The handover can start only after the contract is signed"
+  },
+  "summary": {
+    "title": "Handover"
+  },
+  "fields": {
+    "number": "Handover no.",
+    "contract": "Contract no.",
+    "scheduledDate": "Scheduled for",
+    "inspectionDate": "Inspection date",
+    "handoverDate": "Handover date",
+    "acceptedByName": "Accepted by (customer)",
+    "warrantyMonths": "Warranty term",
+    "warrantyMonthsValue": "{months} months",
+    "language": "Document language",
+    "attendees": "Attendees",
+    "defectsNote": "Defects to fix / notes"
+  },
+  "attendees": {
+    "name": "Name",
+    "role": "Position / role",
+    "add": "Add attendee",
+    "remove": "Remove attendee"
+  },
+  "actions": {
+    "print": "Print handover note",
+    "schedule": "Schedule",
+    "reschedule": "Reschedule",
+    "inspect": "Record inspection",
+    "accept": "Customer accepts",
+    "reject": "Customer refuses"
+  },
+  "banners": {
+    "rejected": "The customer did not accept the work. Fix the items and schedule the inspection again",
+    "accepted": "The customer has accepted the work ({name}). The warranty runs from the handover date"
+  },
+  "dialogs": {
+    "schedule": {
+      "title": "Schedule the handover",
+      "done": "Appointment saved"
+    },
+    "inspect": {
+      "title": "Record the inspection",
+      "done": "Inspection recorded",
+      "fixes": "{count} item(s) marked as needing a fix. Check before saving"
+    },
+    "accept": {
+      "title": "Customer accepts the work",
+      "done": "Handover accepted: the contract is completed and the warranty has started",
+      "hint": "Accepting issues the handover number, completes the contract and starts the warranty period. It cannot be undone"
+    },
+    "reject": {
+      "title": "Customer refuses the work",
+      "done": "Recorded"
+    }
+  },
+  "checklist": {
+    "title": "Inspection checklist",
+    "empty": "No checklist items",
+    "itemTh": "Item (Thai)",
+    "itemEn": "Item (English)",
+    "note": "Note",
+    "add": "Add item",
+    "remove": "Remove item",
+    "save": "Save checklist",
+    "discard": "Discard changes",
+    "saved": "Checklist saved"
+  },
+  "documents": {
+    "title": "Handover documents",
+    "empty": "No documents yet (as-built drawings, manuals, warranty cards, test reports)",
+    "upload": "Upload document",
+    "remove": "Remove document",
+    "removeConfirm": "Remove this document?"
+  },
+  "afterHandover": {
+    "title": "After handover",
+    "hint": "Retention and guarantees are returned when they fall due under the contract",
+    "releaseRetention": "Release retention",
+    "releaseGuarantee": "Return guarantee"
+  },
+  "warranty": {
+    "title": "Warranty period",
+    "daysLeft": "Warranty remaining",
+    "days": "{days} days",
+    "overBy": "Over by {days} days",
+    "period": "Warranty period",
+    "status": "Status",
+    "openClaims": "Open claims",
+    "endingSoon": "The warranty ends soon: {days} days left",
+    "expiredNote": "The warranty has ended. Claims reported now are for the team to judge",
+    "none": {
+      "title": "The warranty has not started",
+      "hint": "The warranty starts when the customer accepts the work"
+    }
+  },
+  "claims": {
+    "title": "Warranty claims",
+    "detailTitle": "Claim {number}",
+    "created": "Claim opened",
+    "noPhotos": "No photos",
+    "assigneeRequired": "Pick a team member or a supplier (at least one)",
+    "costHint": "The cost is posted to the project's costs when the claim is closed",
+    "empty": {
+      "title": "No warranty claims",
+      "hint": "When the customer reports a problem, open a claim and follow it to the end",
+      "noWarranty": "Claims can be opened once the customer has accepted the work"
+    },
+    "create": {
+      "open": "Open a claim",
+      "title": "Open a warranty claim",
+      "submit": "Open claim"
+    },
+    "columns": {
+      "number": "No.",
+      "reportedDate": "Reported",
+      "description": "Problem",
+      "severity": "Severity",
+      "status": "Status",
+      "assignee": "Assigned to",
+      "dueDate": "Due",
+      "cost": "Cost"
+    },
+    "fields": {
+      "description": "Problem found",
+      "location": "Location",
+      "reportedDate": "Reported on",
+      "reportedByName": "Reported by",
+      "channel": "Channel",
+      "severity": "Severity",
+      "dueDate": "Fix by",
+      "photos": "Photos",
+      "assignee": "Assigned to",
+      "assigneeUser": "Team member",
+      "assigneeSupplier": "Contractor / supplier",
+      "resolutionNote": "Resolution note",
+      "resolvedAt": "Fixed on",
+      "closedAt": "Closed on",
+      "costAmount": "Cost of the fix (THB)"
+    },
+    "actions": {
+      "assign": "Assign",
+      "reassign": "Reassign",
+      "start": "Start work",
+      "resolve": "Mark fixed",
+      "close": "Close claim",
+      "reject": "Reject claim"
+    },
+    "dialog": {
+      "assign": "Assign the fix",
+      "resolve": "The fix is done",
+      "close": "Close the claim",
+      "reject": "Reject the claim (outside the warranty terms)"
+    }
+  },
+  "print": {
+    "notFound": "Handover note not found",
+    "draftTitle": "Handover note (draft)"
+  }
+}

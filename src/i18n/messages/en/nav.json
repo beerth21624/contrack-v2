@@ -32,7 +32,8 @@
     "procurement": "Purchasing",
     "siteDiary": "Site diary",
     "labour": "Labour",
-    "cost": "Cost"
+    "cost": "Cost",
+    "handover": "Handover"
   },
   "receivables": "Receivables",
   "suppliers": "Suppliers",

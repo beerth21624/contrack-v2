@@ -32,7 +32,8 @@
     "procurement": "จัดซื้อ",
     "siteDiary": "รายงานประจำวัน",
     "labour": "ค่าแรง",
-    "cost": "ต้นทุน"
+    "cost": "ต้นทุน",
+    "handover": "ส่งมอบงาน"
   },
   "receivables": "ลูกหนี้",
   "suppliers": "ผู้ขาย",

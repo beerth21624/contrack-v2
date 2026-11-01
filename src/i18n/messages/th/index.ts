@@ -32,6 +32,7 @@ import labour from './labour.json';
 import jobCost from './jobCost.json';
 import payables from './payables.json';
 import taxReports from './taxReports.json';
+import handover from './handover.json';
 
 const messages = {
   common,
@@ -68,6 +69,7 @@ const messages = {
   jobCost,
   payables,
   taxReports,
+  handover,
 };
 
 export default messages;

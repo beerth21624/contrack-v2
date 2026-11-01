@@ -443,5 +443,49 @@
     "withheld": "หักภาษี ณ ที่จ่าย",
     "paid_always": "ออกภาษีให้ตลอดไป",
     "paid_once": "ออกภาษีให้ครั้งเดียว"
+  },
+  "handoverStatus": {
+    "draft": "ร่าง",
+    "scheduled": "นัดแล้ว",
+    "inspected": "ตรวจรับแล้ว",
+    "accepted": "ลูกค้ารับมอบแล้ว",
+    "rejected": "ลูกค้าไม่รับมอบ"
+  },
+  "handoverCheckStatus": {
+    "ok": "ผ่าน",
+    "fix": "ต้องแก้",
+    "na": "ไม่เกี่ยวข้อง"
+  },
+  "handoverDocumentKind": {
+    "as_built": "แบบ As-built",
+    "manual": "คู่มือ",
+    "warranty_card": "ใบรับประกัน",
+    "test_report": "รายงานทดสอบ",
+    "other": "อื่น ๆ"
+  },
+  "warrantyStatus": {
+    "active": "อยู่ในประกัน",
+    "expired": "หมดประกัน",
+    "closed": "ปิดแล้ว"
+  },
+  "warrantyClaimStatus": {
+    "open": "รอดำเนินการ",
+    "assigned": "มอบหมายแล้ว",
+    "in_progress": "กำลังแก้ไข",
+    "resolved": "แก้ไขแล้ว",
+    "closed": "ปิดเคลม",
+    "rejected": "ปฏิเสธ"
+  },
+  "warrantyClaimChannel": {
+    "phone": "โทรศัพท์",
+    "line": "LINE",
+    "site": "หน้างาน",
+    "link": "ลิงก์ลูกค้า",
+    "other": "อื่น ๆ"
+  },
+  "warrantyClaimSeverity": {
+    "low": "ต่ำ",
+    "medium": "ปานกลาง",
+    "high": "สูง"
   }
 }

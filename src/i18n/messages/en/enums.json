@@ -443,5 +443,49 @@
     "withheld": "Withheld at source",
     "paid_always": "Paid by the payer every time",
     "paid_once": "Paid by the payer once"
+  },
+  "handoverStatus": {
+    "draft": "Draft",
+    "scheduled": "Scheduled",
+    "inspected": "Inspected",
+    "accepted": "Accepted by customer",
+    "rejected": "Refused by customer"
+  },
+  "handoverCheckStatus": {
+    "ok": "OK",
+    "fix": "Needs fix",
+    "na": "N/A"
+  },
+  "handoverDocumentKind": {
+    "as_built": "As-built drawings",
+    "manual": "Manual",
+    "warranty_card": "Warranty card",
+    "test_report": "Test report",
+    "other": "Other"
+  },
+  "warrantyStatus": {
+    "active": "In warranty",
+    "expired": "Expired",
+    "closed": "Closed"
+  },
+  "warrantyClaimStatus": {
+    "open": "Open",
+    "assigned": "Assigned",
+    "in_progress": "In progress",
+    "resolved": "Fixed",
+    "closed": "Closed",
+    "rejected": "Rejected"
+  },
+  "warrantyClaimChannel": {
+    "phone": "Phone",
+    "line": "LINE",
+    "site": "On site",
+    "link": "Customer link",
+    "other": "Other"
+  },
+  "warrantyClaimSeverity": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High"
   }
 }

@@ -376,5 +376,38 @@
     "preparedBy": "Prepared by",
     "approvedBy": "Approved by",
     "receivedBy": "Received by"
+  },
+  "handover": {
+    "title": "Handover Note",
+    "contractNo": "Contract no.",
+    "client": "Client",
+    "project": "Project",
+    "handoverDate": "Handover date",
+    "scheduledDate": "Inspection scheduled:",
+    "inspectionDate": "Inspected on:",
+    "attendees": "Attendees at the inspection",
+    "checklist": "Inspection result",
+    "item": "Item",
+    "result": "Result",
+    "note": "Note",
+    "noItems": "No checklist items",
+    "results": {
+      "ok": "OK",
+      "fix": "Needs fix",
+      "na": "N/A"
+    },
+    "defects": "Defects to fix / notes",
+    "documents": "Documents handed over with the work",
+    "kinds": {
+      "as_built": "As-built drawings",
+      "manual": "Manual",
+      "warranty_card": "Warranty card",
+      "test_report": "Test report",
+      "other": "Other document"
+    },
+    "warrantyTerm": "The contractor warrants the work for {months} months from the handover date",
+    "acceptedBy": "The client accepted the work, by",
+    "receivedBy": "Received by the client",
+    "handedBy": "Handed over by the contractor"
   }
 }
