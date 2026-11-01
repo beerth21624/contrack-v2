@@ -58,7 +58,7 @@
 | WP-44 | ใบลงเวลา งวดค่าแรง 15 วัน เบิกล่วงหน้า backend | opus | done | beadd7c | migration `0029_wp44_labour`; โมดูล `backend/src/modules/labour/`, ports `PeopleDirectory` (workforce), `SiteDiaryManpower` (site-diary), registry `PayPeriodBillChecks` (core); D-309…D-316 |
 | WP-45 | ค่าแรง web | sonnet | done | 3c96534 | route `/p/<id>/labour`, `/workspace/pay-periods[/<key>]`, `/print/pay-period/<id>`; D-317 … D-319 |
 | WP-46 | Job cost backend: ต้นทุน กำไร แจ้งเตือน | opus | done | 0bbf7ec | migration `0030_wp46_job_cost`; โมดูล `backend/src/modules/job-cost/`, port `SubcontractCommitments` (subcontracting), `CostLedger.listByProject`/`totalsByProjectCostCode`; D-320…D-323 |
-| WP-47 | กระแสเงินสดจริงข้ามโครงการ (backend) | opus | in-progress | | |
+| WP-47 | กระแสเงินสดจริงข้ามโครงการ (backend) | opus | done | d76a926 | D-324…D-328; ไม่มี migration; ไม่เขียนเทสต์ใหม่ |
 | WP-48 | Job cost + กระแสเงินสด web | sonnet | todo | | |
 | WP-49 | เจ้าหนี้: บิลผู้ขาย / งวดจ้างช่วง / ค่าแรง + 3-way match (backend) | opus | todo | | |
 | WP-50 | รอบจ่าย ใบสำคัญจ่าย และ 50 ทวิ (backend) | opus | todo | | |
@@ -1053,7 +1053,7 @@
   - WP-55: `jc_unit_rates` มีแล้ว (ยังไม่มี port `UnitRateHistory`)
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้ (backend + root) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx jest src/modules/subcontracting/contracts` 106 ผ่าน; e2e `approvals` + `projects` 26 ผ่าน; smoke ชั่วคราว (ลบแล้ว): budget 100,000 actual 70,000 progress 0.5 → EAC 120,000 `critical`, manual 105,000 → `warning`; sync จ้างช่วง 2 ครั้ง จำนวน entry เท่าเดิม, commit รวม 120,000 / actual 60,000 / release ตาม claim; alert หายแล้ว `resolved_at` ถูกตั้งและไม่แจ้งซ้ำ; สัญญา closed → committedOpen 0; e2e ชั่วคราว: โมดูลปิด 404, ก่อน baseline `baselineLocked:false`, lock baseline → 203 บรรทัด, PUT manual → alert critical, auto → alert resolved, viewer 403, hub rollup มี `forecastAtCompletion`
 
-### WP-47 — กระแสเงินสดจริงข้ามโครงการ (backend) (HASH)
+### WP-47 — กระแสเงินสดจริงข้ามโครงการ (backend) (d76a926)
 - สร้าง: pure `src/domain/job-cost/cash-projection.ts` (`CashPlanItem`, `weekStartOf`, `windowStart`, `openingBalance`, `cashProjection`; export ใน `index.ts`); contract ส่วนกระแสเงินสดต่อท้าย `erp/job-cost.ts` (`CASH_PLAN_SOURCES`, `cashPlanItemDtoSchema`, `cashWeekDtoSchema`, `cashEstimateWeekDtoSchema`, `cashSettingsDtoSchema`, `cashFlowDtoSchema`, `cashFlowQuerySchema`, `putCashSettingsRequestSchema`)
 - `ports.ts` + core: `CashPlanItem`, `CashPlanSource`, registry `CashPlanSources`; `SubcontractCashPlan` (provide ใน `contracts.parts.ts` → `subcontract-cash-plan.adapter.ts`); registry `PortalCashOutlook` + `CashOutlookWeekInfo`
 - sources: billing `application/billing-cash-plan.ts`, procurement `application/procurement-cash-plan.ts`, labour `application/labour-cash-plan.ts` (ลงทะเบียนในไฟล์ module ของแต่ละโมดูล), subcontracting ลงทะเบียนโดย job-cost (`'subcontracting'`)
