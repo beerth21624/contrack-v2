@@ -83,7 +83,7 @@
 | I-08 | calculators กลุ่ม 3 + overlay domain | done | 1673679 | ไม่มี migration; `shared/PickListPage` ย้ายข้อความ (`calculators.pickList.*`); overlay: `domain/journey/levels.en.ts`, `requirements.en.ts`, `domain/calculators/sections.en.ts`; BOQ page ใช้ `template.v5.en` ผ่าน `useBoqText`; ยกเลิกเงื่อนไขปุ่มภาษา (D-16); D-383…D-387 |
 | I-09 | planning | done | 3e1eda0 | ไม่มี migration; namespace `planning` ใหม่ (th+en 349 ข้อความ); overlay `domain/planning/labels.en.ts`; ESLint glob `src/features/planning/**` เพิ่ม; D-388…D-391 |
 | I-10 | cloud ที่เหลือ | done | befe58a | ไม่มี migration; namespace `cloud` ใหม่ (th+en 175 ข้อความ); ESLint glob `src/features/cloud/**` เพิ่ม; ลบ `ROLE_LABEL/ROLE_HINT/syncStatusText/RULES`; D-392…D-394 |
-| I-11 | workforce | done | HASH | ไม่มี migration; namespace `workforce` ใหม่ (th+en 360 ข้อความ); overlay domain: `domain/workforce/suggest-words.ts`, `lagReasonIn` (task-lags), `thaiDay/thaiDayRange/monthHeaders/weekHeaders` รับ `locale`; ESLint glob `src/features/workforce/**` เพิ่ม; ลบ `PAGE_TITLE/BOARD_TITLE/FIRST_CREW_HINT/UNKNOWN_CREW_NAME/ASSIGN_PROBLEM_TEXT/SUGGESTION_NOTE/SUGGESTION_KIND_LABEL/RULES` ภาษาไทย; D-395…D-398 |
+| I-11 | workforce | done | 4c1f690 | ไม่มี migration; namespace `workforce` ใหม่ (th+en 360 ข้อความ); overlay domain: `domain/workforce/suggest-words.ts`, `lagReasonIn` (task-lags), `thaiDay/thaiDayRange/monthHeaders/weekHeaders` รับ `locale`; ESLint glob `src/features/workforce/**` เพิ่ม; ลบ `PAGE_TITLE/BOARD_TITLE/FIRST_CREW_HINT/UNKNOWN_CREW_NAME/ASSIGN_PROBLEM_TEXT/SUGGESTION_NOTE/SUGGESTION_KIND_LABEL/RULES` ภาษาไทย; D-395…D-398 |
 | I-12 | subcontracting buyer | todo | | |
 | I-13 | subcontracting contracts/shared + sc.* notification en | todo | | |
 | I-14 | vendor portal | todo | | |
@@ -1277,7 +1277,7 @@
 - WP ถัดไปต้องรู้: I-11 (workforce) เปลี่ยน `thaiErrorMessage` เป็น `useErrorMessage()` ได้เลย และ `workforceConflictMessage(e)` คืนข้อความตามภาษา UI แล้ว; I-12…I-14 ยังเรียก `thaiErrorMessage` ได้จนกว่าจะย้าย; ใช้ `useDateTime()` (cloud/ui/common) หรือ `useFormat().dateTime` สำหรับวันที่
 - ตรวจแล้ว: tsc web, eslint `src/features/cloud`, check-parity, vitest `src/i18n src/features/cloud src/features/planning src/features/workforce` ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์; ไม่เขียนเทสต์ใหม่
 
-### I-11 — workforce (HASH)
+### I-11 — workforce (4c1f690)
 - ย้ายไทยตรงตัวของ `src/features/workforce/**` (หน้า ทีมช่างและบุคลากร, ทีมงานของโครงการ, กระดานจัดคน ทั้ง crews/project-team/board และข้อความที่สร้างจาก pure helpers) เข้า `workforce.json` (th+en 360 ข้อความ, parity + ICU parse ผ่าน); ESLint glob `src/features/workforce/**/*.{ts,tsx}` เพิ่มแล้ว (ห้ามเติมไทยกลับ); ไฟล์ใหม่ `features/workforce/text.ts`, `test-intl.tsx`, `domain/workforce/suggest-words.ts`
 - WP ถัดไปต้องรู้: I-12…I-14 ยังเรียก `thaiErrorMessage` ได้; ปฏิทินงาน/พิมพ์ตารางงานที่แสดงชื่อทีม (`useProjectTaskCrews`) ได้ชื่อทีมที่เก็บถาวรแล้วตามภาษา UI; ชื่อทีม/โครงการ/บุคลากรที่ผู้ใช้พิมพ์ไม่แปล; วันที่ในหน้านี้เป็น dd/mm ทั้งสองภาษา; ไม่เขียนเทสต์ใหม่
 - ตรวจแล้ว: tsc web, eslint `src/features/workforce src/domain/workforce`, check-parity, vitest `src/features/workforce src/domain/workforce src/i18n` ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์
