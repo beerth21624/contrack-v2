@@ -57,7 +57,7 @@
 | WP-43 | รายงานประจำวัน web | sonnet | done | 96534e5 | ไม่มี migration; `src/features/erp/site-diary/*`; routes `/p/<id>/site-diary` และ `/p/<id>/site-diary/<date>`; แท็บ `site-diary`; D-306…D-308 |
 | WP-44 | ใบลงเวลา งวดค่าแรง 15 วัน เบิกล่วงหน้า backend | opus | done | beadd7c | migration `0029_wp44_labour`; โมดูล `backend/src/modules/labour/`, ports `PeopleDirectory` (workforce), `SiteDiaryManpower` (site-diary), registry `PayPeriodBillChecks` (core); D-309…D-316 |
 | WP-45 | ค่าแรง web | sonnet | done | 3c96534 | route `/p/<id>/labour`, `/workspace/pay-periods[/<key>]`, `/print/pay-period/<id>`; D-317 … D-319 |
-| WP-46 | Job cost backend: ต้นทุน กำไร แจ้งเตือน | opus | done | COMMIT | migration `0030_wp46_job_cost`; โมดูล `backend/src/modules/job-cost/`, port `SubcontractCommitments` (subcontracting), `CostLedger.listByProject`/`totalsByProjectCostCode`; D-320…D-323 |
+| WP-46 | Job cost backend: ต้นทุน กำไร แจ้งเตือน | opus | done | 0bbf7ec | migration `0030_wp46_job_cost`; โมดูล `backend/src/modules/job-cost/`, port `SubcontractCommitments` (subcontracting), `CostLedger.listByProject`/`totalsByProjectCostCode`; D-320…D-323 |
 | WP-47 | กระแสเงินสดจริงข้ามโครงการ (backend) | opus | todo | | |
 | WP-48 | Job cost + กระแสเงินสด web | sonnet | todo | | |
 | WP-49 | เจ้าหนี้: บิลผู้ขาย / งวดจ้างช่วง / ค่าแรง + 3-way match (backend) | opus | todo | | |
@@ -1034,7 +1034,7 @@
 - WP ถัดไปต้องรู้: งวดที่ยังไม่ build (`id: null`) เปิดหน้ารายละเอียดได้ด้วยรหัสงวดและกด "สร้างงวด"; WP-49/50 (payables) ต้องมีหน้า `/payables` (ลิงก์ "สร้างบิลเพื่อจ่าย" ชี้มาที่นี่) และเมื่อ payables active ปุ่มจ่ายของงวดจะซ่อน
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/features/erp/labour`, `nav-registry.ts`, routes ใหม่ ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/features/erp/hub` ผ่าน
 
-### WP-46 — Job cost backend: ต้นทุน กำไร แจ้งเตือน (COMMIT)
+### WP-46 — Job cost backend: ต้นทุน กำไร แจ้งเตือน (0bbf7ec)
 - สร้าง: `backend/src/shared/infrastructure/database/schema-job-cost.ts` (`jc_forecasts`, `jc_alerts`, `jc_cash_settings`, `jc_unit_rates`; `jobCostTables`) + `database.ts` + `drizzle.config.ts`; contract `src/shared/contract/erp/job-cost.ts` (ส่วนต้นทุน: `JOB_COST_*` constants, `jobCostReportDtoSchema`, `jobCostLineDtoSchema`, `jobCostSectionDtoSchema`, `jobCostProfitDtoSchema`, `jobCostAlertDtoSchema`, `putJobCostForecastRequestSchema`, `jobCostAlertListQuerySchema`); pure `src/domain/job-cost/{forecast,cost-status,profit}.ts`
 - backend `backend/src/modules/job-cost/`: `domain/job-cost-rules.ts` (`projectCost`, `wantedAlerts`), repo `JobCostRepository` (drizzle/in-memory), `application/subcontract-cost-sync.ts`, `application/job-cost.service.ts` (`JobCostEngine.refresh/read/reportDto/rollup`), `application/job-cost-handlers.ts` (sweep `job-cost.alerts`), use cases (`GetJobCostReport`, `GetJobCostLedger`, `PutJobCostForecast`, `ListJobCostAlerts`), `JobCostController` (`@RequiresModule('job-cost')`), `job-cost.module.ts`; `app.module.ts`; `backend/API.md`
 - ports: `SubcontractCommitments` (+ types) ใน `ports.ts` provide ใน `subcontracting/contracts/contracts.parts.ts` (`RepositorySubcontractCommitments`, คืน [] เมื่อ subcontracting ไม่ active); `CostLedger.listByProject`, `CostLedger.totalsByProjectCostCode`
