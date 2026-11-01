@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { Button, Drawer, Image, Result, Spin } from 'antd';
 import { FileOutlined, FilePdfOutlined } from '@ant-design/icons';
 import type { FileDto } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+import { useTranslations } from 'next-intl';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { isModuleDisabled } from '../api';
 
 export function Section({ title, extra, children, tone = 'default', id }: {
@@ -45,26 +46,29 @@ export function PageSpinner() {
 }
 
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
+    const t = useTranslations('vendor');
+    const toText = useErrorMessage();
     if (isModuleDisabled(error)) {
-        return <Result status="info" title="บริการนี้ปิดอยู่" subTitle="ผู้ว่าจ้างปิดระบบจ้างช่วงชั่วคราว ลองเปิดอีกครั้งภายหลัง" />;
+        return <Result status="info" title={t('common.serviceOff')} subTitle={t('common.serviceOffHint')} />;
     }
     return (
         <Result
             status="warning"
-            title="เปิดหน้านี้ไม่ได้"
-            subTitle={thaiErrorMessage(error)}
-            extra={onRetry === undefined ? undefined : <Button type="primary" size="large" onClick={onRetry}>ลองอีกครั้ง</Button>}
+            title={t('common.loadFailed')}
+            subTitle={toText(error)}
+            extra={onRetry === undefined ? undefined : <Button type="primary" size="large" onClick={onRetry}>{t('common.retry')}</Button>}
         />
     );
 }
 
 export function SignInPrompt({ next }: { next: string }) {
+    const t = useTranslations('vendor');
     return (
         <Result
             status="info"
-            title="เข้าสู่ระบบด้วยเบอร์โทร"
-            subTitle="ใช้เบอร์ที่ได้รับข้อความเชิญ ไม่ต้องตั้งรหัสผ่าน"
-            extra={<Link href={`/vendor/login?next=${encodeURIComponent(next)}`}><Button type="primary" size="large">เข้าสู่ระบบ</Button></Link>}
+            title={t('common.signInTitle')}
+            subTitle={t('common.signInHint')}
+            extra={<Link href={`/vendor/login?next=${encodeURIComponent(next)}`}><Button type="primary" size="large">{t('common.signIn')}</Button></Link>}
         />
     );
 }

@@ -3,9 +3,10 @@
 // ─── /vendor/invitations/[id]: one job for a signed-in crew — the bid, the job details, messages ───
 import { useState } from 'react';
 import { App, Button, Collapse, Segmented } from 'antd';
+import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { BidDto, BidStatus, DeclineRequest, GuestPackageDto, MyBidStateDto } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+import type { BidDto, DeclineRequest, GuestPackageDto, MyBidStateDto } from '@/shared/contract';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { useSession } from '@/features/cloud/auth/session';
 import { vendorApi, vk } from '../api';
 import { formatBaht, formatDateTime, formatDay, formatMoney, formatPct, formatQty } from '../format';
@@ -18,53 +19,45 @@ import { AddendumBanner, AskQuestionSheet, DeadlineText, DeclineSheet, PackageDe
 
 type View = 'bid' | 'job' | 'messages';
 
-const BID_STATUS_TEXT: Record<BidStatus, string> = {
-    draft: 'ร่าง',
-    submitted: 'ส่งแล้ว รอผู้ว่าจ้างพิจารณา',
-    superseded: 'มีฉบับใหม่กว่า',
-    withdrawn: 'ถอนราคาแล้ว',
-    selected: 'ได้รับเลือก',
-    not_selected: 'ไม่ได้รับเลือก',
-};
-
 function latestSubmitted(list: readonly BidDto[]): BidDto | null {
     return list.reduce<BidDto | null>((best, b) => (best === null || b.version > best.version ? b : best), null);
 }
 
 function SubmittedBid({ pkg, bid, older }: { pkg: GuestPackageDto; bid: BidDto; older: BidDto[] }) {
+    const t = useTranslations('vendor');
     const byIdx = new Map(pkg.lines.map(l => [l.idx, l]));
     return (
-        <Section title={`ราคาที่ส่ง ฉบับที่ ${String(bid.version)}`} tone={bid.status === 'selected' ? 'success' : 'default'}>
+        <Section title={t('invitation.sentTitle', { version: bid.version })} tone={bid.status === 'selected' ? 'success' : 'default'}>
             <div className="text-figure font-bold text-gray-900">{formatBaht(bid.total)}</div>
             <div className="text-secondary text-gray-600">
-                {BID_STATUS_TEXT[bid.status]}{bid.submittedAt === null ? '' : ` · ${formatDateTime(bid.submittedAt)}`}
+                {t(`invitation.bidStatus.${bid.status}`)}{bid.submittedAt === null ? '' : ` · ${formatDateTime(bid.submittedAt)}`}
             </div>
             {bid.outdated && (
-                <div className="mt-2 text-secondary text-amber-600">ส่งก่อนผู้ว่าจ้างแก้ไขงาน ควรส่งราคาใหม่ให้ตรงกับงานล่าสุด</div>
+                <div className="mt-2 text-secondary text-amber-600">{t('invitation.outdated')}</div>
             )}
             <div className="mt-3">
-                {bid.days !== null && <Fact label="ทำงาน">{bid.days} วัน</Fact>}
-                {bid.earliestStart !== null && <Fact label="เริ่มได้">{formatDay(bid.earliestStart)}</Fact>}
-                {bid.validUntil !== null && <Fact label="ราคายืนถึง">{formatDay(bid.validUntil)}</Fact>}
-                {bid.adjustment < 0 && <Fact label="ส่วนลดรวม">{formatBaht(-bid.adjustment)}</Fact>}
+                {bid.days !== null && <Fact label={t('invitation.work')}>{t('invitation.daysValue', { n: bid.days })}</Fact>}
+                {bid.earliestStart !== null && <Fact label={t('invitation.canStart')}>{formatDay(bid.earliestStart)}</Fact>}
+                {bid.validUntil !== null && <Fact label={t('package.priceValidUntil')}>{formatDay(bid.validUntil)}</Fact>}
+                {bid.adjustment < 0 && <Fact label={t('bid.discountAria')}>{formatBaht(-bid.adjustment)}</Fact>}
                 {bid.installmentsProposal !== null && (
-                    <Fact label="งวดที่เสนอ">{bid.installmentsProposal.map(i => formatPct(i.pct)).join(' / ')}</Fact>
+                    <Fact label={t('invitation.proposedInstallments')}>{bid.installmentsProposal.map(i => formatPct(i.pct)).join(' / ')}</Fact>
                 )}
             </div>
             {bid.mode === 'unit' ? (
                 <Collapse ghost className="!mt-2 -mx-4" items={[{
-                    key: 'lines', label: 'ดูราคารายรายการ',
+                    key: 'lines', label: t('invitation.viewLines'),
                     children: bid.lines.map(l => {
                         const line = byIdx.get(l.idx);
                         return (
                             <div key={l.idx} className="flex items-baseline justify-between gap-3 py-1.5 border-b border-gray-100 last:border-b-0">
                                 <span className="text-secondary text-gray-800">
-                                    {line?.desc ?? `รายการ ${String(l.idx + 1)}`}
+                                    {line?.desc ?? t('invitation.itemN', { n: l.idx + 1 })}
                                     {!l.excluded && l.unitPrice !== null && line !== undefined && (
                                         <span className="text-gray-500"> · {formatMoney(l.unitPrice)}{l.matUnitPrice === null ? '' : ` + ${formatMoney(l.matUnitPrice)}`} × {formatQty(line.qtyPriced)}</span>
                                     )}
                                 </span>
-                                <span className="shrink-0 text-secondary font-medium">{l.excluded ? 'ไม่รวม' : formatMoney(l.total)}</span>
+                                <span className="shrink-0 text-secondary font-medium">{l.excluded ? t('invitation.excluded') : formatMoney(l.total)}</span>
                             </div>
                         );
                     }),
@@ -72,7 +65,7 @@ function SubmittedBid({ pkg, bid, older }: { pkg: GuestPackageDto; bid: BidDto; 
             ) : bid.inclusions !== '' && <p className="mt-2 mb-0 text-secondary text-gray-700 whitespace-pre-line">{bid.inclusions}</p>}
             {older.length > 0 && (
                 <div className="mt-3 text-caption text-gray-500">
-                    ฉบับก่อนหน้า: {older.map(b => `ฉบับที่ ${String(b.version)} ${formatBaht(b.total)}`).join(' · ')}
+                    {t('invitation.previous', { list: older.map(b => t('invitation.versionTotal', { version: b.version, total: formatBaht(b.total) })).join(' · ') })}
                 </div>
             )}
         </Section>
@@ -80,10 +73,12 @@ function SubmittedBid({ pkg, bid, older }: { pkg: GuestPackageDto; bid: BidDto; 
 }
 
 function InvitationBody({ id, pkg, bids }: { id: string; pkg: GuestPackageDto; bids: MyBidStateDto }) {
+    const t = useTranslations('vendor');
+    const toText = useErrorMessage();
     const qc = useQueryClient();
     const { message, modal } = App.useApp();
     const now = useNow();
-    const closed = closedReason(pkg, now);
+    const closed = closedReason(pkg, now, t);
     const canEdit = closed === null;
     const latest = latestSubmitted(bids.submitted);
     const older = bids.submitted.filter(b => b !== latest).sort((a, b) => b.version - a.version);
@@ -94,25 +89,25 @@ function InvitationBody({ id, pkg, bids }: { id: string; pkg: GuestPackageDto; b
     const refresh = () => qc.invalidateQueries({ queryKey: vk.all });
     const ask = useMutation({
         mutationFn: (question: string) => vendorApi.invitation.ask(id, { question }),
-        onSuccess: () => { setSheet(null); void message.success('ส่งคำถามแล้ว'); void refresh(); },
-        onError: (e) => { void message.error(thaiErrorMessage(e)); },
+        onSuccess: () => { setSheet(null); void message.success(t('invitation.questionSent')); void refresh(); },
+        onError: (e) => { void message.error(toText(e)); },
     });
     const decline = useMutation({
         mutationFn: (body: DeclineRequest) => vendorApi.invitation.decline(id, body),
-        onSuccess: () => { setSheet(null); void message.success('แจ้งผู้ว่าจ้างแล้ว'); void refresh(); },
-        onError: (e) => { void message.error(thaiErrorMessage(e)); },
+        onSuccess: () => { setSheet(null); void message.success(t('guest.clientNotified')); void refresh(); },
+        onError: (e) => { void message.error(toText(e)); },
     });
     const withdraw = useMutation({
         mutationFn: () => vendorApi.invitation.withdraw(id),
-        onSuccess: () => { void message.success('ถอนราคาแล้ว'); void refresh(); },
-        onError: (e) => { void message.error(thaiErrorMessage(e)); },
+        onSuccess: () => { void message.success(t('invitation.withdrawn')); void refresh(); },
+        onError: (e) => { void message.error(toText(e)); },
     });
 
     const confirmWithdraw = () => {
         modal.confirm({
-            title: 'ถอนราคานี้?',
-            content: 'ผู้ว่าจ้างจะไม่เห็นราคานี้ในการพิจารณา ส่งราคาใหม่ได้จนถึงวันปิดรับ',
-            okText: 'ถอนราคา', okButtonProps: { danger: true }, cancelText: 'ไม่ถอน',
+            title: t('invitation.withdrawTitle'),
+            content: t('invitation.withdrawContent'),
+            okText: t('invitation.withdraw'), okButtonProps: { danger: true }, cancelText: t('invitation.keep'),
             onOk: () => withdraw.mutateAsync(),
         });
     };
@@ -125,7 +120,7 @@ function InvitationBody({ id, pkg, bids }: { id: string; pkg: GuestPackageDto; b
             <Section>
                 <div className="text-secondary text-gray-600">{pkg.buyerName}</div>
                 <h1 className="m-0 text-card-title font-semibold text-gray-900">{pkg.title}</h1>
-                <div className="mt-1 text-secondary text-gray-700">ปิดรับราคา <DeadlineText deadline={pkg.bidDeadline} /></div>
+                <div className="mt-1 text-secondary text-gray-700">{t('package.bidDeadline')} <DeadlineText deadline={pkg.bidDeadline} /></div>
             </Section>
 
             {closed !== null && (
@@ -136,7 +131,7 @@ function InvitationBody({ id, pkg, bids }: { id: string; pkg: GuestPackageDto; b
             <AddendumBanner pkg={pkg} />
 
             <Segmented<View> block size="large" value={view} onChange={v => setView(v)}
-                options={[{ value: 'bid', label: 'ใบเสนอราคา' }, { value: 'job', label: 'รายละเอียดงาน' }, { value: 'messages', label: 'ข้อความ' }]} />
+                options={[{ value: 'bid', label: t('invitation.tabQuote') }, { value: 'job', label: t('invitation.tabJob') }, { value: 'messages', label: t('invitation.tabMessages') }]} />
 
             {view === 'job' && <PackageDetails pkg={pkg} showHeader={false} onAsk={canEdit ? () => setSheet('ask') : undefined} />}
 
@@ -149,24 +144,24 @@ function InvitationBody({ id, pkg, bids }: { id: string; pkg: GuestPackageDto; b
                 <>
                     <SubmittedBid pkg={pkg} bid={latest} older={older} />
                     {canEdit && latest.status === 'submitted' && (
-                        <Button type="text" danger size="large" block loading={withdraw.isPending} onClick={confirmWithdraw}>ถอนราคา</Button>
+                        <Button type="text" danger size="large" block loading={withdraw.isPending} onClick={confirmWithdraw}>{t('invitation.withdraw')}</Button>
                     )}
                     {canEdit && (
                         <BottomBar>
                             <Button type="primary" size="large" block onClick={() => setEditing(true)}>
-                                {bids.draft === null ? 'ส่งราคาใหม่' : 'ทำราคาฉบับใหม่ต่อ'}
+                                {bids.draft === null ? t('invitation.sendNew') : t('invitation.continueNew')}
                             </Button>
                         </BottomBar>
                     )}
                 </>
             ) : (
-                <Section><div className="text-secondary text-gray-600">คุณไม่ได้ส่งราคางานนี้</div></Section>
+                <Section><div className="text-secondary text-gray-600">{t('invitation.noQuote')}</div></Section>
             ))}
 
             {canEdit && view !== 'messages' && (
                 <div className="flex justify-center gap-2 py-1">
-                    <Button type="text" onClick={() => setSheet('ask')}>ถามคำถาม</Button>
-                    {latest === null && <Button type="text" onClick={() => setSheet('decline')}>ไม่รับงานนี้</Button>}
+                    <Button type="text" onClick={() => setSheet('ask')}>{t('package.askQuestion')}</Button>
+                    {latest === null && <Button type="text" onClick={() => setSheet('decline')}>{t('guest.decline')}</Button>}
                 </div>
             )}
 

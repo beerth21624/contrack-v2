@@ -1,24 +1,26 @@
 // ─── Photos are shrunk on the phone before upload (max 1600 px on the long side, JPEG 0.8) ───
 import { ALLOWED_CONTENT_TYPES } from '@/shared/contract';
-import { isApiError, thaiErrorMessage } from '@/features/cloud/api/errors';
+import { isApiError } from '@/features/cloud/api/errors';
+import { errorText } from '@/features/cloud/text';
+import { vText, type VT } from './text';
 
 /** Photo types the server takes (ALLOWED_CONTENT_TYPES without PDF): the picker's `accept` and its check. */
 export const PHOTO_CONTENT_TYPES: readonly string[] = ALLOWED_CONTENT_TYPES.filter(t => t.startsWith('image/'));
 
 /** Shown when the server refuses an upload (422): what it takes. */
-export const UPLOAD_REFUSED_TEXT = 'ไฟล์นี้ใช้ไม่ได้ (รองรับ JPG, PNG, WEBP, HEIC, PDF)';
+export const uploadRefusedText = (t: VT = vText()): string => t('photo.refused');
 
 /**
  * Thai reason a picked file cannot be sent as a photo, or null when it can. Pure. Size is not checked here: photos are
  * shrunk before upload (the server still refuses anything over MAX_FILE_BYTES).
  */
-export function photoProblem(file: { name: string; type: string }): string | null {
-    if (!PHOTO_CONTENT_TYPES.includes(file.type)) return `${file.name}: ใช้ได้เฉพาะรูป JPG, PNG, WEBP หรือ HEIC`;
+export function photoProblem(file: { name: string; type: string }, t: VT = vText()): string | null {
+    if (!PHOTO_CONTENT_TYPES.includes(file.type)) return t('photo.onlyImages', { name: file.name });
     return null;
 }
 /** Message for a failed upload: a 422 means the file itself is refused. Pure. */
-export function uploadErrorText(e: unknown): string {
-    return isApiError(e) && e.status === 422 ? UPLOAD_REFUSED_TEXT : thaiErrorMessage(e);
+export function uploadErrorText(e: unknown, t: VT = vText(), errorMessage: (e: unknown) => string = errorText): string {
+    return isApiError(e) && e.status === 422 ? uploadRefusedText(t) : errorMessage(e);
 }
 
 export const PHOTO_MAX_SIDE = 1600;

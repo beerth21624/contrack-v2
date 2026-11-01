@@ -5,9 +5,10 @@
 import { useEffect, useReducer, useState } from 'react';
 import { Alert, App, Button, Checkbox, Input, Radio, Segmented } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { BidDto, BidMode, GuestPackageDto, MyBidStateDto, PackageLineDto, SaveBidDraftRequest } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { vendorApi, vk } from '../api';
 import {
     MAX_BID_PHOTOS, bidFormReducer, bidTotal, checkBid, initBidForm, installmentsPctSum, lineTotal, pairLines,
@@ -45,6 +46,7 @@ function MoneyInput({ value, onChange, suffix, placeholder, invalid, ariaLabel }
 function LineEditor({ line, d, dispatch, flagged }: {
     line: PackageLineDto; d: LineDraft; dispatch: React.Dispatch<BidFormAction>; flagged: boolean;
 }) {
+    const t = useTranslations('vendor');
     const vendorMat = line.materialBy === 'vendor';
     const set = (patch: Partial<Omit<LineDraft, 'idx'>>) => dispatch({ type: 'line', idx: line.idx, patch });
     return (
@@ -55,32 +57,33 @@ function LineEditor({ line, d, dispatch, flagged }: {
             </div>
             {d.excluded ? (
                 <Input className="!mt-2" value={d.reason} onChange={e => set({ reason: e.target.value })} maxLength={300}
-                    placeholder="เหตุผลที่ไม่รวม เช่น ผู้ว่าจ้างทำเอง" status={flagged && d.reason.trim() === '' ? 'error' : undefined} />
+                    placeholder={t('bid.excludeReason')} status={flagged && d.reason.trim() === '' ? 'error' : undefined} />
             ) : (
                 <div className={`mt-2 grid gap-2 ${vendorMat ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                    <MoneyInput value={d.unitPrice} onChange={v => set({ unitPrice: v })} suffix={`บาท/${line.unit}`}
-                        ariaLabel={vendorMat ? `ค่าแรงต่อ${line.unit}` : `ราคาต่อ${line.unit}`}
-                        placeholder={vendorMat ? 'ค่าแรง' : 'ราคา/หน่วย'} invalid={flagged && d.unitPrice === ''} />
+                    <MoneyInput value={d.unitPrice} onChange={v => set({ unitPrice: v })} suffix={t('bid.perUnit', { unit: line.unit })}
+                        ariaLabel={vendorMat ? t('bid.labourPer', { unit: line.unit }) : t('bid.pricePer', { unit: line.unit })}
+                        placeholder={vendorMat ? t('bid.labour') : t('bid.unitPrice')} invalid={flagged && d.unitPrice === ''} />
                     {vendorMat && (
-                        <MoneyInput value={d.matUnitPrice} onChange={v => set({ matUnitPrice: v })} suffix={`บาท/${line.unit}`}
-                            ariaLabel={`ค่าวัสดุต่อ${line.unit}`} placeholder="ค่าวัสดุ" />
+                        <MoneyInput value={d.matUnitPrice} onChange={v => set({ matUnitPrice: v })} suffix={t('bid.perUnit', { unit: line.unit })}
+                            ariaLabel={t('bid.materialPer', { unit: line.unit })} placeholder={t('bid.material')} />
                     )}
                 </div>
             )}
             {vendorMat && !d.excluded && line.qtyMaterial !== line.qtyPriced && (
-                <div className="mt-1 text-caption text-gray-500">ค่าวัสดุคิดที่ {formatQty(line.qtyMaterial)} {line.unit} (รวมเผื่อเสีย)</div>
+                <div className="mt-1 text-caption text-gray-500">{t('bid.materialQty', { qty: formatQty(line.qtyMaterial), unit: line.unit })}</div>
             )}
             <div className="mt-2 flex items-center justify-between gap-2">
-                <Checkbox checked={d.excluded} onChange={e => set({ excluded: e.target.checked })}>ไม่รวมรายการนี้</Checkbox>
-                {!d.excluded && <span className="text-secondary text-gray-700">รวม <span className="font-medium text-gray-900">{formatMoney(lineTotal(line, d))}</span></span>}
+                <Checkbox checked={d.excluded} onChange={e => set({ excluded: e.target.checked })}>{t('bid.excludeItem')}</Checkbox>
+                {!d.excluded && <span className="text-secondary text-gray-700">{t('bid.lineTotal')} <span className="font-medium text-gray-900">{formatMoney(lineTotal(line, d))}</span></span>}
             </div>
         </div>
     );
 }
 
 function SaveStatus({ state }: { state: 'idle' | 'pending' | 'success' | 'error' }) {
+    const t = useTranslations('vendor');
     if (state === 'idle') return null;
-    const text = state === 'pending' ? 'กำลังบันทึกร่าง…' : state === 'success' ? 'บันทึกร่างแล้ว' : 'บันทึกร่างไม่สำเร็จ จะลองใหม่เมื่อแก้ครั้งถัดไป';
+    const text = state === 'pending' ? t('bid.saving') : state === 'success' ? t('bid.saved') : t('bid.saveFailed');
     return <span className={`text-caption ${state === 'error' ? 'text-amber-600' : 'text-gray-500'}`}>{text}</span>;
 }
 
@@ -93,6 +96,8 @@ export function BidForm({ pkg, invitationId, from, onSubmitted, onCancel }: {
     /** Leave the form (only when a submitted version exists). */
     onCancel?: () => void;
 }) {
+    const t = useTranslations('vendor');
+    const toText = useErrorMessage();
     const qc = useQueryClient();
     const { message } = App.useApp();
     const [state, dispatch] = useReducer(bidFormReducer, null, () => initBidForm(pkg, from));
@@ -109,23 +114,23 @@ export function BidForm({ pkg, invitationId, from, onSubmitted, onCancel }: {
     const saveDraft = save.mutate;
     useEffect(() => {
         if (state.rev === 0) return undefined;
-        const t = setTimeout(() => { saveDraft(toDraftRequest(pkg, state)); }, AUTOSAVE_MS);
-        return () => { clearTimeout(t); };
+        const timer = setTimeout(() => { saveDraft(toDraftRequest(pkg, state)); }, AUTOSAVE_MS);
+        return () => { clearTimeout(timer); };
     }, [state, pkg, saveDraft]);
 
     const submit = useMutation({
         mutationFn: () => vendorApi.invitation.submit(invitationId, toSubmitRequest(pkg, state)),
         onSuccess: async () => {
             setConfirmOpen(false);
-            void message.success('ส่งราคาแล้ว ผู้ว่าจ้างจะได้รับแจ้งทันที');
+            void message.success(t('bid.sent'));
             await qc.invalidateQueries({ queryKey: vk.all });
             onSubmitted();
         },
-        onError: (e) => { void message.error(thaiErrorMessage(e)); },
+        onError: (e) => { void message.error(toText(e)); },
     });
 
     const total = bidTotal(pkg, state);
-    const check = checkBid(pkg, state);
+    const check = checkBid(pkg, state, t);
     const flagged = new Set(showIssues ? check.lineIdx : []);
     const pairs = new Map(pairLines(pkg, state).map(p => [p.line.idx, p.d]));
     const field = (f: Extract<BidFormAction, { type: 'field' }>['field']) => (v: string) => dispatch({ type: 'field', field: f, value: v });
@@ -142,13 +147,13 @@ export function BidForm({ pkg, invitationId, from, onSubmitted, onCancel }: {
         <div className="flex flex-col gap-3">
             {pkg.pricingMode === 'vendor_choice' && (
                 <Segmented<BidMode> block size="large" value={state.mode} onChange={v => dispatch({ type: 'mode', mode: v })}
-                    options={[{ value: 'unit', label: 'ราคาต่อหน่วย' }, { value: 'lump', label: 'เหมารวม' }]} />
+                    options={[{ value: 'unit', label: t('bid.modeUnit') }, { value: 'lump', label: t('bid.modeLump') }]} />
             )}
 
             {state.mode === 'unit' ? (
                 <>
-                    {groupLines(pkg.lines).map(g => (
-                        <Section key={g.title} title={`หมวด ${g.title}`}>
+                    {groupLines(pkg.lines, t).map(g => (
+                        <Section key={g.title} title={t('package.section', { title: g.title })}>
                             {g.lines.map(line => {
                                 const d = pairs.get(line.idx);
                                 return d === undefined ? null : <LineEditor key={line.idx} line={line} d={d} dispatch={dispatch} flagged={flagged.has(line.idx)} />;
@@ -157,85 +162,85 @@ export function BidForm({ pkg, invitationId, from, onSubmitted, onCancel }: {
                     ))}
                     <Section>
                         <label className="flex flex-col gap-1">
-                            <Label hint="ใส่เมื่อต้องการลดจากยอดรวม">ส่วนลดรวม (บาท)</Label>
-                            <MoneyInput value={state.discount} onChange={field('discount')} ariaLabel="ส่วนลดรวม" placeholder="ไม่มี" />
+                            <Label hint={t('bid.discountHint')}>{t('bid.discountLabel')}</Label>
+                            <MoneyInput value={state.discount} onChange={field('discount')} ariaLabel={t('bid.discountAria')} placeholder={t('bid.none')} />
                         </label>
                     </Section>
                 </>
             ) : (
-                <Section title="ราคาเหมารวม">
+                <Section title={t('bid.lumpPrice')}>
                     <div className="flex flex-col gap-3">
-                        <MoneyInput value={state.lumpTotal} onChange={field('lumpTotal')} suffix="บาท" ariaLabel="ราคาเหมารวม"
+                        <MoneyInput value={state.lumpTotal} onChange={field('lumpTotal')} suffix={t('units.baht')} ariaLabel={t('bid.lumpPrice')}
                             invalid={showIssues && (state.lumpTotal === '')} />
                         <label className="flex flex-col gap-1">
-                            <Label>รวมอะไรบ้าง / ไม่รวมอะไร</Label>
+                            <Label>{t('bid.inclusions')}</Label>
                             <Input.TextArea value={state.inclusions} onChange={e => field('inclusions')(e.target.value)} maxLength={2000}
-                                autoSize={{ minRows: 3, maxRows: 8 }} placeholder="เช่น รวมค่าแรงและนั่งร้าน ไม่รวมวัสดุ" />
+                                autoSize={{ minRows: 3, maxRows: 8 }} placeholder={t('bid.inclusionsPlaceholder')} />
                         </label>
                     </div>
                 </Section>
             )}
 
-            <Section title="เวลาและทีมงาน">
+            <Section title={t('bid.timeAndCrew')}>
                 <div className="grid grid-cols-2 gap-3">
                     <label className="flex flex-col gap-1">
-                        <Label>ทำงานกี่วัน</Label>
-                        <Input value={state.days} onChange={e => field('days')(e.target.value.replace(/\D/g, ''))} inputMode="numeric" suffix="วัน" />
+                        <Label>{t('bid.days')}</Label>
+                        <Input value={state.days} onChange={e => field('days')(e.target.value.replace(/\D/g, ''))} inputMode="numeric" suffix={t('units.days')} />
                     </label>
                     <label className="flex flex-col gap-1">
-                        <Label>เริ่มได้เร็วสุด</Label>
+                        <Label>{t('bid.earliestStart')}</Label>
                         <Input type="date" value={state.earliestStart} onChange={e => field('earliestStart')(e.target.value)} />
                     </label>
                     <label className="flex flex-col gap-1">
-                        <Label>ช่าง</Label>
-                        <Input value={state.crewSkilled} onChange={e => field('crewSkilled')(e.target.value.replace(/\D/g, ''))} inputMode="numeric" suffix="คน" />
+                        <Label>{t('bid.skilled')}</Label>
+                        <Input value={state.crewSkilled} onChange={e => field('crewSkilled')(e.target.value.replace(/\D/g, ''))} inputMode="numeric" suffix={t('units.people')} />
                     </label>
                     <label className="flex flex-col gap-1">
-                        <Label>คนงาน</Label>
-                        <Input value={state.crewLabourers} onChange={e => field('crewLabourers')(e.target.value.replace(/\D/g, ''))} inputMode="numeric" suffix="คน" />
+                        <Label>{t('bid.labourers')}</Label>
+                        <Input value={state.crewLabourers} onChange={e => field('crewLabourers')(e.target.value.replace(/\D/g, ''))} inputMode="numeric" suffix={t('units.people')} />
                     </label>
                     <label className="flex flex-col gap-1 col-span-2">
-                        <Label>ราคานี้ยืนถึงวันที่</Label>
+                        <Label>{t('bid.validUntil')}</Label>
                         <Input type="date" value={state.validUntil} onChange={e => field('validUntil')(e.target.value)} />
                     </label>
                 </div>
             </Section>
 
-            <Section title="งวดจ่ายเงิน">
+            <Section title={t('bid.installments')}>
                 <Radio.Group value={state.installmentsMode} onChange={e => dispatch({ type: 'installmentsMode', mode: e.target.value as 'accept' | 'propose' })}
                     className="!flex !flex-col gap-2">
-                    <Radio value="accept">ตามที่ผู้ว่าจ้างเสนอ</Radio>
-                    <Radio value="propose">ขอเสนองวดเอง</Radio>
+                    <Radio value="accept">{t('bid.acceptInstallments')}</Radio>
+                    <Radio value="propose">{t('bid.proposeInstallments')}</Radio>
                 </Radio.Group>
                 {state.installmentsMode === 'accept' ? (
                     <div className="mt-3">
-                        {pkg.installments.map(i => <Fact key={i.no} label={`งวด ${String(i.no)} · ${formatPct(i.pct)}`}>{i.condition}</Fact>)}
+                        {pkg.installments.map(i => <Fact key={i.no} label={t('package.installmentLabel', { no: i.no, pct: formatPct(i.pct) })}>{i.condition}</Fact>)}
                     </div>
                 ) : (
                     <div className="mt-3 flex flex-col gap-3">
                         {state.installments.map((inst, k) => (
                             <div key={k} className="flex gap-2 items-start">
-                                <span className="pt-2.5 text-secondary text-gray-600 w-12 shrink-0">งวด {k + 1}</span>
+                                <span className="pt-2.5 text-secondary text-gray-600 w-12 shrink-0">{t('bid.installmentN', { n: k + 1 })}</span>
                                 <div className="flex-1 min-w-0 flex flex-col gap-2">
                                     <Input value={inst.pct} onChange={e => dispatch({ type: 'installment', index: k, patch: { pct: amountChars(e.target.value) } })}
-                                        inputMode="decimal" suffix="%" aria-label={`งวด ${String(k + 1)} กี่เปอร์เซ็นต์`} />
+                                        inputMode="decimal" suffix="%" aria-label={t('bid.installmentPct', { n: k + 1 })} />
                                     <Input value={inst.condition} onChange={e => dispatch({ type: 'installment', index: k, patch: { condition: e.target.value } })}
-                                        maxLength={300} placeholder="เบิกได้เมื่อ… เช่น ก่ออิฐเสร็จ" />
+                                        maxLength={300} placeholder={t('bid.conditionPlaceholder')} />
                                 </div>
-                                <Button type="text" aria-label="ลบงวด" icon={<DeleteOutlined />} disabled={state.installments.length <= 1}
+                                <Button type="text" aria-label={t('bid.removeInstallment')} icon={<DeleteOutlined />} disabled={state.installments.length <= 1}
                                     onClick={() => dispatch({ type: 'removeInstallment', index: k })} />
                             </div>
                         ))}
                         <div className="flex items-center justify-between">
-                            <Button icon={<PlusOutlined />} onClick={() => dispatch({ type: 'addInstallment' })}>เพิ่มงวด</Button>
-                            <span className={`text-secondary font-medium ${Math.abs(pctSum - 100) <= 0.01 ? 'text-green-700' : 'text-gray-600'}`}>รวม {String(pctSum)}%</span>
+                            <Button icon={<PlusOutlined />} onClick={() => dispatch({ type: 'addInstallment' })}>{t('bid.addInstallment')}</Button>
+                            <span className={`text-secondary font-medium ${Math.abs(pctSum - 100) <= 0.01 ? 'text-green-700' : 'text-gray-600'}`}>{t('bid.pctTotal', { sum: String(pctSum) })}</span>
                         </div>
                     </div>
                 )}
             </Section>
 
             {pkg.terms.questions.length > 0 && (
-                <Section title="คำถามจากผู้ว่าจ้าง">
+                <Section title={t('bid.clientQuestions')}>
                     <div className="flex flex-col gap-3">
                         {pkg.terms.questions.map((q, k) => (
                             <label key={k} className="flex flex-col gap-1">
@@ -248,50 +253,50 @@ export function BidForm({ pkg, invitationId, from, onSubmitted, onCancel }: {
                 </Section>
             )}
 
-            <Section title="หมายเหตุและรูปผลงาน">
+            <Section title={t('bid.noteAndPhotos')}>
                 <div className="flex flex-col gap-3">
                     <Input.TextArea value={state.note} onChange={e => field('note')(e.target.value)} maxLength={2000}
-                        autoSize={{ minRows: 2, maxRows: 6 }} placeholder="สิ่งที่อยากบอกผู้ว่าจ้าง (ไม่บังคับ)" />
-                    <PhotoPicker photos={state.photos} max={MAX_BID_PHOTOS} purpose="bid_photo" label="เพิ่มรูปผลงานที่คล้ายกัน"
+                        autoSize={{ minRows: 2, maxRows: 6 }} placeholder={t('bid.notePlaceholder')} />
+                    <PhotoPicker photos={state.photos} max={MAX_BID_PHOTOS} purpose="bid_photo" label={t('bid.addPhotos')}
                         onAdd={file => dispatch({ type: 'addPhoto', file })} onRemove={id => dispatch({ type: 'removePhoto', id })} />
                 </div>
             </Section>
 
-            {onCancel !== undefined && <Button type="text" size="large" block onClick={onCancel}>กลับไปดูราคาที่ส่งแล้ว</Button>}
+            {onCancel !== undefined && <Button type="text" size="large" block onClick={onCancel}>{t('bid.backToSent')}</Button>}
 
             <BottomBar>
                 <div className="flex items-center gap-3">
                     <div className="flex-1 min-w-0">
-                        <div className="text-caption text-gray-600">ยอดรวม</div>
+                        <div className="text-caption text-gray-600">{t('bid.total')}</div>
                         <div className="text-card-title font-semibold text-gray-900 truncate">{formatBaht(total)}</div>
                         <SaveStatus state={save.status} />
                     </div>
-                    <Button type="primary" size="large" onClick={() => setConfirmOpen(true)}>ส่งราคา</Button>
+                    <Button type="primary" size="large" onClick={() => setConfirmOpen(true)}>{t('bid.submit')}</Button>
                 </div>
             </BottomBar>
 
-            <Sheet open={confirmOpen} onClose={() => setConfirmOpen(false)} title="ตรวจก่อนส่งราคา">
+            <Sheet open={confirmOpen} onClose={() => setConfirmOpen(false)} title={t('bid.reviewTitle')}>
                 <div className="flex flex-col gap-3">
                     <div className="text-center py-2">
-                        <div className="text-secondary text-gray-600">ยอดที่จะส่งให้ {pkg.buyerName}</div>
+                        <div className="text-secondary text-gray-600">{t('bid.amountTo', { name: pkg.buyerName })}</div>
                         <div className="text-figure font-bold text-gray-900">{formatBaht(total)}</div>
-                        {state.days !== '' && <div className="text-secondary text-gray-600">ทำงาน {state.days} วัน</div>}
+                        {state.days !== '' && <div className="text-secondary text-gray-600">{t('bid.workDays', { n: state.days })}</div>}
                     </div>
                     {check.errors.length > 0 && (
-                        <Alert type="error" showIcon title="ยังส่งไม่ได้" description={<ul className="m-0 pl-4">{check.errors.map(e => <li key={e}>{e}</li>)}</ul>} />
+                        <Alert type="error" showIcon title={t('bid.cannotSend')} description={<ul className="m-0 pl-4">{check.errors.map(e => <li key={e}>{e}</li>)}</ul>} />
                     )}
                     {check.warnings.length > 0 && (
-                        <Alert type="warning" showIcon title="ตรวจอีกครั้ง" description={<ul className="m-0 pl-4">{check.warnings.map(e => <li key={e}>{e}</li>)}</ul>} />
+                        <Alert type="warning" showIcon title={t('bid.checkAgain')} description={<ul className="m-0 pl-4">{check.warnings.map(e => <li key={e}>{e}</li>)}</ul>} />
                     )}
                     {check.errors.length > 0 ? (
-                        <Button type="primary" size="large" block onClick={fixIssues}>กลับไปแก้</Button>
+                        <Button type="primary" size="large" block onClick={fixIssues}>{t('bid.goFix')}</Button>
                     ) : (
                         <>
-                            <Button type="primary" size="large" block loading={submit.isPending} onClick={() => submit.mutate()}>ยืนยันส่งราคา</Button>
-                            {check.warnings.length > 0 && <Button type="text" block onClick={fixIssues}>กลับไปแก้</Button>}
+                            <Button type="primary" size="large" block loading={submit.isPending} onClick={() => submit.mutate()}>{t('bid.confirmSend')}</Button>
+                            {check.warnings.length > 0 && <Button type="text" block onClick={fixIssues}>{t('bid.goFix')}</Button>}
                         </>
                     )}
-                    <div className="text-caption text-gray-500 text-center">ส่งแล้วแก้ไม่ได้ แต่ส่งราคาใหม่ได้จนถึงวันปิดรับ</div>
+                    <div className="text-caption text-gray-500 text-center">{t('bid.afterSendNote')}</div>
                 </div>
             </Sheet>
         </div>

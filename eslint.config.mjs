@@ -117,6 +117,9 @@ const eslintConfig = defineConfig([
       // Track I-13: subcontracting contracts (list, contract page, claims, retention, settings, report, print) and shared pieces
       "src/features/subcontracting/contracts/**/*.{ts,tsx}",
       "src/features/subcontracting/shared/**/*.{ts,tsx}",
+      // Track I-14: vendor (crew) portal; the province list and tool names live in src/domain/subcontracting
+      "src/features/vendor/**/*.{ts,tsx}",
+      "src/app/(vendor)/**/*.{ts,tsx}",
     ],
     ignores: ["**/__tests__/**", "src/features/export/baht-text.ts"],
     rules: {

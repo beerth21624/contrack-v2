@@ -4,9 +4,10 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Alert, Button, Input } from 'antd';
+import { useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
 import { OTP_LENGTH, formatThaiPhone, phoneSchema, type MyVendorsDto } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { safeNext } from '@/features/cloud/auth/form-rules';
 import { useSession } from '@/features/cloud/auth/session';
 import { vendorApi, vk } from '../api';
@@ -32,6 +33,8 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 export function VendorLoginPage() {
+    const t = useTranslations('vendor');
+    const toText = useErrorMessage();
     const router = useRouter();
     const qc = useQueryClient();
     const params = useSearchParams();
@@ -92,14 +95,14 @@ export function VendorLoginPage() {
         try {
             await fn();
         } catch (e) {
-            setError(thaiErrorMessage(e));
+            setError(toText(e));
         } finally {
             setBusy(false);
         }
     };
 
     const sendCode = () => run(async () => {
-        if (e164 === null) { setError('เบอร์โทรไม่ถูกต้อง ตัวอย่าง 081-234-5678'); return; }
+        if (e164 === null) { setError(t('login.invalidPhone')); return; }
         const res = await vendorApi.otp.check({ phone: e164 });
         await vendorApi.otp.request({ phone: e164 });
         setExists(res.exists);
@@ -132,15 +135,15 @@ export function VendorLoginPage() {
 
     if (step === 'phone' && status === 'signed-in') {
         return (
-            <Section title="เข้าสู่ระบบอยู่แล้ว">
-                <Button type="primary" size="large" block loading={busy} onClick={() => { void run(() => afterSignIn(null)); }}>ไปต่อ</Button>
+            <Section title={t('login.alreadySignedIn')}>
+                <Button type="primary" size="large" block loading={busy} onClick={() => { void run(() => afterSignIn(null)); }}>{t('login.continue')}</Button>
             </Section>
         );
     }
 
     if (step === 'team') {
         return (
-            <Section title="ทำงานในนามทีมไหน">
+            <Section title={t('login.whichTeam')}>
                 <div className="flex flex-col gap-2">
                     {vendors.map(v => (
                         <Button key={v.workspaceId} size="large" block onClick={() => { void run(() => enter(v.workspaceId)); }} disabled={busy}>
@@ -162,49 +165,49 @@ export function VendorLoginPage() {
 
     return (
         <Section>
-            <h1 className="m-0 text-page-title font-semibold">เข้าใช้งานด้วยเบอร์โทร</h1>
-            <p className="m-0 mt-1 mb-4 text-secondary text-gray-600">ไม่ต้องตั้งรหัสผ่าน ระบบส่งรหัส 6 หลักทาง SMS</p>
+            <h1 className="m-0 text-page-title font-semibold">{t('login.title')}</h1>
+            <p className="m-0 mt-1 mb-4 text-secondary text-gray-600">{t('login.subtitle')}</p>
             {error !== null && <Alert type="error" showIcon title={error} className="!mb-4" />}
 
             {step === 'phone' && (
                 <form className="flex flex-col gap-4" onSubmit={e => { e.preventDefault(); void sendCode(); }}>
-                    <Field label="เบอร์มือถือ" hint={tail === '' ? undefined : `เบอร์ที่ผู้ว่าจ้างเชิญลงท้ายด้วย ${tail}`}>
+                    <Field label={t('login.mobile')} hint={tail === '' ? undefined : t('login.invitedTail', { tail })}>
                         <Input value={phone} onChange={e => setPhone(e.target.value)} type="tel" inputMode="tel" autoComplete="tel"
                             placeholder="081-234-5678" maxLength={16} autoFocus />
                     </Field>
                     {e164 !== null && !phoneMatchesMasked(phone, masked) && (
-                        <div className="text-caption text-amber-600">เบอร์นี้ไม่ตรงกับที่ผู้ว่าจ้างเชิญ ใช้ต่อได้ แต่ผู้ว่าจ้างจะเห็นเป็นเบอร์นี้</div>
+                        <div className="text-caption text-amber-600">{t('login.phoneMismatch')}</div>
                     )}
-                    <Button type="primary" htmlType="submit" size="large" block loading={busy} disabled={e164 === null}>ขอรหัส</Button>
+                    <Button type="primary" htmlType="submit" size="large" block loading={busy} disabled={e164 === null}>{t('login.requestCode')}</Button>
                 </form>
             )}
 
             {(step === 'code' || step === 'finishing') && (
                 <form className="flex flex-col gap-4" onSubmit={e => { e.preventDefault(); void verify(); }}>
                     <div className="text-body text-gray-700">
-                        ส่งรหัสไปที่ <span className="font-medium">{e164 === null ? phone : formatThaiPhone(e164)}</span>
-                        <Button type="link" size="small" onClick={() => { setStep('phone'); setError(null); }}>เปลี่ยนเบอร์</Button>
+                        {t('login.codeSentTo')} <span className="font-medium">{e164 === null ? phone : formatThaiPhone(e164)}</span>
+                        <Button type="link" size="small" onClick={() => { setStep('phone'); setError(null); }}>{t('login.changeNumber')}</Button>
                     </div>
-                    <Field label="รหัส 6 หลัก">
+                    <Field label={t('login.code6')}>
                         <Input value={code} onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, OTP_LENGTH))}
                             inputMode="numeric" autoComplete="one-time-code" maxLength={OTP_LENGTH} autoFocus
-                            style={{ fontSize: 24, letterSpacing: 8, textAlign: 'center', height: 56 }} aria-label="รหัส 6 หลัก" />
+                            style={{ fontSize: 24, letterSpacing: 8, textAlign: 'center', height: 56 }} aria-label={t('login.code6')} />
                     </Field>
                     {needNames && (
                         <>
-                            <Field label="ชื่อผู้ติดต่อ">
-                                <Input value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} autoComplete="name" placeholder="เช่น สมชาย ใจดี" />
+                            <Field label={t('createProfile.contactName')}>
+                                <Input value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={80} autoComplete="name" placeholder={t('login.namePlaceholder')} />
                             </Field>
-                            <Field label="ชื่อทีม / ชื่อร้าน" hint="ผู้ว่าจ้างจะเห็นชื่อนี้ แก้ทีหลังได้">
-                                <Input value={teamName} onChange={e => setTeamName(e.target.value)} maxLength={120} autoComplete="organization" placeholder={invitedName === '' ? 'เช่น ทีมช่างสมชาย' : invitedName} />
+                            <Field label={t('createProfile.teamName')} hint={t('login.teamHint')}>
+                                <Input value={teamName} onChange={e => setTeamName(e.target.value)} maxLength={120} autoComplete="organization" placeholder={invitedName === '' ? t('createProfile.teamNamePlaceholder') : invitedName} />
                             </Field>
                         </>
                     )}
                     <Button type="primary" htmlType="submit" size="large" block loading={busy || step === 'finishing'} disabled={!codeOk || !namesOk}>
-                        เข้าใช้งาน
+                        {t('login.enter')}
                     </Button>
                     <Button type="text" block disabled={waitMs > 0 || busy} onClick={() => { void resend(); }}>
-                        {waitMs > 0 ? `ส่งรหัสอีกครั้งได้ใน ${String(Math.ceil(waitMs / 1000))} วินาที` : 'ส่งรหัสอีกครั้ง'}
+                        {waitMs > 0 ? t('login.resendIn', { n: Math.ceil(waitMs / 1000) }) : t('login.resend')}
                     </Button>
                 </form>
             )}

@@ -4,12 +4,14 @@
 // Only the photo types the server takes (JPG, PNG, WEBP, HEIC); anything else gets a clear message and is not sent.
 import { useRef, useState } from 'react';
 import { App, Button, Image } from 'antd';
+import { useTranslations } from 'next-intl';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { CameraOutlined, CloseOutlined } from '@ant-design/icons';
 import type { FileDto, FilePurpose } from '@/shared/contract';
 import { uploadFile } from '../api';
 import { PHOTO_CONTENT_TYPES, photoProblem, uploadErrorText } from '../images';
 
-export function PhotoPicker({ photos, max, purpose, onAdd, onRemove, label = 'เพิ่มรูป', disabled = false }: {
+export function PhotoPicker({ photos, max, purpose, onAdd, onRemove, label, disabled = false }: {
     photos: readonly FileDto[];
     max: number;
     purpose: FilePurpose;
@@ -18,6 +20,8 @@ export function PhotoPicker({ photos, max, purpose, onAdd, onRemove, label = '�
     label?: string;
     disabled?: boolean;
 }) {
+    const t = useTranslations('vendor');
+    const toText = useErrorMessage();
     const { message } = App.useApp();
     const input = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(0);
@@ -26,8 +30,8 @@ export function PhotoPicker({ photos, max, purpose, onAdd, onRemove, label = '�
     const onPick = async (list: FileList | null) => {
         const picked = Array.from(list ?? []);
         if (input.current !== null) input.current.value = '';
-        const refused = picked.map(photoProblem).filter((p): p is string => p !== null);
-        if (refused.length > 0) void message.warning(refused.length === 1 ? refused[0] : `${refused[0]} (และอีก ${String(refused.length - 1)} ไฟล์)`);
+        const refused = picked.map(f => photoProblem(f, t)).filter((p): p is string => p !== null);
+        if (refused.length > 0) void message.warning(refused.length === 1 ? refused[0] : t('photo.more', { first: refused[0] ?? '', n: refused.length - 1 }));
         const files = picked.filter(f => photoProblem(f) === null).slice(0, Math.max(0, room));
         if (files.length === 0) return;
         setUploading(n => n + files.length);
@@ -35,7 +39,7 @@ export function PhotoPicker({ photos, max, purpose, onAdd, onRemove, label = '�
             try {
                 onAdd(await uploadFile(f, purpose));
             } catch (e) {
-                void message.error(`อัปโหลดรูปไม่สำเร็จ: ${uploadErrorText(e)}`);
+                void message.error(t('photo.uploadFailed', { reason: uploadErrorText(e, t, toText) }));
             } finally {
                 setUploading(n => n - 1);
             }
@@ -51,7 +55,7 @@ export function PhotoPicker({ photos, max, purpose, onAdd, onRemove, label = '�
                             <div key={p.id} className="relative">
                                 <Image src={p.url} alt={p.name} width="100%" height={96} style={{ objectFit: 'cover', borderRadius: 6 }} />
                                 {!disabled && (
-                                    <Button size="small" shape="circle" aria-label="เอารูปออก" icon={<CloseOutlined />}
+                                    <Button size="small" shape="circle" aria-label={t('photo.remove')} icon={<CloseOutlined />}
                                         className="!absolute top-1 right-1" onClick={() => onRemove(p.id)} />
                                 )}
                             </div>
@@ -62,7 +66,7 @@ export function PhotoPicker({ photos, max, purpose, onAdd, onRemove, label = '�
             <input ref={input} type="file" accept={PHOTO_CONTENT_TYPES.join(',')} multiple hidden onChange={e => { void onPick(e.target.files); }} />
             <Button block size="large" icon={<CameraOutlined />} loading={uploading > 0} disabled={disabled || room <= 0}
                 onClick={() => input.current?.click()}>
-                {uploading > 0 ? 'กำลังอัปโหลด…' : room <= 0 ? `ครบ ${String(max)} รูปแล้ว` : label}
+                {uploading > 0 ? t('photo.uploading') : room <= 0 ? t('photo.full', { n: max }) : label ?? t('photo.add')}
             </Button>
         </div>
     );

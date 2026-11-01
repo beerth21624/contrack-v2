@@ -1,33 +1,49 @@
-// ─── Plain Thai wording and number/date formats of the vendor (crew) screens. Pure: no React, no browser. ───
+// ─── Plain wording and number/date formats of the vendor (crew) screens, in the UI locale. Pure: no React, no browser. ───
 import type {
     DeclineReason, InvitationStatus, MaterialBy, Penalty, PricingMode, Provider, SubcontractStatus, SupplyMode,
 } from '@/shared/contract';
 import { round2 } from '@/domain/subcontracting/snapshot';
+import type { Locale } from '@/i18n/config';
+import { PROVINCE_NAMES_EN } from '@/domain/subcontracting/provinces';
+import { vLocale, vText, vendorTranslator, type VT } from './text';
 
-const MONEY = new Intl.NumberFormat('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-const QTY = new Intl.NumberFormat('th-TH', { maximumFractionDigits: 2 });
-// Thai months with the Christian-era year, like the rest of the app.
-const DATE = new Intl.DateTimeFormat('th-TH-u-ca-gregory', { day: 'numeric', month: 'short', year: '2-digit' });
-const DATE_TIME = new Intl.DateTimeFormat('th-TH-u-ca-gregory', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' });
-const MONTH = new Intl.DateTimeFormat('th-TH-u-ca-gregory', { month: 'short', year: '2-digit' });
+// Thai: Thai months with the Christian-era year, like the rest of the app. English: day, short month, full year.
+interface Formats { money: Intl.NumberFormat; qty: Intl.NumberFormat; date: Intl.DateTimeFormat; dateTime: Intl.DateTimeFormat; month: Intl.DateTimeFormat }
+const FORMATS = new Map<Locale, Formats>();
+function formats(locale: Locale): Formats {
+    const hit = FORMATS.get(locale);
+    if (hit !== undefined) return hit;
+    const th = locale === 'th';
+    const tag = th ? 'th-TH-u-ca-gregory' : 'en-GB';
+    const year = th ? '2-digit' : 'numeric';
+    const made: Formats = {
+        money: new Intl.NumberFormat(th ? 'th-TH' : 'en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }),
+        qty: new Intl.NumberFormat(th ? 'th-TH' : 'en-US', { maximumFractionDigits: 2 }),
+        date: new Intl.DateTimeFormat(tag, { day: 'numeric', month: 'short', year }),
+        dateTime: new Intl.DateTimeFormat(tag, { day: 'numeric', month: 'short', year, hour: '2-digit', minute: '2-digit', hour12: false }),
+        month: new Intl.DateTimeFormat(tag, { month: 'short', year }),
+    };
+    FORMATS.set(locale, made);
+    return made;
+}
 
 /** 125000 → "125,000" (up to 2 decimals). */
-export function formatMoney(n: number): string {
-    return MONEY.format(Number.isFinite(n) ? round2(n) : 0);
+export function formatMoney(n: number, locale: Locale = vLocale()): string {
+    return formats(locale).money.format(Number.isFinite(n) ? round2(n) : 0);
 }
 
-/** 125000 → "125,000 บาท". */
-export function formatBaht(n: number): string {
-    return `${formatMoney(n)} บาท`;
+/** 125000 → "125,000 บาท" (English: "THB 125,000"). */
+export function formatBaht(n: number, locale: Locale = vLocale()): string {
+    return locale === 'th' ? `${formatMoney(n, locale)} ${vendorTranslator(locale)('units.baht')}` : `THB ${formatMoney(n, locale)}`;
 }
 
-export function formatQty(n: number): string {
-    return QTY.format(n);
+export function formatQty(n: number, locale: Locale = vLocale()): string {
+    return formats(locale).qty.format(n);
 }
 
 /** 0.05 → "5%" (up to 2 decimals). */
-export function formatPct(fraction: number): string {
-    return `${QTY.format(Math.round(fraction * 10000) / 100)}%`;
+export function formatPct(fraction: number, locale: Locale = vLocale()): string {
+    return `${formats(locale).qty.format(Math.round(fraction * 10000) / 100)}%`;
 }
 
 /** "2026-10-30" (local calendar day) → Date at local midnight; null when malformed. */
@@ -39,22 +55,22 @@ export function parseDay(day: string): Date | null {
 }
 
 /** "2026-10-30" → "30 ต.ค. 69". */
-export function formatDay(day: string | null): string {
+export function formatDay(day: string | null, locale: Locale = vLocale()): string {
     if (day === null) return '';
     const d = parseDay(day);
-    return d === null ? '' : DATE.format(d);
+    return d === null ? '' : formats(locale).date.format(d);
 }
 
-/** ISO date-time → "30 ต.ค. 69 17:00". */
-export function formatDateTime(iso: string): string {
+/** ISO date-time → "30 ต.ค. 69 17:00" (English: "30 Oct 2026, 17:00"). */
+export function formatDateTime(iso: string, locale: Locale = vLocale()): string {
     const d = new Date(iso);
-    return Number.isNaN(d.getTime()) ? '' : DATE_TIME.format(d);
+    return Number.isNaN(d.getTime()) ? '' : formats(locale).dateTime.format(d);
 }
 
 /** "2026-11" → "พ.ย. 69". */
-export function formatMonth(month: string): string {
+export function formatMonth(month: string, locale: Locale = vLocale()): string {
     const d = parseDay(`${month}-01`);
-    return d === null ? month : MONTH.format(d);
+    return d === null ? month : formats(locale).month.format(d);
 }
 
 /** Date → "2026-10-30" (local calendar day). */
@@ -77,19 +93,19 @@ export interface DeadlineInfo {
     passed: boolean;
     /** Less than a day left. */
     soon: boolean;
-    /** "เหลือ 2 วัน", "เหลือ 5 ชม.", "เหลือ 12 นาที", "ปิดรับแล้ว". */
+    /** "เหลือ 2 วัน", "เหลือ 5 ชม.", "เหลือ 12 นาที", "ปิดรับแล้ว" (English: "2 days left", …, "Closed"). */
     left: string;
 }
 
 /** Countdown to a deadline (ISO) seen at `nowMs`. */
-export function deadlineInfo(deadlineIso: string, nowMs: number): DeadlineInfo {
+export function deadlineInfo(deadlineIso: string, nowMs: number, t: VT = vText()): DeadlineInfo {
     const ms = new Date(deadlineIso).getTime() - nowMs;
-    if (Number.isNaN(ms) || ms <= 0) return { passed: true, soon: false, left: 'ปิดรับแล้ว' };
+    if (Number.isNaN(ms) || ms <= 0) return { passed: true, soon: false, left: t('deadline.closed') };
     const minutes = Math.floor(ms / 60_000);
-    if (minutes < 60) return { passed: false, soon: true, left: `เหลือ ${String(Math.max(1, minutes))} นาที` };
+    if (minutes < 60) return { passed: false, soon: true, left: t('deadline.minutesLeft', { n: Math.max(1, minutes) }) };
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return { passed: false, soon: true, left: `เหลือ ${String(hours)} ชม.` };
-    return { passed: false, soon: false, left: `เหลือ ${String(Math.floor(hours / 24))} วัน` };
+    if (hours < 24) return { passed: false, soon: true, left: t('deadline.hoursLeft', { n: hours }) };
+    return { passed: false, soon: false, left: t('deadline.daysLeft', { n: Math.floor(hours / 24) }) };
 }
 
 /**
@@ -116,83 +132,53 @@ export function maskPhone(e164: string): string {
     return `${local.slice(0, 3)}-xxx-${local.slice(-4)}`;
 }
 
-export const SUPPLY_MODE_TEXT: Record<SupplyMode, string> = {
-    labour_only: 'ค่าแรงอย่างเดียว ผู้ว่าจ้างจัดหาวัสดุ',
-    with_materials: 'รวมวัสดุ คุณจัดหาวัสดุเองทั้งหมด',
-    per_line: 'บางรายการรวมวัสดุ (ดูที่แต่ละรายการ)',
-};
+export const supplyModeText = (m: SupplyMode, t: VT = vText()): string => t(`labels.supplyMode.${m}`);
 
-export const PRICING_MODE_TEXT: Record<PricingMode, string> = {
-    unit: 'เสนอราคาต่อหน่วย ทีละรายการ',
-    lump: 'เสนอราคาเหมารวมทั้งงาน',
-    vendor_choice: 'เสนอต่อหน่วยหรือเหมารวมก็ได้',
-};
+export const pricingModeText = (m: PricingMode, t: VT = vText()): string => t(`labels.pricingMode.${m}`);
 
-export const PROVIDER_TEXT: Record<Provider, string> = {
-    buyer: 'ผู้ว่าจ้างจัดให้',
-    vendor: 'คุณจัดเอง',
-    none: 'ไม่ต้องใช้',
-};
+export const providerText = (p: Provider, t: VT = vText()): string => t(`labels.provider.${p}`);
 
-export const PROVISION_LABEL = { water: 'น้ำใช้', power: 'ไฟฟ้า', lodging: 'ที่พักคนงาน', scaffolding: 'นั่งร้าน' } as const;
+export const provisionLabel = (p: 'water' | 'power' | 'lodging' | 'scaffolding', t: VT = vText()): string => t(`labels.provision.${p}`);
 
-export function materialByText(by: MaterialBy): string {
-    return by === 'vendor' ? 'คุณจัดหาวัสดุ' : 'ผู้ว่าจ้างจัดหาวัสดุ';
+export function materialByText(by: MaterialBy, t: VT = vText()): string {
+    return by === 'vendor' ? t('labels.materialBy.vendor') : t('labels.materialBy.buyer');
 }
 
-export function penaltyText(p: Penalty): string {
+export function penaltyText(p: Penalty, t: VT = vText(), locale: Locale = vLocale()): string {
     switch (p.kind) {
-        case 'none': return 'ไม่มีค่าปรับ';
-        case 'per_day': return `ปรับวันละ ${formatBaht(p.amount)} เมื่อเสร็จช้า`;
-        case 'pct_per_day': return `ปรับวันละ ${formatPct(p.rate)} ของค่างาน เมื่อเสร็จช้า`;
+        case 'none': return t('labels.penalty.none');
+        case 'per_day': return t('labels.penalty.perDay', { amount: formatBaht(p.amount, locale) });
+        case 'pct_per_day': return t('labels.penalty.pctPerDay', { rate: formatPct(p.rate, locale) });
     }
 }
 
-export const DECLINE_REASON_TEXT: Record<DeclineReason, string> = {
-    busy: 'คิวงานเต็ม',
-    too_far: 'ไกลเกินไป',
-    not_my_trade: 'ไม่ใช่งานที่ทีมทำ',
-    price_too_low: 'งบน่าจะไม่พอ',
-    other: 'เหตุผลอื่น',
-};
+export const declineReasonText = (r: DeclineReason, t: VT = vText()): string => t(`labels.declineReason.${r}`);
 
-export const INVITATION_STATUS_TEXT: Record<InvitationStatus, string> = {
-    sent: 'ยังไม่ได้เปิดดู',
-    viewed: 'ยังไม่ได้เสนอราคา',
-    declined: 'ไม่รับงานนี้',
-    submitted: 'ส่งราคาแล้ว',
-    withdrawn: 'ผู้ว่าจ้างถอนคำเชิญ',
-    won: 'ได้งาน',
-    lost: 'ไม่ได้งาน',
-    closed: 'ปิดแล้ว',
-};
+export const invitationStatusText = (s: InvitationStatus, t: VT = vText()): string => t(`labels.invitationStatus.${s}`);
 
-export const SUBCONTRACT_STATUS_TEXT: Record<SubcontractStatus, string> = {
-    pending_acceptance: 'รอคุณยอมรับเงื่อนไข',
-    active: 'กำลังทำงาน',
-    completed: 'งานเสร็จ รอคืนเงินประกัน',
-    closed: 'ปิดสัญญาแล้ว',
-    cancelled: 'ยกเลิกแล้ว',
-    terminated: 'เลิกสัญญาแล้ว',
-};
+export const subcontractStatusText = (s: SubcontractStatus, t: VT = vText()): string => t(`labels.subcontractStatus.${s}`);
 
-export const OUTCOME_TEXT = {
-    pending: '',
-    won: 'คุณได้งานนี้',
-    lost: 'ผู้ว่าจ้างเลือกทีมอื่น ขอบคุณที่เสนอราคา',
-    cancelled: 'ผู้ว่าจ้างยกเลิกงานนี้',
-} as const;
+export const outcomeText = (o: 'pending' | 'won' | 'lost' | 'cancelled', t: VT = vText()): string => (o === 'pending' ? '' : t(`labels.outcome.${o}`));
 
 /** Schedule in one line: "เริ่ม 1 พ.ย. 69 · เสร็จ 30 พ.ย. 69 · 30 วัน". */
-export function scheduleText(s: { start: string | null; finish: string | null; days: number | null }): string {
+export function scheduleText(s: { start: string | null; finish: string | null; days: number | null }, t: VT = vText(), locale: Locale = vLocale()): string {
     const parts: string[] = [];
-    if (s.start !== null) parts.push(`เริ่ม ${formatDay(s.start)}`);
-    if (s.finish !== null) parts.push(`เสร็จ ${formatDay(s.finish)}`);
-    if (s.days !== null && s.days > 0) parts.push(`${String(s.days)} วัน`);
+    if (s.start !== null) parts.push(t('labels.schedule.start', { date: formatDay(s.start, locale) }));
+    if (s.finish !== null) parts.push(t('labels.schedule.finish', { date: formatDay(s.finish, locale) }));
+    if (s.days !== null && s.days > 0) parts.push(t('labels.schedule.days', { n: s.days }));
     return parts.join(' · ');
 }
 
-/** "อ.เมือง จ.ขอนแก่น" (either part may be missing). */
-export function locationText(l: { district: string; province: string }): string {
-    return [l.district === '' ? '' : `อ.${l.district}`, l.province === '' ? '' : `จ.${l.province}`].filter(s => s !== '').join(' ');
+/** "อ.เมือง จ.ขอนแก่น" (either part may be missing). English: "Mueang district, Khon Kaen". */
+export function locationText(l: { district: string; province: string }, t: VT = vText(), locale: Locale = vLocale()): string {
+    const province = provinceName(l.province, locale);
+    return [
+        l.district === '' ? '' : t('labels.location.district', { name: l.district }),
+        province === '' ? '' : t('labels.location.province', { name: province }),
+    ].filter(s => s !== '').join(locale === 'th' ? ' ' : ', ');
+}
+
+/** Display name of a stored (Thai) province: the English name in the English interface. */
+export function provinceName(province: string, locale: Locale = vLocale()): string {
+    return locale === 'en' ? PROVINCE_NAMES_EN[province] ?? province : province;
 }

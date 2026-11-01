@@ -1,14 +1,12 @@
 // ─── The crew's inbox: which tab each invitation / contract belongs to, and the one action of its card. Pure. ───
 import type { InboxInvitationDto, SubcontractSummaryDto } from '@/shared/contract';
+import { vText, type VT } from './text';
 
 export type InboxTab = 'todo' | 'submitted' | 'contracts' | 'history';
 
-export const INBOX_TABS: readonly { key: InboxTab; label: string }[] = [
-    { key: 'todo', label: 'รอเสนอราคา' },
-    { key: 'submitted', label: 'ส่งราคาแล้ว' },
-    { key: 'contracts', label: 'สัญญา' },
-    { key: 'history', label: 'ประวัติ' },
-];
+export const INBOX_TABS: readonly { key: InboxTab }[] = [{ key: 'todo' }, { key: 'submitted' }, { key: 'contracts' }, { key: 'history' }];
+
+export const inboxTabLabel = (tab: InboxTab, t: VT = vText()): string => t(`inbox.tabs.${tab}`);
 
 const CLOSED_PACKAGE = new Set(['awarded', 'closed', 'cancelled', 'expired']);
 const FINISHED_INVITATION = new Set(['declined', 'withdrawn', 'won', 'lost', 'closed']);
@@ -61,17 +59,17 @@ export interface CardAction {
     primary: boolean;
 }
 
-export function invitationAction(i: InboxInvitationDto, tab: InboxTab): CardAction {
+export function invitationAction(i: InboxInvitationDto, tab: InboxTab, t: VT = vText()): CardAction {
     const href = `/vendor/invitations/${i.invitationId}`;
-    if (tab === 'todo') return { label: i.hasDraft ? 'ทำใบเสนอราคาต่อ' : 'เสนอราคา', href, primary: true };
-    if (tab === 'submitted') return { label: i.unreadMessages > 0 ? 'อ่านข้อความ' : 'ดูราคาที่ส่ง', href, primary: i.unreadMessages > 0 };
-    return { label: 'ดูรายละเอียด', href, primary: false };
+    if (tab === 'todo') return { label: i.hasDraft ? t('inbox.actions.continueQuote') : t('inbox.actions.quote'), href, primary: true };
+    if (tab === 'submitted') return { label: i.unreadMessages > 0 ? t('inbox.actions.readMessages') : t('inbox.actions.viewQuote'), href, primary: i.unreadMessages > 0 };
+    return { label: t('inbox.actions.viewDetails'), href, primary: false };
 }
 
-export function contractAction(c: SubcontractSummaryDto): CardAction {
+export function contractAction(c: SubcontractSummaryDto, t: VT = vText()): CardAction {
     const href = `/vendor/contracts/${c.id}`;
-    if (c.pendingAction === 'vendor_accept' || c.status === 'pending_acceptance') return { label: 'อ่านและยอมรับเงื่อนไข', href, primary: true };
-    if (c.pendingAction === 'variation_response') return { label: 'ตอบงานเพิ่ม-ลด', href, primary: true };
-    if (c.status === 'active' && c.nextInstallment !== null) return { label: `ดูงวด ${String(c.nextInstallment)}`, href, primary: false };
-    return { label: 'ดูสัญญา', href, primary: false };
+    if (c.pendingAction === 'vendor_accept' || c.status === 'pending_acceptance') return { label: t('inbox.actions.acceptTerms'), href, primary: true };
+    if (c.pendingAction === 'variation_response') return { label: t('inbox.actions.answerVariation'), href, primary: true };
+    if (c.status === 'active' && c.nextInstallment !== null) return { label: t('inbox.actions.viewInstallment', { n: c.nextInstallment }), href, primary: false };
+    return { label: t('inbox.actions.viewContract'), href, primary: false };
 }

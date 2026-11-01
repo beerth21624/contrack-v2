@@ -1,6 +1,7 @@
 // ─── The crew's view of a contract: expected net per installment and which installment can be claimed. Pure. ───
 import type { ClaimDto, SubcontractDto, SubcontractLineDto, SubcontractTerms } from '@/shared/contract';
 import { contractClaimAmounts } from '@/domain/subcontracting/claims';
+import { vText, type VT } from './text';
 
 export interface ExpectedNet {
     gross: number;
@@ -56,24 +57,8 @@ export function claimableInstallment(sc: Pick<SubcontractDto, 'status' | 'instal
     return null;
 }
 
-export const CLAIM_STATUS_TEXT = {
-    requested: 'ขอเบิกแล้ว รอผู้ว่าจ้างตรวจงาน',
-    inspected: 'ตรวจงานแล้ว',
-    approved: 'อนุมัติแล้ว รอจ่ายเงิน',
-    paid: 'จ่ายเงินแล้ว',
-    rejected: 'ผู้ว่าจ้างไม่รับใบเบิกนี้',
-} as const;
+export const claimStatusText = (s: 'requested' | 'inspected' | 'approved' | 'paid' | 'rejected', t: VT = vText()): string => t(`contract.claimStatus.${s}`);
 
-export const INSPECTION_TEXT = {
-    pass: 'ผ่าน',
-    pass_with_fixes: 'ผ่าน มีจุดต้องแก้',
-    fail: 'ยังไม่ผ่าน แก้แล้วขอเบิกใหม่ได้',
-} as const;
+export const inspectionText = (r: 'pass' | 'pass_with_fixes' | 'fail', t: VT = vText()): string => t(`contract.inspection.${r}`);
 
-export const INSTALLMENT_STATE_TEXT = {
-    not_started: 'ยังไม่เบิก',
-    requested: 'รอตรวจงาน',
-    inspected: 'ตรวจแล้ว',
-    approved: 'รอจ่ายเงิน',
-    paid: 'ได้รับเงินแล้ว',
-} as const;
+export const installmentStateText = (s: 'not_started' | 'requested' | 'inspected' | 'approved' | 'paid', t: VT = vText()): string => t(`contract.installmentState.${s}`);

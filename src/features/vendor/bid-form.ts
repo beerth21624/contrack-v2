@@ -5,6 +5,7 @@ import type {
     BidDto, BidMode, FileDto, GuestPackageDto, InstallmentDto, PackageLineDto, SaveBidDraftRequest, SubmitBidRequest,
 } from '@/shared/contract';
 import { priceLine, round2 } from '@/domain/subcontracting/snapshot';
+import { vText, type VT } from './text';
 
 export interface LineDraft {
     idx: number;
@@ -188,7 +189,7 @@ export interface BidCheck {
 }
 
 /** What stops (errors) or deserves a second look (warnings) before the bid goes out. */
-export function checkBid(pkg: GuestPackageDto, s: BidFormState): BidCheck {
+export function checkBid(pkg: GuestPackageDto, s: BidFormState, t: VT = vText()): BidCheck {
     const errors: string[] = [];
     const warnings: string[] = [];
     const lineIdx: number[] = [];
@@ -210,20 +211,20 @@ export function checkBid(pkg: GuestPackageDto, s: BidFormState): BidCheck {
             if (mat === null) { noMaterial += 1; lineIdx.push(line.idx); return; }
             if (unit === 0 && mat === 0) { zero += 1; lineIdx.push(line.idx); }
         });
-        if (unpriced > 0) errors.push(`ยังไม่ได้ใส่ราคา ${String(unpriced)} รายการ (ใส่ราคา หรือกด "ไม่รวม")`);
-        if (noMaterial > 0) errors.push(`ยังไม่ได้ใส่ค่าวัสดุ ${String(noMaterial)} รายการ (รายการที่คุณจัดหาวัสดุ ใส่ 0 ถ้าไม่คิดค่าวัสดุ)`);
-        if (noReason > 0) errors.push(`รายการที่ไม่รวม ${String(noReason)} รายการ ยังไม่ได้บอกเหตุผล`);
-        if (zero > 0) warnings.push(`มี ${String(zero)} รายการราคาเป็น 0 บาท — ตั้งใจให้ฟรีใช่ไหม`);
-        if (pairs.length > 0 && pairs.every(p => p.d.excluded)) errors.push('ต้องเสนอราคาอย่างน้อย 1 รายการ');
+        if (unpriced > 0) errors.push(t('check.unpriced', { n: unpriced }));
+        if (noMaterial > 0) errors.push(t('check.noMaterial', { n: noMaterial }));
+        if (noReason > 0) errors.push(t('check.noReason', { n: noReason }));
+        if (zero > 0) warnings.push(t('check.zero', { n: zero }));
+        if (pairs.length > 0 && pairs.every(p => p.d.excluded)) errors.push(t('check.atLeastOne'));
     } else if ((parseAmount(s.lumpTotal) ?? 0) <= 0) {
-        errors.push('ใส่ราคาเหมารวม');
+        errors.push(t('check.lumpMissing'));
     }
     if (s.installmentsMode === 'propose') {
         const sum = installmentsPctSum(s);
-        if (Math.abs(sum - 100) > 0.01) errors.push(`งวดจ่ายรวมได้ ${String(sum)}% ต้องรวมให้ได้ 100%`);
-        if (s.installments.some(i => i.condition.trim() === '')) errors.push('บอกเงื่อนไขของทุกงวด (ทำอะไรเสร็จจึงเบิก)');
+        if (Math.abs(sum - 100) > 0.01) errors.push(t('check.pctSum', { sum: String(sum) }));
+        if (s.installments.some(i => i.condition.trim() === '')) errors.push(t('check.installmentCondition'));
     }
-    if (s.days !== '' && (parseCount(s.days) ?? 0) < 1) errors.push('จำนวนวันทำงานไม่ถูกต้อง');
+    if (s.days !== '' && (parseCount(s.days) ?? 0) < 1) errors.push(t('check.daysInvalid'));
     return { errors, warnings, lineIdx };
 }
 
