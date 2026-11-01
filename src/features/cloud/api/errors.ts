@@ -42,7 +42,7 @@ export function errorFromBody(status: number, body: unknown, fallback: string): 
     return new ApiError(status, status >= 500 ? 'internal' : 'validation_failed', fallback);
 }
 
-/** Plain Thai message for people, by error code (the Thai texts live in messages/th/errors.json; screens that moved use useErrorMessage). */
+/** Plain Thai message for people, by error code (Thai texts of messages/th/errors.json; screens that moved use useErrorMessage, plain code uses errorText in ../text.ts). */
 export function thaiErrorMessage(e: unknown): string {
     if (!isApiError(e)) return thErrors.unknown;
     const codes: Record<string, string> = thErrors.codes;

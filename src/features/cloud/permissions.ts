@@ -3,28 +3,6 @@ import { can, roleRank, type Role } from '@/shared/contract';
 
 export { PERMISSIONS, can, roleRank, type Permission } from '@/shared/contract';
 
-export const ROLE_LABEL: Record<Role, string> = {
-    owner: 'เจ้าของ',
-    admin: 'ผู้ดูแล',
-    estimator: 'ผู้ถอดแบบ/ประมาณราคา',
-    viewer: 'ดูอย่างเดียว',
-    pm: 'ผู้จัดการโครงการ',
-    purchasing: 'จัดซื้อ',
-    accounting: 'บัญชี-การเงิน',
-    foreman: 'โฟร์แมน',
-};
-
-export const ROLE_HINT: Record<Role, string> = {
-    owner: 'ทำได้ทุกอย่าง รวมถึงลบพื้นที่ทำงาน',
-    admin: 'เชิญ/ลบสมาชิก มอบหมายผู้รับผิดชอบ ลบโครงการ',
-    estimator: 'สร้างและกรอกโครงการ ออกฉบับแก้ไข',
-    viewer: 'ดูและส่งออก BOQ ได้ แก้ไขไม่ได้',
-    pm: 'ดูแลโครงการ งบประมาณ จัดซื้อ งานหน้างาน และอนุมัติงานผู้รับเหมาช่วง',
-    purchasing: 'ขอซื้อ สั่งซื้อ รับของ และดูแลผู้ขาย',
-    accounting: 'วางบิล รับเงิน จ่ายเงิน ภาษี และรายงานการเงิน',
-    foreman: 'รายงานประจำวัน บันทึกค่าแรง และรับของที่หน้างาน',
-};
-
 /** The ERP working roles: offered only while the ERP (`project-hub`) is active for the workspace. */
 export const ERP_ROLES: readonly Role[] = ['pm', 'purchasing', 'accounting', 'foreman'];
 

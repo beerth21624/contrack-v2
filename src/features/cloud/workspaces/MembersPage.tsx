@@ -9,8 +9,8 @@ import {
     CheckOutlined, CopyOutlined, DeleteOutlined, EditOutlined, LogoutOutlined, PlusOutlined, TeamOutlined, UserAddOutlined,
 } from '@ant-design/icons';
 import type { AssignableRole, InvitationDto, MemberDto, Role, WorkspaceDto } from '@/shared/contract';
-import { thaiErrorMessage } from '../api/errors';
-import { RULES } from '../auth/form-rules';
+import { useErrorMessage } from '../api/error-message';
+import { useRules } from '../auth/use-rules';
 import { initials, useSession } from '../auth/session';
 import { useModuleEnabled } from '@/features/modules/modules';
 import { can, canManage, grantableRoles } from '../permissions';
@@ -18,7 +18,7 @@ import {
     useChangeRole, useCreateInvitation, useCreateWorkspace, useCurrentWorkspace, useDeleteWorkspace, useInvitations, useMembers,
     useRemoveMember, useRenameWorkspace, useRevokeInvitation,
 } from '../query/hooks';
-import { RequireSignIn, formatDateTime, spinner } from '../ui/common';
+import { RequireSignIn, spinner, useDateTime } from '../ui/common';
 
 const { Title, Text } = Typography;
 
@@ -55,14 +55,17 @@ const renderRoleOption = (o: { data: { label?: unknown; hint?: unknown } }) => (
 );
 
 export function MembersPage() {
+    const t = useTranslations('cloud.members');
     return (
-        <RequireSignIn next="/workspace/members" title="สมาชิกและทีม">
+        <RequireSignIn next="/workspace/members" title={t('title')}>
             <MembersContent />
         </RequireSignIn>
     );
 }
 
 function MembersContent() {
+    const t = useTranslations('cloud.members');
+    const tc = useTranslations('cloud.shared');
     const { workspace, workspaces, isLoading, select } = useCurrentWorkspace();
     const [createOpen, setCreateOpen] = useState(false);
 
@@ -72,15 +75,15 @@ function MembersContent() {
         <div className="flex flex-col gap-4 max-w-[1200px] mx-auto w-full">
             <div className="bg-white border border-gray-200 rounded-card p-5 shadow-card flex flex-col md:flex-row md:items-center gap-3">
                 <div className="flex-1 min-w-0">
-                    <Title level={3} style={{ margin: 0 }}>สมาชิก</Title>
-                    <Text type="secondary" className="text-[13px]">ใครอยู่ในพื้นที่ทำงานนี้ และทำอะไรได้บ้าง</Text>
+                    <Title level={3} style={{ margin: 0 }}>{t('heading')}</Title>
+                    <Text type="secondary" className="text-[13px]">{t('subtitle')}</Text>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     {workspace && (
-                        <Select value={workspace.id} onChange={select} style={{ minWidth: 220 }} aria-label="พื้นที่ทำงาน"
-                            options={workspaces.map(w => ({ value: w.id, label: w.kind === 'personal' ? 'ส่วนตัว' : w.name }))} />
+                        <Select value={workspace.id} onChange={select} style={{ minWidth: 220 }} aria-label={tc('workspaceAria')}
+                            options={workspaces.map(w => ({ value: w.id, label: w.kind === 'personal' ? tc('personal') : w.name }))} />
                     )}
-                    <Button icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>สร้างพื้นที่ของบริษัท/ทีม</Button>
+                    <Button icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>{t('createWorkspace')}</Button>
                 </div>
             </div>
             {workspace ? <WorkspaceSection key={workspace.id} workspace={workspace} onCreate={() => setCreateOpen(true)} /> : null}
@@ -100,32 +103,36 @@ function WorkspaceSection({ workspace, onCreate }: { workspace: WorkspaceDto; on
     const deleteWorkspace = useDeleteWorkspace();
     const [renameOpen, setRenameOpen] = useState(false);
     const roleText = useRoleText();
+    const t = useTranslations('cloud.members');
+    const tc = useTranslations('cloud.shared');
+    const toText = useErrorMessage();
+    const dateTime = useDateTime();
     // The ERP working roles (pm, purchasing, accounting, foreman) are offered only while the ERP is active here.
     const erpRoles = useModuleEnabled('project-hub', workspace.id).enabled;
 
     const onRole = (m: MemberDto, role: Role) => {
         changeRole.mutate({ userId: m.userId, role }, {
-            onSuccess: () => { void message.success(`เปลี่ยน ${m.displayName} เป็น ${roleText.label(role)} แล้ว`); },
-            onError: (e) => { void message.error(thaiErrorMessage(e)); },
+            onSuccess: () => { void message.success(t('roleChanged', { name: m.displayName, role: roleText.label(role) })); },
+            onError: (e) => { void message.error(toText(e)); },
         });
     };
     const onRemove = (m: MemberDto) => {
         removeMember.mutate(m.userId, {
-            onSuccess: () => { void message.success(m.userId === me?.id ? 'ออกจากพื้นที่ทำงานแล้ว' : `นำ ${m.displayName} ออกแล้ว`); },
-            onError: (e) => { void message.error(thaiErrorMessage(e)); },
+            onSuccess: () => { void message.success(m.userId === me?.id ? t('left') : t('removed', { name: m.displayName })); },
+            onError: (e) => { void message.error(toText(e)); },
         });
     };
     const onDelete = () => {
         modal.confirm({
-            title: `ลบพื้นที่ทำงาน "${workspace.name}" ถาวร?`,
-            content: 'โครงการทั้งหมดในพื้นที่นี้จะหายไปด้วย กู้คืนไม่ได้',
-            okText: 'ลบถาวร', okButtonProps: { danger: true }, cancelText: 'ยกเลิก',
+            title: t('deleteTitle', { name: workspace.name }),
+            content: t('deleteContent'),
+            okText: tc('deletePermanent'), okButtonProps: { danger: true }, cancelText: tc('cancel'),
             onOk: async () => {
                 try {
                     await deleteWorkspace.mutateAsync(workspace.id);
-                    void message.success('ลบพื้นที่ทำงานแล้ว');
+                    void message.success(t('workspaceDeleted'));
                 } catch (e) {
-                    void message.error(thaiErrorMessage(e));
+                    void message.error(toText(e));
                 }
             },
         });
@@ -133,19 +140,19 @@ function WorkspaceSection({ workspace, onCreate }: { workspace: WorkspaceDto; on
 
     const columns = [
         {
-            title: 'สมาชิก', key: 'who',
+            title: t('colMember'), key: 'who',
             render: (_: unknown, m: MemberDto) => (
                 <div className="flex items-center gap-3">
                     <Avatar style={{ background: '#F97316' }}>{initials(m.displayName)}</Avatar>
                     <div className="min-w-0">
-                        <div className="font-semibold">{m.displayName}{m.userId === me?.id && <Tag className="!ml-2">คุณ</Tag>}</div>
+                        <div className="font-semibold">{m.displayName}{m.userId === me?.id && <Tag className="!ml-2">{t('you')}</Tag>}</div>
                         <div className="text-[12px] text-gray-500 truncate">{m.email}</div>
                     </div>
                 </div>
             ),
         },
         {
-            title: 'บทบาท', key: 'role', width: 240,
+            title: t('colRole'), key: 'role', width: 240,
             render: (_: unknown, m: MemberDto) => (isCompany && m.userId !== me?.id && canManage(myRole, m.role)
                 ? (
                     <Select value={m.role} style={{ width: 210 }} onChange={(r: Role) => onRole(m, r)} loading={changeRole.isPending}
@@ -158,23 +165,23 @@ function WorkspaceSection({ workspace, onCreate }: { workspace: WorkspaceDto; on
                     </Tooltip>
                 )),
         },
-        { title: 'เข้าร่วมเมื่อ', key: 'joined', width: 170, responsive: ['md' as const], render: (_: unknown, m: MemberDto) => formatDateTime(m.joinedAt) },
+        { title: t('colJoined'), key: 'joined', width: 170, responsive: ['md' as const], render: (_: unknown, m: MemberDto) => dateTime(m.joinedAt) },
         {
             title: '', key: 'actions', width: 140, align: 'right' as const,
             render: (_: unknown, m: MemberDto) => {
                 if (!isCompany) return null;
                 if (m.userId === me?.id) {
                     return (
-                        <Popconfirm title="ออกจากพื้นที่ทำงานนี้?" okText="ออก" cancelText="ยกเลิก" onConfirm={() => onRemove(m)}>
-                            <Button size="small" icon={<LogoutOutlined />}>ออก</Button>
+                        <Popconfirm title={t('leaveConfirm')} okText={t('leave')} cancelText={tc('cancel')} onConfirm={() => onRemove(m)}>
+                            <Button size="small" icon={<LogoutOutlined />}>{t('leave')}</Button>
                         </Popconfirm>
                     );
                 }
                 if (!can(myRole, 'members.remove') || !canManage(myRole, m.role)) return null;
                 return (
-                    <Popconfirm title={`นำ ${m.displayName} ออกจากพื้นที่ทำงาน?`} okText="นำออก" cancelText="ยกเลิก"
+                    <Popconfirm title={t('removeConfirm', { name: m.displayName })} okText={t('remove')} cancelText={tc('cancel')}
                         okButtonProps={{ danger: true }} onConfirm={() => onRemove(m)}>
-                        <Button size="small" type="text" danger icon={<DeleteOutlined />}>นำออก</Button>
+                        <Button size="small" type="text" danger icon={<DeleteOutlined />}>{t('remove')}</Button>
                     </Popconfirm>
                 );
             },
@@ -186,25 +193,25 @@ function WorkspaceSection({ workspace, onCreate }: { workspace: WorkspaceDto; on
             <div className="bg-white border border-gray-200 rounded-card p-4 shadow-card">
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                     <TeamOutlined className="text-orange-500 text-[18px]" />
-                    <span className="font-semibold text-[16px]">{isCompany ? workspace.name : 'พื้นที่ส่วนตัว'}</span>
-                    <Tag>{isCompany ? 'บริษัท/ทีม' : 'ส่วนตัว'}</Tag>
-                    <Text type="secondary" className="text-[12px]">บทบาทของคุณ: {roleText.label(myRole)}</Text>
+                    <span className="font-semibold text-[16px]">{isCompany ? workspace.name : t('personalSpace')}</span>
+                    <Tag>{isCompany ? tc('company') : tc('personal')}</Tag>
+                    <Text type="secondary" className="text-[12px]">{tc('yourRole', { role: roleText.label(myRole) })}</Text>
                     <span className="ml-auto flex gap-2">
                         {isCompany && can(myRole, 'workspace.rename') && (
-                            <Button size="small" icon={<EditOutlined />} onClick={() => setRenameOpen(true)}>เปลี่ยนชื่อ</Button>
+                            <Button size="small" icon={<EditOutlined />} onClick={() => setRenameOpen(true)}>{tc('rename')}</Button>
                         )}
                         {isCompany && can(myRole, 'workspace.delete') && (
-                            <Button size="small" type="text" danger icon={<DeleteOutlined />} onClick={onDelete}>ลบพื้นที่</Button>
+                            <Button size="small" type="text" danger icon={<DeleteOutlined />} onClick={onDelete}>{t('deleteWorkspace')}</Button>
                         )}
                     </span>
                 </div>
                 {!isCompany && (
-                    <Alert type="info" showIcon className="!mb-3" title="พื้นที่ส่วนตัวมีคุณคนเดียว"
-                        description={<>ถ้าจะทำ BOQ เป็นทีม ให้สร้างพื้นที่ของบริษัท/ทีมแล้วเชิญเพื่อนร่วมงาน <Button type="link" size="small" onClick={onCreate}>สร้างเลย</Button></>} />
+                    <Alert type="info" showIcon className="!mb-3" title={t('personalAlertTitle')}
+                        description={<>{t('personalAlertDesc')} <Button type="link" size="small" onClick={onCreate}>{t('createNow')}</Button></>} />
                 )}
                 <Table<MemberDto> rowKey="userId" columns={columns} dataSource={members.data ?? []} loading={members.isLoading}
                     pagination={false} size="middle" scroll={{ x: 560 }}
-                    locale={{ emptyText: members.isError ? thaiErrorMessage(members.error) : 'ยังไม่มีสมาชิก' }} />
+                    locale={{ emptyText: members.isError ? toText(members.error) : t('emptyMembers') }} />
             </div>
 
             {isCompany && can(myRole, 'members.invite') && <InvitationsSection workspace={workspace} />}
@@ -220,9 +227,13 @@ function InvitationsSection({ workspace }: { workspace: WorkspaceDto }) {
     const revoke = useRevokeInvitation(workspace.id);
     const [form] = Form.useForm<{ email: string; role: AssignableRole }>();
     const [link, setLink] = useState<{ email: string; url: string } | null>(null);
-    // "คัดลอกแล้ว" after a successful copy, until the dialog closes.
+    // "Copied" after a successful copy, until the dialog closes.
     const [copied, setCopied] = useState(false);
     const roleText = useRoleText();
+    const t = useTranslations('cloud.members');
+    const rules = useRules();
+    const toText = useErrorMessage();
+    const dateTime = useDateTime();
     const erpRoles = useModuleEnabled('project-hub', workspace.id).enabled;
     const roles = grantableRoles(workspace.role, false, erpRoles) as AssignableRole[];
     const closeLink = () => { setLink(null); setCopied(false); };
@@ -232,7 +243,7 @@ function InvitationsSection({ workspace }: { workspace: WorkspaceDto }) {
             await navigator.clipboard.writeText(link.url);
             setCopied(true);
         } catch {
-            void message.error('คัดลอกไม่สำเร็จ — เลือกลิงก์แล้วคัดลอกเอง');
+            void message.error(t('copyFailed'));
         }
     };
 
@@ -243,23 +254,23 @@ function InvitationsSection({ workspace }: { workspace: WorkspaceDto }) {
             setLink({ email: res.invitation.email, url: inviteLink(res.token) });
             form.resetFields();
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         }
     };
 
     const columns = [
-        { title: 'อีเมล', dataIndex: 'email', key: 'email' },
+        { title: t('colEmail'), dataIndex: 'email', key: 'email' },
         {
-            title: 'บทบาท', key: 'role',
+            title: t('colRole'), key: 'role',
             render: (_: unknown, i: InvitationDto) => <Tooltip title={roleText.hint(i.role)}><Tag>{roleText.label(i.role)}</Tag></Tooltip>,
         },
-        { title: 'หมดอายุ', key: 'exp', responsive: ['sm' as const], render: (_: unknown, i: InvitationDto) => formatDateTime(i.expiresAt) },
+        { title: t('colExpires'), key: 'exp', responsive: ['sm' as const], render: (_: unknown, i: InvitationDto) => dateTime(i.expiresAt) },
         {
             title: '', key: 'actions', align: 'right' as const,
             render: (_: unknown, i: InvitationDto) => (
-                <Popconfirm title="ยกเลิกคำเชิญนี้? ลิงก์ที่ส่งไปจะใช้ไม่ได้" okText="ยกเลิกคำเชิญ" cancelText="ไม่"
-                    onConfirm={() => revoke.mutate(i.id, { onError: (e) => { void message.error(thaiErrorMessage(e)); } })}>
-                    <Button size="small">ยกเลิก</Button>
+                <Popconfirm title={t('revokeConfirm')} okText={t('revokeOk')} cancelText={t('revokeNo')}
+                    onConfirm={() => revoke.mutate(i.id, { onError: (e) => { void message.error(toText(e)); } })}>
+                    <Button size="small">{t('revoke')}</Button>
                 </Popconfirm>
             ),
         },
@@ -269,35 +280,35 @@ function InvitationsSection({ workspace }: { workspace: WorkspaceDto }) {
         <div className="bg-white border border-gray-200 rounded-card p-4 shadow-card">
             <div className="flex items-center gap-2 mb-3">
                 <UserAddOutlined className="text-orange-500 text-[18px]" />
-                <span className="font-semibold text-[16px]">เชิญสมาชิก</span>
+                <span className="font-semibold text-[16px]">{t('inviteHeading')}</span>
             </div>
             <Form form={form} layout="inline" requiredMark={false} initialValues={{ role: 'estimator' }}
                 className="flex flex-wrap gap-y-2" onFinish={() => { void submit(); }}>
-                <Form.Item name="email" rules={RULES.email} style={{ minWidth: 260, flex: 1 }}>
-                    <Input placeholder="อีเมลของคนที่จะเชิญ" inputMode="email" />
+                <Form.Item name="email" rules={rules.email} style={{ minWidth: 260, flex: 1 }}>
+                    <Input placeholder={t('emailPlaceholder')} inputMode="email" />
                 </Form.Item>
                 <Form.Item name="role">
                     <Select style={{ width: 210 }} popupMatchSelectWidth={260} optionRender={renderRoleOption}
                         options={roles.map(r => roleOption(roleText, r))} />
                 </Form.Item>
-                <Button type="primary" htmlType="submit" icon={<UserAddOutlined />} loading={create.isPending}>สร้างลิงก์เชิญ</Button>
+                <Button type="primary" htmlType="submit" icon={<UserAddOutlined />} loading={create.isPending}>{t('createLink')}</Button>
             </Form>
             <Text type="secondary" className="block text-[12px] mt-2">
-                ระบบยังไม่ส่งอีเมลให้ — คัดลอกลิงก์ไปส่งทาง LINE หรืออีเมลเอง คนที่ได้รับต้องเข้าสู่ระบบด้วยอีเมลที่เชิญ
+                {t('noEmailNote')}
             </Text>
 
-            <div className="mt-4 font-semibold text-[14px]">คำเชิญที่ยังไม่ตอบรับ</div>
+            <div className="mt-4 font-semibold text-[14px]">{t('pendingHeading')}</div>
             <Table<InvitationDto> rowKey="id" columns={columns} dataSource={invitations.data ?? []} loading={invitations.isLoading}
                 pagination={false} size="small" className="mt-2"
-                locale={{ emptyText: invitations.isError ? thaiErrorMessage(invitations.error) : 'ไม่มีคำเชิญค้าง' }} />
+                locale={{ emptyText: invitations.isError ? toText(invitations.error) : t('emptyInvites') }} />
 
-            <Modal open={link !== null} onCancel={closeLink} title="ลิงก์เชิญพร้อมแล้ว"
-                footer={<Button onClick={closeLink}>เสร็จ</Button>}>
-                <p className="text-[13px] text-gray-600">ส่งลิงก์นี้ให้ <b>{link?.email}</b> (แสดงครั้งเดียว ถ้าทำหายให้สร้างคำเชิญใหม่)</p>
+            <Modal open={link !== null} onCancel={closeLink} title={t('linkReadyTitle')}
+                footer={<Button onClick={closeLink}>{t('done')}</Button>}>
+                <p className="text-[13px] text-gray-600">{t.rich('linkSend', { email: link?.email ?? '', b: (chunks) => <b>{chunks}</b> })}</p>
                 <div className="flex gap-2">
-                    <Input readOnly value={link?.url ?? ''} aria-label="ลิงก์เชิญ" onFocus={e => e.currentTarget.select()} />
+                    <Input readOnly value={link?.url ?? ''} aria-label={t('linkAria')} onFocus={e => e.currentTarget.select()} />
                     <Button type="primary" icon={copied ? <CheckOutlined /> : <CopyOutlined />} onClick={() => { void copyLink(); }}>
-                        {copied ? 'คัดลอกแล้ว' : 'คัดลอกลิงก์'}
+                        {copied ? t('copied') : t('copyLink')}
                     </Button>
                 </div>
             </Modal>
@@ -308,27 +319,31 @@ function InvitationsSection({ workspace }: { workspace: WorkspaceDto }) {
 function CreateWorkspaceModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     const { message } = App.useApp();
     const router = useRouter();
+    const t = useTranslations('cloud.members');
+    const tc = useTranslations('cloud.shared');
+    const rules = useRules();
+    const toText = useErrorMessage();
     const create = useCreateWorkspace();
     const [form] = Form.useForm<{ name: string }>();
     const submit = async () => {
         const { name } = await form.validateFields();
         try {
             await create.mutateAsync(name.trim());
-            void message.success('สร้างพื้นที่ทำงานแล้ว — เชิญสมาชิกเข้าร่วมได้');
+            void message.success(t('created'));
             form.resetFields();
             onClose();
             router.push('/workspace/members');
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         }
     };
     return (
-        <Modal open={open} onCancel={onClose} destroyOnHidden title="สร้างพื้นที่ทำงานของบริษัท/ทีม" okText="สร้าง" cancelText="ยกเลิก"
+        <Modal open={open} onCancel={onClose} destroyOnHidden title={t('createTitle')} okText={t('createOk')} cancelText={tc('cancel')}
             confirmLoading={create.isPending} onOk={() => { void submit().catch(() => undefined); }}>
-            <p className="text-[13px] text-gray-600">คุณจะเป็นเจ้าของ แล้วเชิญเพื่อนร่วมงานเข้ามาทำ BOQ ด้วยกัน</p>
+            <p className="text-[13px] text-gray-600">{t('createNote')}</p>
             <Form form={form} layout="vertical" requiredMark={false}>
-                <Form.Item name="name" label="ชื่อบริษัท/ทีม" rules={RULES.workspaceName}>
-                    <Input placeholder="เช่น หจก. สมชายก่อสร้าง" autoFocus />
+                <Form.Item name="name" label={t('nameLabel')} rules={rules.workspaceName}>
+                    <Input placeholder={t('namePlaceholder')} autoFocus />
                 </Form.Item>
             </Form>
         </Modal>
@@ -337,6 +352,10 @@ function CreateWorkspaceModal({ open, onClose }: { open: boolean; onClose: () =>
 
 function RenameWorkspaceModal({ workspace, onClose }: { workspace: WorkspaceDto | null; onClose: () => void }) {
     const { message } = App.useApp();
+    const t = useTranslations('cloud.members');
+    const tc = useTranslations('cloud.shared');
+    const rules = useRules();
+    const toText = useErrorMessage();
     const rename = useRenameWorkspace(workspace?.id ?? '');
     const [form] = Form.useForm<{ name: string }>();
     const submit = async () => {
@@ -345,14 +364,14 @@ function RenameWorkspaceModal({ workspace, onClose }: { workspace: WorkspaceDto 
             await rename.mutateAsync(name.trim());
             onClose();
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         }
     };
     return (
-        <Modal open={workspace !== null} onCancel={onClose} destroyOnHidden title="เปลี่ยนชื่อพื้นที่ทำงาน" okText="บันทึก" cancelText="ยกเลิก"
+        <Modal open={workspace !== null} onCancel={onClose} destroyOnHidden title={t('renameTitle')} okText={tc('save')} cancelText={tc('cancel')}
             confirmLoading={rename.isPending} onOk={() => { void submit().catch(() => undefined); }}>
             <Form form={form} layout="vertical" requiredMark={false} initialValues={{ name: workspace?.name ?? '' }}>
-                <Form.Item name="name" label="ชื่อบริษัท/ทีม" rules={RULES.workspaceName}>
+                <Form.Item name="name" label={t('nameLabel')} rules={rules.workspaceName}>
                     <Input autoFocus />
                 </Form.Item>
             </Form>

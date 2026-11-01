@@ -62,13 +62,3 @@ export const useCloud = create<CloudState>()((set) => ({
         set({ workspaceId: userId === null ? null : readRememberedWorkspace(userId) });
     },
 }));
-
-/** Plain Thai text of a sync status. */
-export function syncStatusText(s: SyncStatus): string {
-    switch (s.state) {
-        case 'saved': return 'บันทึกแล้ว';
-        case 'saving': return 'กำลังบันทึก…';
-        case 'pending': return `รอส่ง ${String(s.count)} รายการ`;
-        case 'offline': return s.count > 0 ? `ออฟไลน์ · รอส่ง ${String(s.count)} รายการ` : 'ออฟไลน์';
-    }
-}

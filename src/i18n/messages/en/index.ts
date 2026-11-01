@@ -39,6 +39,7 @@ import journeyUi from './journeyUi.json';
 import exportMessages from './export.json';
 import calculators from './calculators.json';
 import planning from './planning.json';
+import cloud from './cloud.json';
 
 const messages = {
   common,
@@ -82,6 +83,7 @@ const messages = {
   export: exportMessages,
   calculators,
   planning,
+  cloud,
 };
 
 export default messages;

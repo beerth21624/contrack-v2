@@ -9,8 +9,9 @@ import { boqControlKeys } from '@/features/erp/boq-control/hooks';
 import { moduleKeys, modulesApi } from '@/features/modules/modules';
 import type { ProjectDocDto } from '@/shared/contract';
 import { api } from '../api/routes';
-import { ApiError, isApiError, thaiErrorMessage } from '../api/errors';
+import { ApiError, isApiError } from '../api/errors';
 import { qk } from '../query/keys';
+import { cloudText, errorText } from '../text';
 import { SAVED_STATUS, useCloud } from '../state';
 import { SyncEngine, type SyncEvent } from '../sync/engine';
 import { browserNetwork, localQueueStorage, projectStoreAdapter } from '../sync/adapters';
@@ -51,14 +52,15 @@ function syncEventHandler(queryClient: QueryClient, projectId: string) {
             case 'conflict':
                 emitNotice({
                     level: 'warning', key: `conflict:${e.docKey}`,
-                    text: `สมาชิกอีกคนแก้ไข ${docLabel(e.docKey)} ไปก่อนแล้ว — ระบบแสดงข้อมูลล่าสุดให้แล้ว กรุณาตรวจสอบก่อนแก้ไขต่อ`,
+                    text: cloudText()('notice.conflict', { label: docLabel(e.docKey) }),
                 });
                 return;
             case 'rejected': {
                 const label = docLabel(e.docKey);
+                const t = cloudText();
                 const text = isApiError(e.error) && e.error.status === 422
-                    ? `${label} มีค่าที่ระบบคำนวณไม่ได้ จึงไม่ได้บันทึก — กลับไปใช้ค่าที่บันทึกไว้ล่าสุด`
-                    : `${thaiErrorMessage(e.error)} — ${label} กลับไปใช้ค่าที่บันทึกไว้ล่าสุด`;
+                    ? t('notice.unprocessable', { label })
+                    : t('notice.rejected', { error: errorText(e.error), label });
                 emitNotice({ level: 'error', key: `rejected:${e.docKey}`, text });
                 return;
             }

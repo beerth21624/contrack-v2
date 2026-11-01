@@ -1,12 +1,11 @@
 // ─── antd form rules built from the contract's zod schemas (same rules as the server; messages from messages/*/auth.json) ───
 import type { FormRule } from 'antd';
-import { createTranslator } from 'next-intl';
 import type { ZodTypeAny } from 'zod';
 import {
     PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, displayNameSchema, emailSchema, passwordSchema, projectNameSchema,
     revisionLabelSchema, workspaceNameSchema,
 } from '@/shared/contract';
-import thAuth from '@/i18n/messages/th/auth.json';
+import type thAuth from '@/i18n/messages/th/auth.json';
 
 export function zodRule(schema: ZodTypeAny, message: string): FormRule {
     return {
@@ -32,11 +31,6 @@ export function buildRules(t: RulesTranslator) {
         revisionLabel: [{ required: true, message: t('revisionRequired') }, zodRule(revisionLabelSchema, t('revisionMax'))],
     } satisfies Record<string, FormRule[]>;
 }
-
-/** Thai rules for the screens track I has not moved yet (I-10); moved screens use `useRules()`. */
-export const RULES = buildRules(createTranslator({
-    locale: 'th', messages: { rules: thAuth.rules }, namespace: 'rules', timeZone: 'Asia/Bangkok',
-}) as RulesTranslator);
 
 /** A same-site path to go to after signing in (never another origin). */
 export function safeNext(next: string | null | undefined, fallback = '/projects'): string {

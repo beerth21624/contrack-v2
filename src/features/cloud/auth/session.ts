@@ -39,7 +39,7 @@ export function bootstrapSession(): Promise<void> {
 }
 
 export function initials(name: string): string {
-    // "ช่างประเสริฐ (ถอดแบบ)": a note in brackets is not part of the name (it gave "ช(").
+    // "Somchai (estimator)": a note in brackets is not part of the name (it gave "S(").
     const bare = name.replace(/\([^)]*\)/g, ' ').trim();
     const words = (bare === '' ? name.trim() : bare).split(/\s+/).filter(w => w !== '');
     const first = words[0] ?? '?';

@@ -15,6 +15,7 @@ import { forgetDeletedProject } from '../projects/controller';
 import { qk } from '../query/keys';
 import { setAssignmentInCache } from '../query/hooks';
 import { useCloud } from '../state';
+import { cloudText } from '../text';
 import { RealtimeConnection, loadRealtimeUrl } from './connection';
 
 /** The journey level of a path (`/journey/<level>`), else null. */
@@ -54,7 +55,7 @@ export function useRealtime(): void {
                 onProject: (e) => {
                     const open = useCloud.getState().project;
                     if (open?.id === e.project.id && open.archivedAt === null && e.project.archivedAt !== null) {
-                        emitNotice({ level: 'warning', key: 'archived', text: 'โครงการนี้ถูกเก็บถาวรแล้ว แก้ไขเพิ่มไม่ได้' });
+                        emitNotice({ level: 'warning', key: 'archived', text: cloudText()('notice.archived') });
                     }
                     projectChanged(qc, e.project);
                 },
@@ -64,7 +65,7 @@ export function useRealtime(): void {
                     if (workspaceId !== undefined) void qc.invalidateQueries({ queryKey: qk.projectLists(workspaceId) });
                     void forgetDeletedProject(e.projectId).then(wasOpen => {
                         if (!wasOpen) return;
-                        emitNotice({ level: 'warning', key: 'deleted', text: 'โครงการนี้ถูกลบแล้ว — กลับมาใช้โครงการในเครื่องนี้ (การแก้ที่ยังไม่ได้ส่งถูกยกเลิก)' });
+                        emitNotice({ level: 'warning', key: 'deleted', text: cloudText()('notice.deleted') });
                         router.push('/projects');
                     });
                 },

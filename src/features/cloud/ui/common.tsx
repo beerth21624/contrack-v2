@@ -4,7 +4,10 @@
 import Link from 'next/link';
 import { Button, Result, Spin } from 'antd';
 import { LoginOutlined } from '@ant-design/icons';
-import { useTranslations } from 'next-intl';
+import { useCallback } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import type { Locale } from '@/i18n/config';
+import { formatDateTime as formatDateTimeIn } from '@/i18n/format';
 import { useSession } from '../auth/session';
 
 export const spinner = <div className="flex justify-center p-20"><Spin size="large" /></div>;
@@ -32,13 +35,20 @@ export function RequireSignIn({ children, next, title }: { children: React.React
 }
 
 // Thai months with the Christian-era year, like the rest of the app (calendar, S-Curve, crew board): plain 'th-TH'
-// prints the Buddhist year (69 for 2026).
+// prints the Buddhist year (69 for 2026). English uses the shared formatter (`31 Oct 2026, 14:05`).
 const DATE_FORMAT = new Intl.DateTimeFormat('th-TH-u-ca-gregory', {
     day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit',
 });
 
-/** "26 ต.ค. 26 11:17" ('' for an invalid date). */
-export function formatDateTime(iso: string): string {
+/** Date and time (Thai: day, short Thai month, 2-digit year, time); "" for an invalid date. English gives `26 Oct 2026, 11:17`. */
+export function formatDateTime(iso: string, locale: Locale = 'th'): string {
     const d = new Date(iso);
-    return Number.isNaN(d.getTime()) ? '' : DATE_FORMAT.format(d);
+    if (Number.isNaN(d.getTime())) return '';
+    return locale === 'th' ? DATE_FORMAT.format(d) : formatDateTimeIn(iso, locale);
+}
+
+/** `formatDateTime` bound to the UI language. */
+export function useDateTime(): (iso: string) => string {
+    const locale = useLocale();
+    return useCallback((iso: string) => formatDateTime(iso, locale), [locale]);
 }

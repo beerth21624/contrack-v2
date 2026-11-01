@@ -1,6 +1,6 @@
 'use client';
 
-// ─── Workspace rate-card library (คลังอัตราค่าแรงของบริษัท): typed routes + TanStack Query hooks ───
+// ─── Workspace rate-card library (company wage-set library): typed routes + TanStack Query hooks ───
 // Backend: GET/POST /workspaces/:workspaceId/rate-cards, PATCH/DELETE …/rate-cards/:rateCardId (backend/API.md).
 // Rates are whole baht per day. A project copies the rates of the card it picks (snapshot), so changing or archiving a
 // card never changes a project by itself.
@@ -12,6 +12,7 @@ import {
 } from '@/shared/contract';
 import { useSession } from '../auth/session';
 import { apiClient, type ApiClient } from './client';
+import { cloudText } from '../text';
 import { isApiError } from './errors';
 
 const seg = (s: string) => encodeURIComponent(s);
@@ -58,13 +59,14 @@ export function rateCardConflict(error: unknown): RateCardConflictDetails | unde
     return parsed.success ? parsed.data : undefined;
 }
 
-/** Thai message for a refused rate-card write (falls back to undefined so callers can use thaiErrorMessage). */
+/** Message (UI language) for a refused rate-card write (falls back to undefined so callers can use thaiErrorMessage). */
 export function rateCardConflictMessage(error: unknown): string | undefined {
     const conflict = rateCardConflict(error);
     if (conflict === undefined) return undefined;
+    const t = cloudText();
     return conflict.reason === 'name_taken'
-        ? `มีชุดค่าแรงชื่อ "${conflict.name}" อยู่แล้ว ตั้งชื่ออื่น`
-        : `เก็บชุดค่าแรงได้สูงสุด ${conflict.limit} ชุด เก็บถาวรชุดที่ไม่ใช้ก่อน`;
+        ? t('conflicts.rateCardNameTaken', { name: conflict.name })
+        : t('conflicts.rateCardLimit', { limit: conflict.limit });
 }
 
 const useSignedIn = () => useSession(s => s.status === 'signed-in');

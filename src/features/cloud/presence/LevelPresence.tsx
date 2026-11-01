@@ -3,9 +3,10 @@
 // ─── Team on the level map and level pages: who is where (presence), who is assigned, soft lock ───
 import { Alert, App, Avatar, Button, Dropdown, Tooltip, type MenuProps } from 'antd';
 import { UserOutlined, UserSwitchOutlined } from '@ant-design/icons';
+import { useTranslations } from 'next-intl';
 import type { LevelAssignmentDto, MemberDto, PresenceEntry } from '@/shared/contract';
 import { useProjectStore } from '@/store/project-store';
-import { thaiErrorMessage } from '../api/errors';
+import { useErrorMessage } from '../api/error-message';
 import { initials, useSession } from '../auth/session';
 import { can } from '../permissions';
 import { useAssignLevel, useAssignments, useMembers } from '../query/hooks';
@@ -46,18 +47,21 @@ export function useCloudLevelInfo(): CloudLevelInfo {
     };
 }
 
-/** "คุณสมชาย" (or "คุณสมชาย และคุณสมหญิง"). */
-export function namesOf(people: { displayName: string }[]): string {
-    return people.map(p => `คุณ${p.displayName}`).join(' และ');
+type PresenceT = ReturnType<typeof useTranslations<'cloud.presence'>>;
+
+/** "Somchai" (or "Somchai and Somying"); Thai puts a polite prefix before each name. */
+export function namesOf(people: { displayName: string }[], t: PresenceT): string {
+    return people.map(p => t('person', { name: p.displayName })).join(t('joiner'));
 }
 
 /** Avatars of the other members on a level (on its map node). */
 export function LevelPresenceAvatars({ info, levelId }: { info: CloudLevelInfo; levelId: string }) {
+    const t = useTranslations('cloud.presence');
     if (!info.enabled) return null;
     const others = info.othersOn(levelId);
     if (others.length === 0) return null;
     return (
-        <Tooltip title={`${namesOf(others)} กำลังแก้ไขขั้นตอนนี้`}>
+        <Tooltip title={t('editingTip', { names: namesOf(others, t) })}>
             <span className="ml-auto shrink-0">
                 <Avatar.Group size="small" max={{ count: 2 }}>
                     {others.map(p => (
@@ -72,15 +76,17 @@ export function LevelPresenceAvatars({ info, levelId }: { info: CloudLevelInfo; 
 /** Who the level is assigned to, and (owner/admin) a control to assign it. Below the level's map node. */
 export function LevelAssignee({ info, levelId }: { info: CloudLevelInfo; levelId: string }) {
     const { message } = App.useApp();
+    const t = useTranslations('cloud.presence');
+    const toText = useErrorMessage();
     const assign = useAssignLevel(info.projectId);
     if (!info.enabled) return null;
     const current = info.assigneeOf(levelId);
-    const name = current ? current.member?.displayName ?? 'สมาชิกที่ออกไปแล้ว' : null;
+    const name = current ? current.member?.displayName ?? t('leftMember') : null;
 
     const label = (
         <span className="flex items-center gap-1 min-w-0 text-[12px] text-gray-500">
             <UserOutlined />
-            <span className="truncate">{name ?? 'ยังไม่มอบหมาย'}</span>
+            <span className="truncate">{name ?? t('unassigned')}</span>
         </span>
     );
     if (!info.canAssign) return name === null ? null : <div className="px-1">{label}</div>;
@@ -88,17 +94,17 @@ export function LevelAssignee({ info, levelId }: { info: CloudLevelInfo; levelId
     const items: MenuProps['items'] = [
         ...info.members.map(m => ({ key: m.userId, label: m.displayName })),
         { type: 'divider' as const },
-        { key: '__none', label: 'ไม่มอบหมาย', disabled: current === undefined },
+        { key: '__none', label: t('unassign'), disabled: current === undefined },
     ];
     const onClick: MenuProps['onClick'] = ({ key }) => {
         assign.mutate({ levelId, userId: key === '__none' ? null : key }, {
-            onError: (e) => { void message.error(thaiErrorMessage(e)); },
+            onError: (e) => { void message.error(toText(e)); },
         });
     };
     return (
         <Dropdown menu={{ items, onClick, selectable: true, selectedKeys: current ? [current.assignment.userId] : [] }} trigger={['click']}>
             <Button type="text" size="small" className="!px-1 !h-6 !justify-start max-w-full" loading={assign.isPending}
-                icon={<UserSwitchOutlined className="text-gray-400" />} aria-label="มอบหมายผู้รับผิดชอบ">
+                icon={<UserSwitchOutlined className="text-gray-400" />} aria-label={t('assignAria')}>
                 {label}
             </Button>
         </Dropdown>
@@ -108,6 +114,7 @@ export function LevelAssignee({ info, levelId }: { info: CloudLevelInfo; levelId
 /** Soft lock: a warning when another member is on the same level (nothing is blocked). */
 export function LevelSoftLock({ levelId }: { levelId: string }) {
     const info = useCloudLevelInfo();
+    const t = useTranslations('cloud.presence');
     const myId = useSession(s => s.user?.id ?? null);
     if (!info.enabled) return null;
     const others = info.othersOn(levelId);
@@ -116,12 +123,12 @@ export function LevelSoftLock({ levelId }: { levelId: string }) {
     if (others.length === 0 && !assignedToOther) return null;
     if (others.length === 0 && assignee !== undefined) {
         return (
-            <Alert type="info" showIcon title={`ขั้นตอนนี้มอบหมายให้คุณ${assignee.member?.displayName ?? 'สมาชิกอีกคน'}`}
-                description="แก้ไขได้ตามปกติ แต่ควรแจ้งผู้รับผิดชอบก่อน เพื่อไม่ให้ทำงานซ้ำกัน" />
+            <Alert type="info" showIcon title={t('assignedTitle', { name: assignee.member?.displayName ?? t('otherMember') })}
+                description={t('assignedDesc')} />
         );
     }
     return (
-        <Alert type="warning" showIcon title={`${namesOf(others)} กำลังแก้ไขขั้นตอนนี้อยู่`}
-            description="หากแก้ไขพร้อมกัน ข้อมูลอาจบันทึกทับกัน — กรุณาตกลงผู้แก้ไขก่อน หรือทำขั้นตอนอื่นไปก่อนแล้วค่อยกลับมา" />
+        <Alert type="warning" showIcon title={t('editingTitle', { names: namesOf(others, t) })}
+            description={t('editingDesc')} />
     );
 }

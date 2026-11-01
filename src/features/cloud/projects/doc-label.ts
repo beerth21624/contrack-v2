@@ -1,23 +1,26 @@
-// ─── Plain Thai name of a document, for notices ("ขั้นตอนฐานราก", "ข้อมูลโครงการ" …) ───
+// ─── Plain name of a document in the UI language, for notices  ───
 import { parseDocKey } from '@/domain/sync';
 import { JOURNEY_LEVELS } from '@/domain/journey';
+import { levelTitleIn } from '@/domain/journey/levels.en';
 import { CALCULATORS } from '@/domain/calculators/registry';
-
-const PLANNING_LABEL = { manday: 'แผนแรงงาน (Man-Day)', schedule: 'แผนงาน (S-Curve)', cashflow: 'กระแสเงินสด (Cash Flow)' } as const;
+import { readLocaleCookie } from '@/i18n/locale-cookie';
+import { cloudText } from '../text';
 
 export function docLabel(docKey: string): string {
+    const t = cloudText();
+    const locale = readLocaleCookie();
     const parsed = parseDocKey(docKey);
-    if (!parsed) return 'ข้อมูลโครงการ';
+    if (!parsed) return t('docLabel.project');
     switch (parsed.kind) {
-        case 'meta': return 'ข้อมูลโครงการ';
-        case 'journey': return 'สถานะขั้นตอน';
-        case 'planning': return PLANNING_LABEL[parsed.sheet];
-        case 'boq': return 'รายการใน BOQ';
+        case 'meta': return t('docLabel.project');
+        case 'journey': return t('docLabel.journey');
+        case 'planning': return t(`docLabel.${parsed.sheet}`);
+        case 'boq': return t('docLabel.boq');
         case 'calc': {
             const level = JOURNEY_LEVELS.find(l => l.kind.type === 'calc' && l.kind.calc === parsed.calcId);
-            if (level) return `ขั้นตอน "${level.title}"`;
+            if (level) return t('docLabel.level', { title: levelTitleIn(level, locale) });
             const def = CALCULATORS.find(c => c.id === parsed.calcId);
-            return def ? `"${def.title}"` : 'ข้อมูลเครื่องคำนวณ';
+            return def ? t('docLabel.calc', { title: locale === 'th' ? def.title : def.titleEn }) : t('docLabel.calcFallback');
         }
     }
 }

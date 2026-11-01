@@ -18,6 +18,7 @@ import { useModuleEnabled, usePlatformModules } from '@/features/modules/modules
 import { useSession } from '../auth/session';
 import { useCurrentWorkspace } from '../query/hooks';
 import { apiClient, type ApiClient } from './client';
+import { cloudText } from '../text';
 import { isApiError } from './errors';
 
 const seg = (s: string) => encodeURIComponent(s);
@@ -99,14 +100,15 @@ export function workforceConflict(error: unknown): WorkforceConflictDetails | un
     return parsed.success ? parsed.data : undefined;
 }
 
-/** Thai message for a refused write; undefined so callers can fall back to thaiErrorMessage. */
+/** Message (UI language) for a refused write; undefined so callers can fall back to thaiErrorMessage. */
 export function workforceConflictMessage(error: unknown): string | undefined {
     const c = workforceConflict(error);
     if (c === undefined) return undefined;
+    const t = cloudText();
     switch (c.reason) {
-        case 'name_taken': return `มีชื่อ "${c.name}" อยู่แล้ว ตั้งชื่ออื่น`;
-        case 'limit_reached': return `เพิ่มได้สูงสุด ${c.limit} รายการ เก็บถาวรรายการที่ไม่ใช้ก่อน`;
-        case 'in_use': return `ยังมีงานที่จัดไว้ ${c.assignments} งานที่ยังไม่จบ ย้ายหรือลบงานเหล่านั้นก่อน`;
+        case 'name_taken': return t('conflicts.workforceNameTaken', { name: c.name });
+        case 'limit_reached': return t('conflicts.workforceLimit', { limit: c.limit });
+        case 'in_use': return t('conflicts.workforceInUse', { assignments: c.assignments });
     }
 }
 
@@ -114,7 +116,7 @@ const useSignedIn = () => useSession(s => s.status === 'signed-in');
 
 /**
  * The workforce module for `workspaceId` (default: the open cloud project's workspace, else the current one): 'on' when
- * the platform offers it AND that company switched it on (โมดูลเสริม); 'loading' until the platform list, the workspace
+ * the platform offers it AND that company switched it on (optional module); 'loading' until the platform list, the workspace
  * and its switches are known, so nothing flashes in or out.
  */
 export function useWorkforceState(workspaceId?: string): 'loading' | 'on' | 'off' {

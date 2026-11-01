@@ -9,19 +9,20 @@ import {
     LaptopOutlined, MoreOutlined, PlusOutlined, RollbackOutlined, SearchOutlined,
 } from '@ant-design/icons';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { computeProject, createProject, type Project, type ProjectStart } from '@/domain/project';
 import { diffDocs } from '@/domain/sync';
 import { JOURNEY_LEVELS } from '@/domain/journey';
 import { formatNumber } from '@/components/sheet/NumberCell';
 import { selectGuestProject, useProjectStore } from '@/store/project-store';
 import type { ProjectDto } from '@/shared/contract';
-import { thaiErrorMessage } from '../api/errors';
-import { RULES } from '../auth/form-rules';
-import { can, ROLE_LABEL } from '../permissions';
+import { useErrorMessage } from '../api/error-message';
+import { useRules } from '../auth/use-rules';
+import { can } from '../permissions';
 import { useCreateProject, useCurrentWorkspace, useDeleteProject, useProjects, useUpdateProject } from '../query/hooks';
 import { useCloud } from '../state';
 import { savedPendingCount } from '../sync/adapters';
-import { RequireSignIn, formatDateTime, spinner } from '../ui/common';
+import { RequireSignIn, spinner, useDateTime } from '../ui/common';
 import { closeCloudProject, forgetDeletedProject, openCloudProject } from './controller';
 
 const { Title, Text } = Typography;
@@ -32,10 +33,10 @@ export function hasGuestData(p: Project): boolean {
 }
 
 type ProjectSort = 'recent' | 'name' | 'value';
-const SORT_OPTIONS: { value: ProjectSort; label: string }[] = [
-    { value: 'recent', label: 'แก้ล่าสุด' },
-    { value: 'name', label: 'ชื่อ ก–ฮ' },
-    { value: 'value', label: 'มูลค่าสูงสุด' },
+const SORT_KEYS: { value: ProjectSort; key: 'sortRecent' | 'sortName' | 'sortValue' }[] = [
+    { value: 'recent', key: 'sortRecent' },
+    { value: 'name', key: 'sortName' },
+    { value: 'value', key: 'sortValue' },
 ];
 /** Search and sort show from this many projects on. */
 const LIST_TOOLS_FROM = 6;
@@ -53,14 +54,15 @@ export function sortProjects(list: readonly ProjectDto[], sort: ProjectSort): Pr
     return out;
 }
 
-const START_CHOICES: { start: ProjectStart; icon: React.ReactNode; title: string; text: string }[] = [
-    { start: 'blank', icon: <FileAddOutlined />, title: 'เริ่มจากแบบแปลนของฉัน', text: 'ทุกขั้นตอนเริ่มจากค่าว่าง กรอกขนาดและจำนวนตามแบบ' },
-    { start: 'sample', icon: <HomeOutlined />, title: 'ลองกับบ้านตัวอย่าง', text: 'เทมเพลตบ้านเดี่ยว 1 ชั้น กรอกข้อมูลไว้ครบ' },
+const START_CHOICES: { start: ProjectStart; icon: React.ReactNode; title: 'startBlankTitle' | 'startSampleTitle'; text: 'startBlankText' | 'startSampleText' }[] = [
+    { start: 'blank', icon: <FileAddOutlined />, title: 'startBlankTitle', text: 'startBlankText' },
+    { start: 'sample', icon: <HomeOutlined />, title: 'startSampleTitle', text: 'startSampleText' },
 ];
 
 export function ProjectsPage() {
+    const t = useTranslations('cloud.projects');
     return (
-        <RequireSignIn next="/projects" title="โครงการบนคลาวด์">
+        <RequireSignIn next="/projects" title={t('cloudTitle')}>
             <ProjectsContent />
         </RequireSignIn>
     );
@@ -70,6 +72,11 @@ function ProjectsContent() {
     const router = useRouter();
     const qc = useQueryClient();
     const { message, modal } = App.useApp();
+    const t = useTranslations('cloud.projects');
+    const tc = useTranslations('cloud.shared');
+    const tRoles = useTranslations('roles');
+    const toText = useErrorMessage();
+    const dateTime = useDateTime();
     const { workspace, workspaces, isLoading: wsLoading, select } = useCurrentWorkspace();
     const [archived, setArchived] = useState(false);
     const projects = useProjects(workspace?.id, archived);
@@ -90,14 +97,14 @@ function ProjectsContent() {
     const guestDone = JOURNEY_LEVELS.filter(l => guest.journey?.[l.id] !== undefined).length;
 
     if (wsLoading) return spinner;
-    if (!workspace) return <Empty description="ยังไม่มีพื้นที่ทำงาน" />;
+    if (!workspace) return <Empty description={t('noWorkspace')} />;
 
     const open = async (projectId: string) => {
         try {
             await openCloudProject(qc, projectId);
             router.push('/journey');
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         }
     };
 
@@ -109,26 +116,26 @@ function ProjectsContent() {
     const setArchivedFlag = (p: ProjectDto, value: boolean) => {
         update.mutate({ projectId: p.id, archived: value }, {
             onSuccess: () => {
-                void message.success(value ? 'เก็บถาวรแล้ว (กู้คืนได้ที่แท็บ "เก็บถาวร")' : 'กู้คืนแล้ว');
+                void message.success(value ? t('archivedDone') : t('restored'));
                 if (value && p.id === openId) void closeCloudProject();
             },
-            onError: (e) => { void message.error(thaiErrorMessage(e)); },
+            onError: (e) => { void message.error(toText(e)); },
         });
     };
 
     const confirmDelete = (p: ProjectDto) => {
         modal.confirm({
-            title: `ลบโครงการ "${p.name}" ถาวร?`,
-            content: 'ข้อมูลทุกขั้นตอนและทุกฉบับแก้ไข ของโครงการนี้จะหายไป กู้คืนไม่ได้ (ถ้าแค่ไม่ใช้แล้ว ให้ "เก็บถาวร" แทน)',
-            okText: 'ลบถาวร', okButtonProps: { danger: true }, cancelText: 'ยกเลิก',
+            title: t('deleteTitle', { name: p.name }),
+            content: t('deleteContent'),
+            okText: tc('deletePermanent'), okButtonProps: { danger: true }, cancelText: tc('cancel'),
             onOk: async () => {
                 if (p.id === openId) await closeCloudProject();
                 try {
                     await remove.mutateAsync(p.id);
                     await forgetDeletedProject(p.id);
-                    void message.success('ลบโครงการแล้ว');
+                    void message.success(t('deleted'));
                 } catch (e) {
-                    void message.error(thaiErrorMessage(e));
+                    void message.error(toText(e));
                 }
             },
         });
@@ -136,13 +143,13 @@ function ProjectsContent() {
 
     const menuFor = (p: ProjectDto): MenuProps => ({
         items: [
-            ...(can(role, 'projects.edit') ? [{ key: 'rename', icon: <EditOutlined />, label: 'เปลี่ยนชื่อ' }] : []),
+            ...(can(role, 'projects.edit') ? [{ key: 'rename', icon: <EditOutlined />, label: tc('rename') }] : []),
             ...(can(role, 'projects.archive')
                 ? [p.archivedAt === null
-                    ? { key: 'archive', icon: <InboxOutlined />, label: 'เก็บถาวร' }
-                    : { key: 'restore', icon: <RollbackOutlined />, label: 'กู้คืน' }]
+                    ? { key: 'archive', icon: <InboxOutlined />, label: t('archive') }
+                    : { key: 'restore', icon: <RollbackOutlined />, label: t('restore') }]
                 : []),
-            ...(can(role, 'projects.delete') ? [{ key: 'delete', icon: <DeleteOutlined />, label: 'ลบถาวร', danger: true }] : []),
+            ...(can(role, 'projects.delete') ? [{ key: 'delete', icon: <DeleteOutlined />, label: tc('deletePermanent'), danger: true }] : []),
         ],
         onClick: ({ key }) => {
             if (key === 'rename') setRenaming(p);
@@ -161,17 +168,17 @@ function ProjectsContent() {
         <div className="flex flex-col gap-4 max-w-[1200px] mx-auto w-full">
             <div className="bg-white border border-gray-200 rounded-card p-4 sm:p-5 shadow-card flex flex-col md:flex-row md:items-center gap-3">
                 <div className="flex-1 min-w-0">
-                    <Title level={3} style={{ margin: 0 }}>โครงการทั้งหมด</Title>
-                    <Text type="secondary" className="text-[13px]">บันทึกบนคลาวด์ อัตโนมัติ เปิดจากเครื่องไหนก็ทำต่อได้</Text>
+                    <Title level={3} style={{ margin: 0 }}>{t('heading')}</Title>
+                    <Text type="secondary" className="text-[13px]">{t('subtitle')}</Text>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <Select value={workspace.id} onChange={select} style={{ minWidth: 220 }} aria-label="พื้นที่ทำงาน"
+                    <Select value={workspace.id} onChange={select} style={{ minWidth: 220 }} aria-label={tc('workspaceAria')}
                         options={workspaces.map(w => ({
                             value: w.id,
-                            label: `${w.kind === 'personal' ? 'ส่วนตัว' : w.name} · ${ROLE_LABEL[w.role]}`,
+                            label: `${w.kind === 'personal' ? tc('personal') : w.name} · ${tRoles(`${w.role}.label`)}`,
                         }))} />
                     {can(role, 'projects.create') && (
-                        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>สร้างโครงการใหม่</Button>
+                        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>{t('createNew')}</Button>
                     )}
                 </div>
             </div>
@@ -181,17 +188,17 @@ function ProjectsContent() {
                 <div className="flex flex-1 min-w-0 items-center gap-3">
                 <LaptopOutlined className="shrink-0 text-[22px] text-gray-500" />
                 <div className="flex-1 min-w-0">
-                    <div className="font-semibold">โครงการในเครื่องนี้: {guest.meta.projectName === '' ? 'โครงการของฉัน' : guest.meta.projectName}</div>
+                    <div className="font-semibold">{t('localTitle', { name: guest.meta.projectName === '' ? t('localDefaultName') : guest.meta.projectName })}</div>
                     <div className="text-[12px] text-gray-500 tabular-nums">
-                        {guestDone}/{JOURNEY_LEVELS.length} ขั้นตอน · {formatNumber(guestTotal, 0)} บาท · เก็บในเบราว์เซอร์นี้เท่านั้น
+                        {t('localSummary', { steps: tc('steps', { done: guestDone, total: JOURNEY_LEVELS.length }), amount: formatNumber(guestTotal, 0) })}
                     </div>
                 </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    {openId !== null && <Button icon={<FolderOpenOutlined />} onClick={() => { void openLocal(); }}>เปิด</Button>}
+                    {openId !== null && <Button icon={<FolderOpenOutlined />} onClick={() => { void openLocal(); }}>{t('open')}</Button>}
                     {guestHasData && can(role, 'projects.create') && (
                         <Button icon={<CloudUploadOutlined />} onClick={() => setUploadOpen(true)}>
-                            อัปโหลดโครงการในเครื่องขึ้นคลาวด์
+                            {t('uploadLocal')}
                         </Button>
                     )}
                 </div>
@@ -199,38 +206,38 @@ function ProjectsContent() {
 
             <div className="flex flex-wrap items-center gap-3">
                 <Segmented value={archived ? 'archived' : 'active'} onChange={v => setArchived(v === 'archived')}
-                    options={[{ value: 'active', label: 'ใช้งานอยู่' }, { value: 'archived', label: 'เก็บถาวร' }]} />
-                {projects.isFetching && <Text type="secondary" className="text-[12px]">กำลังโหลด…</Text>}
+                    options={[{ value: 'active', label: t('segActive') }, { value: 'archived', label: t('segArchived') }]} />
+                {projects.isFetching && <Text type="secondary" className="text-[12px]">{t('loading')}</Text>}
                 {showTools && (
                     <span className="ml-auto flex flex-wrap items-center gap-2">
-                        <Input allowClear prefix={<SearchOutlined className="text-gray-400" />} placeholder="ค้นหาชื่อโครงการ"
-                            aria-label="ค้นหาชื่อโครงการ" value={search} onChange={e => setSearch(e.target.value)} style={{ width: 220 }} />
-                        <Select<ProjectSort> value={sort} onChange={setSort} aria-label="เรียงตาม" style={{ width: 150 }}
-                            options={SORT_OPTIONS} />
+                        <Input allowClear prefix={<SearchOutlined className="text-gray-400" />} placeholder={t('searchPlaceholder')}
+                            aria-label={t('searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)} style={{ width: 220 }} />
+                        <Select<ProjectSort> value={sort} onChange={setSort} aria-label={t('sortAria')} style={{ width: 150 }}
+                            options={SORT_KEYS.map(o => ({ value: o.value, label: t(o.key) }))} />
                     </span>
                 )}
             </div>
 
             {projects.isLoading ? spinner : projects.isError ? (
                 <div className="bg-white border border-gray-200 rounded-card p-6 text-center text-gray-600">
-                    {thaiErrorMessage(projects.error)}
-                    <div className="mt-3"><Button onClick={() => { void projects.refetch(); }}>ลองใหม่</Button></div>
+                    {toText(projects.error)}
+                    <div className="mt-3"><Button onClick={() => { void projects.refetch(); }}>{tc('retry')}</Button></div>
                 </div>
             ) : all.length === 0 ? (
                 <div className="bg-white border border-gray-200 rounded-card p-10">
                     {archived || !can(role, 'projects.create')
-                        ? <Empty description={archived ? 'ไม่มีโครงการที่เก็บถาวร' : 'ยังไม่มีโครงการในพื้นที่นี้'} />
+                        ? <Empty description={archived ? t('emptyArchived') : t('emptyNone')} />
                         : (
                             <Empty description={(
                                 <span className="block max-w-md mx-auto">
-                                    ยังไม่มีโครงการในพื้นที่นี้ — สร้างโครงการแล้วกรอกตามแบบแปลนทีละขั้นตอน
-                                    {guestHasData && ' หรืออัปโหลดโครงการที่ทำไว้ในเครื่องนี้'}
+                                    {t('emptyCreate')}
+                                    {guestHasData && t('emptyUploadHint')}
                                 </span>
                             )}>
                                 <div className="flex flex-wrap justify-center gap-2">
-                                    <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>สร้างโครงการแรก</Button>
+                                    <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>{t('createFirst')}</Button>
                                     {guestHasData && (
-                                        <Button icon={<CloudUploadOutlined />} onClick={() => setUploadOpen(true)}>อัปโหลดโครงการในเครื่อง</Button>
+                                        <Button icon={<CloudUploadOutlined />} onClick={() => setUploadOpen(true)}>{t('uploadLocalShort')}</Button>
                                     )}
                                 </div>
                             </Empty>
@@ -238,8 +245,8 @@ function ProjectsContent() {
                 </div>
             ) : list.length === 0 ? (
                 <div className="bg-white border border-gray-200 rounded-card p-8 text-center text-gray-600">
-                    ไม่พบโครงการที่ชื่อมี &quot;{search.trim()}&quot;
-                    <div className="mt-2"><Button size="small" onClick={() => setSearch('')}>ล้างคำค้น</Button></div>
+                    {t('noMatch', { search: search.trim() })}
+                    <div className="mt-2"><Button size="small" onClick={() => setSearch('')}>{t('clearSearch')}</Button></div>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -266,34 +273,34 @@ function ProjectsContent() {
                                             className="w-full text-left font-semibold text-[15px] text-gray-900 line-clamp-2 [overflow-wrap:anywhere] bg-transparent border-0 p-0 cursor-pointer hover:text-orange-600 disabled:cursor-default disabled:hover:text-gray-900">
                                             {p.name}
                                         </button>
-                                        <div className="text-[12px] text-gray-500">แก้ล่าสุด {formatDateTime(p.updatedAt)}</div>
+                                        <div className="text-[12px] text-gray-500">{t('lastEdited', { time: dateTime(p.updatedAt) })}</div>
                                     </div>
                                     {items.length > 0 && (
                                         <span onClick={own()}>
                                             <Dropdown menu={menuFor(p)} trigger={['click']}>
-                                                <Button type="text" size="small" icon={<MoreOutlined />} aria-label="ตัวเลือก" />
+                                                <Button type="text" size="small" icon={<MoreOutlined />} aria-label={t('optionsAria')} />
                                             </Dropdown>
                                         </span>
                                     )}
                                 </div>
                                 <div className="flex flex-wrap gap-1">
-                                    {p.id === openId && <Tag color="orange">เปิดอยู่</Tag>}
-                                    {p.start === 'sample' && <Tag>บ้านตัวอย่าง</Tag>}
-                                    {p.archivedAt !== null && <Tag>เก็บถาวร</Tag>}
-                                    {pendingCount > 0 && <Tag color="gold">รอส่ง {pendingCount} รายการ</Tag>}
+                                    {p.id === openId && <Tag color="orange">{t('tagOpen')}</Tag>}
+                                    {p.start === 'sample' && <Tag>{t('tagSample')}</Tag>}
+                                    {p.archivedAt !== null && <Tag>{t('archive')}</Tag>}
+                                    {pendingCount > 0 && <Tag color="gold">{t('tagPending', { count: pendingCount })}</Tag>}
                                 </div>
                                 <div className="text-[22px] font-bold tabular-nums leading-tight">
-                                    {formatNumber(p.summary.constructionTotal, 0)} <span className="text-[13px] font-normal text-gray-500">บาท</span>
+                                    {formatNumber(p.summary.constructionTotal, 0)} <span className="text-[13px] font-normal text-gray-500">{tc('baht')}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Progress percent={p.summary.levelsTotal === 0 ? 0 : Math.round((p.summary.levelsDone / p.summary.levelsTotal) * 100)}
                                         showInfo={false} strokeColor="#F97316" className="flex-1 !mb-0" size="small" />
-                                    <span className="text-[12px] text-gray-600 whitespace-nowrap tabular-nums">{p.summary.levelsDone}/{p.summary.levelsTotal} ขั้นตอน</span>
+                                    <span className="text-[12px] text-gray-600 whitespace-nowrap tabular-nums">{tc('steps', { done: p.summary.levelsDone, total: p.summary.levelsTotal })}</span>
                                 </div>
-                                {/* The whole card opens it: a quiet button, so "สร้างโครงการใหม่" stays the page's one primary action. */}
+                                {/* The whole card opens it: a quiet button, so "New project" stays the page's one primary action. */}
                                 <Button block icon={<FolderOpenOutlined />} className="!mt-auto"
                                     loading={opening} disabled={!canOpen} onClick={own(activate)}>
-                                    {p.id === openId ? 'ไปที่โครงการ' : p.archivedAt !== null ? 'กู้คืนก่อนเปิด' : 'เปิด'}
+                                    {p.id === openId ? t('goTo') : p.archivedAt !== null ? t('restoreFirst') : t('open')}
                                 </Button>
                             </div>
                         );
@@ -307,9 +314,9 @@ function ProjectsContent() {
                 onCreated={(id) => {
                     setUploadOpen(false);
                     modal.confirm({
-                        title: 'อัปโหลดขึ้นคลาวด์ แล้ว',
-                        content: 'โครงการในเครื่องนี้ยังอยู่เหมือนเดิม ต้องการเปิดโครงการบนคลาวด์ เพื่อทำต่อเลยไหม',
-                        okText: 'เปิดโครงการบนคลาวด์', cancelText: 'ไว้ทีหลัง',
+                        title: t('uploadedTitle'),
+                        content: t('uploadedContent'),
+                        okText: t('openCloud'), cancelText: t('later'),
                         onOk: () => open(id),
                     });
                 }} />
@@ -328,6 +335,10 @@ export function CreateProjectModal({ open, workspaceId, upload, onClose, onCreat
     onCreated: (projectId: string) => void;
 }) {
     const { message } = App.useApp();
+    const t = useTranslations('cloud.projects');
+    const tc = useTranslations('cloud.shared');
+    const rules = useRules();
+    const toText = useErrorMessage();
     const create = useCreateProject(workspaceId);
     const [form] = Form.useForm<{ name: string; start: ProjectStart }>();
     const [start, setStart] = useState<ProjectStart>('blank');
@@ -343,7 +354,7 @@ export function CreateProjectModal({ open, workspaceId, upload, onClose, onCreat
             form.resetFields();
             onCreated(detail.project.id);
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         }
     };
 
@@ -351,17 +362,17 @@ export function CreateProjectModal({ open, workspaceId, upload, onClose, onCreat
 
     return (
         <Modal open={open} onCancel={onClose} destroyOnHidden
-            title={upload ? 'อัปโหลดโครงการในเครื่องขึ้นคลาวด์' : 'สร้างโครงการใหม่'}
-            okText={upload ? 'อัปโหลด' : 'สร้างโครงการ'} cancelText="ยกเลิก"
+            title={upload ? t('uploadLocal') : t('createNew')}
+            okText={upload ? t('uploadOk') : t('createOk')} cancelText={tc('cancel')}
             confirmLoading={create.isPending} onOk={() => { void submit().catch(() => undefined); }}>
             {upload && (
                 <p className="text-[13px] text-gray-600 mb-3">
-                    ข้อมูลทุกขั้นตอนที่กรอกไว้ในเครื่องนี้จะถูกคัดลอกขึ้นคลาวด์ — โครงการในเครื่องยังอยู่ ไม่ถูกลบ
+                    {t('uploadNote')}
                 </p>
             )}
             <Form form={form} layout="vertical" requiredMark={false} initialValues={{ name: defaultName }}>
-                <Form.Item name="name" label="ชื่อโครงการ" rules={RULES.projectName}>
-                    <Input placeholder="เช่น บ้านคุณสมชาย ลำลูกกา" autoFocus />
+                <Form.Item name="name" label={t('nameLabel')} rules={rules.projectName}>
+                    <Input placeholder={t('namePlaceholder')} autoFocus />
                 </Form.Item>
             </Form>
             {!upload && (
@@ -372,8 +383,8 @@ export function CreateProjectModal({ open, workspaceId, upload, onClose, onCreat
                                 ${start === c.start ? 'border-orange-400 bg-orange-50' : 'border-gray-200 hover:border-orange-300'}`}>
                             <span className="text-[22px] text-orange-500">{c.icon}</span>
                             <span>
-                                <span className="block font-semibold text-[14px] text-gray-900">{c.title}</span>
-                                <span className="block text-[12px] text-gray-600">{c.text}</span>
+                                <span className="block font-semibold text-[14px] text-gray-900">{t(c.title)}</span>
+                                <span className="block text-[12px] text-gray-600">{t(c.text)}</span>
                             </span>
                         </button>
                     ))}
@@ -385,6 +396,10 @@ export function CreateProjectModal({ open, workspaceId, upload, onClose, onCreat
 
 function RenameModal({ project, onClose }: { project: ProjectDto | null; onClose: () => void }) {
     const { message } = App.useApp();
+    const t = useTranslations('cloud.projects');
+    const tc = useTranslations('cloud.shared');
+    const rules = useRules();
+    const toText = useErrorMessage();
     const update = useUpdateProject();
     const [form] = Form.useForm<{ name: string }>();
 
@@ -393,19 +408,19 @@ function RenameModal({ project, onClose }: { project: ProjectDto | null; onClose
         const { name } = await form.validateFields();
         try {
             await update.mutateAsync({ projectId: project.id, name: name.trim() });
-            void message.success('เปลี่ยนชื่อแล้ว');
+            void message.success(t('renamed'));
             onClose();
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         }
     };
 
     return (
-        <Modal open={project !== null} onCancel={onClose} destroyOnHidden title="เปลี่ยนชื่อโครงการ"
-            okText="บันทึก" cancelText="ยกเลิก" confirmLoading={update.isPending}
+        <Modal open={project !== null} onCancel={onClose} destroyOnHidden title={t('renameTitle')}
+            okText={tc('save')} cancelText={tc('cancel')} confirmLoading={update.isPending}
             onOk={() => { void submit().catch(() => undefined); }}>
             <Form form={form} layout="vertical" requiredMark={false} initialValues={{ name: project?.name ?? '' }} key={project?.id ?? 'none'}>
-                <Form.Item name="name" label="ชื่อโครงการ" rules={RULES.projectName}>
+                <Form.Item name="name" label={t('nameLabel')} rules={rules.projectName}>
                     <Input autoFocus />
                 </Form.Item>
             </Form>

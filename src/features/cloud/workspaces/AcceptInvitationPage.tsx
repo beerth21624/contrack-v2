@@ -6,37 +6,43 @@ import { useRouter } from 'next/navigation';
 import { Button, Result } from 'antd';
 import { CheckCircleOutlined, MailOutlined, TeamOutlined } from '@ant-design/icons';
 import { acceptInvitationRequestSchema } from '@/shared/contract';
-import { isApiError, thaiErrorMessage } from '../api/errors';
+import { useTranslations } from 'next-intl';
+import { useErrorMessage } from '../api/error-message';
+import { isApiError } from '../api/errors';
 import { useSession } from '../auth/session';
-import { ROLE_LABEL } from '../permissions';
 import { useAcceptInvitation } from '../query/hooks';
 import { RequireSignIn } from '../ui/common';
 
 export function AcceptInvitationPage({ token }: { token: string }) {
+    const t = useTranslations('cloud.accept');
     const next = `/invite/${encodeURIComponent(token)}`;
     if (!acceptInvitationRequestSchema.safeParse({ token }).success) {
         return (
-            <Result status="warning" title="ลิงก์เชิญไม่ถูกต้อง" subTitle="ตรวจว่าคัดลอกลิงก์มาครบ หรือขอลิงก์ใหม่จากผู้เชิญ"
-                extra={<Link href="/journey"><Button>ไปหน้าจัดทำ BOQ</Button></Link>} />
+            <Result status="warning" title={t('invalidTitle')} subTitle={t('invalidSub')}
+                extra={<Link href="/journey"><Button>{t('goBoq')}</Button></Link>} />
         );
     }
     return (
-        <RequireSignIn next={next} title="คุณได้รับเชิญให้ทำ BOQ ร่วมกัน">
+        <RequireSignIn next={next} title={t('signInTitle')}>
             <AcceptInvitation token={token} />
         </RequireSignIn>
     );
 }
 
 function AcceptInvitation({ token }: { token: string }) {
+    const t = useTranslations('cloud.accept');
+    const tRoles = useTranslations('roles');
+    const tShared = useTranslations('cloud.shared');
+    const toText = useErrorMessage();
     const router = useRouter();
     const user = useSession(s => s.user);
     const accept = useAcceptInvitation();
 
     if (accept.isSuccess) {
         return (
-            <Result status="success" icon={<CheckCircleOutlined />} title="เข้าร่วมแล้ว"
-                subTitle={`บทบาทของคุณ: ${ROLE_LABEL[accept.data.role]}`}
-                extra={<Button type="primary" onClick={() => router.push('/projects')}>ไปที่โครงการของทีม</Button>} />
+            <Result status="success" icon={<CheckCircleOutlined />} title={t('joined')}
+                subTitle={tShared('yourRole', { role: tRoles(`${accept.data.role}.label`) })}
+                extra={<Button type="primary" onClick={() => router.push('/projects')}>{t('goTeamProjects')}</Button>} />
         );
     }
 
@@ -44,20 +50,20 @@ function AcceptInvitation({ token }: { token: string }) {
         const wrongEmail = isApiError(accept.error) && (accept.error.code === 'forbidden' || accept.error.code === 'not_found');
         return (
             <Result status="warning" icon={<MailOutlined />}
-                title={wrongEmail ? 'ลิงก์นี้เชิญอีเมลอื่น' : 'เข้าร่วมไม่สำเร็จ'}
+                title={wrongEmail ? t('wrongEmail') : t('failed')}
                 subTitle={wrongEmail
-                    ? `คุณเข้าสู่ระบบด้วย ${user?.email ?? ''} — ออกจากระบบแล้วเข้าใหม่ด้วยอีเมลที่ได้รับเชิญ`
-                    : thaiErrorMessage(accept.error)}
+                    ? t('wrongEmailSub', { email: user?.email ?? '' })
+                    : toText(accept.error)}
                 extra={[
-                    <Button key="retry" onClick={() => accept.reset()}>ลองใหม่</Button>,
-                    <Link key="projects" href="/projects"><Button type="link">ไปที่โครงการ</Button></Link>,
+                    <Button key="retry" onClick={() => accept.reset()}>{tShared('retry')}</Button>,
+                    <Link key="projects" href="/projects"><Button type="link">{t('goProjects')}</Button></Link>,
                 ]} />
         );
     }
 
     return (
-        <Result icon={<TeamOutlined className="!text-orange-500" />} title="คุณได้รับเชิญเข้าพื้นที่ทำงานของทีม"
-            subTitle={`เข้าร่วมด้วยบัญชี ${user?.email ?? ''}`}
-            extra={<Button type="primary" size="large" loading={accept.isPending} onClick={() => accept.mutate(token)}>เข้าร่วมทีม</Button>} />
+        <Result icon={<TeamOutlined className="!text-orange-500" />} title={t('teamTitle')}
+            subTitle={t('joinWith', { email: user?.email ?? '' })}
+            extra={<Button type="primary" size="large" loading={accept.isPending} onClick={() => accept.mutate(token)}>{t('join')}</Button>} />
     );
 }

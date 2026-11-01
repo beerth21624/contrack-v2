@@ -5,6 +5,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { App } from 'antd';
+import { useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
 import { readLocaleCookie, writeLocaleCookie } from '@/i18n/locale-cookie';
 import { onNotice } from '@/store/notices';
@@ -17,6 +18,7 @@ import { useRealtime } from './realtime/useRealtime';
 
 export function CloudRuntime() {
     const { message } = App.useApp();
+    const t = useTranslations('cloud');
     const qc = useQueryClient();
     const status = useSession(s => s.status);
     const userId = useSession(s => s.user?.id ?? null);
@@ -46,23 +48,23 @@ export function CloudRuntime() {
             forgetVariationSandbox();
             if (useProjectStore.getState().binding.kind !== 'guest') {
                 void closeCloudProject().then(() => {
-                    if (wasSignedIn) void message.info('ออกจากระบบแล้ว — กลับมาใช้โครงการในเครื่องนี้');
+                    if (wasSignedIn) void message.info(t('runtime.signedOut'));
                 });
             }
             qc.clear();
         }
-    }, [status, userId, qc, message]);
+    }, [status, userId, qc, message, t]);
 
     // Someone changed my role (or removed me) in the open project's workspace.
     useEffect(() => {
         if (binding.kind !== 'cloud' || !me.data) return;
         const ws = me.data.workspaces.find(w => w.id === binding.workspaceId);
         if (!ws) {
-            void closeCloudProject().then(() => { void message.warning('คุณไม่ได้เป็นสมาชิกของพื้นที่ทำงานนี้แล้ว'); });
+            void closeCloudProject().then(() => { void message.warning(t('runtime.notMember')); });
             return;
         }
         if (ws.role !== binding.role) useProjectStore.getState().setCloudRole(ws.role);
-    }, [binding, me.data, message]);
+    }, [binding, me.data, message, t]);
 
     // The profile language wins over this browser's cookie (signed in on another device, or switched there).
     // A server without users.locale answers no locale: nothing changes. Release 1: every profile is Thai = no cookie.

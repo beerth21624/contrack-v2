@@ -107,6 +107,8 @@ const eslintConfig = defineConfig([
       "src/features/boq-home/useBoqText.ts",
       // Track I-09: planning (Man-Day, S-Curve, CashFlow pages; calendar-grid and the pace readings included)
       "src/features/planning/**/*.{ts,tsx}",
+      // Track I-10: the rest of the cloud feature (projects, revisions, workspaces, presence, realtime, api messages)
+      "src/features/cloud/**/*.{ts,tsx}",
     ],
     ignores: ["**/__tests__/**", "src/features/export/baht-text.ts"],
     rules: {
