@@ -65,8 +65,48 @@ web ──(เครือข่าย docker ภายใน)── api:4000 �
 
 `docker compose pull && docker compose up -d` — API ทำ migration เองตอนเริ่ม · ข้อมูลเดโมไม่ถูกใส่ซ้ำ
 
+## ราคากลางภาครัฐ
+
+image `contrack-api` มี `goverment_price.json` ติดมาด้วย ตอนเริ่ม container จะ import เข้าฐานข้อมูล **ครั้งแรกครั้งเดียว** (4,559 รายการ)
+รีสตาร์ทครั้งต่อไปจะข้ามขั้นนี้ ถ้า import ล้มเหลว API ยังเปิดได้ตามปกติ และจะพิมพ์ WARNING ลง log
+
+## เปิดโมดูล ERP (เดโม ERP · branch `epic/erp` · tag `:erp-demo`)
+
+ค่าเริ่มต้นของ image คือ release 1 (BOQ + `subcontracting,workforce`) ถ้าจะให้ลูกค้าดูโมดูล ERP ให้ใส่ env ของ `contrack-api` เพิ่ม:
+
+| ตัวแปร | ค่า | หมายเหตุ |
+|---|---|---|
+| `MODULES_ENABLED` | `subcontracting,workforce,project-hub,portal,boq-control,quotations,contracts,billing,variations,procurement,site-diary,labour,job-cost,payables,handover` | โมดูลที่เซิร์ฟเวอร์เปิดให้ใช้ |
+| `ENTITLEMENTS` | `open` | ทุกบริษัทเปิดใช้เองได้ทันที · ถ้าไม่ใส่ `NODE_ENV=production` จะเป็น `enforce` (ต้องกด "ทดลองใช้" หรือให้แอดมินให้สิทธิ์) |
+| `PLATFORM_ADMIN_EMAILS` | อีเมลแอดมิน (คั่นด้วย `,`) | ใช้หน้า `/admin/entitlements` |
+
+ตั้ง `SEED_DEMO=true` บนฐานข้อมูลว่างแล้ว จะได้โครงการ "บ้านพักอาศัย ERP ตัวอย่าง – คุณมานะ ตั้งใจ" ที่มีข้อมูลตั้งแต่ใบเสนอราคาจนถึงรอบจ่ายเงิน
+(รายละเอียดใน `backend/SEED.md`)
+
+## build image จาก Mac (Apple Silicon / ARM)
+
+เซิร์ฟเวอร์ปลายทางเป็น **x86-64** ไม่ว่าจะเป็น cloud Linux หรือเครื่อง Windows ที่รัน Docker Desktop
+และทั้งสองแบบรัน **Linux container** (Windows ใช้ WSL2) image จึงต้องเป็น `linux/amd64` เสมอ ไม่ใช่ Windows image
+
+- เครื่อง Windows หรือ Intel: `docker build` ธรรมดาก็ได้ `linux/amd64` อยู่แล้ว
+- Mac M1/M2/M3: `docker build` ธรรมดาจะได้ `linux/arm64` ซึ่งรันบนเซิร์ฟเวอร์ไม่ได้ (`exec format error`)
+  ต้องสั่งระบุ platform เอง:
+
+```bash
+# Docker Desktop → Settings → Features in development (หรือ General) → "Use Rosetta for x86/amd64 emulation" ต้องเปิดไว้
+# ถ้าไม่เปิด จะใช้ QEMU แทน ซึ่งทำให้ next build ค้างตอนจบ (Node ล่ม uv__io_poll EEXIST)
+docker buildx build --platform linux/amd64 --load -f Dockerfile.api -t beerth21624/contrack-api:<tag> .
+docker buildx build --platform linux/amd64 --load -f Dockerfile.web -t beerth21624/contrack-web:<tag> .
+docker image inspect beerth21624/contrack-web:<tag> --format '{{.Os}}/{{.Architecture}}'   # ต้องได้ linux/amd64
+docker push beerth21624/contrack-api:<tag> && docker push beerth21624/contrack-web:<tag>
+```
+
+- build ทีละ image (RAM 16 GB) · บน M1 Pro: api ~7 นาที (QEMU) · web ~1–2 นาทีกับ Rosetta เมื่อ `npm ci` อยู่ใน cache แล้ว (ถ้าใช้ QEMU ขั้น next build อย่างเดียวใช้ ~6 นาทีแล้วค้าง)
+- `.dockerignore` กัน `.env*` ไว้ ห้ามเอาออก เพราะ `.env.local` ที่มี `NEXT_PUBLIC_*` จะถูกฝังลง image เว็บตอน build
+- เสร็จแล้วล้าง cache ด้วย `docker builder prune`
+
 ## ยังไม่รวมในรอบนี้ (เพิ่มภายหลัง)
 - SMS จริงสำหรับ OTP (ตอนนี้ `console`) · LINE OA
 - สำรองฐานข้อมูลอัตโนมัติ
 - build/push image อัตโนมัติจาก CI (ตอนนี้ build จากเครื่องนักพัฒนา)
-- image เป็น linux/amd64 เท่านั้น
+- image เป็น linux/amd64 เท่านั้น (ถ้าต้องการรันบน Mac ARM แบบ native ให้ build เพิ่มด้วย `--platform linux/amd64,linux/arm64`)
