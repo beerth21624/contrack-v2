@@ -1,5 +1,6 @@
 import type {
-    BillLineMatch, BillMatchStatus, CostCategory, SupplierBillKind, SupplierBillStatus, SupplierWhtPreset,
+    ApPaymentMethod, ApPaymentStatus, BillLineMatch, BillMatchStatus, CostCategory, PaymentRunStatus, SupplierBillKind, SupplierBillStatus,
+    SupplierWhtPreset, WhtCertificateStatus, WhtCondition, WhtForm, WhtIncomeType, WhtPayeeSnapshot, WhtPayerSnapshot,
 } from '@contrack/contract';
 import type { ProjectId, UserId, WorkspaceId } from '../../../../shared/domain/ids';
 
@@ -72,6 +73,80 @@ export interface BillListFilter {
     dueTo?: string;
 }
 
+/** One `ap_payment_runs` row (WP-50). */
+export interface PaymentRunRecord {
+    id: string;
+    workspaceId: WorkspaceId;
+    number: string | null;
+    status: PaymentRunStatus;
+    billIds: string[];
+    payDate: string;
+    method: ApPaymentMethod;
+    note: string;
+    totalCash: number;
+    totalWht: number;
+    approvedBy: UserId | null;
+    approvedAt: Date | null;
+    paidAt: Date | null;
+    paidBy: UserId | null;
+    cancelledAt: Date | null;
+    createdBy: UserId;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/** One `ap_payments` row: a payment voucher. */
+export interface PaymentRecord {
+    id: string;
+    workspaceId: WorkspaceId;
+    runId: string | null;
+    supplierId: string | null;
+    payeeName: string;
+    number: string;
+    payDate: string;
+    method: ApPaymentMethod;
+    bankRef: string;
+    cashAmount: number;
+    whtAmount: number;
+    whtCertificateId: string | null;
+    status: ApPaymentStatus;
+    fileIds: string[];
+    createdBy: UserId;
+    createdAt: Date;
+}
+
+/** One `ap_payment_allocations` row. */
+export interface PaymentAllocationRecord {
+    paymentId: string;
+    billId: string;
+    workspaceId: WorkspaceId;
+    settled: number;
+    wht: number;
+    cash: number;
+}
+
+/** One `ap_wht_certificates` row (50 ทวิ). */
+export interface WhtCertificateRecord {
+    id: string;
+    workspaceId: WorkspaceId;
+    number: string;
+    bookNo: string;
+    paymentId: string;
+    payeeSnapshot: WhtPayeeSnapshot;
+    payerSnapshot: WhtPayerSnapshot;
+    form: WhtForm;
+    incomeType: WhtIncomeType;
+    incomeDesc: string;
+    payDate: string;
+    baseAmount: number;
+    whtRate: number;
+    whtAmount: number;
+    condition: WhtCondition;
+    status: WhtCertificateStatus;
+    issuedAt: Date;
+    createdBy: UserId;
+}
+
 /** Supplier bills. Every method filters by `workspaceId` except `find` (the route carries only the id) and `dueOn`. */
 export abstract class PayablesRepository {
     /** Serializes bill creation / posting of a workspace (duplicate checks) until the transaction ends. */
@@ -95,4 +170,23 @@ export abstract class PayablesRepository {
     abstract dueOn(date: string, statuses: readonly SupplierBillStatus[], limit: number): Promise<BillRecord[]>;
     /** Memory adapter: forget a deleted project's bills (PostgreSQL drops them with the project). */
     abstract deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void>;
+
+    /** Bills of the workspace among these ids (any status). */
+    abstract findMany(workspaceId: WorkspaceId, billIds: readonly string[]): Promise<BillRecord[]>;
+
+    // ── payment runs, payments, WHT certificates (WP-50) ──
+    abstract findRun(runId: string): Promise<PaymentRunRecord | undefined>;
+    abstract lockRun(workspaceId: WorkspaceId, runId: string): Promise<PaymentRunRecord | undefined>;
+    /** Newest first (pay date, creation). */
+    abstract listRuns(workspaceId: WorkspaceId, statuses?: readonly PaymentRunStatus[]): Promise<PaymentRunRecord[]>;
+    abstract insertRun(run: PaymentRunRecord): Promise<void>;
+    abstract saveRun(run: PaymentRunRecord): Promise<void>;
+    abstract insertPayment(payment: PaymentRecord, allocations: readonly PaymentAllocationRecord[]): Promise<void>;
+    abstract findPayment(paymentId: string): Promise<PaymentRecord | undefined>;
+    /** Payments of a run, in number order. */
+    abstract paymentsOfRun(workspaceId: WorkspaceId, runId: string): Promise<PaymentRecord[]>;
+    abstract allocationsOf(workspaceId: WorkspaceId, paymentId: string): Promise<PaymentAllocationRecord[]>;
+    abstract insertCertificate(certificate: WhtCertificateRecord): Promise<void>;
+    abstract findCertificate(certificateId: string): Promise<WhtCertificateRecord | undefined>;
+    abstract certificatesOf(workspaceId: WorkspaceId, certificateIds: readonly string[]): Promise<WhtCertificateRecord[]>;
 }

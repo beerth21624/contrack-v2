@@ -4,7 +4,7 @@
 // company balance is forecast below its minimum.
 import { Injectable, Logger } from '@nestjs/common';
 import type {
-    CashEstimateWeekDto, CashFlowDto, CashPlanItemDto, CashSettingsDto, JobCostAlertLevel,
+    CashEstimateWeekDto, CashFlowDto, CashPlanItemDto, CashSettingsDto, FinDirection, JobCostAlertLevel,
 } from '@contrack/contract';
 import { CASH_FLOW_DEFAULT_WEEKS } from '@contrack/contract';
 import { addDays, bangkokToday, compareDates, isBusinessDate } from '@contrack/domain/dates/business-date';
@@ -84,9 +84,12 @@ export class CashFlowEngine {
         return out.sort(byDate);
     }
 
-    /** Actual cash events as projection input. */
-    private static actual(events: readonly { eventDate: string; cash: number }[]): CashActual[] {
-        return events.filter(e => e.cash !== 0).map(e => ({ date: e.eventDate, cash: e.cash }));
+    /**
+     * Actual cash events as projection input (+ in, − out). Modules post `cash` as the amount moved and give the way
+     * in `direction` (a reversal negates the amount, so it cancels the original either way).
+     */
+    private static actual(events: readonly { eventDate: string; cash: number; direction: FinDirection }[]): CashActual[] {
+        return events.filter(e => e.cash !== 0).map(e => ({ date: e.eventDate, cash: e.direction === 'out' ? -e.cash : e.cash }));
     }
 
     private static items(items: readonly CashPlanItem[], names: ReadonlyMap<string, string>): CashPlanItemDto[] {

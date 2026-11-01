@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { isoDateTimeSchema, uuidSchema } from '../common';
 import { amountSchema, businessDateSchema, quantitySchema, rateSchema, unitPriceSchema } from './common';
 import { costCategorySchema } from './ledger';
-import { supplierWhtPresetSchema } from './suppliers';
+import { type SupplierWhtPreset, supplierWhtPresetSchema } from './suppliers';
 
 export const SUPPLIER_BILL_KINDS = ['material', 'subcontract', 'service', 'labour', 'expense'] as const;
 export const supplierBillKindSchema = z.enum(SUPPLIER_BILL_KINDS);
@@ -278,3 +278,222 @@ export const payablesDueDtoSchema = z.object({
     payPeriods: z.array(billablePayPeriodDtoSchema),
 });
 export type PayablesDueDto = z.infer<typeof payablesDueDtoSchema>;
+
+// ── Payment runs, payment vouchers and WHT certificates (WP-50) ──
+// A run collects approved bills (→ scheduled), is approved (`payment_run.approve`, skipped when solo / policy off) and
+// paid: one payment voucher (`PV`) per supplier (one per labour bill), a WHT certificate (50 ทวิ, `WHT`) per payment
+// with WHT, fin_events `ap.payment` / `ap.wht_withheld`, bills → paid. Cancel: draft / pending / approved → bills back
+// to approved.
+
+export const PAYMENT_RUN_STATUSES = ['draft', 'pending_approval', 'approved', 'paid', 'cancelled'] as const;
+export const paymentRunStatusSchema = z.enum(PAYMENT_RUN_STATUSES);
+export type PaymentRunStatus = z.infer<typeof paymentRunStatusSchema>;
+
+export const AP_PAYMENT_METHODS = ['transfer', 'cheque', 'cash'] as const;
+export const apPaymentMethodSchema = z.enum(AP_PAYMENT_METHODS);
+export type ApPaymentMethod = z.infer<typeof apPaymentMethodSchema>;
+
+export const AP_PAYMENT_STATUSES = ['issued', 'voided'] as const;
+export const apPaymentStatusSchema = z.enum(AP_PAYMENT_STATUSES);
+export type ApPaymentStatus = z.infer<typeof apPaymentStatusSchema>;
+
+/** ภ.ง.ด.3 (individual payee) / ภ.ง.ด.53 (juristic payee). */
+export const WHT_FORMS = ['pnd3', 'pnd53'] as const;
+export const whtFormSchema = z.enum(WHT_FORMS);
+export type WhtForm = z.infer<typeof whtFormSchema>;
+
+export const WHT_INCOME_TYPES = ['service', 'transport', 'advertising', 'rent', 'other'] as const;
+export const whtIncomeTypeSchema = z.enum(WHT_INCOME_TYPES);
+export type WhtIncomeType = z.infer<typeof whtIncomeTypeSchema>;
+
+/** Income type of a certificate from the bill's WHT preset (`none` never makes a certificate). */
+export const WHT_PRESET_INCOME_TYPE: Readonly<Record<SupplierWhtPreset, WhtIncomeType>> = {
+    none: 'other', government: 'other', transport: 'transport', advertising: 'advertising', service: 'service', rent: 'rent',
+};
+
+/** Box "ผู้จ่ายเงิน" of the 50 ทวิ: withheld at source / paid by the payer every time / once. */
+export const WHT_CONDITIONS = ['withheld', 'paid_always', 'paid_once'] as const;
+export const whtConditionSchema = z.enum(WHT_CONDITIONS);
+export type WhtCondition = z.infer<typeof whtConditionSchema>;
+
+export const WHT_CERTIFICATE_STATUSES = ['issued', 'voided'] as const;
+export const whtCertificateStatusSchema = z.enum(WHT_CERTIFICATE_STATUSES);
+export type WhtCertificateStatus = z.infer<typeof whtCertificateStatusSchema>;
+
+/** One payee of a run: one supplier (all its bills), or one labour bill. */
+export const paymentRunGroupDtoSchema = z.object({
+    supplierId: uuidSchema.nullable(),
+    /** Supplier name (labour bills: the pay period key). */
+    payeeName: z.string(),
+    billIds: z.array(uuidSchema),
+    /** Σ (payable − paid) of the bills: the money that goes out. */
+    cash: z.number(),
+    /** Σ WHT of the bills. */
+    wht: z.number(),
+});
+export type PaymentRunGroupDto = z.infer<typeof paymentRunGroupDtoSchema>;
+
+export const paymentRunSummaryDtoSchema = z.object({
+    id: uuidSchema,
+    workspaceId: uuidSchema,
+    /** Runs are not numbered (always null in v1). */
+    number: z.string().nullable(),
+    status: paymentRunStatusSchema,
+    payDate: businessDateSchema,
+    method: apPaymentMethodSchema,
+    note: z.string(),
+    billCount: z.number().int(),
+    totalCash: z.number(),
+    totalWht: z.number(),
+    approvedBy: uuidSchema.nullable(),
+    approvedAt: isoDateTimeSchema.nullable(),
+    paidAt: isoDateTimeSchema.nullable(),
+    cancelledAt: isoDateTimeSchema.nullable(),
+    createdBy: uuidSchema,
+    createdAt: isoDateTimeSchema,
+    updatedAt: isoDateTimeSchema,
+});
+export type PaymentRunSummaryDto = z.infer<typeof paymentRunSummaryDtoSchema>;
+export const paymentRunListDtoSchema = z.object({ items: z.array(paymentRunSummaryDtoSchema) });
+export type PaymentRunListDto = z.infer<typeof paymentRunListDtoSchema>;
+
+export const paymentAllocationDtoSchema = z.object({
+    billId: uuidSchema,
+    billNumber: z.string().nullable(),
+    supplierInvoiceNo: z.string(),
+    /** Liability settled (cash + WHT). */
+    settled: z.number(),
+    wht: z.number(),
+    cash: z.number(),
+});
+export type PaymentAllocationDto = z.infer<typeof paymentAllocationDtoSchema>;
+
+export const apPaymentSummaryDtoSchema = z.object({
+    id: uuidSchema,
+    workspaceId: uuidSchema,
+    runId: uuidSchema.nullable(),
+    /** null = a labour pay period. */
+    supplierId: uuidSchema.nullable(),
+    payeeName: z.string(),
+    /** `PV…`. */
+    number: z.string(),
+    payDate: businessDateSchema,
+    method: apPaymentMethodSchema,
+    bankRef: z.string(),
+    cashAmount: z.number(),
+    whtAmount: z.number(),
+    whtCertificateId: uuidSchema.nullable(),
+    whtCertificateNumber: z.string().nullable(),
+    status: apPaymentStatusSchema,
+    createdAt: isoDateTimeSchema,
+});
+export type ApPaymentSummaryDto = z.infer<typeof apPaymentSummaryDtoSchema>;
+
+export const apPaymentDtoSchema = apPaymentSummaryDtoSchema.extend({
+    allocations: z.array(paymentAllocationDtoSchema),
+    fileIds: z.array(uuidSchema),
+    createdBy: uuidSchema,
+});
+export type ApPaymentDto = z.infer<typeof apPaymentDtoSchema>;
+
+export const paymentRunDtoSchema = paymentRunSummaryDtoSchema.extend({
+    billIds: z.array(uuidSchema),
+    bills: z.array(supplierBillSummaryDtoSchema),
+    /** Payees as the run would pay now (paid runs: as paid). */
+    groups: z.array(paymentRunGroupDtoSchema),
+    /** Payment vouchers of a paid run ([] before). */
+    payments: z.array(apPaymentSummaryDtoSchema),
+    /** `payables.manage` and draft. */
+    canEdit: z.boolean(),
+    /** `payables.manage` and draft (sends for approval, or approves at once). */
+    canApprove: z.boolean(),
+    /** `payables.pay` and approved. */
+    canPay: z.boolean(),
+    /** `payables.manage`, draft / pending / approved. */
+    canCancel: z.boolean(),
+});
+export type PaymentRunDto = z.infer<typeof paymentRunDtoSchema>;
+
+/** Payee block copied onto a 50 ทวิ when issued. */
+export const whtPayeeSnapshotSchema = z.object({
+    name: z.string(),
+    taxId: z.string(),
+    branchCode: z.string(),
+    address: z.string(),
+    isJuristic: z.boolean(),
+});
+export type WhtPayeeSnapshot = z.infer<typeof whtPayeeSnapshotSchema>;
+
+/** Payer (the company) block copied onto a 50 ทวิ when issued. */
+export const whtPayerSnapshotSchema = z.object({
+    name: z.string(),
+    taxId: z.string(),
+    branchCode: z.string(),
+    address: z.string(),
+});
+export type WhtPayerSnapshot = z.infer<typeof whtPayerSnapshotSchema>;
+
+export const whtCertificateDtoSchema = z.object({
+    id: uuidSchema,
+    workspaceId: uuidSchema,
+    /** `WHT…`. */
+    number: z.string(),
+    bookNo: z.string(),
+    paymentId: uuidSchema,
+    paymentNumber: z.string(),
+    payee: whtPayeeSnapshotSchema,
+    payer: whtPayerSnapshotSchema,
+    form: whtFormSchema,
+    incomeType: whtIncomeTypeSchema,
+    incomeDesc: z.string(),
+    payDate: businessDateSchema,
+    /** Income before VAT the tax was withheld on. */
+    baseAmount: z.number(),
+    whtRate: z.number(),
+    whtAmount: z.number(),
+    condition: whtConditionSchema,
+    status: whtCertificateStatusSchema,
+    issuedAt: isoDateTimeSchema,
+});
+export type WhtCertificateDto = z.infer<typeof whtCertificateDtoSchema>;
+
+/** GET /workspaces/:workspaceId/payment-runs?status=draft,approved */
+export const paymentRunListQuerySchema = z.object({
+    status: csv(paymentRunStatusSchema),
+});
+export type PaymentRunListQuery = z.infer<typeof paymentRunListQuerySchema>;
+
+const billIdsSchema = z.array(uuidSchema).min(1).max(500);
+
+/** POST /workspaces/:workspaceId/payment-runs — approved bills, paid in full (payable − paid). */
+export const createPaymentRunRequestSchema = z.object({
+    billIds: billIdsSchema,
+    /** Default: today (Bangkok). */
+    payDate: businessDateSchema.optional(),
+    method: apPaymentMethodSchema.default('transfer'),
+    note: z.string().max(4000).optional(),
+});
+export type CreatePaymentRunRequest = z.infer<typeof createPaymentRunRequestSchema>;
+
+/** PATCH /payment-runs/:runId — draft only; `billIds` replaces the run's bills (removed ones go back to approved). */
+export const patchPaymentRunRequestSchema = z.object({
+    billIds: billIdsSchema.optional(),
+    payDate: businessDateSchema.optional(),
+    method: apPaymentMethodSchema.optional(),
+    note: z.string().max(4000).optional(),
+});
+export type PatchPaymentRunRequest = z.infer<typeof patchPaymentRunRequestSchema>;
+
+/** POST /payment-runs/:runId/pay — `payables.pay`; the run's pay date unless given. */
+export const payPaymentRunRequestSchema = z.object({
+    payDate: businessDateSchema.optional(),
+    /** Bank transfer / cheque reference written on every voucher of the run. */
+    bankRef: text(120).optional(),
+});
+export type PayPaymentRunRequest = z.infer<typeof payPaymentRunRequestSchema>;
+
+/** POST /payment-runs/:runId/cancel */
+export const cancelPaymentRunRequestSchema = z.object({
+    reason: z.string().trim().max(1000).optional(),
+});
+export type CancelPaymentRunRequest = z.infer<typeof cancelPaymentRunRequestSchema>;

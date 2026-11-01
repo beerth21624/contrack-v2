@@ -8,17 +8,18 @@ import type {
 } from '@contrack/contract';
 import { bangkokToday, payPeriodOf } from '@contrack/domain/dates/business-date';
 import { isPayPeriodKey } from '@contrack/domain/labour/pay-period';
-import { allocate, round2 } from '@contrack/domain/money';
+import { round2 } from '@contrack/domain/money';
 import { type WorkspaceGrant, ModuleAccess } from '../../../../shared/application/module-access';
 import {
     Approvals, AuditLog, Clock, FinancialEvents, IdGenerator, PayPeriodBillChecks, PeopleDirectory, UnitOfWork,
 } from '../../../../shared/application/ports';
 import { DomainError } from '../../../../shared/domain/domain-error';
-import { type ProjectId, type UserId, type WorkspaceId, isUuid } from '../../../../shared/domain/ids';
+import { type UserId, type WorkspaceId, isUuid } from '../../../../shared/domain/ids';
 import { type Result, err, ok } from '../../../../shared/domain/result';
 import { requirePeriodTransition } from '../../domain/labour-state';
+import { markPeriodPaid } from '../pay-period-paid';
 import {
-    ADVANCE_SOURCE, LabourEffects, LabourViews, MODULE, PERIOD_SOURCE, advanceDto, periodNotFound, periodSummaryDto, seesWages, transact,
+    ADVANCE_SOURCE, LabourEffects, LabourViews, MODULE, advanceDto, periodNotFound, periodSummaryDto, seesWages, transact,
     virtualPeriodSummary,
 } from '../labour.service';
 import { LabourRepository, type PayPeriodRecord, type WageAdvanceRecord } from '../ports/labour.repository';
@@ -201,42 +202,9 @@ export class PayPayPeriodUseCase {
                 return err(DomainError.conflict('This pay period is paid through payables', { reason: 'paid_via_payables' }));
             }
             const now = this.clock.now();
-            const paidDate = body.paidDate ?? bangkokToday(now);
-            const entries = await this.repo.entriesOfPeriod(ws, period.id);
-            const lines = await this.repo.linesOf(ws, period.id);
-
-            // Wages per project: the cost (gross) and the cash actually paid (period net spread by the gross).
-            const byProject = new Map<ProjectId, number>();
-            for (const e of entries) byProject.set(e.projectId, round2((byProject.get(e.projectId) ?? 0) + e.amount));
-            const projects = [...byProject.keys()].sort();
-            const cash = allocate(period.net, projects.map(p => byProject.get(p) ?? 0));
-            const common = { eventDate: paidDate, counterpartyType: 'worker' as const, sourceType: PERIOD_SOURCE, sourceId: period.id, by: userId };
-            for (const [i, projectId] of projects.entries()) {
-                const posted = await this.events.post(ws, {
-                    ...common, projectId, eventType: 'lb.wages_paid', direction: 'out', counterpartyName: '', net: byProject.get(projectId) ?? 0,
-                    cash: cash[i] ?? 0, data: { periodKey, paymentMethod: body.paymentMethod },
-                });
-                if (!posted.ok) return posted;
-            }
-            for (const l of lines.filter(x => x.advanceDeduction > 0)) {
-                const posted = await this.events.post(ws, {
-                    ...common, projectId: null, eventType: 'lb.advance_recovered', direction: 'none', counterpartyId: l.personId,
-                    counterpartyName: l.personName, net: l.advanceDeduction, cash: 0, data: { periodKey, payLineId: l.id },
-                });
-                if (!posted.ok) return posted;
-            }
-
-            await this.repo.markLinesPaid(ws, period.id);
-            await this.repo.saveEntries(entries.map(e => ({ ...e, status: 'paid' as const, updatedAt: now })));
-            const paid: PayPeriodRecord = {
-                ...period, status: 'paid', paidDate, paidAt: now, paidBy: userId, paymentMethod: body.paymentMethod, updatedAt: now,
-            };
-            await this.repo.savePeriod(paid);
-            await this.audit.record({
-                workspaceId: ws, projectId: null, actor: userId, entityType: 'pay_period', entityId: period.id, action: 'pay',
-                data: { status: [period.status, 'paid'], periodKey, net: period.net, paidDate, paymentMethod: body.paymentMethod },
+            return markPeriodPaid({ repo: this.repo, events: this.events, audit: this.audit }, period, {
+                paidDate: body.paidDate ?? bangkokToday(now), paymentMethod: body.paymentMethod, by: userId, now,
             });
-            return ok(paid);
         });
         if (!done.ok) return done;
         return ok(await this.views.periodDetail(done.value, grant.value.role));

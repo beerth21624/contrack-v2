@@ -1,5 +1,5 @@
 // ─── State machine of supplier bills (docs/erp/02-domain-model.md §10) ───
-import type { SupplierBillStatus } from '@contrack/contract';
+import type { PaymentRunStatus, SupplierBillStatus } from '@contrack/contract';
 import { DomainError } from '../../../shared/domain/domain-error';
 import { type Result, err, okVoid } from '../../../shared/domain/result';
 
@@ -28,4 +28,29 @@ export function requireBillDraft(current: SupplierBillStatus): Result<void, Doma
         return err(DomainError.conflict('The supplier bill is waiting for approval', { reason: 'approval_pending', status: current }));
     }
     return err(DomainError.conflict(`The supplier bill is ${current}`, { reason: 'invalid_transition', status: current }));
+}
+
+export const PAYMENT_RUN_TRANSITIONS: Readonly<Record<PaymentRunStatus, readonly PaymentRunStatus[]>> = {
+    // draft → approved when the approval is skipped (policy off, solo, …).
+    draft: ['pending_approval', 'approved', 'cancelled'],
+    // Rejected: back to draft. Cancelling a pending run withdraws its approval request.
+    pending_approval: ['approved', 'draft', 'cancelled'],
+    approved: ['paid', 'cancelled'],
+    paid: [],
+    cancelled: [],
+};
+
+/** conflict `invalid_transition` unless the run may move to `to`. */
+export function requireRunTransition(current: PaymentRunStatus, to: PaymentRunStatus): Result<void, DomainError> {
+    if (PAYMENT_RUN_TRANSITIONS[current].includes(to)) return okVoid();
+    return err(DomainError.conflict(`The payment run is ${current}`, { reason: 'invalid_transition', status: current }));
+}
+
+/** Editing a run: draft only (waiting for approval → `approval_pending`). */
+export function requireRunDraft(current: PaymentRunStatus): Result<void, DomainError> {
+    if (current === 'draft') return okVoid();
+    if (current === 'pending_approval') {
+        return err(DomainError.conflict('The payment run is waiting for approval', { reason: 'approval_pending', status: current }));
+    }
+    return err(DomainError.conflict(`The payment run is ${current}`, { reason: 'invalid_transition', status: current }));
 }

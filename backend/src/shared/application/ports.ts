@@ -11,7 +11,7 @@ import type {
 } from '@contrack/contract';
 import type { CashPlanSourceKind, EntitlementStatus, PortalTaskKind, SearchHit } from '@contrack/contract';
 import type { PurchaseOrderStatus, SupplierKind, SupplierSnapshot, SupplierWhtPreset, TradeId } from '@contrack/contract';
-import type { ClaimStatus, PayPeriodStatus, SubcontractStatus } from '@contrack/contract';
+import type { ClaimStatus, LabourPaymentMethod, PayPeriodStatus, SubcontractStatus } from '@contrack/contract';
 import type {
     ContractMilestoneKind, ContractMilestoneSource, ContractMilestoneStatus, ContractMilestoneTrigger, ContractVariationBilling,
     MainContractBillingMode, MainContractStatus, MainContractTerms, MilestoneTemplateItem,
@@ -1622,6 +1622,12 @@ export abstract class PayPeriodPayments {
     /** Approved periods (not paid) without a supplier bill (PayPeriodBillChecks), oldest first. */
     abstract approvedUnbilled(workspaceId: WorkspaceId): Promise<PayPeriodPaymentInfo[]>;
     abstract find(workspaceId: WorkspaceId, periodId: string): Promise<PayPeriodPaymentInfo | undefined>;
+    /**
+     * WP-50: an approved period paid through a payment run, inside the caller's transaction — the same effects as the
+     * labour pay endpoint (fin_events `lb.wages_paid` / `lb.advance_recovered`, timesheets and lines paid, period paid)
+     * without its `paid_via_payables` check. not_found; conflict `invalid_transition` unless approved.
+     */
+    abstract markPaid(workspaceId: WorkspaceId, periodId: string, input: { paidAt: string; method: LabourPaymentMethod; by: UserId }): Promise<Result<void, DomainError>>;
 }
 
 // ── Subcontract claims for payables (WP-49): provided by subcontracting ──
@@ -1656,6 +1662,25 @@ export abstract class SubcontractPayables {
     abstract listApprovedUnpaid(workspaceId: WorkspaceId): Promise<SubcontractPayableClaim[]>;
     /** A claim of one of the workspace's subcontracts (any status). */
     abstract find(workspaceId: WorkspaceId, claimId: string): Promise<SubcontractPayableClaim | undefined>;
+}
+
+/** WP-50: what a paid subcontract bill does to its claim. Provided by subcontracting (the `PayClaim` logic). */
+export interface SubcontractClaimPayment {
+    /** Bangkok business date. */
+    paidAt: string;
+    amount: number;
+    channel: string;
+    ref: string;
+    by: UserId;
+}
+
+export abstract class SubcontractClaimPayer {
+    /**
+     * Inside the caller's transaction: approved claim → paid, its retention recorded as withheld (once). The returned
+     * `afterCommit` notifies the vendor; call it after the transaction committed. not_found; conflict when the claim
+     * is not approved or the subcontract is not active / terminated.
+     */
+    abstract markPaid(workspaceId: WorkspaceId, claimId: string, input: SubcontractClaimPayment): Promise<Result<{ afterCommit: () => Promise<void> }, DomainError>>;
 }
 
 // ── Subcontract commitments (WP-46, docs/erp/02-domain-model.md §12): what job-cost posts to the cost ledger ──

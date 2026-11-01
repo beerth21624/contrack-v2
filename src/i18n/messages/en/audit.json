@@ -89,6 +89,7 @@
     "wage_advance": "Wage advance",
     "cost_forecast": "Cost forecast",
     "cash_settings": "Cash settings",
-    "supplier_bill": "Supplier bill"
+    "supplier_bill": "Supplier bill",
+    "payment_run": "Payment run"
   }
 }

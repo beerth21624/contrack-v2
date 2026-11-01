@@ -1,6 +1,6 @@
 // ─── E2E: approval workflow + audit log over HTTP (in-memory persistence, the whole app wired) ───
 import { approvalListDtoSchema, approvalPoliciesDtoSchema, approvalRequestDtoSchema, auditListDtoSchema } from '@contrack/contract';
-import { type ApprovalDecidedEvent, ApprovalHandlers, Approvals } from '../../src/shared/application/ports';
+import { type ApprovalDecidedEvent, type ApprovalHandler, ApprovalHandlers, Approvals } from '../../src/shared/application/ports';
 import { asUserId, asWorkspaceId, okVoid } from '../../src/shared/domain';
 import { type Session, type TestApp, addMember, bearer, createCompany, expectError, expectStatus, register, startApp } from '../support/e2e';
 
@@ -17,13 +17,17 @@ describe('approvals (e2e)', () => {
 
     beforeAll(async () => {
         t = await startApp();
-        // A subject no module handles yet (procurement registers `purchase_order.issue` itself since WP-39).
-        t.app.get(ApprovalHandlers).register('payment_run.approve', {
+        // Every subject has a module handler now (payables registers `payment_run.approve` since WP-50): route this
+        // subject to a test handler instead.
+        const handlers = t.app.get(ApprovalHandlers);
+        const real = handlers.handlerOf.bind(handlers);
+        const testHandler: ApprovalHandler = {
             onDecided: e => {
                 decided.push(e);
                 return Promise.resolve(okVoid());
             },
-        });
+        };
+        jest.spyOn(handlers, 'handlerOf').mockImplementation(subject => (subject === 'payment_run.approve' ? testHandler : real(subject)));
         owner = await register(t, 'Owner');
         estimator = await register(t, 'Estimator');
         viewer = await register(t, 'Viewer');

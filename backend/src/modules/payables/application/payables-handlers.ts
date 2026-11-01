@@ -12,6 +12,7 @@ import type { ProjectId, WorkspaceId } from '../../../shared/domain/ids';
 import { can } from '../../../shared/domain/permissions';
 import { type Result, okVoid } from '../../../shared/domain/result';
 import { BILL_SOURCE, BillPosting, MODULE, supplierDisplayName, transact } from './payables.service';
+import { RUN_SOURCE } from './payment-runs.service';
 import { type BillRecord, PayablesRepository } from './ports/payables.repository';
 
 export const DUE_SOON_SWEEP = 'payables.due';
@@ -54,6 +55,26 @@ export class PayablesHandlers {
             await this.audit.record({
                 workspaceId: e.workspaceId, projectId: b.projectId, actor: e.decidedBy, entityType: BILL_SOURCE, entityId: b.id,
                 action: 'approval_rejected', data: { status: ['pending_approval', 'draft'], note: e.note },
+            });
+            return okVoid();
+        });
+    }
+
+    /** `payment_run.approve`: approved → the run may be paid; rejected → back to draft (bills stay scheduled). */
+    async onRunDecided(e: ApprovalDecidedEvent): Promise<Result<void, DomainError>> {
+        if (!(await this.flags.isEnabled(e.workspaceId, MODULE))) return okVoid();
+        return transact(this.uow, async (): Promise<Result<void, DomainError>> => {
+            const r = await this.repo.lockRun(e.workspaceId, e.subjectId.toLowerCase());
+            // Cancelled meanwhile: nothing to apply.
+            if (r?.status !== 'pending_approval') return okVoid();
+            const now = this.clock.now();
+            const approved = e.decision === 'approved';
+            await this.repo.saveRun(approved
+                ? { ...r, status: 'approved', approvedBy: e.decidedBy, approvedAt: now, updatedAt: now }
+                : { ...r, status: 'draft', updatedAt: now });
+            await this.audit.record({
+                workspaceId: e.workspaceId, projectId: null, actor: e.decidedBy, entityType: RUN_SOURCE, entityId: r.id,
+                action: approved ? 'approved' : 'approval_rejected', data: { status: ['pending_approval', approved ? 'approved' : 'draft'], note: e.note },
             });
             return okVoid();
         });

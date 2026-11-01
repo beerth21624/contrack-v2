@@ -1,7 +1,8 @@
-import type { SupplierBillStatus } from '@contrack/contract';
+import type { PaymentRunStatus, SupplierBillStatus } from '@contrack/contract';
 import type { ProjectId, WorkspaceId } from '../../../../shared/domain/ids';
 import {
-    type BillLineRecord, type BillListFilter, type BillRecord, PayablesRepository,
+    type BillLineRecord, type BillListFilter, type BillRecord, PayablesRepository, type PaymentAllocationRecord, type PaymentRecord,
+    type PaymentRunRecord, type WhtCertificateRecord,
 } from '../../application/ports/payables.repository';
 
 const clone = <T>(v: T): T => structuredClone(v);
@@ -14,6 +15,10 @@ const cmp = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 export class InMemoryPayablesRepository extends PayablesRepository {
     private readonly bills = new Map<string, BillRecord>();
     private readonly lines = new Map<string, BillLineRecord>();
+    private readonly runs = new Map<string, PaymentRunRecord>();
+    private readonly payments = new Map<string, PaymentRecord>();
+    private readonly allocations: PaymentAllocationRecord[] = [];
+    private readonly certificates = new Map<string, WhtCertificateRecord>();
 
     private live(): BillRecord[] {
         return [...this.bills.values()].filter(b => b.status !== 'voided');
@@ -128,5 +133,82 @@ export class InMemoryPayablesRepository extends PayablesRepository {
             for (const [lineId, l] of this.lines) if (l.billId === id) this.lines.delete(lineId);
         }
         return Promise.resolve();
+    }
+
+    findMany(workspaceId: WorkspaceId, billIds: readonly string[]): Promise<BillRecord[]> {
+        const wanted = new Set(billIds);
+        return Promise.resolve([...this.bills.values()].filter(b => b.workspaceId === workspaceId && wanted.has(b.id)).map(clone));
+    }
+
+    findRun(runId: string): Promise<PaymentRunRecord | undefined> {
+        const r = this.runs.get(runId);
+        return Promise.resolve(r === undefined ? undefined : clone(r));
+    }
+
+    lockRun(workspaceId: WorkspaceId, runId: string): Promise<PaymentRunRecord | undefined> {
+        const r = this.runs.get(runId);
+        return Promise.resolve(r?.workspaceId === workspaceId ? clone(r) : undefined);
+    }
+
+    listRuns(workspaceId: WorkspaceId, statuses?: readonly PaymentRunStatus[]): Promise<PaymentRunRecord[]> {
+        return Promise.resolve([...this.runs.values()]
+            .filter(r => r.workspaceId === workspaceId && (statuses === undefined || statuses.includes(r.status)))
+            .sort((a, b) => cmp(b.payDate, a.payDate) || b.createdAt.getTime() - a.createdAt.getTime() || cmp(b.id, a.id))
+            .map(clone));
+    }
+
+    insertRun(run: PaymentRunRecord): Promise<void> {
+        if (this.runs.has(run.id)) throw new Error('duplicate key value violates unique constraint "ap_payment_runs_pkey"');
+        this.runs.set(run.id, clone(run));
+        return Promise.resolve();
+    }
+
+    saveRun(run: PaymentRunRecord): Promise<void> {
+        const old = this.runs.get(run.id);
+        if (old?.workspaceId === run.workspaceId) this.runs.set(run.id, clone({ ...run, createdAt: old.createdAt, createdBy: old.createdBy }));
+        return Promise.resolve();
+    }
+
+    insertPayment(payment: PaymentRecord, allocations: readonly PaymentAllocationRecord[]): Promise<void> {
+        if ([...this.payments.values()].some(p => p.workspaceId === payment.workspaceId && p.number === payment.number)) {
+            throw new Error('duplicate key value violates unique constraint "ap_payments_workspace_number_key"');
+        }
+        this.payments.set(payment.id, clone(payment));
+        this.allocations.push(...allocations.map(clone));
+        return Promise.resolve();
+    }
+
+    findPayment(paymentId: string): Promise<PaymentRecord | undefined> {
+        const p = this.payments.get(paymentId);
+        return Promise.resolve(p === undefined ? undefined : clone(p));
+    }
+
+    paymentsOfRun(workspaceId: WorkspaceId, runId: string): Promise<PaymentRecord[]> {
+        return Promise.resolve([...this.payments.values()]
+            .filter(p => p.workspaceId === workspaceId && p.runId === runId)
+            .sort((a, b) => cmp(a.number, b.number))
+            .map(clone));
+    }
+
+    allocationsOf(workspaceId: WorkspaceId, paymentId: string): Promise<PaymentAllocationRecord[]> {
+        return Promise.resolve(this.allocations.filter(a => a.workspaceId === workspaceId && a.paymentId === paymentId).map(clone));
+    }
+
+    insertCertificate(certificate: WhtCertificateRecord): Promise<void> {
+        const clash = [...this.certificates.values()].some(c => c.paymentId === certificate.paymentId
+            || (c.workspaceId === certificate.workspaceId && c.number === certificate.number));
+        if (clash) throw new Error('duplicate key value violates unique constraint "ap_wht_certificates_workspace_number_key"');
+        this.certificates.set(certificate.id, clone(certificate));
+        return Promise.resolve();
+    }
+
+    findCertificate(certificateId: string): Promise<WhtCertificateRecord | undefined> {
+        const c = this.certificates.get(certificateId);
+        return Promise.resolve(c === undefined ? undefined : clone(c));
+    }
+
+    certificatesOf(workspaceId: WorkspaceId, certificateIds: readonly string[]): Promise<WhtCertificateRecord[]> {
+        const wanted = new Set(certificateIds);
+        return Promise.resolve([...this.certificates.values()].filter(c => c.workspaceId === workspaceId && wanted.has(c.id)).map(clone));
     }
 }

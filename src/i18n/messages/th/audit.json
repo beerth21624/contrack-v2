@@ -89,6 +89,7 @@
     "wage_advance": "เบิกล่วงหน้า",
     "cost_forecast": "ประมาณการต้นทุน",
     "cash_settings": "ตั้งค่ากระแสเงินสด",
-    "supplier_bill": "บิลผู้ขาย"
+    "supplier_bill": "บิลผู้ขาย",
+    "payment_run": "รอบจ่ายเงิน"
   }
 }

@@ -472,3 +472,16 @@ Schemas: `../src/shared/contract/erp/payables.ts`. Read `payables.read`; create 
 | POST | `/supplier-bills/:billId/approve` | `{note?}` → `SupplierBillDto` (200) | draft; no lines → 422 `no_lines`; approval `supplier_bill.approve` (amount = total), skipped → posted at once |
 | POST | `/supplier-bills/:billId/void` | `{reason}` → `SupplierBillDto` (200) | pending: the approval request is withdrawn |
 | GET | `/workspaces/:workspaceId/payables/due?within=30` | → `PayablesDueDto` | posted bills not paid due by today + within (overdue too) + `totalDue`/`totalOverdue`, approved sc claims and pay periods not billed yet |
+
+### Payment runs, payment vouchers, 50 ทวิ (WP-50)
+Read `payables.read`; create / edit / approve / cancel `payables.manage`; pay `payables.pay`. Run `draft → pending_approval (payment_run.approve) | approved → paid`; rejected → `draft`; `draft | pending_approval | approved → cancelled`. Bills put in a run: `approved → scheduled` (removed / run cancelled → `approved`); another status → 409 `bill_not_payable`, nothing left (`payable − paidAmount ≤ 0`) → 422 `nothing_to_pay`. v1 pays every bill in full. Pay (one transaction): per supplier one voucher `PV` (`cash = Σ (payable − paid)`, `wht = Σ wht`), one per labour bill; WHT > 0 → 50 ทวิ `WHT` (`form` `pnd53` when the supplier `isJuristic` else `pnd3`; `incomeType` from the bills' `whtPreset`, mixed → `other`; `baseAmount` = Σ (subtotal − discount) of the bills with WHT; payee / payer snapshots) + fin_events `ap.wht_withheld` (`net` = base, `wht`, `data.form`, `data.incomeType`, projectId null); fin_events `ap.payment` per bill (`direction: 'out'`, `cash` = paid, `net`/`vat`/`wht`/`retention` of the bill, project of the bill; not for labour bills); labour bill → `PayPeriodPayments.markPaid` (`lb.wages_paid` / `lb.advance_recovered`, period paid); subcontract bill → `SubcontractClaimPayer.markPaid` (claim paid, retention withheld, vendor notified after commit); bills → `paid`. Audited `payment_run` (`create|update|submit|approved|approval_rejected|pay|cancel`) and `supplier_bill` (`pay`).
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET · POST | `/workspaces/:workspaceId/payment-runs?status=` | `CreatePaymentRunRequest` `{billIds, payDate?, method?, note?}` → `PaymentRunDto` (201) | list → `PaymentRunListDto`, newest first |
+| GET · PATCH | `/payment-runs/:runId` | `PatchPaymentRunRequest` → `PaymentRunDto` | draft only (pending → 409 `approval_pending`); `billIds` replaces the bills; `groups` = payees as the run would pay (paid: as paid) |
+| POST | `/payment-runs/:runId/approve` | → `PaymentRunDto` (200) | draft; approval `payment_run.approve` (amount = total cash), skipped → approved |
+| POST | `/payment-runs/:runId/pay` | `{payDate?, bankRef?}` → `PaymentRunDto` (200) | approved only (draft / paid → 409 `invalid_transition`) |
+| POST | `/payment-runs/:runId/cancel` | `{reason?}` → `PaymentRunDto` (200) | pending: the approval request is withdrawn |
+| GET | `/payments/:paymentId` | → `ApPaymentDto` | voucher + allocations (`settled = cash + wht` per bill) |
+| GET | `/wht-certificates/:certificateId` | → `WhtCertificateDto` | the 50 ทวิ as issued |
