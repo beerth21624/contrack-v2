@@ -82,7 +82,7 @@
 | I-07 | calculators กลุ่ม 2 | done | 9a0b6d0 | ไม่มี migration; namespace `calculators` เพิ่มกลุ่ม `roofSlab…waterPipe` + `common.*` เพิ่ม; ESLint glob เพิ่ม; D-381, D-382 |
 | I-08 | calculators กลุ่ม 3 + overlay domain | done | 1673679 | ไม่มี migration; `shared/PickListPage` ย้ายข้อความ (`calculators.pickList.*`); overlay: `domain/journey/levels.en.ts`, `requirements.en.ts`, `domain/calculators/sections.en.ts`; BOQ page ใช้ `template.v5.en` ผ่าน `useBoqText`; ยกเลิกเงื่อนไขปุ่มภาษา (D-16); D-383…D-387 |
 | I-09 | planning | done | 3e1eda0 | ไม่มี migration; namespace `planning` ใหม่ (th+en 349 ข้อความ); overlay `domain/planning/labels.en.ts`; ESLint glob `src/features/planning/**` เพิ่ม; D-388…D-391 |
-| I-10 | cloud ที่เหลือ | done | HASH | ไม่มี migration; namespace `cloud` ใหม่ (th+en 175 ข้อความ); ESLint glob `src/features/cloud/**` เพิ่ม; ลบ `ROLE_LABEL/ROLE_HINT/syncStatusText/RULES`; D-392…D-394 |
+| I-10 | cloud ที่เหลือ | done | befe58a | ไม่มี migration; namespace `cloud` ใหม่ (th+en 175 ข้อความ); ESLint glob `src/features/cloud/**` เพิ่ม; ลบ `ROLE_LABEL/ROLE_HINT/syncStatusText/RULES`; D-392…D-394 |
 | I-11 | workforce | todo | | |
 | I-12 | subcontracting buyer | todo | | |
 | I-13 | subcontracting contracts/shared + sc.* notification en | todo | | |
@@ -1268,7 +1268,7 @@
 - WP ถัดไปต้องรู้: I-10 ต้องแปล `rateCardConflictMessage` (`cloud/api/rate-cards.ts`) และลบ `thaiErrorMessage` ที่เหลือ; I-11 (workforce) ใช้ `taskNameIn(id, name, locale)` / `usePlanningText().task` กับ `PLAN_TASKS[].name` และ `monthLabelIn` ได้; ข้อความ en ของวันที่ใน planning ยังเป็น dd/mm/yyyy; ไม่เขียนเทสต์ใหม่
 - ตรวจแล้ว: tsc web, eslint ไฟล์ที่แก้ + `src/features/planning`, check-parity, vitest `src/features/planning src/features/export src/i18n src/domain/planning/__tests__/wage-sets.test.ts` ผ่าน; smoke ICU (plural/rich) ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์
 
-### I-10 — cloud ที่เหลือ (HASH)
+### I-10 — cloud ที่เหลือ (befe58a)
 - ย้ายไทยตรงตัวของ `src/features/cloud/**` ที่เหลือ (ProjectsPage, MembersPage, AcceptInvitationPage, RevisionButtons, LevelPresence, CloudRuntime, doc-label/controller/useRealtime notices, conflict messages ของ rate-cards/workforce) เข้า `cloud.json` (th+en 175 ข้อความ, parity + ICU smoke ผ่าน); ESLint glob `src/features/cloud/**/*.{ts,tsx}` เพิ่มแล้ว (ห้ามเติมไทยกลับ); ไฟล์ใหม่ `features/cloud/text.ts`
 - WP ถัดไปต้องรู้: I-11 (workforce) เปลี่ยน `thaiErrorMessage` เป็น `useErrorMessage()` ได้เลย และ `workforceConflictMessage(e)` คืนข้อความตามภาษา UI แล้ว; I-12…I-14 ยังเรียก `thaiErrorMessage` ได้จนกว่าจะย้าย; ใช้ `useDateTime()` (cloud/ui/common) หรือ `useFormat().dateTime` สำหรับวันที่
 - ตรวจแล้ว: tsc web, eslint `src/features/cloud`, check-parity, vitest `src/i18n src/features/cloud src/features/planning src/features/workforce` ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์; ไม่เขียนเทสต์ใหม่
