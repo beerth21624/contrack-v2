@@ -77,7 +77,7 @@
 | I-02 | components/sheet | done | ac13bef | ไม่มี migration; namespace `sheet` ใหม่; ESLint glob เพิ่ม; D-371 |
 | I-03 | components/sheet/journey | done | 0ab4816 | ไม่มี migration; namespace `journeyUi` ใหม่; ESLint glob เพิ่ม; D-372 |
 | I-04 | boq-home + journey | done | 0b518b0 | ไม่มี migration; namespaces `boqHome`/`journeyUi` ขยาย; ESLint glob เพิ่ม; D-373, D-374 |
-| I-05 | export (BOQ print/xlsx) | done | COMMIT | ไม่มี migration; namespace `export` ใหม่ (`buttons/print/sheet/summary/schedule`); ESLint glob เพิ่ม; D-375…D-377 |
+| I-05 | export (BOQ print/xlsx) | done | 143319f | ไม่มี migration; namespace `export` ใหม่ (`buttons/print/sheet/summary/schedule`); ESLint glob เพิ่ม; D-375…D-377 |
 | I-06 | calculators กลุ่ม 1 | todo | | |
 | I-07 | calculators กลุ่ม 2 | todo | | |
 | I-08 | calculators กลุ่ม 3 + overlay domain | todo | | หลังข้อนี้เปิดปุ่มภาษาทั่วไป |
@@ -1226,7 +1226,7 @@
 - WP ถัดไปต้องรู้: ชื่อ level/phase/`planHint` ที่แสดงในหน้า journey มาจาก domain (ไทยจนกว่า I-08 overlay); ข้อความ finding ของ BOQ review มาจาก domain/backend; `CONSENT_TEXT`, `REVIEW_TEXT` ถูกลบ
 - ตรวจแล้ว: tsc web, eslint ไฟล์ที่แก้, check-parity, vitest `src/features/boq-home src/features/journey src/i18n src/components/sheet` ผ่าน; ไม่เขียนเทสต์ใหม่
 
-### I-05 — export (COMMIT)
+### I-05 — export (143319f)
 - ย้ายไทยตรงตัวของ `src/features/export/*` เข้า `export.{buttons,print,sheet,summary,schedule}` (th+en, ตรวจตรงตัวอักษรกับต้นฉบับด้วยสคริปต์แล้ว); ไฟล์ใหม่ `src/features/export/text.ts` (`exportMessages`, `lineDesc`, `unitText`, `sectionTitle`, `groupedNumber`); ESLint glob `src/features/export/*.{ts,tsx}` (ยกเว้น `baht-text.ts`)
 - WP ถัดไปต้องรู้: เรียกตัวสร้างเอกสารพร้อม `locale` ของเอกสาร (ใบเสนอราคา/เอกสาร ERP ใช้ `documentTranslator` ของตัวเอง ไม่ต้องใช้ตัวนี้); I-09 ต้องแปลข้อมูลจาก planning ที่เอกสารตารางงานใช้ (เดือน/วัน/ป้ายงวด/`formatDate`/`crewText`) และข้อความใน `SchedulePrintButton.tsx`; เนื้อหา BOQ ภาษาอังกฤษจะสมบูรณ์เมื่อ I-08 (overlay ที่ใช้อยู่คือ `template.v5.en.ts` เดิม)
 - ตรวจแล้ว: tsc web, eslint ไฟล์ที่แก้, vitest `src/features/export src/i18n` ผ่าน; ไม่เขียนเทสต์ใหม่
