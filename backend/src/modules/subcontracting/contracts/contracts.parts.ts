@@ -3,7 +3,7 @@
 // stream implements (see ../shared/ports.ts) must be registered here too, and listed in the exports.
 import type { Provider, Type } from '@nestjs/common';
 import { persistence } from '../../../shared/infrastructure/core.module';
-import { SubcontractCashPlan, SubcontractCommitments } from '../../../shared/application/ports';
+import { SubcontractCashPlan, SubcontractCommitments, SubcontractPayables } from '../../../shared/application/ports';
 import { SubcontractCreator, SubcontractingSettingsReader, VendorLinkListener, VendorStats } from '../shared/ports';
 import { ContractAccess } from './application/contract-access';
 import { ContractNotices } from './application/contract-notices';
@@ -52,6 +52,7 @@ import { InMemorySubcontractRepository } from './infrastructure/adapters/in-memo
 import { InMemoryVariationRepository } from './infrastructure/adapters/in-memory-variation.repository';
 import { RepositorySubcontractCashPlan } from './infrastructure/adapters/subcontract-cash-plan.adapter';
 import { RepositorySubcontractCommitments } from './infrastructure/adapters/subcontract-commitments.adapter';
+import { RepositorySubcontractPayables } from './infrastructure/adapters/subcontract-payables.adapter';
 import {
     ProjectContractsController, SubcontractsController, VendorContractsController, WorkspaceContractsController,
 } from './presentation/contracts.controller';
@@ -76,6 +77,7 @@ export const CONTRACTS_PROVIDERS: Provider[] = [
     { provide: VendorLinkListener, useClass: RepositoryVendorLinkListener },
     { provide: SubcontractCommitments, useClass: RepositorySubcontractCommitments },
     { provide: SubcontractCashPlan, useClass: RepositorySubcontractCashPlan },
+    { provide: SubcontractPayables, useClass: RepositorySubcontractPayables },
     // registers the running-work counter of the module in ModuleWorkRegistry (onModuleInit)
     RepositoryModuleUsage,
     // application services
@@ -95,4 +97,5 @@ export const CONTRACTS_PROVIDERS: Provider[] = [
 /** Ports from ../shared/ports.ts (or shared/application/ports.ts) this stream provides to the others. */
 export const CONTRACTS_EXPORTS: (abstract new (...args: never[]) => unknown)[] = [
     SubcontractCreator, SubcontractingSettingsReader, VendorStats, VendorLinkListener, SubcontractCommitments, SubcontractCashPlan,
+    SubcontractPayables,
 ];

@@ -23,4 +23,5 @@ export const FILE_PURPOSE_MODULE: Readonly<Record<FilePurpose, ModuleId>> = {
     delivery_note_photo: 'procurement',
     goods_photo: 'procurement',
     site_photo: 'site-diary',
+    supplier_bill_scan: 'payables',
 };

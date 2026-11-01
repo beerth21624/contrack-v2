@@ -15,7 +15,8 @@
     "purchase_request_to_order": "Purchase request {number} is approved and waiting for an order",
     "purchase_order_to_receive": "Purchase order {number} from {supplierName} is waiting for delivery",
     "site_report_missing": "The daily report for {date} has not been submitted",
-    "pay_period_ready": "Pay period {periodKey} is approved and waiting to be paid"
+    "pay_period_ready": "Pay period {periodKey} is approved and waiting to be paid",
+    "supplier_bill_due": "Supplier bill {number} {supplierName} is due soon"
   },
   "risky": {
     "title": "Projects to watch",

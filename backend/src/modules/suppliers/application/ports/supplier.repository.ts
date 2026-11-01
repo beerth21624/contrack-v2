@@ -34,6 +34,8 @@ export abstract class SupplierRepository {
     abstract findActiveByTax(workspaceId: WorkspaceId, taxId: string, branchCode: string, exceptId?: string): Promise<Supplier | undefined>;
     /** Vendor-list entry ids already linked to a supplier of the workspace (archived ones too). */
     abstract linkedScEntryIds(workspaceId: WorkspaceId): Promise<Set<string>>;
+    /** The supplier linked to a vendor-list entry (archived ones too), oldest first when several. */
+    abstract findByScEntry(workspaceId: WorkspaceId, vendorListEntryId: string): Promise<Supplier | undefined>;
     abstract save(supplier: Supplier): Promise<void>;
     abstract addRating(rating: SupplierRating): Promise<void>;
     /** Every score of the supplier (for the average). */

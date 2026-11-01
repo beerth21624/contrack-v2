@@ -88,6 +88,7 @@
     "pay_period": "งวดค่าแรง",
     "wage_advance": "เบิกล่วงหน้า",
     "cost_forecast": "ประมาณการต้นทุน",
-    "cash_settings": "ตั้งค่ากระแสเงินสด"
+    "cash_settings": "ตั้งค่ากระแสเงินสด",
+    "supplier_bill": "บิลผู้ขาย"
   }
 }

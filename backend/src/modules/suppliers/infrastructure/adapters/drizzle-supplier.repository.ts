@@ -99,6 +99,13 @@ export class DrizzleSupplierRepository extends SupplierRepository {
         return row === undefined ? undefined : toSupplier(row);
     }
 
+    async findByScEntry(workspaceId: WorkspaceId, vendorListEntryId: string): Promise<Supplier | undefined> {
+        const [row] = await this.ctx.executor.select().from(supSuppliers)
+            .where(and(eq(supSuppliers.workspaceId, workspaceId), eq(supSuppliers.scVendorListEntryId, vendorListEntryId)))
+            .orderBy(asc(supSuppliers.createdAt)).limit(1);
+        return row === undefined ? undefined : toSupplier(row);
+    }
+
     async linkedScEntryIds(workspaceId: WorkspaceId): Promise<Set<string>> {
         const rows = await this.ctx.executor.select({ id: supSuppliers.scVendorListEntryId }).from(supSuppliers)
             .where(and(eq(supSuppliers.workspaceId, workspaceId), isNotNull(supSuppliers.scVendorListEntryId)));

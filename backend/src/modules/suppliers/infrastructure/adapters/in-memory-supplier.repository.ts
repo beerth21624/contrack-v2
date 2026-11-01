@@ -39,6 +39,13 @@ export class InMemorySupplierRepository extends SupplierRepository {
         return Promise.resolve(hit === undefined ? undefined : structuredClone(hit));
     }
 
+    findByScEntry(workspaceId: WorkspaceId, vendorListEntryId: string): Promise<Supplier | undefined> {
+        const found = [...this.rows.values()]
+            .filter(s => s.workspaceId === workspaceId && s.scVendorListEntryId === vendorListEntryId)
+            .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())[0];
+        return Promise.resolve(found === undefined ? undefined : structuredClone(found));
+    }
+
     linkedScEntryIds(workspaceId: WorkspaceId): Promise<Set<string>> {
         const ids = [...this.rows.values()].filter(s => s.workspaceId === workspaceId)
             .flatMap(s => (s.scVendorListEntryId === null ? [] : [s.scVendorListEntryId]));

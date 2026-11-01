@@ -145,6 +145,11 @@
     "entry_approved": "This person's timesheet for the day is already approved and cannot change",
     "duplicate_person": "Each person can appear only once per day",
     "future_work_date": "Timesheets cannot be written for a future date; pick today or an earlier day",
-    "advance_paid": "This advance is already paid; its date and amount cannot change"
+    "advance_paid": "This advance is already paid; its date and amount cannot change",
+    "duplicate_supplier_invoice": "This supplier already has a bill with this invoice number",
+    "already_billed": "A supplier bill already exists for this document",
+    "not_billable": "This document cannot be billed in its current status",
+    "match_note_required": "The bill does not match the purchase order or goods received. Add a note before approving",
+    "supplier_required": "This subcontractor is not linked to the supplier register. Pick a supplier"
   }
 }

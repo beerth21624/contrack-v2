@@ -10,7 +10,7 @@ import {
     type PurchaseOrderLineInfo, PurchaseOrders, SupplierLookup, UnitOfWork,
 } from '../../../shared/application/ports';
 import { DomainError } from '../../../shared/domain/domain-error';
-import type { ProjectId, WorkspaceId } from '../../../shared/domain/ids';
+import { type ProjectId, type WorkspaceId, isUuid } from '../../../shared/domain/ids';
 import { type Result, err, ok, okVoid } from '../../../shared/domain/result';
 import { PurchaseOrderRepository } from './ports/procurement.repository';
 import { MODULE, transact } from './procurement.service';
@@ -100,6 +100,11 @@ export class ProcurementPurchaseOrders extends PurchaseOrders {
             language: o.language, supplierSnapshot: o.supplierSnapshot === null ? null : structuredClone(o.supplierSnapshot), vatRate: o.vatRate,
             subtotal: o.subtotal, discount: o.discount, vat: o.vat, total: o.total, whtPreset: o.whtPreset, paymentTermDays: o.paymentTermDays,
         };
+    }
+
+    async locate(orderId: string): Promise<WorkspaceId | undefined> {
+        if (!isUuid(orderId)) return undefined;
+        return (await this.orders.find(orderId.toLowerCase()))?.workspaceId;
     }
 
     async linesWithReceived(workspaceId: WorkspaceId, orderId: string): Promise<PurchaseOrderLineInfo[]> {

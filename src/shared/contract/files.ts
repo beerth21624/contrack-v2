@@ -8,7 +8,7 @@ import { isoDateTimeSchema, uuidSchema } from './common';
 export const FILE_PURPOSES = ['package_attachment', 'bid_photo', 'claim_photo', 'portfolio_photo', 'contract_scan', 'contract_pdf',
     'company_logo', 'company_stamp', 'company_signature', 'customer_document', 'quotation_attachment',
     'main_contract_scan', 'guarantee_scan', 'payment_slip', 'customer_wht_certificate', 'variation_evidence', 'supplier_quote',
-    'delivery_note_photo', 'goods_photo', 'site_photo'] as const;
+    'delivery_note_photo', 'goods_photo', 'site_photo', 'supplier_bill_scan'] as const;
 export const filePurposeSchema = z.enum(FILE_PURPOSES);
 export type FilePurpose = z.infer<typeof filePurposeSchema>;
 

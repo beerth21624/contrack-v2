@@ -11,7 +11,7 @@ import type {
 } from '@contrack/contract';
 import type { CashPlanSourceKind, EntitlementStatus, PortalTaskKind, SearchHit } from '@contrack/contract';
 import type { PurchaseOrderStatus, SupplierKind, SupplierSnapshot, SupplierWhtPreset, TradeId } from '@contrack/contract';
-import type { SubcontractStatus } from '@contrack/contract';
+import type { ClaimStatus, PayPeriodStatus, SubcontractStatus } from '@contrack/contract';
 import type {
     ContractMilestoneKind, ContractMilestoneSource, ContractMilestoneStatus, ContractMilestoneTrigger, ContractVariationBilling,
     MainContractBillingMode, MainContractStatus, MainContractTerms, MilestoneTemplateItem,
@@ -1472,6 +1472,8 @@ export abstract class SupplierLookup {
     abstract snapshot(workspaceId: WorkspaceId, supplierId: string, language: DocLanguage): Promise<SupplierSnapshot | undefined>;
     /** Workspace of a supplier by id alone (the caller authorizes on that workspace next); undefined when unknown. */
     abstract locate(supplierId: string): Promise<WorkspaceId | undefined>;
+    /** The supplier linked to a subcontracting vendor-list entry (archived ones too); undefined when none (WP-49). */
+    abstract findByScVendorEntry(workspaceId: WorkspaceId, vendorListEntryId: string): Promise<Supplier | undefined>;
 }
 
 // ── Purchase orders for payables (WP-39 → WP-49): provided by procurement ──
@@ -1515,6 +1517,8 @@ export interface PurchaseOrderLineInfo {
 /** Provided by procurement. No module check: the caller checked its own. Every method filters by workspace. */
 export abstract class PurchaseOrders {
     abstract find(workspaceId: WorkspaceId, orderId: string): Promise<PurchaseOrderInfo | undefined>;
+    /** Workspace of a purchase order by id alone (the caller authorizes on that workspace next); undefined when unknown. */
+    abstract locate(orderId: string): Promise<WorkspaceId | undefined>;
     /** Lines in order with what was received / billed so far (input of the 3-way match). */
     abstract linesWithReceived(workspaceId: WorkspaceId, orderId: string): Promise<PurchaseOrderLineInfo[]>;
     /**
@@ -1595,6 +1599,63 @@ export class PayPeriodBillChecks {
         for (const check of this.checks) if (await check(workspaceId, periodId)) return true;
         return false;
     }
+}
+
+// ── Pay periods for payables (WP-49; WP-50 adds markPaid): provided by labour ──
+
+export interface PayPeriodPaymentInfo {
+    id: string;
+    periodKey: string;
+    status: PayPeriodStatus;
+    startDate: string;
+    endDate: string;
+    gross: number;
+    advanceDeduction: number;
+    /** What is paid out (gross − advances recovered). */
+    net: number;
+    /** Gross wages per project (Σ approved timesheet amounts of the period), project id order. */
+    byProject: { projectId: ProjectId; gross: number }[];
+}
+
+/** Provided by labour. No module check: the caller checked its own. Filters by workspace. */
+export abstract class PayPeriodPayments {
+    /** Approved periods (not paid) without a supplier bill (PayPeriodBillChecks), oldest first. */
+    abstract approvedUnbilled(workspaceId: WorkspaceId): Promise<PayPeriodPaymentInfo[]>;
+    abstract find(workspaceId: WorkspaceId, periodId: string): Promise<PayPeriodPaymentInfo | undefined>;
+}
+
+// ── Subcontract claims for payables (WP-49): provided by subcontracting ──
+
+/** A progress claim of a buyer's subcontract with its amounts. */
+export interface SubcontractPayableClaim {
+    claimId: string;
+    subcontractId: string;
+    projectId: ProjectId;
+    status: ClaimStatus;
+    contractNo: string;
+    title: string;
+    vendorName: string;
+    /** The vendor-list entry of the subcontract (links to a supplier of the register). */
+    vendorListEntryId: string;
+    installmentNo: number;
+    /** Bangkok business date of the approval; null when not approved. */
+    approvedOn: string | null;
+    /** Work value (gross + adjustments) before retention / WHT / VAT. */
+    base: number;
+    gross: number;
+    retention: number;
+    wht: number;
+    whtPct: number;
+    vat: number;
+    net: number;
+}
+
+/** Provided by subcontracting. [] / undefined while `subcontracting` is not active for the workspace. */
+export abstract class SubcontractPayables {
+    /** Approved (not paid) claims of the workspace's subcontracts, oldest approval first. */
+    abstract listApprovedUnpaid(workspaceId: WorkspaceId): Promise<SubcontractPayableClaim[]>;
+    /** A claim of one of the workspace's subcontracts (any status). */
+    abstract find(workspaceId: WorkspaceId, claimId: string): Promise<SubcontractPayableClaim | undefined>;
 }
 
 // ── Subcontract commitments (WP-46, docs/erp/02-domain-model.md §12): what job-cost posts to the cost ledger ──

@@ -10,6 +10,7 @@ import { erpCoreTables } from './schema-erp-core';
 import { identityPhoneTables } from './schema-identity-phone';
 import { jobCostTables } from './schema-job-cost';
 import { ledgerTables } from './schema-ledger';
+import { payablesTables } from './schema-payables';
 import { platformTables } from './schema-platform';
 import { procurementTables } from './schema-procurement';
 import { quotationTables } from './schema-quotations';
@@ -25,6 +26,7 @@ export const schema = {
     ...coreSchema, ...identityPhoneTables, ...platformTables, ...scSharedTables, ...scSourcingTables, ...scBiddingTables,
     ...scContractsTables, ...erpCoreTables, ...boqControlTables, ...ledgerTables, ...quotationTables, ...contractsBillingTables,
     ...variationTables, ...procurementTables, ...siteTables, ...jobCostTables,
+    ...payablesTables,
 };
 
 export type Database = NodePgDatabase<typeof schema>;

@@ -27,6 +27,11 @@ export class RepositorySupplierLookup extends SupplierLookup {
         return (await this.repo.findById(supplierId.toLowerCase()))?.workspaceId;
     }
 
+    findByScVendorEntry(workspaceId: WorkspaceId, vendorListEntryId: string): Promise<Supplier | undefined> {
+        if (!isUuid(vendorListEntryId)) return Promise.resolve(undefined);
+        return this.repo.findByScEntry(workspaceId, vendorListEntryId.toLowerCase());
+    }
+
     async snapshot(workspaceId: WorkspaceId, supplierId: string, language: DocLanguage): Promise<SupplierSnapshot | undefined> {
         const s = await this.find(workspaceId, supplierId);
         return s === undefined ? undefined : supplierSnapshot(s, language);
