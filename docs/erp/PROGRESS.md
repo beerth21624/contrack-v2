@@ -77,7 +77,7 @@
 | I-02 | components/sheet | done | ac13bef | ไม่มี migration; namespace `sheet` ใหม่; ESLint glob เพิ่ม; D-371 |
 | I-03 | components/sheet/journey | done | 0ab4816 | ไม่มี migration; namespace `journeyUi` ใหม่; ESLint glob เพิ่ม; D-372 |
 | I-04 | boq-home + journey | done | 0b518b0 | ไม่มี migration; namespaces `boqHome`/`journeyUi` ขยาย; ESLint glob เพิ่ม; D-373, D-374 |
-| I-05 | export (BOQ print/xlsx) | todo | | |
+| I-05 | export (BOQ print/xlsx) | done | COMMIT | ไม่มี migration; namespace `export` ใหม่ (`buttons/print/sheet/summary/schedule`); ESLint glob เพิ่ม; D-375…D-377 |
 | I-06 | calculators กลุ่ม 1 | todo | | |
 | I-07 | calculators กลุ่ม 2 | todo | | |
 | I-08 | calculators กลุ่ม 3 + overlay domain | todo | | หลังข้อนี้เปิดปุ่มภาษาทั่วไป |
@@ -471,6 +471,9 @@
 | D-372 | 2026-11-01 | (I-03) ฟังก์ชัน pure ที่ไม่ใช่ hook (`planChecks`, `outOfRange`, `rebarSummaryItem`) อ่านข้อความผ่าน `journeyText()` (`journey/text.ts`, createTranslator + คุกกี้ภาษา แบบ notice-texts); default prop ไทย (`amountUnit`, `verb`, `label`, `placeholder`) กลายเป็น optional ที่เติมค่าจาก `journeyUi.*`; `levelTitle` ยังคืนชื่อไทยจาก domain (I-08 overlay) | ผู้เรียกใน calculators ไม่ต้องแก้ |
 | D-373 | 2026-11-01 | (I-04) `TOOL_TEXT`/`REVIEW_TEXT`/`CONSENT_TEXT` (const ไทย/อังกฤษในไฟล์) → `boqHome.tools/review/consent`; `consent.test.ts` อ่านข้อความจาก `th/boqHome.json`; สัญลักษณ์ `฿` (U+0E3F อยู่ในช่วงอักษรไทย) → `boqHome.currencySymbol` | ESLint ห้ามไทยจับ `฿` |
 | D-374 | 2026-11-01 | (I-04) glob ESLint `src/features/{boq-home,journey}/**` + `ignores: ["**/__tests__/**"]` ที่บล็อกเดียวกัน (เทสต์ใช้ข้อมูลตัวอย่างไทย); แถบล่างของ `LevelPage` แยกเป็น `StepBottomBar` เพราะ React Compiler lint (`preserve-manual-memoization`) ล้มเมื่อเรียก `t()` ในส่วนนั้นของคอมโพเนนต์เดียวกัน | พฤติกรรมเหมือนเดิม |
+| D-375 | 2026-11-01 | (I-05) ตัวสร้างเอกสาร (`buildBoqPrintModel`, `buildBoqSheet`, `buildBoqSummarySheet`, `boqXlsxBuffer`, `downloadBoqXlsx`, `buildGanttPrintModel`, `buildCalendarPrintModel`, `monthSummaryText`, `scheduleFileBaseName`, `fmtMoney`, `fmtQty`) รับ `locale` เป็นพารามิเตอร์ท้ายสุด ค่าเริ่มต้น `'th'` (ผลลัพธ์ไทยเหมือนเดิมทุกตัวอักษร); `PRINT_TEXT`/`SHEET_TEXT`/`SUMMARY_TEXT`/`SCHEDULE_PRINT_TEXT`/`COLUMN_HEADERS`/`SUMMARY_SHEET_NAME` ยังส่งออกเป็นค่าไทยจาก `th/export.json` (เทสต์เดิมใช้); โมเดลพิมพ์เก็บ `locale` ไว้ให้ `BoqPrintDocument`/`*PrintDocument` เลือกข้อความผ่าน React context; ปุ่ม `BoqExportButtons` ส่ง `useLocale()` ตอนกด (เอกสาร = ภาษา UI ตอนพิมพ์); ข้อความอ่านผ่าน `exportMessages(locale)` ใน `src/features/export/text.ts` (ไม่ใช้ ICU เพราะเป็นข้อความล้วน) | ตรงกับ 03-i18n §6 และไม่เปลี่ยน release 1 |
+| D-376 | 2026-11-01 | (I-05) เอกสาร BOQ ภาษาอังกฤษ: ยอดเป็นตัวอักษรใช้ `amountInWords` (`… baht only`); ชื่อหมวด/รายการ/หน่วยใช้ overlay `BOQ_SECTION_TITLES_EN`/`boqLineEn`/`unitEn` (ไม่พบ → ข้อความไทยเดิม); ใน Excel ภาษาอังกฤษบรรทัดตัวอักษรเป็นข้อความตรง ๆ (ไม่ใช้สูตร `BAHTTEXT` ซึ่งออกไทยเท่านั้น); ชื่อชีต "สรุป" → `Summary` (สูตรอ้างชื่อชีต BOQ เดิม `BOQ (Home)` ไม่เปลี่ยน) | ปร.4/ปร.5 เขียนเป็น "Por.Ror.4/5" ในข้อความอังกฤษ |
+| D-377 | 2026-11-01 | (I-05) `baht-text.ts` (อัลกอริทึมคำอ่านตัวเลขไทย) ไม่ย้ายเข้า JSON แต่ยกเว้นจาก ESLint ด้วย `ignores` (คู่กับ `domain/money/amount-in-words.ts` ฝั่งอังกฤษ); เอกสารตารางงาน (Gantt/ปฏิทิน): ป้ายคงที่ของเอกสารแปลแล้ว แต่ข้อมูลที่มาจาก planning (ชื่อเดือน, ชื่อวัน, `formatDate` dd/mm/yyyy, ป้ายงวด, `crewText`) ยังเป็นไทยจนกว่า I-09; `SchedulePrintButton.tsx` (planning) แก้เฉพาะส่ง `useLocale()` เข้าตัวสร้างเอกสาร ข้อความปุ่ม/โมดัลของมันยังไทย (I-09) | ขอบเขต I-05 |
 
 ## Handoff notes
 
@@ -1222,3 +1225,8 @@
 - ย้ายไทยตรงตัวของ `src/features/boq-home/**` และ `src/features/journey/**` เข้า `boqHome.{tools,review,consent,currencySymbol}` และ `journeyUi.{map,levelPage,newProject,projectInfo,boqLevel}` (th+en, parity ผ่าน); ESLint glob เพิ่มแล้ว
 - WP ถัดไปต้องรู้: ชื่อ level/phase/`planHint` ที่แสดงในหน้า journey มาจาก domain (ไทยจนกว่า I-08 overlay); ข้อความ finding ของ BOQ review มาจาก domain/backend; `CONSENT_TEXT`, `REVIEW_TEXT` ถูกลบ
 - ตรวจแล้ว: tsc web, eslint ไฟล์ที่แก้, check-parity, vitest `src/features/boq-home src/features/journey src/i18n src/components/sheet` ผ่าน; ไม่เขียนเทสต์ใหม่
+
+### I-05 — export (COMMIT)
+- ย้ายไทยตรงตัวของ `src/features/export/*` เข้า `export.{buttons,print,sheet,summary,schedule}` (th+en, ตรวจตรงตัวอักษรกับต้นฉบับด้วยสคริปต์แล้ว); ไฟล์ใหม่ `src/features/export/text.ts` (`exportMessages`, `lineDesc`, `unitText`, `sectionTitle`, `groupedNumber`); ESLint glob `src/features/export/*.{ts,tsx}` (ยกเว้น `baht-text.ts`)
+- WP ถัดไปต้องรู้: เรียกตัวสร้างเอกสารพร้อม `locale` ของเอกสาร (ใบเสนอราคา/เอกสาร ERP ใช้ `documentTranslator` ของตัวเอง ไม่ต้องใช้ตัวนี้); I-09 ต้องแปลข้อมูลจาก planning ที่เอกสารตารางงานใช้ (เดือน/วัน/ป้ายงวด/`formatDate`/`crewText`) และข้อความใน `SchedulePrintButton.tsx`; เนื้อหา BOQ ภาษาอังกฤษจะสมบูรณ์เมื่อ I-08 (overlay ที่ใช้อยู่คือ `template.v5.en.ts` เดิม)
+- ตรวจแล้ว: tsc web, eslint ไฟล์ที่แก้, vitest `src/features/export src/i18n` ผ่าน; ไม่เขียนเทสต์ใหม่

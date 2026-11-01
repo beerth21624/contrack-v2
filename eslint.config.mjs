@@ -93,8 +93,10 @@ const eslintConfig = defineConfig([
       // Track I-04: BOQ home + journey pages (tests keep Thai sample data)
       "src/features/boq-home/**/*.{ts,tsx}",
       "src/features/journey/**/*.{ts,tsx}",
+      // Track I-05: BOQ / schedule export (baht-text.ts is the Thai number-word algorithm, like amount-in-words.ts)
+      "src/features/export/*.{ts,tsx}",
     ],
-    ignores: ["**/__tests__/**"],
+    ignores: ["**/__tests__/**", "src/features/export/baht-text.ts"],
     rules: {
       "no-restricted-syntax": [
         "error",

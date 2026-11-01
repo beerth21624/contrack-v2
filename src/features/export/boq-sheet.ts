@@ -12,6 +12,8 @@
 
 import type { BoqItemRow, BoqResult, BoqSectionResult } from '@/domain/boq/types';
 import type { ProjectMeta } from '@/domain/project';
+import type { Locale } from '@/i18n/config';
+import { exportMessages, lineDesc, sectionTitle, unitText } from './text';
 
 export type SheetCol = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L' | 'M' | 'N';
 
@@ -124,30 +126,20 @@ export const SHEET_NAME = 'BOQ (Home)';
 export const HEADER_ROW = 7;
 export const FIRST_BODY_ROW = 8;
 
-export const SHEET_TEXT = {
-    title: 'แบบแสดงรายการ ปริมาณงาน และราคา',
-    projectName: 'ชื่อโครงการ',
-    siteAddress: 'สถานที่ก่อสร้าง',
-    ownerName: 'เจ้าของ/หน่วยงาน',
-    drawingNo: 'แบบเลขที่',
-    revision: 'ฉบับแก้ไขที่',
-    documentDate: 'เมื่อวันที่',
-    preparedBy: 'ประมาณราคาโดย',
-    groupMat: 'ค่าวัสดุ',
-    groupLab: 'ค่าแรงงาน',
-    subtotal: 'รวม >> ',
-    constructionTotal: 'รวมต้นทุนก่อสร้างทั้งหมด',
-    preConstruction: 'ค่าใช้จ่ายก่อนก่อสร้าง (ไม่รวมในต้นทุนก่อสร้าง)',
-    baht: 'บาท',
-    pageOf: 'แผ่นที่',
-} as const;
+/** Sheet texts in Thai (release 1 wording); other languages: `exportMessages(locale).sheet`. */
+export const SHEET_TEXT = exportMessages('th').sheet;
 
-/** Row 7 headers, verbatim from v5 (H has a line break in Excel). */
-export const COLUMN_HEADERS: [SheetCol, string][] = [
-    ['B', 'No.'], ['C', 'ขั้นตอน'], ['D', 'รายการ'], ['E', 'ปริมาณ'], ['F', 'หน่วย'], ['G', '%เผื่อ'],
-    ['H', 'ปริมาณ\nเผื่อแล้ว'], ['I', 'ต่อหน่วย'], ['J', 'รวม'], ['K', 'ต่อหน่วย'], ['L', 'รวม'], ['M', 'รวมทั้งหมด'],
-    ['N', 'หมายเหตุ'],
-];
+/** Row 7 headers, verbatim from v5 in Thai (H has a line break in Excel). */
+export function columnHeaders(locale: Locale = 'th'): [SheetCol, string][] {
+    const T = exportMessages(locale).sheet;
+    return [
+        ['B', T.colNo], ['C', T.colStep], ['D', T.colItem], ['E', T.colQty], ['F', T.colUnit], ['G', T.colWaste],
+        ['H', T.colGross], ['I', T.colUnitPrice], ['J', T.colSubtotal], ['K', T.colUnitPrice], ['L', T.colSubtotal],
+        ['M', T.colTotal], ['N', T.colNote],
+    ];
+}
+
+export const COLUMN_HEADERS: [SheetCol, string][] = columnHeaders('th');
 
 const BODY_COLS: SheetCol[] = ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
 
@@ -164,19 +156,19 @@ export function headerText(s: string): string {
 }
 
 /** "&R<font>[label   ]แผ่นที่ &P/&N" */
-export function pageHeader(formLabel: string): string {
+export function pageHeader(formLabel: string, locale: Locale = 'th'): string {
     const label = formLabel === '' ? '' : `${headerText(formLabel)}   `;
-    return `&R${HEADER_FONT}${label}${SHEET_TEXT.pageOf} &P/&N`;
+    return `&R${HEADER_FONT}${label}${exportMessages(locale).sheet.pageOf} &P/&N`;
 }
 
-function itemCells(row: BoqItemRow): SheetCell[] {
+function itemCells(row: BoqItemRow, locale: Locale): SheetCell[] {
     const qtyIsInput = row.qtySource === 'input';
     return [
         { col: 'B', value: null, style: { border: 'all' } },
         { col: 'C', value: row.itemNo ?? null, style: { align: 'center', border: 'all' } },
-        { col: 'D', value: row.desc, style: { align: 'left', border: 'all' } },
+        { col: 'D', value: lineDesc(row.key, row.desc, locale), style: { align: 'left', border: 'all' } },
         { col: 'E', value: row.qtySource === 'none' ? null : finite(row.qty), style: money(qtyIsInput ? SHEET_FILL.input : undefined) },
-        { col: 'F', value: row.unit, style: { align: 'center', border: 'all' } },
+        { col: 'F', value: unitText(row.unit, locale), style: { align: 'center', border: 'all' } },
         { col: 'G', value: finite(row.waste), style: { numFmt: NUM_FMT.percent, align: 'right', border: 'all', fill: SHEET_FILL.input } },
         { col: 'H', value: row.grossQty === null ? null : finite(row.grossQty), style: money() },
         { col: 'I', value: finite(row.matUnit), style: money(SHEET_FILL.input) },
@@ -188,7 +180,8 @@ function itemCells(row: BoqItemRow): SheetCell[] {
     ];
 }
 
-function sectionRows(s: BoqSectionResult, startRow: number): { rows: SheetRow[]; subtotalRow: number } {
+function sectionRows(s: BoqSectionResult, startRow: number, locale: Locale): { rows: SheetRow[]; subtotalRow: number } {
+    const T = exportMessages(locale).sheet;
     const rows: SheetRow[] = [];
     let r = startRow;
     rows.push({
@@ -196,7 +189,7 @@ function sectionRows(s: BoqSectionResult, startRow: number): { rows: SheetRow[];
         cells: BODY_COLS.map((col): SheetCell => {
             const base: SheetCellStyle = { fill: SHEET_FILL.header, bold: true, border: 'all' };
             if (col === 'B') return { col, value: s.no, style: { ...base, align: 'center', numFmt: NUM_FMT.integer } };
-            if (col === 'C') return { col, value: s.title.trim(), style: { ...base, align: 'left' } };
+            if (col === 'C') return { col, value: sectionTitle(s.no, s.title.trim(), locale), style: { ...base, align: 'left' } };
             return { col, value: null, style: base };
         }),
     });
@@ -207,12 +200,12 @@ function sectionRows(s: BoqSectionResult, startRow: number): { rows: SheetRow[];
                 r: r++, kind: 'heading', height: 24,
                 cells: BODY_COLS.map((col): SheetCell => {
                     if (col === 'C') return { col, value: row.itemNo ?? null, style: { align: 'center', border: 'all' } };
-                    if (col === 'D') return { col, value: row.desc, style: { align: 'left', border: 'all' } };
+                    if (col === 'D') return { col, value: lineDesc(row.key, row.desc, locale), style: { align: 'left', border: 'all' } };
                     return { col, value: null, style: { border: 'all' } };
                 }),
             });
         } else {
-            rows.push({ r: r++, kind: 'item', height: 24, cells: itemCells(row) });
+            rows.push({ r: r++, kind: 'item', height: 24, cells: itemCells(row, locale) });
         }
     }
     const last = r - 1;
@@ -225,7 +218,7 @@ function sectionRows(s: BoqSectionResult, startRow: number): { rows: SheetRow[];
     rows.push({
         r: r++, kind: 'subtotal', height: 24,
         cells: BODY_COLS.map((col): SheetCell => {
-            if (col === 'D') return { col, value: SHEET_TEXT.subtotal, style: { bold: true, align: 'right', border: 'all' } };
+            if (col === 'D') return { col, value: T.subtotal, style: { bold: true, align: 'right', border: 'all' } };
             if (col === 'J') return sum('J', s.matTotal);
             if (col === 'L') return sum('L', s.labTotal);
             if (col === 'M') return sum('M', s.total);
@@ -254,29 +247,30 @@ function metaRow(r: number, left: [string, string], right?: [string, string]): S
 }
 
 /** The whole BOQ (Home) sheet for a computed BOQ and the project header fields. */
-export function buildBoqSheet(boq: BoqResult, meta: ProjectMeta): BoqSheetModel {
+export function buildBoqSheet(boq: BoqResult, meta: ProjectMeta, locale: Locale = 'th'): BoqSheetModel {
+    const T = exportMessages(locale).sheet;
     const rows: SheetRow[] = [];
     rows.push({
         r: 1, kind: 'title', height: 36,
-        cells: [{ col: 'B', value: SHEET_TEXT.title, style: { bold: true, size: 22, align: 'center' } }],
+        cells: [{ col: 'B', value: T.title, style: { bold: true, size: 22, align: 'center' } }],
     });
-    rows.push(metaRow(2, [SHEET_TEXT.projectName, meta.projectName], [SHEET_TEXT.revision, meta.revision]));
-    rows.push(metaRow(3, [SHEET_TEXT.siteAddress, meta.siteAddress], [SHEET_TEXT.documentDate, meta.documentDate]));
-    rows.push(metaRow(4, [SHEET_TEXT.ownerName, meta.ownerName], [SHEET_TEXT.preparedBy, meta.preparedBy]));
-    rows.push(metaRow(5, [SHEET_TEXT.drawingNo, '']));
+    rows.push(metaRow(2, [T.projectName, meta.projectName], [T.revision, meta.revision]));
+    rows.push(metaRow(3, [T.siteAddress, meta.siteAddress], [T.documentDate, meta.documentDate]));
+    rows.push(metaRow(4, [T.ownerName, meta.ownerName], [T.preparedBy, meta.preparedBy]));
+    rows.push(metaRow(5, [T.drawingNo, '']));
 
     const headerStyle: SheetCellStyle = { fill: SHEET_FILL.header, bold: true, align: 'center', border: 'all', wrap: true };
     rows.push({
         r: 6, kind: 'groupHeader', height: 24.75,
         cells: BODY_COLS.map((col): SheetCell => ({
             col,
-            value: col === 'I' ? SHEET_TEXT.groupMat : col === 'K' ? SHEET_TEXT.groupLab : null,
+            value: col === 'I' ? T.groupMat : col === 'K' ? T.groupLab : null,
             style: headerStyle,
         })),
     });
     rows.push({
         r: HEADER_ROW, kind: 'columnHeader', height: 49.5,
-        cells: COLUMN_HEADERS.map(([col, value]): SheetCell => ({ col, value, style: headerStyle })),
+        cells: columnHeaders(locale).map(([col, value]): SheetCell => ({ col, value, style: headerStyle })),
     });
 
     let r = FIRST_BODY_ROW;
@@ -284,7 +278,7 @@ export function buildBoqSheet(boq: BoqResult, meta: ProjectMeta): BoqSheetModel 
     const preRefs: string[] = [];
     const subtotalRows: Record<number, number> = {};
     for (const s of boq.sections) {
-        const out = sectionRows(s, r);
+        const out = sectionRows(s, r, locale);
         rows.push(...out.rows);
         (s.inConstructionTotal ? constructionRefs : preRefs).push(`M${out.subtotalRow}`);
         subtotalRows[s.no] = out.subtotalRow;
@@ -296,25 +290,25 @@ export function buildBoqSheet(boq: BoqResult, meta: ProjectMeta): BoqSheetModel 
     rows.push({
         r: grandTotalRow, kind: 'grandTotal', height: 26.25,
         cells: [
-            { col: 'L', value: SHEET_TEXT.constructionTotal, style: { bold: true, align: 'right' } },
+            { col: 'L', value: T.constructionTotal, style: { bold: true, align: 'right' } },
             {
                 col: 'M', value: finite(boq.constructionTotal),
                 formula: constructionRefs.length > 0 ? constructionRefs.join('+') : undefined,
                 style: { bold: true, size: 20, color: 'FF7F7F7F', fill: SHEET_FILL.grandTotal, align: 'right', numFmt: NUM_FMT.grandTotal },
             },
-            { col: 'N', value: SHEET_TEXT.baht, style: { align: 'left' } },
+            { col: 'N', value: T.baht, style: { align: 'left' } },
         ],
     });
     rows.push({
         r: grandTotalRow + 1, kind: 'preConstruction', height: 24,
         cells: [
-            { col: 'L', value: SHEET_TEXT.preConstruction, style: { align: 'right' } },
+            { col: 'L', value: T.preConstruction, style: { align: 'right' } },
             {
                 col: 'M', value: finite(boq.preConstructionTotal),
                 formula: preRefs.length > 0 ? preRefs.join('+') : undefined,
                 style: { align: 'right', numFmt: NUM_FMT.grandTotal },
             },
-            { col: 'N', value: SHEET_TEXT.baht, style: { align: 'left' } },
+            { col: 'N', value: T.baht, style: { align: 'left' } },
         ],
     });
 
@@ -329,7 +323,7 @@ export function buildBoqSheet(boq: BoqResult, meta: ProjectMeta): BoqSheetModel 
             orientation: 'landscape',
             printArea: `B1:N${grandTotalRow + 1}`,
             printTitlesRow: `6:${HEADER_ROW}`,
-            header: pageHeader(''),
+            header: pageHeader('', locale),
         },
         grandTotalRow,
         subtotalRows,

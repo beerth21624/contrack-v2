@@ -10,7 +10,9 @@
 
 import type { BoqHeadingRow, BoqItemRow, BoqResult, BoqSectionResult } from '@/domain/boq/types';
 import type { ProjectMeta } from '@/domain/project';
-import { bahtText } from './baht-text';
+import type { Locale } from '@/i18n/config';
+import { amountInWords } from '@/i18n/format';
+import { exportMessages, groupedNumber, lineDesc, sectionTitle, unitText } from './text';
 
 /** Which forms to print. */
 export type PrintPart = 'all' | 'summary' | 'detail';
@@ -79,6 +81,8 @@ export interface PrintSignature {
 }
 
 export interface BoqPrintModel {
+    /** Language of the document (the UI language when it was printed). */
+    locale: Locale;
     projectName: string;
     summaryHeader: PrintPageHeader;
     detailHeader: PrintPageHeader;
@@ -103,53 +107,10 @@ export interface BoqPrintOptions {
     drawingNo?: string;
 }
 
-export const PRINT_TEXT = {
-    formSummary: 'รูปแบบตามแบบ ปร.5',
-    formDetail: 'รูปแบบตามแบบ ปร.4',
-    summaryTitle: 'แบบสรุปผลการประมาณราคาค่าก่อสร้าง',
-    detailTitle: 'แบบแสดงรายการ ปริมาณงาน และราคา',
-    projectName: 'ชื่อโครงการ',
-    revision: 'ฉบับแก้ไขที่',
-    siteAddress: 'สถานที่ก่อสร้าง',
-    ownerName: 'เจ้าของ/หน่วยงาน',
-    drawingNo: 'แบบเลขที่',
-    preparedBy: 'ประมาณราคาโดย',
-    documentDate: 'เมื่อวันที่',
-    colNo: 'ลำดับที่',
-    colDesc: 'รายการ',
-    colSection: 'รายการ (หมวดงาน)',
-    colQty: 'จำนวน',
-    colUnit: 'หน่วย',
-    colMat: 'ค่าวัสดุ',
-    colLab: 'ค่าแรงงาน',
-    colUnitPrice: 'ราคาต่อหน่วย',
-    colAmount: 'จำนวนเงิน',
-    colMatLab: 'รวมค่าวัสดุและค่าแรงงาน',
-    colTotal: 'รวม',
-    colNote: 'หมายเหตุ',
-    currency: '(บาท)',
-    subtotalPrefix: 'รวมหมวดที่',
-    constructionTotal: 'รวมค่างานต้นทุน',
-    inWords: 'ตัวอักษร',
-    factorF: 'Factor F (ถ้ามี)',
-    preConstruction: 'ค่าใช้จ่ายก่อนการก่อสร้าง (ไม่รวมในค่างานต้นทุน)',
-    preConstructionNote: 'ไม่รวมในค่างานต้นทุน',
-    baht: 'บาท',
-    signPrepared: 'ผู้ประมาณราคา',
-    signChecked: 'ผู้ตรวจสอบ',
-    signApproved: 'ผู้อนุมัติ',
-    signName: 'ลงชื่อ',
-    signPosition: 'ตำแหน่ง',
-    signDate: 'วันที่',
-    pageOf: 'แผ่นที่',
-    matShort: 'ค่าวัสดุ',
-    labShort: 'ค่าแรง',
-    pricedAt: 'คิดที่',
-    allowance: 'เผื่อ',
-    grossIncluded: 'ปริมาณรวมเผื่อแล้ว',
-    grossRounded: 'ปริมาณปัดเศษแล้ว',
-    nothing: 'ยังไม่มีรายการ',
-} as const;
+/** The printed texts in Thai (release 1 wording); other languages: `exportMessages(locale).print`. */
+export const PRINT_TEXT = exportMessages('th').print;
+
+const printText = (locale: Locale) => exportMessages(locale).print;
 
 const finite = (v: number) => (Number.isFinite(v) ? v : 0);
 
@@ -172,8 +133,8 @@ function amountBasis(unit: number, amount: number, net: number, gross: number): 
 }
 
 /** Waste fraction → "10%" (up to 2 decimals). */
-function wastePct(v: number): string {
-    return `${(v * 100).toLocaleString('th-TH', { maximumFractionDigits: 2 })}%`;
+function wastePct(v: number, locale: Locale): string {
+    return `${(v * 100).toLocaleString(locale === 'th' ? 'th-TH' : 'en-US', { maximumFractionDigits: 2 })}%`;
 }
 
 /**
@@ -181,7 +142,8 @@ function wastePct(v: number): string {
  * จำนวน × ราคาต่อหน่วย = จำนวนเงิน can be checked on paper (material is mostly priced on the gross quantity, labour
  * on the net one: Excel J = I×H, L = K×E).
  */
-export function quantityBasis(r: BoqItemRow): { qty: number | null; qtyNote: string } {
+export function quantityBasis(r: BoqItemRow, locale: Locale = 'th'): { qty: number | null; qtyNote: string } {
+    const T = printText(locale);
     const gross = r.grossQty === null ? null : finite(r.grossQty);
     if (r.qtySource === 'none') return { qty: gross, qtyNote: '' };
     const net = finite(r.qty);
@@ -191,21 +153,21 @@ export function quantityBasis(r: BoqItemRow): { qty: number | null; qtyNote: str
     const waste = finite(r.waste);
     if (mat !== 'net' && lab !== 'net' && (mat === 'gross' || lab === 'gross')) {
         // every priced amount uses the gross quantity: show it, and say it includes the allowance
-        return { qty: gross, qtyNote: waste > 0 ? `${PRINT_TEXT.grossIncluded} ${wastePct(waste)}` : PRINT_TEXT.grossRounded };
+        return { qty: gross, qtyNote: waste > 0 ? `${T.grossIncluded} ${wastePct(waste, locale)}` : T.grossRounded };
     }
     const who = mat === 'gross' && lab === 'gross'
-        ? `${PRINT_TEXT.matShort}และ${PRINT_TEXT.labShort}`
-        : mat === 'gross' ? PRINT_TEXT.matShort : lab === 'gross' ? PRINT_TEXT.labShort : '';
+        ? T.matAndLabShort
+        : mat === 'gross' ? T.matShort : lab === 'gross' ? T.labShort : '';
     if (who === '') return { qty: net, qtyNote: '' };
-    const unit = r.unit.trim();
-    const allowance = waste > 0 ? ` (${PRINT_TEXT.allowance} ${wastePct(waste)})` : '';
-    return { qty: net, qtyNote: `${who}${PRINT_TEXT.pricedAt} ${fmtQty(gross)}${unit !== '' ? ` ${unit}` : ''}${allowance}` };
+    const unit = unitText(r.unit.trim(), locale);
+    const allowance = waste > 0 ? ` (${T.allowance} ${wastePct(waste, locale)})` : '';
+    return { qty: net, qtyNote: `${who}${T.pricedAt} ${fmtQty(gross, locale)}${unit !== '' ? ` ${unit}` : ''}${allowance}` };
 }
 
-function detailItem(r: BoqItemRow): PrintDetailRow {
-    const { qty, qtyNote } = quantityBasis(r);
+function detailItem(r: BoqItemRow, locale: Locale): PrintDetailRow {
+    const { qty, qtyNote } = quantityBasis(r, locale);
     return {
-        type: 'item', key: r.key, itemNo: (r.itemNo ?? '').trim(), desc: r.desc, unit: r.unit, qty,
+        type: 'item', key: r.key, itemNo: (r.itemNo ?? '').trim(), desc: lineDesc(r.key, r.desc, locale), unit: unitText(r.unit, locale), qty,
         matUnit: finite(r.matUnit), matTotal: finite(r.matTotal),
         labUnit: finite(r.labUnit), labTotal: finite(r.labTotal),
         total: finite(r.total),
@@ -227,7 +189,7 @@ const numbered = (itemNo: string | undefined) => (itemNo ?? '').trim() !== '';
  * Each is printed just before the first printed item under it, and only then; a printed group heading restarts
  * the count, so where nothing was left out the printed numbers are the template's (and the Excel export's).
  */
-function detailRows(s: BoqSectionResult): PrintDetailRow[] {
+function detailRows(s: BoqSectionResult, locale: Locale): PrintDetailRow[] {
     const out: PrintDetailRow[] = [];
     let group: BoqHeadingRow | null = null;   // group heading not printed yet
     let head: BoqHeadingRow | null = null;    // numbered heading not printed yet
@@ -246,41 +208,41 @@ function detailRows(s: BoqSectionResult): PrintDetailRow[] {
         if (numbered(r.itemNo)) head = null;   // a numbered item ends the numbered heading's sub-items
         if (!isPrintableItem(r)) continue;
         if (group !== null) {
-            out.push({ type: 'heading', key: group.key, itemNo: '', desc: group.desc, group: true });
+            out.push({ type: 'heading', key: group.key, itemNo: '', desc: lineDesc(group.key, group.desc, locale), group: true });
             group = null;
             n = 0;
         }
         if (head !== null) {
-            out.push({ type: 'heading', key: head.key, itemNo: renumber(head.itemNo), desc: head.desc, group: false });
+            out.push({ type: 'heading', key: head.key, itemNo: renumber(head.itemNo), desc: lineDesc(head.key, head.desc, locale), group: false });
             head = null;
         }
-        out.push({ ...detailItem(r), itemNo: renumber(r.itemNo) });
+        out.push({ ...detailItem(r, locale), itemNo: renumber(r.itemNo) });
     }
     return out;
 }
 
-function summaryLine(s: BoqSectionResult): PrintSummaryLine {
+function summaryLine(s: BoqSectionResult, locale: Locale): PrintSummaryLine {
     return {
-        no: s.no, title: s.title.trim(),
+        no: s.no, title: sectionTitle(s.no, s.title.trim(), locale),
         matTotal: finite(s.matTotal), labTotal: finite(s.labTotal), total: finite(s.total),
     };
 }
 
-function detailSection(s: BoqSectionResult): PrintDetailSection {
+function detailSection(s: BoqSectionResult, locale: Locale): PrintDetailSection {
     return {
-        no: s.no, title: s.title.trim(), inConstructionTotal: s.inConstructionTotal,
-        rows: detailRows(s),
+        no: s.no, title: sectionTitle(s.no, s.title.trim(), locale), inConstructionTotal: s.inConstructionTotal,
+        rows: detailRows(s, locale),
         matTotal: finite(s.matTotal), labTotal: finite(s.labTotal), total: finite(s.total),
-        subtotalLabel: `${PRINT_TEXT.subtotalPrefix} ${s.no}`,
+        subtotalLabel: `${printText(locale).subtotalPrefix} ${s.no}`,
     };
 }
 
 const hasItems = (s: PrintDetailSection) => s.rows.some(r => r.type === 'item');
 
 /** The header fields, the same on both forms (blank values stay, as lines to fill in). */
-export function buildHeaderFields(meta: ProjectMeta, options: BoqPrintOptions = {}): PrintHeaderField[] {
+export function buildHeaderFields(meta: ProjectMeta, options: BoqPrintOptions = {}, locale: Locale = 'th'): PrintHeaderField[] {
     const f = (key: PrintHeaderFieldKey, value: string | undefined, wide = false): PrintHeaderField => ({
-        key, label: PRINT_TEXT[key], value: (value ?? '').trim(), wide,
+        key, label: printText(locale)[key], value: (value ?? '').trim(), wide,
     });
     return [
         f('projectName', meta.projectName), f('revision', meta.revision),
@@ -290,43 +252,47 @@ export function buildHeaderFields(meta: ProjectMeta, options: BoqPrintOptions = 
     ];
 }
 
-export function buildBoqPrintModel(boq: BoqResult, meta: ProjectMeta, options: BoqPrintOptions = {}): BoqPrintModel {
+export function buildBoqPrintModel(
+    boq: BoqResult, meta: ProjectMeta, options: BoqPrintOptions = {}, locale: Locale = 'th',
+): BoqPrintModel {
+    const T = printText(locale);
     const constructionTotal = finite(boq.constructionTotal);
     const construction = boq.sections.filter(s => s.inConstructionTotal);
     const pre = boq.sections.filter(s => !s.inConstructionTotal);
-    const fields = buildHeaderFields(meta, options);
-    const summary = construction.map(summaryLine);
+    const fields = buildHeaderFields(meta, options, locale);
+    const summary = construction.map(sec => summaryLine(sec, locale));
     return {
+        locale,
         projectName: meta.projectName.trim(),
-        summaryHeader: { formLabel: PRINT_TEXT.formSummary, title: PRINT_TEXT.summaryTitle, fields },
-        detailHeader: { formLabel: PRINT_TEXT.formDetail, title: PRINT_TEXT.detailTitle, fields },
+        summaryHeader: { formLabel: T.formSummary, title: T.summaryTitle, fields },
+        detailHeader: { formLabel: T.formDetail, title: T.detailTitle, fields },
         summary,
         constructionMat: summary.reduce((a, l) => a + l.matTotal, 0),
         constructionLab: summary.reduce((a, l) => a + l.labTotal, 0),
         constructionTotal,
-        constructionTotalText: bahtText(constructionTotal),
-        preConstruction: pre.map(summaryLine),
+        constructionTotalText: amountInWords(constructionTotal, locale),
+        preConstruction: pre.map(sec => summaryLine(sec, locale)),
         preConstructionTotal: finite(boq.preConstructionTotal),
-        details: construction.map(detailSection).filter(hasItems),
-        preConstructionDetails: pre.map(detailSection).filter(hasItems),
+        details: construction.map(sec => detailSection(sec, locale)).filter(hasItems),
+        preConstructionDetails: pre.map(sec => detailSection(sec, locale)).filter(hasItems),
         signatures: [
-            { role: PRINT_TEXT.signPrepared, name: meta.preparedBy.trim() },
-            { role: PRINT_TEXT.signChecked, name: '' },
-            { role: PRINT_TEXT.signApproved, name: '' },
+            { role: T.signPrepared, name: meta.preparedBy.trim() },
+            { role: T.signChecked, name: '' },
+            { role: T.signApproved, name: '' },
         ],
     };
 }
 
-// ─── Display formatting (th-TH digits and separators, like the BOQ page) ─────
+// ─── Display formatting (digits and separators like the BOQ page) ─────
 
 /** 1,234.50; zero and missing show "-" (the Excel accounting format). */
-export function fmtMoney(v: number | null): string {
+export function fmtMoney(v: number | null, locale: Locale = 'th'): string {
     if (v === null || !Number.isFinite(v) || Math.abs(v) < 0.005) return '-';
-    return v.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return groupedNumber(v, locale, 2);
 }
 
 /** Quantity: always 2 decimals so the column lines up on the decimal point; missing → empty. */
-export function fmtQty(v: number | null): string {
+export function fmtQty(v: number | null, locale: Locale = 'th'): string {
     if (v === null || !Number.isFinite(v)) return '';
-    return v.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return groupedNumber(v, locale, 2);
 }

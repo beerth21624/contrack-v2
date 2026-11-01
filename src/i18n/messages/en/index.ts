@@ -36,6 +36,7 @@ import taxReports from './taxReports.json';
 import handover from './handover.json';
 import sheet from './sheet.json';
 import journeyUi from './journeyUi.json';
+import exportMessages from './export.json';
 
 const messages = {
   common,
@@ -76,6 +77,7 @@ const messages = {
   handover,
   sheet,
   journeyUi,
+  export: exportMessages,
 };
 
 export default messages;

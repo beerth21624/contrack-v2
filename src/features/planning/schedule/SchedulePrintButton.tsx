@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { Button, Checkbox, Dropdown, Modal, Tooltip, type MenuProps } from 'antd';
 import { DownOutlined, PrinterOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { useLocale } from 'next-intl';
 import { computeCrewCalendar, type ManDayResult, type ScheduleResult } from '@/domain/planning';
 import { runBrowserPrint } from '@/features/export/print-runner';
 import {
@@ -42,6 +43,7 @@ export function SchedulePrintButton({ schedule, manday, fallbackName = '' }: {
     /** Printed when the S-Curve has no project name (the project's own name). */
     fallbackName?: string;
 }) {
+    const locale = useLocale();   // the printed document follows the UI language (texts of the buttons: I-09)
     const [job, setJob] = useState<PrintJob | null>(null);
     const [picking, setPicking] = useState(false);
     const [months, setMonths] = useState<string[]>([]);
@@ -51,19 +53,19 @@ export function SchedulePrintButton({ schedule, manday, fallbackName = '' }: {
     const ready = schedule.start !== null && options.length > 0;
 
     const print = (next: PrintJob) => runBrowserPrint({
-        title: scheduleFileBaseName(next.kind, next.model.projectName),
+        title: scheduleFileBaseName(next.kind, next.model.projectName, locale),
         mount: () => setJob(next),
         unmount: () => setJob(null),
     });
 
-    const printGantt = () => print({ kind: 'gantt', model: buildGanttPrintModel(schedule, dayjs().format('YYYY-MM-DD'), fallbackName) });
+    const printGantt = () => print({ kind: 'gantt', model: buildGanttPrintModel(schedule, dayjs().format('YYYY-MM-DD'), fallbackName, locale) });
     const openCalendar = () => {
         setMonths(options.map(o => o.value));   // every month of the plan by default
         setPicking(true);
     };
     const printCalendar = () => {
         setPicking(false);
-        print({ kind: 'calendar', model: buildCalendarPrintModel(schedule, manday, months, fallbackName, crews) });
+        print({ kind: 'calendar', model: buildCalendarPrintModel(schedule, manday, months, fallbackName, crews, locale) });
     };
 
     const button = (

@@ -17,27 +17,35 @@
 // Type sizes: Google Sarabun draws Thai about 1.35× larger than TH Sarabun New at the same point size, so 12 pt here
 // reads like the official 16 pt TH Sarabun New body text, and the 10.5 pt tables like 14 pt.
 
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
+import type { Locale } from '@/i18n/config';
 import {
-    fmtMoney, fmtQty, PRINT_TEXT as T,
+    fmtMoney, fmtQty,
     type BoqPrintModel, type PrintDetailRow, type PrintDetailSection, type PrintPageHeader, type PrintPart,
     type PrintSignature, type PrintSummaryLine,
 } from './boq-print-model';
+import { exportMessages } from './text';
 
 export const PRINT_ROOT_CLASS = 'boqp-root';
 /** Set on <html> while printing (see BoqExportButtons): the page margin boxes do not see body's --font-sarabun. */
 export const PRINT_FONT_VAR = '--boqp-font';
 
 const R = PRINT_ROOT_CLASS;
+
+/** The language of the document being printed (BoqPrintModel.locale) and its texts. */
+const PrintContext = createContext<{ locale: Locale; T: ReturnType<typeof exportMessages>['print'] }>({
+    locale: 'th', T: exportMessages('th').print,
+});
+const usePrint = () => useContext(PrintContext);
 const RULE = '0.5pt solid #000';
 
-const CSS = `
+const buildCss = (pageOf: string) => `
 @media screen { .${R} { display: none !important; } }
 @media print {
   @page {
     size: A4; margin: 20mm;
     @top-right {
-      content: "${T.pageOf} " counter(page) "/" counter(pages);
+      content: "${pageOf} " counter(page) "/" counter(pages);
       font-family: var(${PRINT_FONT_VAR}, Tahoma), Tahoma, sans-serif; font-size: 11pt; color: #000;
       vertical-align: bottom; padding-bottom: 5mm;
     }
@@ -119,19 +127,21 @@ function Header({ header }: { header: PrintPageHeader }) {
 const SUMMARY_COLS = 6;
 
 function SummaryRow({ line, note = '' }: { line: PrintSummaryLine; note?: string }) {
+    const { locale } = usePrint();
     return (
         <tr>
             <td className="boqp-c">{line.no}</td>
             <td>{line.title}</td>
-            <td className="boqp-num">{fmtMoney(line.matTotal)}</td>
-            <td className="boqp-num">{fmtMoney(line.labTotal)}</td>
-            <td className="boqp-num">{fmtMoney(line.total)}</td>
+            <td className="boqp-num">{fmtMoney(line.matTotal, locale)}</td>
+            <td className="boqp-num">{fmtMoney(line.labTotal, locale)}</td>
+            <td className="boqp-num">{fmtMoney(line.total, locale)}</td>
             <td>{note}</td>
         </tr>
     );
 }
 
 function Signature({ s }: { s: PrintSignature }) {
+    const { T } = usePrint();
     return (
         <div>
             <div className="boqp-sign-role">{s.role}</div>
@@ -144,6 +154,7 @@ function Signature({ s }: { s: PrintSignature }) {
 }
 
 function SummaryForm({ model }: { model: BoqPrintModel }) {
+    const { T, locale } = usePrint();
     return (
         <section className="boqp-pr5">
             <Header header={model.summaryHeader} />
@@ -171,9 +182,9 @@ function SummaryForm({ model }: { model: BoqPrintModel }) {
                     <tr className="boqp-total">
                         <td />
                         <td className="boqp-c">{T.constructionTotal}</td>
-                        <td className="boqp-num">{fmtMoney(model.constructionMat)}</td>
-                        <td className="boqp-num">{fmtMoney(model.constructionLab)}</td>
-                        <td className="boqp-num">{fmtMoney(model.constructionTotal)}</td>
+                        <td className="boqp-num">{fmtMoney(model.constructionMat, locale)}</td>
+                        <td className="boqp-num">{fmtMoney(model.constructionLab, locale)}</td>
+                        <td className="boqp-num">{fmtMoney(model.constructionTotal, locale)}</td>
                         <td />
                     </tr>
                     <tr className="boqp-words">
@@ -204,6 +215,7 @@ function SummaryForm({ model }: { model: BoqPrintModel }) {
 const DETAIL_COLS = 10;
 
 function DetailRow({ r }: { r: PrintDetailRow }) {
+    const { locale } = usePrint();
     if (r.type === 'heading') {
         return (
             <tr className={r.group ? 'boqp-hd boqp-grp' : 'boqp-hd'}>
@@ -217,13 +229,13 @@ function DetailRow({ r }: { r: PrintDetailRow }) {
         <tr>
             <td className="boqp-c">{r.itemNo}</td>
             <td>{r.desc}</td>
-            <td className="boqp-num">{fmtQty(r.qty)}</td>
+            <td className="boqp-num">{fmtQty(r.qty, locale)}</td>
             <td className="boqp-c">{r.unit}</td>
-            <td className="boqp-num">{fmtMoney(r.matUnit)}</td>
-            <td className="boqp-num">{fmtMoney(r.matTotal)}</td>
-            <td className="boqp-num">{fmtMoney(r.labUnit)}</td>
-            <td className="boqp-num">{fmtMoney(r.labTotal)}</td>
-            <td className="boqp-num">{fmtMoney(r.total)}</td>
+            <td className="boqp-num">{fmtMoney(r.matUnit, locale)}</td>
+            <td className="boqp-num">{fmtMoney(r.matTotal, locale)}</td>
+            <td className="boqp-num">{fmtMoney(r.labUnit, locale)}</td>
+            <td className="boqp-num">{fmtMoney(r.labTotal, locale)}</td>
+            <td className="boqp-num">{fmtMoney(r.total, locale)}</td>
             <td>
                 {r.note !== '' && <div>{r.note}</div>}
                 {r.qtyNote !== '' && <div className="boqp-qnote">{r.qtyNote}</div>}
@@ -235,15 +247,16 @@ function DetailRow({ r }: { r: PrintDetailRow }) {
 function AmountsRow({ className, label, mat, lab, total }: {
     className: string; label: string; mat: number; lab: number; total: number;
 }) {
+    const { locale } = usePrint();
     return (
         <tr className={className}>
             <td />
             <td className="boqp-c">{label}</td>
             <td /><td /><td />
-            <td className="boqp-num">{fmtMoney(mat)}</td>
+            <td className="boqp-num">{fmtMoney(mat, locale)}</td>
             <td />
-            <td className="boqp-num">{fmtMoney(lab)}</td>
-            <td className="boqp-num">{fmtMoney(total)}</td>
+            <td className="boqp-num">{fmtMoney(lab, locale)}</td>
+            <td className="boqp-num">{fmtMoney(total, locale)}</td>
             <td />
         </tr>
     );
@@ -276,6 +289,7 @@ function keepChunks(rows: PrintDetailRow[]): PrintDetailRow[][] {
  * Runs of plain items between them share one ordinary <tbody>, free to break between any two rows.
  */
 function DetailSection({ s, lead }: { s: PrintDetailSection; lead?: ReactNode }) {
+    const { T } = usePrint();
     const outside = s.inConstructionTotal ? '' : ` (${T.preConstructionNote})`;
     const subtotal = (
         <AmountsRow className="boqp-sub" label={`${s.subtotalLabel}${outside}`}
@@ -320,6 +334,7 @@ function DetailSection({ s, lead }: { s: PrintDetailSection; lead?: ReactNode })
 }
 
 function DetailForm({ model }: { model: BoqPrintModel }) {
+    const { T } = usePrint();
     const empty = model.details.length === 0 && model.preConstructionDetails.length === 0;
     return (
         <section className="boqp-pr4">
@@ -376,11 +391,14 @@ function DetailForm({ model }: { model: BoqPrintModel }) {
 
 /** The printable document: the ปร.5 summary (with signatures), then the ปร.4 detailed list. */
 export function BoqPrintDocument({ model, part = 'all' }: { model: BoqPrintModel; part?: PrintPart }) {
+    const T = exportMessages(model.locale).print;
     return (
-        <div className={PRINT_ROOT_CLASS} lang="th">
-            <style>{CSS}</style>
-            {part !== 'detail' && <SummaryForm model={model} />}
-            {part !== 'summary' && <DetailForm model={model} />}
-        </div>
+        <PrintContext.Provider value={{ locale: model.locale, T }}>
+            <div className={PRINT_ROOT_CLASS} lang={model.locale}>
+                <style>{buildCss(T.pageOf)}</style>
+                {part !== 'detail' && <SummaryForm model={model} />}
+                {part !== 'summary' && <DetailForm model={model} />}
+            </div>
+        </PrintContext.Provider>
     );
 }

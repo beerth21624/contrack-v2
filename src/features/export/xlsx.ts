@@ -5,6 +5,7 @@
 import type { Borders, Cell, Workbook } from 'exceljs';
 import type { Project } from '@/domain/project';
 import { computeProject } from '@/domain/project';
+import type { Locale } from '@/i18n/config';
 import {
     boqFileBaseName, buildBoqSheet, PRINT_MARGINS, SHEET_COLUMNS, SHEET_FONT,
     type SheetCell, type SheetModel,
@@ -84,17 +85,17 @@ export async function writeBoqWorkbook(...models: SheetModel[]): Promise<Workboo
 }
 
 /** The .xlsx bytes of a project's BOQ: the "สรุป" summary sheet, then BOQ (Home). */
-export async function boqXlsxBuffer(project: Project): Promise<ArrayBuffer> {
+export async function boqXlsxBuffer(project: Project, locale: Locale = 'th'): Promise<ArrayBuffer> {
     const { boq } = computeProject(project);
-    const home = buildBoqSheet(boq, project.meta);
-    const wb = await writeBoqWorkbook(buildBoqSummarySheet(boq, project.meta, home), home);
+    const home = buildBoqSheet(boq, project.meta, locale);
+    const wb = await writeBoqWorkbook(buildBoqSummarySheet(boq, project.meta, home, locale), home);
     const buf = await wb.xlsx.writeBuffer();
     return buf as ArrayBuffer;
 }
 
 /** Downloads the project's BOQ as `BOQ_<project>_Rev<rev>.xlsx` (browser only). */
-export async function downloadBoqXlsx(project: Project): Promise<void> {
-    const buffer = await boqXlsxBuffer(project);
+export async function downloadBoqXlsx(project: Project, locale: Locale = 'th'): Promise<void> {
+    const buffer = await boqXlsxBuffer(project, locale);
     const { saveAs } = await import('file-saver');
     saveAs(new Blob([buffer], { type: XLSX_MIME }), `${boqFileBaseName(project.meta)}.xlsx`);
 }

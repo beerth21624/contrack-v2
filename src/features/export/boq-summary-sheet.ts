@@ -8,44 +8,21 @@
 
 import type { BoqResult } from '@/domain/boq/types';
 import type { ProjectMeta } from '@/domain/project';
-import { bahtText } from './baht-text';
+import type { Locale } from '@/i18n/config';
+import { amountInWords } from '@/i18n/format';
+import { exportMessages, sectionTitle } from './text';
 import {
     finite, NUM_FMT, pageHeader, SHEET_FILL,
     type BoqSheetModel, type SheetCell, type SheetCellStyle, type SheetCol, type SheetModel, type SheetRow,
 } from './boq-sheet';
 
-export const SUMMARY_SHEET_NAME = 'สรุป';
+/** The summary sheet's name in Thai (release 1); other languages: `exportMessages(locale).summary.sheetName`. */
+export const SUMMARY_SHEET_NAME = exportMessages('th').summary.sheetName;
 export const SUMMARY_HEADER_ROW = 7;
 export const SUMMARY_FIRST_ROW = 8;
 
-export const SUMMARY_TEXT = {
-    formLabel: 'รูปแบบตามแบบ ปร.5',
-    title: 'แบบสรุปผลการประมาณราคาค่าก่อสร้าง',
-    projectName: 'ชื่อโครงการ',
-    revision: 'ฉบับแก้ไขที่',
-    siteAddress: 'สถานที่ก่อสร้าง',
-    ownerName: 'เจ้าของ/หน่วยงาน',
-    drawingNo: 'แบบเลขที่',
-    preparedBy: 'ประมาณราคาโดย',
-    documentDate: 'เมื่อวันที่',
-    colNo: 'ลำดับ',
-    colSection: 'รายการ (หมวดงาน)',
-    colMat: 'ค่าวัสดุ\n(บาท)',
-    colLab: 'ค่าแรงงาน\n(บาท)',
-    colTotal: 'รวม\n(บาท)',
-    colNote: 'หมายเหตุ',
-    constructionTotal: 'รวมค่างานต้นทุน',
-    inWords: 'ตัวอักษร',
-    factorF: 'Factor F (ถ้ามี)',
-    preConstruction: 'ค่าใช้จ่ายก่อนการก่อสร้าง (ไม่รวมในค่างานต้นทุน)',
-    preConstructionNote: 'ไม่รวมในค่างานต้นทุน',
-    signPrepared: 'ผู้ประมาณราคา',
-    signChecked: 'ผู้ตรวจสอบ',
-    signApproved: 'ผู้อนุมัติ',
-    signName: 'ลงชื่อ',
-    signPosition: 'ตำแหน่ง',
-    signDate: 'วันที่',
-} as const;
+/** Summary sheet texts in Thai (release 1 wording); other languages: `exportMessages(locale).summary`. */
+export const SUMMARY_TEXT = exportMessages('th').summary;
 
 /** B ลำดับ, C รายการ, D ค่าวัสดุ, E ค่าแรงงาน, F รวม, G หมายเหตุ (sized for one portrait page at about 90 %). */
 export const SUMMARY_COLUMN_WIDTHS: Partial<Record<SheetCol, number>> = {
@@ -71,8 +48,10 @@ function spanCells(cols: SheetCol[], value: string | number | null, style: Sheet
 
 const span = (r: number, cols: SheetCol[]) => `${cols[0]}${r}:${cols[cols.length - 1]}${r}`;
 
-export function buildBoqSummarySheet(boq: BoqResult, meta: ProjectMeta, boqSheet: BoqSheetModel): SheetModel {
-    const T = SUMMARY_TEXT;
+export function buildBoqSummarySheet(
+    boq: BoqResult, meta: ProjectMeta, boqSheet: BoqSheetModel, locale: Locale = 'th',
+): SheetModel {
+    const T = exportMessages(locale).summary;
     const rows: SheetRow[] = [];
     const merges: string[] = [];
     const merged = (r: number, cols: SheetCol[]) => { if (cols.length > 1) merges.push(span(r, cols)); };
@@ -119,7 +98,7 @@ export function buildBoqSummarySheet(boq: BoqResult, meta: ProjectMeta, boqSheet
             r, kind: 'section', height: 24,
             cells: [
                 { col: 'B', value: s.no, style: cellStyle({ align: 'center', numFmt: NUM_FMT.integer }) },
-                { col: 'C', value: s.title.trim(), style: cellStyle({ align: 'left', wrap: true }) },
+                { col: 'C', value: sectionTitle(s.no, s.title.trim(), locale), style: cellStyle({ align: 'left', wrap: true }) },
                 { col: 'D', value: finite(s.matTotal), formula: link('J'), style: moneyStyle() },
                 { col: 'E', value: finite(s.labTotal), formula: link('L'), style: moneyStyle() },
                 { col: 'F', value: finite(s.total), formula: link('M'), style: moneyStyle() },
@@ -157,9 +136,10 @@ export function buildBoqSummarySheet(boq: BoqResult, meta: ProjectMeta, boqSheet
     rows.push({
         r: wordsRow, kind: 'words', height: 24,
         cells: spanCells(
-            TABLE_COLS, `(${T.inWords} ${bahtText(constructionTotal)})`,
+            TABLE_COLS, `(${T.inWords} ${amountInWords(constructionTotal, locale)})`,
             cellStyle({ bold: true, align: 'center', wrap: true }),
-            `${str(`(${T.inWords} `)}&BAHTTEXT(F${totalRow})&${str(')')}`,
+            // Excel's BAHTTEXT only writes Thai; the English words are written as text
+            locale === 'th' ? `${str(`(${T.inWords} `)}&BAHTTEXT(F${totalRow})&${str(')')}` : undefined,
         ),
     });
     merged(wordsRow, TABLE_COLS);
@@ -212,7 +192,7 @@ export function buildBoqSummarySheet(boq: BoqResult, meta: ProjectMeta, boqSheet
     const lastRow = r - 1;
 
     return {
-        sheetName: SUMMARY_SHEET_NAME,
+        sheetName: T.sheetName,
         columnWidths: SUMMARY_COLUMN_WIDTHS,
         rows,
         merges,
@@ -221,7 +201,7 @@ export function buildBoqSummarySheet(boq: BoqResult, meta: ProjectMeta, boqSheet
             orientation: 'portrait',
             printArea: `B1:G${lastRow}`,
             printTitlesRow: `${SUMMARY_HEADER_ROW}:${SUMMARY_HEADER_ROW}`,
-            header: pageHeader(T.formLabel),
+            header: pageHeader(T.formLabel, locale),
         },
     };
 }

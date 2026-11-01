@@ -1,10 +1,12 @@
 'use client';
 
-// "ดาวน์โหลด Excel" + "พิมพ์ / PDF" for the current project. Reused by the BOQ (Home) page and the journey finish card.
+// "Download Excel" + "Print / PDF" (texts: messages `export.buttons`) for the current project. Reused by the BOQ (Home) page and the journey finish card.
 // PDF = the browser's print dialog ("Save as PDF") on a print-only document, so Thai uses the app's Sarabun font.
-// The arrow next to the print button prints one form only (summary ปร.5 or detail ปร.4).
+// The arrow next to the print button prints one form only (summary Por.Ror.5 or detail Por.Ror.4).
+// The documents are in the UI language at the moment of the click.
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { createPortal, flushSync } from 'react-dom';
 import { Button, Dropdown, message, Space, type MenuProps } from 'antd';
 import { DownOutlined, FileExcelOutlined, PrinterOutlined } from '@ant-design/icons';
@@ -14,22 +16,6 @@ import { boqFileBaseName } from './boq-sheet';
 import { buildBoqPrintModel, type BoqPrintModel, type PrintPart } from './boq-print-model';
 import { BoqPrintDocument, PRINT_FONT_VAR } from './BoqPrintDocument';
 import { downloadBoqXlsx } from './xlsx';
-
-export const EXPORT_TEXT = {
-    excel: 'ดาวน์โหลด Excel',
-    print: 'พิมพ์ / PDF',
-    printChoose: 'เลือกแบบที่จะพิมพ์',
-    printAll: 'ทั้งชุด (แบบสรุป ปร.5 + รายการ ปร.4)',
-    printSummary: 'เฉพาะแบบสรุป (ปร.5)',
-    printDetail: 'เฉพาะรายการ ปริมาณงานและราคา (ปร.4)',
-    excelFailed: 'สร้างไฟล์ Excel ไม่สำเร็จ',
-} as const;
-
-const PRINT_MENU: NonNullable<MenuProps['items']> = [
-    { key: 'all', label: EXPORT_TEXT.printAll },
-    { key: 'summary', label: EXPORT_TEXT.printSummary },
-    { key: 'detail', label: EXPORT_TEXT.printDetail },
-];
 
 const isPrintPart = (k: string): k is PrintPart => k === 'all' || k === 'summary' || k === 'detail';
 
@@ -49,21 +35,28 @@ export function BoqExportButtons({ project: projectProp, size = 'middle', primar
     const [busy, setBusy] = useState(false);
     const [printJob, setPrintJob] = useState<{ model: BoqPrintModel; part: PrintPart } | null>(null);
     const [msg, msgHolder] = message.useMessage();
+    const locale = useLocale();
+    const t = useTranslations('export.buttons');
+    const printMenu = useMemo<NonNullable<MenuProps['items']>>(() => [
+        { key: 'all', label: t('printAll') },
+        { key: 'summary', label: t('printSummary') },
+        { key: 'detail', label: t('printDetail') },
+    ], [t]);
 
     const onExcel = async () => {
         setBusy(true);
         try {
-            await downloadBoqXlsx(project);
+            await downloadBoqXlsx(project, locale);
         } catch (e) {
             console.error('BOQ Excel export failed', e);
-            void msg.error(EXPORT_TEXT.excelFailed);
+            void msg.error(t('excelFailed'));
         } finally {
             setBusy(false);
         }
     };
 
     const onPrint = (part: PrintPart) => {
-        const model = buildBoqPrintModel(computeProject(project).boq, project.meta);
+        const model = buildBoqPrintModel(computeProject(project).boq, project.meta, {}, locale);
         const prevTitle = document.title;
         const root = document.documentElement;
         let done = false;
@@ -94,17 +87,17 @@ export function BoqExportButtons({ project: projectProp, size = 'middle', primar
             <Space wrap size={8}>
                 <Button size={size} icon={<FileExcelOutlined />} loading={busy} disabled={!ready}
                     onClick={() => { void onExcel(); }}>
-                    {EXPORT_TEXT.excel}
+                    {t('excel')}
                 </Button>
                 <Space.Compact>
                     <Button size={size} type={printType} icon={<PrinterOutlined />} disabled={!ready}
                         onClick={() => onPrint('all')}>
-                        {EXPORT_TEXT.print}
+                        {t('print')}
                     </Button>
                     <Dropdown disabled={!ready} trigger={['click']}
-                        menu={{ items: PRINT_MENU, onClick: ({ key }) => { if (isPrintPart(key)) onPrint(key); } }}>
+                        menu={{ items: printMenu, onClick: ({ key }) => { if (isPrintPart(key)) onPrint(key); } }}>
                         <Button size={size} type={printType} icon={<DownOutlined />} disabled={!ready}
-                            aria-label={EXPORT_TEXT.printChoose} title={EXPORT_TEXT.printChoose} />
+                            aria-label={t('printChoose')} title={t('printChoose')} />
                     </Dropdown>
                 </Space.Compact>
             </Space>

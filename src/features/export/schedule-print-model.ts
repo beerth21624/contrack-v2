@@ -20,58 +20,12 @@ import { formatDate, usedBucketCount } from '@/features/planning/shared/planning
 import {
     crewText, keyToIso, monthCells, monthKey, monthTitle, parts,
 } from '@/features/planning/schedule/calendar-grid';
+import type { Locale } from '@/i18n/config';
 import { fmtMoney } from './boq-print-model';
+import { exportMessages, groupedNumber } from './text';
 
-export const SCHEDULE_PRINT_TEXT = {
-    ganttTitle: 'แผนงานก่อสร้างและ S-Curve',
-    calendarTitle: 'ปฏิทินงาน',
-    projectName: 'ชื่อโครงการ',
-    start: 'วันเริ่มโครงการ',
-    finish: 'วันเสร็จโครงการ',
-    duration: 'ระยะเวลา',
-    budget: 'งบประมาณโครงการ',
-    printedOn: 'วันที่พิมพ์',
-    days: 'วัน',
-    baht: 'บาท',
-    scurve: 'S-Curve แผนงานเทียบผลงาน (สะสม)',
-    planCum: 'แผนงาน (สะสม)',
-    actualCum: 'ผลงานจริง (สะสม)',
-    plan: 'แผน',
-    actual: 'ผลงานจริง',
-    colNo: 'ลำดับ',
-    colTask: 'งาน',
-    colInstallment: 'งวด',
-    colDuration: 'ระยะเวลา',
-    colStart: 'เริ่ม',
-    colFinish: 'เสร็จ',
-    colBudget: 'งบ',
-    colWeight: '% น้ำหนัก',
-    colTimeline: 'ช่วงเวลาตามแผน',
-    unitDays: '(วัน)',
-    unitBaht: '(บาท)',
-    total: 'รวมทั้งโครงการ',
-    finishOn: 'เสร็จ',
-    noTasks: 'ยังไม่มีงานที่กำหนดวันเริ่ม',
-    ganttNote: 'วันเสร็จ = วันเริ่ม + ระยะเวลา − 1 (นับวันปฏิทิน ไม่เว้นวันหยุด) · แถบตามสัดส่วนวันที่ของแต่ละงาน',
-    calendarNote: 'นับทุกวันปฏิทิน (ไม่เว้นวันหยุด) · จำนวนช่างและคนงานมาจากหน้า Man-Day',
-    calendarCrewNote: 'ชื่อทีมมาจากหน้าทีมงาน',
-    planSpan: 'แผนงาน',
-    tasksInMonth: 'งานในเดือนนี้',
-    tasksUnit: 'งาน',
-    peak: 'ใช้คนมากที่สุด',
-    people: 'คน',
-    onDay: 'วันที่',
-    andMore: 'และอีก',
-    noCrew: 'ไม่มีข้อมูลจำนวนคน',
-    noWork: 'ไม่มีงานตามแผนในเดือนนี้',
-    overflowTitle: 'งานที่ไม่พอแสดงในช่องวัน',
-    colRange: 'ช่วงวันที่',
-    colSkilled: 'ช่าง',
-    colLabourers: 'คนงาน',
-    more: 'งาน',
-} as const;
-
-const T = SCHEDULE_PRINT_TEXT;
+/** Schedule print texts in Thai (release 1 wording); other languages: `exportMessages(locale).schedule`. */
+export const SCHEDULE_PRINT_TEXT = exportMessages('th').schedule;
 
 // ─── Gantt + S-Curve ──────────────────────────────────────────────────────────
 
@@ -121,6 +75,8 @@ export interface SCurvePrintModel {
 }
 
 export interface GanttPrintModel {
+    /** Language of the document's own texts (the UI language when it was printed). */
+    locale: Locale;
     projectName: string;
     title: string;
     fields: PrintField[];
@@ -136,9 +92,8 @@ export interface GanttPrintModel {
 export const TIMELINE_MAX_LABELS = 9;
 
 const pct = (v: number) => `${(v * 100).toFixed(2)}%`;
-const durationText = (d: number) => (Number.isFinite(d) ? d.toLocaleString('th-TH', {
-    minimumFractionDigits: Number.isInteger(d) ? 0 : 2, maximumFractionDigits: Number.isInteger(d) ? 0 : 2,
-}) : '');
+const durationText = (d: number, locale: Locale) => (Number.isFinite(d)
+    ? groupedNumber(d, locale, Number.isInteger(d) ? 0 : 2) : '');
 
 /** A dated span as a bar over [from, to] (serials, inclusive); null when it is undated or outside. */
 export function timelineBar(start: string | null, finish: string | null, from: number, to: number): TimelineBar | null {
@@ -154,7 +109,10 @@ export function timelineBar(start: string | null, finish: string | null, from: n
 }
 
 /** The printed Gantt + S-Curve. `printedOn` is the print date (ISO). */
-export function buildGanttPrintModel(schedule: ScheduleResult, printedOn: string, fallbackName = ''): GanttPrintModel {
+export function buildGanttPrintModel(
+    schedule: ScheduleResult, printedOn: string, fallbackName = '', locale: Locale = 'th',
+): GanttPrintModel {
+    const T = exportMessages(locale).schedule;
     const s = schedule;
     const count = usedBucketCount(s.buckets, s.planWeekly, s.actualWeekly);
     const buckets = s.buckets.slice(0, count);
@@ -183,7 +141,7 @@ export function buildGanttPrintModel(schedule: ScheduleResult, printedOn: string
         no: inst.no,
         label: inst.label,
         finish: formatDate(inst.finish),
-        budget: fmtMoney(inst.budget),
+        budget: fmtMoney(inst.budget, locale),
         weight: pct(inst.weight),
         tasks: inst.taskIds.flatMap(id => {
             const t = byId.get(id);
@@ -192,10 +150,10 @@ export function buildGanttPrintModel(schedule: ScheduleResult, printedOn: string
                 id: t.id,
                 installment: t.installment,
                 name: t.name,
-                duration: durationText(t.duration),
+                duration: durationText(t.duration, locale),
                 start: formatDate(t.start),
                 finish: formatDate(t.finish),
-                budget: fmtMoney(t.budget),
+                budget: fmtMoney(t.budget, locale),
                 weight: pct(t.weight),
                 plan: timelineBar(t.start, t.finish, from, to),
                 actual: timelineBar(t.actual.start, t.actual.finish, from, to),
@@ -205,6 +163,7 @@ export function buildGanttPrintModel(schedule: ScheduleResult, printedOn: string
 
     const projectName = s.projectName.trim() || fallbackName.trim();
     return {
+        locale,
         projectName,
         title: T.ganttTitle,
         fields: [
@@ -212,8 +171,8 @@ export function buildGanttPrintModel(schedule: ScheduleResult, printedOn: string
             { label: T.projectName, value: projectName },
             { label: T.start, value: formatDate(s.start) },
             { label: T.finish, value: formatDate(s.finish) },
-            { label: T.budget, value: `${fmtMoney(s.budget)} ${T.baht}` },
-            { label: T.duration, value: s.start && s.finish ? `${s.durationDays.toLocaleString('th-TH')} ${T.days}` : '' },
+            { label: T.budget, value: `${fmtMoney(s.budget, locale)} ${T.baht}` },
+            { label: T.duration, value: s.start && s.finish ? `${groupedNumber(s.durationDays, locale, 0)} ${T.days}` : '' },
             { label: T.printedOn, value: formatDate(printedOn) },
         ],
         scurve: {
@@ -223,7 +182,7 @@ export function buildGanttPrintModel(schedule: ScheduleResult, printedOn: string
         },
         timeline: { from: buckets[0]?.start ?? '', to: buckets[buckets.length - 1]?.end ?? '', months: timelineMonths },
         installments,
-        totalBudget: fmtMoney(s.budget),
+        totalBudget: fmtMoney(s.budget, locale),
         totalWeight: pct(s.tasks.reduce((sum, t) => sum + t.weight, 0)),
         hasTasks: s.start !== null,
     };
@@ -281,6 +240,7 @@ export interface CalendarPrintMonth {
 }
 
 export interface CalendarPrintModel {
+    locale: Locale;
     projectName: string;
     start: string | null;
     finish: string | null;
@@ -390,12 +350,13 @@ function crewRecord(ids: readonly string[], names: (taskId: string) => string[])
  */
 export function buildCalendarPrintModel(
     schedule: ScheduleResult, manday: ManDayResult, months?: readonly string[], fallbackName = '', crews?: TaskCrewMap,
+    locale: Locale = 'th',
 ): CalendarPrintModel {
     const cal = computeCrewCalendar(schedule, manday);
     const projectName = schedule.projectName.trim() || fallbackName.trim();
     const legend = INSTALLMENTS.map(i => ({ no: i.no, label: i.label }));
     const hasCrews = crews !== undefined && [...crews.values()].some(list => list.length > 0);
-    if (cal.start === null || cal.finish === null) return { projectName, start: null, finish: null, months: [], legend, hasCrews };
+    if (cal.start === null || cal.finish === null) return { locale, projectName, start: null, finish: null, months: [], legend, hasCrews };
     const { start, finish } = cal;
 
     const firstKey = monthKey(start);
@@ -458,11 +419,12 @@ export function buildCalendarPrintModel(
         };
     });
 
-    return { projectName, start, finish, months: pages, legend, hasCrews };
+    return { locale, projectName, start, finish, months: pages, legend, hasCrews };
 }
 
 /** "งานในเดือนนี้ 12 งาน · ใช้คนมากที่สุด 21 คน (ช่าง 8 · คนงาน 13) วันที่ 21/05/2026 และอีก 2 วัน". */
-export function monthSummaryText(m: CalendarPrintMonth): string {
+export function monthSummaryText(m: CalendarPrintMonth, locale: Locale = 'th'): string {
+    const T = exportMessages(locale).schedule;
     if (m.taskCount === 0) return T.noWork;
     const tasks = `${T.tasksInMonth} ${m.taskCount} ${T.tasksUnit}`;
     if (m.peak === null) return `${tasks} · ${T.noCrew}`;
@@ -472,7 +434,8 @@ export function monthSummaryText(m: CalendarPrintMonth): string {
 }
 
 /** Default PDF file name: "แผนงาน_บ้านคุณสมชาย" / "ปฏิทินงาน_บ้านคุณสมชาย". */
-export function scheduleFileBaseName(kind: 'gantt' | 'calendar', projectName: string): string {
+export function scheduleFileBaseName(kind: 'gantt' | 'calendar', projectName: string, locale: Locale = 'th'): string {
+    const T = exportMessages(locale).schedule;
     const name = projectName.replace(/[\\/:*?"<>|\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
-    return [kind === 'gantt' ? 'แผนงาน' : T.calendarTitle, name].filter(p => p !== '').join('_');
+    return [kind === 'gantt' ? T.ganttFile : T.calendarTitle, name].filter(p => p !== '').join('_');
 }

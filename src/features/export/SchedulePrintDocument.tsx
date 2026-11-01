@@ -15,29 +15,33 @@
 //               second line under the task in the overflow table.
 
 import {
-    CAL_LAYOUT, SCHEDULE_PRINT_TEXT as T, monthSummaryText,
+    CAL_LAYOUT, monthSummaryText,
     type CalendarPrintCell, type CalendarPrintModel, type CalendarPrintMonth, type GanttPrintInstallment,
     type GanttPrintModel, type GanttPrintTask, type SCurvePrintModel, type TimelineBar, type TimelineMonth,
 } from './schedule-print-model';
-import type { ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { PRINT_FONT_VAR } from './BoqPrintDocument';
-import { PRINT_TEXT } from './boq-print-model';
+import { exportMessages, type ExportMessages } from './text';
 import { CHART_COLORS, formatDate, installmentColors } from '@/features/planning/shared/planning-format';
 import { WEEKDAYS, crewText } from '@/features/planning/schedule/calendar-grid';
 
 export const SCHEDULE_PRINT_ROOT_CLASS = 'schp-root';
 
 const R = SCHEDULE_PRINT_ROOT_CLASS;
+
+/** The document's own texts, in the language of the model being printed. */
+const TextContext = createContext<ExportMessages['schedule']>(exportMessages('th').schedule);
+const useT = () => useContext(TextContext);
 const RULE = '0.5pt solid #000';
 
 
-const CSS = `
+const buildCss = (pageOf: string) => `
 @media screen { .${R} { display: none !important; } }
 @media print {
   @page {
     size: A4 landscape; margin: 14mm 10mm 10mm;
     @top-right {
-      content: "${PRINT_TEXT.pageOf} " counter(page) "/" counter(pages);
+      content: "${pageOf} " counter(page) "/" counter(pages);
       font-family: var(${PRINT_FONT_VAR}, Tahoma), Tahoma, sans-serif; font-size: 10pt; color: #000;
       vertical-align: bottom; padding-bottom: 3mm;
     }
@@ -96,7 +100,7 @@ const CSS = `
 .schp-bar-actual { top: 3mm; height: 1.1mm; background: ${CHART_COLORS.actual}; }
 .schp-tlkeys { display: flex; justify-content: center; gap: 4mm; font-weight: 400; font-size: 8pt; }
 
-/* ── ปฏิทินงาน ── */
+/* ── work calendar ── */
 .schp-month { height: ${CAL_LAYOUT.pageHeight}mm; display: flex; flex-direction: column; overflow: hidden;
   break-inside: avoid; page-break-inside: avoid; font-size: 10pt; }
 .schp-month + .schp-month { break-before: page; page-break-before: always; }
@@ -157,6 +161,7 @@ function ticksTo(hi: number, count = 4): number[] {
 }
 
 function SCurve({ m }: { m: SCurvePrintModel }) {
+    const T = useT();
     const n = m.buckets.length;
     const plotW = VW - M.left - M.right;
     const bw = n > 0 ? plotW / n : plotW;
@@ -239,6 +244,7 @@ function TaskRow({ t, months }: { t: GanttPrintTask; months: TimelineMonth[] }) 
 }
 
 function InstallmentRow({ inst, months }: { inst: GanttPrintInstallment; months: TimelineMonth[] }) {
+    const T = useT();
     const c = installmentColors(inst.no);
     return (
         <tr className="schp-inst">
@@ -274,6 +280,7 @@ function InstallmentBlocks({ inst, months, total }: { inst: GanttPrintInstallmen
 }
 
 function GanttTable({ model }: { model: GanttPrintModel }) {
+    const T = useT();
     const months = model.timeline.months;
     const total = (
         <tr className="schp-total">
@@ -342,9 +349,11 @@ function GanttTable({ model }: { model: GanttPrintModel }) {
 
 /** Gantt + S-Curve: header block, the S-curve, the task table with its timeline. */
 export function GanttPrintDocument({ model }: { model: GanttPrintModel }) {
+    const T = exportMessages(model.locale).schedule;
     return (
-        <div className={R} lang="th">
-            <style>{CSS}</style>
+        <TextContext.Provider value={T}>
+        <div className={R} lang={model.locale}>
+            <style>{buildCss(exportMessages(model.locale).print.pageOf)}</style>
             <section className="schp-gantt">
                 <div className="schp-lead">
                     <h1 className="schp-title">{model.title}</h1>
@@ -370,6 +379,7 @@ export function GanttPrintDocument({ model }: { model: GanttPrintModel }) {
                 <GanttTable model={model} />
             </section>
         </div>
+        </TextContext.Provider>
     );
 }
 
@@ -379,6 +389,7 @@ const tint = (hex: string) => `${hex}2e`;
 export const OVERFLOW_COLS = 6;
 
 function DayCell({ c }: { c: CalendarPrintCell }) {
+    const T = useT();
     if (!c.inMonth) return <div className="schp-cell schp-out" />;
     return (
         <div className={c.inPlan ? 'schp-cell' : 'schp-cell schp-off'}>
@@ -399,6 +410,7 @@ function DayCell({ c }: { c: CalendarPrintCell }) {
 }
 
 function OverflowTables({ m }: { m: CalendarPrintMonth }) {
+    const T = useT();
     const per = Math.ceil(m.overflow.length / m.overflowColumns);
     const columns = Array.from({ length: m.overflowColumns }, (_, i) => m.overflow.slice(i * per, i * per + per))
         .filter(c => c.length > 0);
@@ -447,6 +459,7 @@ function OverflowTables({ m }: { m: CalendarPrintMonth }) {
 const scaleClass = (s: number) => (s === 1 ? '' : s >= 0.9 ? ' schp-s90' : ' schp-s80');
 
 function MonthPage({ m, model }: { m: CalendarPrintMonth; model: CalendarPrintModel }) {
+    const T = useT();
     const rows = m.weeks.length;
     return (
         <section className={`schp-month${scaleClass(m.scale)}`} data-month={m.value}>
@@ -459,7 +472,7 @@ function MonthPage({ m, model }: { m: CalendarPrintMonth; model: CalendarPrintMo
                         <span key={l.no}><i style={{ background: installmentColors(l.no).background }} />{l.label}</span>
                     ))}
                 </div>
-                <div className="schp-msum">{monthSummaryText(m)}</div>
+                <div className="schp-msum">{monthSummaryText(m, model.locale)}</div>
                 <div className="schp-mspan">{T.calendarNote}{model.hasCrews ? ` · ${T.calendarCrewNote}` : ''}</div>
             </header>
             <div className="schp-grid" style={{ gridTemplateRows: `auto repeat(${rows}, minmax(0, 1fr))` }}>
@@ -474,9 +487,11 @@ function MonthPage({ m, model }: { m: CalendarPrintMonth; model: CalendarPrintMo
 /** ปฏิทินงาน: one landscape page per month of the model. */
 export function CalendarPrintDocument({ model }: { model: CalendarPrintModel }) {
     return (
-        <div className={R} lang="th">
-            <style>{CSS}</style>
+        <TextContext.Provider value={exportMessages(model.locale).schedule}>
+        <div className={R} lang={model.locale}>
+            <style>{buildCss(exportMessages(model.locale).print.pageOf)}</style>
             {model.months.map(m => <MonthPage key={m.value} m={m} model={model} />)}
         </div>
+        </TextContext.Provider>
     );
 }
