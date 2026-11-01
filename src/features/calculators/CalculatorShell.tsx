@@ -11,6 +11,7 @@ import { MissingPrices } from '@/components/sheet/journey/MissingPrices';
 import { formatNumber, SHEET_COLORS } from '@/components/sheet/NumberCell';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { useTranslations } from 'next-intl';
+import { useBoqText } from '@/features/boq-home/useBoqText';
 
 const { Title, Text } = Typography;
 
@@ -25,6 +26,7 @@ export function BoqPreview({ result, sections, highlight, highlightPrefix, title
     title?: string;
 }) {
     const t = useTranslations('calculators');
+    const bt = useBoqText();
     const heading = title ?? t('common.sentToBoq');
     const isHighlighted = (key: string) =>
         (highlight?.has(key) ?? false) || (highlightPrefix !== undefined && key.startsWith(highlightPrefix));
@@ -45,16 +47,16 @@ export function BoqPreview({ result, sections, highlight, highlightPrefix, title
                     {secs.map(s => (
                         <tbody key={s.no}>
                             <tr style={{ background: SHEET_COLORS.header }}>
-                                <td className={`${td} font-semibold`} colSpan={5}>{s.no}. {s.title}</td>
+                                <td className={`${td} font-semibold`} colSpan={5}>{s.no}. {bt.section(s.no, s.title)}</td>
                                 <td className={`${tdNum} font-semibold`}>{formatNumber(s.total)}</td>
                             </tr>
                             {s.rows.map(r => r.type === 'heading'
-                                ? <tr key={r.key}><td className={`${td} font-medium`} colSpan={6}>{r.itemNo} {r.desc}</td></tr>
+                                ? <tr key={r.key}><td className={`${td} font-medium`} colSpan={6}>{r.itemNo} {bt.line(r.key, r.desc)}</td></tr>
                                 : (
                                     <tr key={r.key} style={isHighlighted(r.key) ? { background: SHEET_COLORS.calc } : undefined}>
-                                        <td className={td}>{r.itemNo} {r.desc}</td>
+                                        <td className={td}>{r.itemNo} {bt.line(r.key, r.desc)}</td>
                                         <td className={tdNum}>{formatNumber(r.qty)}</td>
-                                        <td className={`${td} text-center`}>{r.unit}</td>
+                                        <td className={`${td} text-center`}>{bt.unit(r.unit)}</td>
                                         <td className={tdNum}>{formatNumber(r.matTotal)}</td>
                                         <td className={tdNum}>{formatNumber(r.labTotal)}</td>
                                         <td className={`${tdNum} font-medium`}>{formatNumber(r.total)}</td>
@@ -79,6 +81,7 @@ export function CalculatorShell({ def, result, isDefault, onReset, children, asi
     aside?: ReactNode;
 }) {
     const t = useTranslations('calculators');
+    const bt = useBoqText();
     const highlight = new Set(def.boqLinks.map(l => l.line));
     const inJourney = useJourneyMode();
     const preview = (
@@ -121,8 +124,8 @@ export function CalculatorShell({ def, result, isDefault, onReset, children, asi
                     <Text className="text-[12px] font-semibold tracking-wide text-orange-500 uppercase">
                         {t('shell.boqSection')}{def.sections.join(', ')}
                     </Text>
-                    <Title level={4} style={{ margin: 0 }}>{def.title}</Title>
-                    <Text type="secondary" className="text-[12px] [overflow-wrap:anywhere]">{t('shell.form')}{def.sheetName}</Text>
+                    <Title level={4} style={{ margin: 0 }}>{bt.calc(def)}</Title>
+                    {bt.locale === 'th' && <Text type="secondary" className="text-[12px] [overflow-wrap:anywhere]">{t('shell.form')}{def.sheetName}</Text>}
                 </div>
                 <div className="ml-auto flex items-center gap-2">
                     {isDefault

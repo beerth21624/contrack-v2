@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { AutoComplete, Button, Select } from 'antd';
+import { useTranslations } from 'next-intl';
 import { PlusOutlined } from '@ant-design/icons';
 import type { CalculatorDef } from '@/domain/calculators/types';
 import {
@@ -17,9 +18,10 @@ import {
     useRequiredField,
 } from '@/components/sheet/journey';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
+import { dt, du } from '../domainText';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
-import { suggestionText, type ItemSuggestion } from './itemMatch';
+import type { ItemSuggestion } from './itemMatch';
 import { useItemMatches, type ItemMatches } from './useItemMatches';
 
 interface PickListPageProps {
@@ -72,13 +74,14 @@ export function PickListPage(props: PickListPageProps) {
     );
 }
 
-const itemOptionsOf = (options: readonly string[]) => options.map(o => ({ value: o, label: o.trim() }));
+const itemOptionsOf = (options: readonly string[]) => options.map(o => ({ value: o, label: dt(o.trim()) }));
 
 /** รายการ cell: dropdown, or dropdown + free text; under it, what the AI thinks a free text means (quiet, inline). */
 function ItemCell({ row, options, allowFreeText, catalogue, onChange, placeholder, matches }: {
     row: PickRow; options: readonly string[]; allowFreeText?: boolean; catalogue: Catalogue;
     onChange: (row: PickRow) => void; placeholder?: string; matches?: ItemMatches;
 }) {
+    const t = useTranslations('calculators');
     const itemOptions = itemOptionsOf(options);
     const suggestion = matches?.suggestionFor(row.item);
     return (
@@ -86,13 +89,13 @@ function ItemCell({ row, options, allowFreeText, catalogue, onChange, placeholde
             {allowFreeText
                 ? (
                     <AutoComplete size="small" variant="borderless" style={{ width: '100%' }}
-                        value={row.item} options={itemOptions} placeholder={placeholder ?? 'เลือกหรือพิมพ์รายการ'}
+                        value={row.item} options={itemOptions} placeholder={placeholder ?? t('pickList.chooseOrType')}
                         onChange={v => onChange(selectItem(row, v, catalogue))}
                         onBlur={() => matches?.flush()} />
                 )
                 : (
                     <Select size="small" variant="borderless" style={{ width: '100%' }} allowClear
-                        value={row.item === '' ? undefined : row.item} options={itemOptions} placeholder={placeholder ?? 'เลือกรายการ'}
+                        value={row.item === '' ? undefined : row.item} options={itemOptions} placeholder={placeholder ?? t('pickList.choose')}
                         onChange={(v: string | undefined) => onChange(selectItem(row, v ?? '', catalogue))} />
                 )}
             {suggestion !== undefined && matches !== undefined && (
@@ -112,11 +115,12 @@ function ItemCell({ row, options, allowFreeText, catalogue, onChange, placeholde
 function ItemSuggestionLine({ suggestion, onAccept, onDecline }: {
     suggestion: ItemSuggestion; onAccept: () => void; onDecline: () => void;
 }) {
+    const t = useTranslations('calculators');
     return (
         <div className="flex flex-wrap items-center gap-x-1 px-2 pb-1 text-[12px] leading-tight text-gray-500" role="status">
-            <span className="min-w-0 break-words">{suggestionText(suggestion)}</span>
-            <Button type="link" size="small" className="!px-1 !h-auto !text-[12px]" onClick={onAccept}>ใช้รายการนี้</Button>
-            <Button type="link" size="small" className="!px-1 !h-auto !text-[12px] !text-gray-400" onClick={onDecline}>ไม่ใช่</Button>
+            <span className="min-w-0 break-words">{t(suggestion.level === 'auto' ? 'pickList.meansV' : 'pickList.mayMeanV', { item: suggestion.item.trim() })}</span>
+            <Button type="link" size="small" className="!px-1 !h-auto !text-[12px]" onClick={onAccept}>{t('pickList.useThisItem')}</Button>
+            <Button type="link" size="small" className="!px-1 !h-auto !text-[12px] !text-gray-400" onClick={onDecline}>{t('pickList.no')}</Button>
         </div>
     );
 }
@@ -138,9 +142,10 @@ function UnitCell({ row, units, catalogue, onChange }: {
 function QtyCell({ row, catalogue, onChange, ariaLabel, blankZero }: {
     row: PickRow; catalogue: Catalogue; onChange: (qty: number) => void; ariaLabel?: string; blankZero?: boolean;
 }) {
+    const t = useTranslations('calculators');
     return (
         <NumberCell value={row.qty} digits={qtyDigits(row.qty, pickRowCalc(row, catalogue).unit)} blankZero={blankZero}
-            onCommit={v => onChange(v ?? 0)} ariaLabel={ariaLabel ?? 'จำนวน'} />
+            onCommit={v => onChange(v ?? 0)} ariaLabel={ariaLabel ?? t('pickList.count')} />
     );
 }
 
@@ -148,16 +153,17 @@ function QtyCell({ row, catalogue, onChange, ariaLabel, blankZero }: {
 function PriceCell({ row, field, catalogue, onChange, highlight, blankZero }: {
     row: PickRow; field: 'mat' | 'lab'; catalogue: Catalogue; onChange: (row: PickRow) => void; highlight?: boolean; blankZero?: boolean;
 }) {
+    const t = useTranslations('calculators');
     const typed = row[field];
     const cell = (
         <NumberCell value={pickRowCalc(row, catalogue)[field]} edited={typed !== null} blankZero={blankZero}
             tone={typed === null ? 'calc' : 'input'}
             onCommit={v => onChange({ ...row, [field]: v ?? null })}
-            ariaLabel={field === 'mat' ? 'ค่าวัสดุต่อหน่วย' : 'ค่าแรงต่อหน่วย'} />
+            ariaLabel={field === 'mat' ? t('pickList.matPerUnitAria') : t('pickList.labPerUnitAria')} />
     );
     if (!highlight) return cell;
     return (
-        <div className="rounded ring-2 ring-orange-400" title="ยังไม่มีราคา — พิมพ์ราคาต่อหน่วย">
+        <div className="rounded ring-2 ring-orange-400" title={t('pickList.noPriceTitle')}>
             {cell}
         </div>
     );
@@ -165,6 +171,7 @@ function PriceCell({ row, field, catalogue, onChange, highlight, blankZero }: {
 
 /** The full Excel-mirror view (/calc). */
 function SheetPickList({ catalogue, options, units = [], allowFreeText, title, notes, calc }: PickListPageProps & { calc: Calc }) {
+    const t = useTranslations('calculators');
     const { input, update, outputs } = calc;
     const setRow = (i: number, row: PickRow) => update(p => ({ ...p, items: p.items.map((r, j) => (j === i ? row : r)) }));
     const matches = useItemMatches(input.items, catalogue);
@@ -175,48 +182,47 @@ function SheetPickList({ catalogue, options, units = [], allowFreeText, title, n
                 rows={input.items}
                 onChange={items => update({ items })}
                 newRow={emptyPickRow}
-                addLabel="+ เพิ่มรายการ"
+                addLabel={t('pickList.addItem')}
                 columns={[
                     {
-                        kind: 'label', key: 'item', title: 'รายการ',
+                        kind: 'label', key: 'item', title: t('pickList.item'),
                         get: (r, i) => (
                             <ItemCell row={r} options={options} allowFreeText={allowFreeText} catalogue={catalogue}
                                 matches={matches} onChange={row => setRow(i, row)} />
                         ),
                     },
                     {
-                        kind: 'label', key: 'qty', title: 'จำนวน', width: 90,
+                        kind: 'label', key: 'qty', title: t('pickList.count'), width: 90,
                         get: (r, i) => <QtyCell row={r} catalogue={catalogue} onChange={qty => setRow(i, { ...r, qty })} />,
                     },
                     {
-                        kind: 'label', key: 'unit', title: 'หน่วย', width: 110,
+                        kind: 'label', key: 'unit', title: t('pickList.unit'), width: 110,
                         get: (r, i) => <UnitCell row={r} units={units} catalogue={catalogue} onChange={row => setRow(i, row)} />,
                     },
                     {
-                        kind: 'label', key: 'mat', title: 'ค่าวัสดุ / หน่วย', width: 120,
+                        kind: 'label', key: 'mat', title: t('pickList.matPerUnit'), width: 120,
                         get: (r, i) => (
                             <PriceCell row={r} field="mat" catalogue={catalogue} onChange={row => setRow(i, row)}
                                 highlight={allowFreeText === true && needsPrice(r, catalogue)} />
                         ),
                     },
                     {
-                        kind: 'label', key: 'lab', title: 'ค่าแรง / หน่วย', width: 120,
+                        kind: 'label', key: 'lab', title: t('pickList.labPerUnit'), width: 120,
                         get: (r, i) => (
                             <PriceCell row={r} field="lab" catalogue={catalogue} onChange={row => setRow(i, row)}
                                 highlight={allowFreeText === true && needsPrice(r, catalogue)} />
                         ),
                     },
-                    { kind: 'calc', key: 'total', title: 'รวม', width: 120, get: r => pickRowCalc(r, catalogue).total },
+                    { kind: 'calc', key: 'total', title: t('pickList.total'), width: 120, get: r => pickRowCalc(r, catalogue).total },
                 ]}
             />
             <div className="mt-3 max-w-md ml-auto">
-                <CalcField label="รวมค่าวัสดุ" value={outputs.mat} unit="บาท" />
-                <CalcField label="รวมค่าแรง" value={outputs.lab} unit="บาท" />
-                <CalcField label="รวมทั้งหมด" value={outputs.total} unit="บาท" strong />
+                <CalcField label={t('pickList.totalMat')} value={outputs.mat} unit={t('pickList.baht')} />
+                <CalcField label={t('pickList.totalLab')} value={outputs.lab} unit={t('pickList.baht')} />
+                <CalcField label={t('pickList.grandTotal')} value={outputs.total} unit={t('pickList.baht')} strong />
             </div>
             <p className="mt-2 text-[12px] text-gray-500">
-                ราคาสีเขียว = ราคาตั้งต้นของรายการ (จาก BOQ เทมเพลต) — พิมพ์ทับเพื่อใช้ราคาของโครงการนี้, ลบค่าเพื่อกลับไปใช้ราคาตั้งต้น.
-                ทุกรายการที่มีจำนวน &gt; 0 จะเป็น 1 แถวใน BOQ.
+                {t('pickList.sheetNote')}
             </p>
             {notes}
         </SheetCard>
@@ -238,12 +244,12 @@ interface OtherLine {
 }
 
 /** The count lines in the page's groups (dropdown order inside a group); lines in no group come last. */
-function groupLines(lines: OptionLine[], groups: readonly PickGroup[] | undefined): { title: string; lines: OptionLine[] }[] {
+function groupLines(lines: OptionLine[], groups: readonly PickGroup[] | undefined, othersTitle: string): { title: string; lines: OptionLine[] }[] {
     if (groups === undefined || groups.length === 0) return [{ title: '', lines }];
     const inGroup = (g: PickGroup, l: OptionLine) => g.items.some(it => matchKey(it) === matchKey(l.label));
     const out = groups.map(g => ({ title: g.title, lines: lines.filter(l => inGroup(g, l)) })).filter(g => g.lines.length > 0);
     const rest = lines.filter(l => !groups.some(g => inGroup(g, l)));
-    return rest.length > 0 ? [...out, { title: 'อื่น ๆ', lines: rest }] : out;
+    return rest.length > 0 ? [...out, { title: othersTitle, lines: rest }] : out;
 }
 
 const hintOf = (hints: Readonly<Record<string, string>> | undefined, label: string): string | undefined =>
@@ -256,34 +262,35 @@ const hintOf = (hints: Readonly<Record<string, string>> | undefined, label: stri
 function CountLine({ line, hint, suggestion, onQty }: {
     line: OptionLine; hint?: string; suggestion?: PickSuggestion; onQty: (qty: number) => void;
 }) {
+    const t = useTranslations('calculators');
     const qty = line.row?.qty ?? 0;
     const offer = suggestion !== undefined && suggestion.qty > 0 && suggestion.qty !== qty ? suggestion : undefined;
     return (
         <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 border-b border-gray-100 py-2 last:border-b-0">
             <div className="min-w-0">
-                <div className="text-[13px] text-gray-800">{line.label}</div>
+                <div className="text-[13px] text-gray-800">{dt(line.label)}</div>
                 {hint !== undefined && <Hint>{hint}</Hint>}
                 {offer !== undefined && (
                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-sky-800">
                         <span>
-                            <LevelLink levelId={offer.levelId} className="text-sky-700 hover:underline">ขั้นตอน{levelTitle(offer.levelId)}</LevelLink>
-                            {' '}นับ{offer.what} ได้ {formatNumber(offer.qty, 0)}
+                            <LevelLink levelId={offer.levelId} className="text-sky-700 hover:underline">{t('pickList.offerLevel', { title: levelTitle(offer.levelId) })}</LevelLink>
+                            {' '}{t('pickList.offerCounted', { what: offer.what, qty: formatNumber(offer.qty, 0) })}
                         </span>
-                        <Button size="small" onClick={() => onQty(offer.qty)}>ใช้ {formatNumber(offer.qty, 0)} {line.unit}</Button>
+                        <Button size="small" onClick={() => onQty(offer.qty)}>{t('pickList.useQty', { qty: formatNumber(offer.qty, 0), unit: du(line.unit) })}</Button>
                     </div>
                 )}
             </div>
             <div className="flex items-center gap-1.5">
                 {isCountUnit(line.unit)
-                    ? <CountStepper value={qty} onChange={onQty} ariaLabel={`จำนวน ${line.label}`} unit={line.unit} />
+                    ? <CountStepper value={qty} onChange={onQty} ariaLabel={t('pickList.qtyAria', { label: dt(line.label) })} unit={du(line.unit)} />
                     : (
                         // As wide as a stepper (− box +) and with the same unit column, so every line ends in one column.
                         <>
                             <span className="w-[120px]">
                                 <NumberCell value={qty} digits={qtyDigits(qty, line.unit)} blankZero placeholder="0"
-                                    onCommit={v => onQty(v ?? 0)} ariaLabel={`ปริมาณ ${line.label} (${line.unit})`} />
+                                    onCommit={v => onQty(v ?? 0)} ariaLabel={t('pickList.amountAria', { label: dt(line.label), unit: du(line.unit) })} />
                             </span>
-                            <span className="min-w-[40px] text-[12px] text-gray-500 whitespace-nowrap">{line.unit}</span>
+                            <span className="min-w-[40px] text-[12px] text-gray-500 whitespace-nowrap">{du(line.unit)}</span>
                         </>
                     )}
             </div>
@@ -300,6 +307,7 @@ function JourneyPickList({
     catalogue, options, units = [], allowFreeText, journeyNotes, journeyTop, groups, itemHints, suggestions, calc,
 }: PickListPageProps & { calc: Calc }) {
     const { input, update, outputs } = calc;
+    const t = useTranslations('calculators');
     // The step needs at least one counted item: the count sheet's title carries the `*`.
     const qtyRequired = useRequiredField('qty').required;
     const rows = input.items;
@@ -326,11 +334,11 @@ function JourneyPickList({
 
     return (
         <>
-            <SheetCard title={<>นับจากแบบ<RequiredMark required={qtyRequired} /></>}>
+            <SheetCard title={<>{t('pickList.countFromPlan')}<RequiredMark required={qtyRequired} /></>}>
                 {journeyTop !== undefined && <div className="mb-3">{journeyTop}</div>}
-                <p className="mb-1 text-[12px] text-gray-500">ใส่จำนวนตามที่เห็นในแบบ รายการที่ไม่มีให้เว้นว่างไว้</p>
+                <p className="mb-1 text-[12px] text-gray-500">{t('pickList.countHelp')}</p>
                 <RequiredArea className="flex flex-col gap-3">
-                    {groupLines(lines, groups).map(g => (
+                    {groupLines(lines, groups, t('pickList.others')).map(g => (
                         <div key={g.title}>
                             {g.title !== '' && <div className="mt-1 text-[12px] font-semibold text-gray-500">{g.title}</div>}
                             <div className="flex flex-col">
@@ -348,13 +356,13 @@ function JourneyPickList({
             </SheetCard>
 
             {showOthers && (
-                <SheetCard title={allowFreeText ? 'งานอื่นที่ไม่อยู่ในรายการ' : 'รายการเพิ่มเติม'}>
+                <SheetCard title={allowFreeText ? t('pickList.otherWork') : t('pickList.extraItems')}>
                     {otherLines.length === 0
                         ? (
                             // Optional extras: a quiet add button, so the step's own "ยืนยัน" stays the one primary action.
                             <>
-                                <p className="mb-2 text-[12px] text-gray-500">มีงานอื่นที่ไม่อยู่ในรายการด้านบน เพิ่มเองได้ พร้อมใส่ราคาต่อหน่วย</p>
-                                <AddButton label="เพิ่มงานอื่น" onClick={addOther} />
+                                <p className="mb-2 text-[12px] text-gray-500">{t('pickList.otherHelp')}</p>
+                                <AddButton label={t('pickList.addOther')} onClick={addOther} />
                             </>
                         )
                         : (
@@ -369,42 +377,42 @@ function JourneyPickList({
                                     }}
                                     columns={[
                                         {
-                                            kind: 'label', key: 'item', title: 'รายการ',
+                                            kind: 'label', key: 'item', title: t('pickList.item'),
                                             get: l => (
                                                 <ItemCell row={l.row} options={options} allowFreeText={allowFreeText} catalogue={catalogue}
-                                                    placeholder={allowFreeText ? 'พิมพ์ชื่องาน' : undefined} matches={matches}
+                                                    placeholder={allowFreeText ? t('pickList.typeName') : undefined} matches={matches}
                                                     onChange={row => setRow(l.index, row)} />
                                             ),
                                         },
                                         {
-                                            kind: 'label', key: 'qty', title: 'จำนวน', width: 90,
+                                            kind: 'label', key: 'qty', title: t('pickList.count'), width: 90,
                                             get: l => <QtyCell row={l.row} catalogue={catalogue} blankZero onChange={qty => setRow(l.index, { ...l.row, qty })} />,
                                         },
                                         {
-                                            kind: 'label', key: 'unit', title: 'หน่วย', width: 90,
+                                            kind: 'label', key: 'unit', title: t('pickList.unit'), width: 90,
                                             get: l => <UnitCell row={l.row} units={units} catalogue={catalogue} onChange={row => setRow(l.index, row)} />,
                                         },
                                         {
-                                            kind: 'label', key: 'mat', title: 'ค่าวัสดุ / หน่วย (บาท)', width: 120,
+                                            kind: 'label', key: 'mat', title: t('pickList.matPerUnitBaht'), width: 120,
                                             get: l => (
                                                 <PriceCell row={l.row} field="mat" catalogue={catalogue} onChange={row => setRow(l.index, row)}
                                                     highlight={needsPrice(l.row, catalogue)} blankZero />
                                             ),
                                         },
                                         {
-                                            kind: 'label', key: 'lab', title: 'ค่าแรง / หน่วย (บาท)', width: 120,
+                                            kind: 'label', key: 'lab', title: t('pickList.labPerUnitBaht'), width: 120,
                                             get: l => (
                                                 <PriceCell row={l.row} field="lab" catalogue={catalogue} onChange={row => setRow(l.index, row)}
                                                     highlight={needsPrice(l.row, catalogue)} blankZero />
                                             ),
                                         },
-                                        { kind: 'calc', key: 'total', title: 'เป็นเงิน (บาท)', width: 110, get: l => blankIfZero(pickRowCalc(l.row, catalogue).total) },
+                                        { kind: 'calc', key: 'total', title: t('pickList.amountBaht'), width: 110, get: l => blankIfZero(pickRowCalc(l.row, catalogue).total) },
                                     ]}
                                 />
-                                <Button type="dashed" icon={<PlusOutlined />} className="mt-2" onClick={addOther}>เพิ่มงานอื่น</Button>
+                                <Button type="dashed" icon={<PlusOutlined />} className="mt-2" onClick={addOther}>{t('pickList.addOther')}</Button>
                                 {unpriced > 0 && (
                                     <p className="mt-2 text-[12px] text-orange-600">
-                                        ช่องกรอบสีส้มยังไม่มีราคา — ใส่ค่าวัสดุและ/หรือค่าแรงต่อหน่วย ไม่เช่นนั้นรายการนี้จะคิดเป็น 0 บาท
+                                        {t('pickList.unpricedWarn')}
                                     </p>
                                 )}
                             </>
@@ -414,7 +422,7 @@ function JourneyPickList({
 
             <AdvancedSection>
                 {priced.length === 0
-                    ? <p className="text-[12px] text-gray-500">ใส่จำนวนรายการก่อน แล้วราคาต่อหน่วยจะแสดงที่นี่</p>
+                    ? <p className="text-[12px] text-gray-500">{t('pickList.enterCountFirst')}</p>
                     : (
                         <>
                             <EditableTable<{ index: number; row: PickRow; label: string }>
@@ -422,19 +430,19 @@ function JourneyPickList({
                                 onChange={() => undefined}
                                 canDelete={false}
                                 columns={[
-                                    { kind: 'label', key: 'item', title: 'รายการ', get: l => <span className="px-1">{l.label}</span> },
+                                    { kind: 'label', key: 'item', title: t('pickList.item'), get: l => <span className="px-1">{dt(l.label)}</span> },
                                     {
-                                        kind: 'label', key: 'mat', title: 'ค่าวัสดุ / หน่วย (บาท)', width: 130,
+                                        kind: 'label', key: 'mat', title: t('pickList.matPerUnitBaht'), width: 130,
                                         get: l => <PriceCell row={l.row} field="mat" catalogue={catalogue} onChange={row => setRow(l.index, row)} />,
                                     },
                                     {
-                                        kind: 'label', key: 'lab', title: 'ค่าแรง / หน่วย (บาท)', width: 130,
+                                        kind: 'label', key: 'lab', title: t('pickList.labPerUnitBaht'), width: 130,
                                         get: l => <PriceCell row={l.row} field="lab" catalogue={catalogue} onChange={row => setRow(l.index, row)} />,
                                     },
                                 ]}
                             />
                             <p className="mt-2 text-[12px] text-gray-500">
-                                สีเขียว = ราคาตั้งต้น · พิมพ์ทับเพื่อใช้ราคาของโครงการนี้ · ลบค่าเพื่อกลับไปใช้ราคาตั้งต้น
+                                {t('pickList.priceNote')}
                             </p>
                         </>
                     )}
@@ -442,9 +450,9 @@ function JourneyPickList({
 
             {/* The split material / labour; the total is มูลค่าขั้นตอนนี้ in the bottom bar. */}
             <ResultSummary items={[
-                { label: 'ค่าวัสดุ', value: outputs.mat, unit: 'บาท', digits: 0 },
-                { label: 'ค่าแรง', value: outputs.lab, unit: 'บาท', digits: 0 },
-            ]} empty="ใส่จำนวนตามแบบ ระบบจะคิดค่าวัสดุและค่าแรงให้" />
+                { label: t('pickList.material'), value: outputs.mat, unit: t('pickList.baht'), digits: 0 },
+                { label: t('pickList.labour'), value: outputs.lab, unit: t('pickList.baht'), digits: 0 },
+            ]} empty={t('pickList.summaryEmpty')} />
         </>
     );
 }

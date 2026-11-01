@@ -5,6 +5,7 @@ import { ExclamationCircleOutlined } from '@ant-design/icons';
 import type { BoqItemRow } from '@/domain/boq/types';
 import { useProjectStore } from '@/store/project-store';
 import { NumberCell, formatNumber } from '@/components/sheet/NumberCell';
+import { useBoqText } from '@/features/boq-home/useBoqText';
 
 /**
  * Rows a level fills that have a quantity but no price in the standard price list (e.g. fill soil): without a
@@ -12,6 +13,7 @@ import { NumberCell, formatNumber } from '@/components/sheet/NumberCell';
  */
 export function MissingPrices({ rows }: { rows: BoqItemRow[] }) {
     const t = useTranslations('journeyUi.missingPrices');
+    const bt = useBoqText();
     const overrides = useProjectStore(s => s.project.boqOverrides);
     const setOverride = useProjectStore(s => s.setBoqOverride);
     const shown = rows.filter(r => {
@@ -35,19 +37,19 @@ export function MissingPrices({ rows }: { rows: BoqItemRow[] }) {
                 {shown.map(r => (
                     <div key={r.key} className="grid grid-cols-2 sm:grid-cols-[minmax(0,1fr)_120px_120px] items-center gap-x-3 gap-y-1">
                         <div className="col-span-2 sm:col-span-1 text-[13px] text-gray-800">
-                            {r.desc}{' '}
+                            {bt.line(r.key, r.desc)}{' '}
                             <span className="text-gray-500 tabular-nums">
-                                {t(r.grossQty !== null && r.grossQty !== r.qty ? 'qtyWithWaste' : 'qty', { qty: formatNumber(r.grossQty ?? r.qty), unit: r.unit })}
+                                {t(r.grossQty !== null && r.grossQty !== r.qty ? 'qtyWithWaste' : 'qty', { qty: formatNumber(r.grossQty ?? r.qty), unit: bt.unit(r.unit) })}
                             </span>
                         </div>
                         <label className="flex flex-col gap-0.5">
-                            <span className="text-[12px] text-gray-500">{t('matLabel', { unit: r.unit })}</span>
-                            <NumberCell value={r.matUnit} blankZero ariaLabel={t('matAria', { desc: r.desc })}
+                            <span className="text-[12px] text-gray-500">{t('matLabel', { unit: bt.unit(r.unit) })}</span>
+                            <NumberCell value={r.matUnit} blankZero ariaLabel={t('matAria', { desc: bt.line(r.key, r.desc) })}
                                 onCommit={v => setOverride(r.key, 'mat', v)} />
                         </label>
                         <label className="flex flex-col gap-0.5">
-                            <span className="text-[12px] text-gray-500">{t('labLabel', { unit: r.unit })}</span>
-                            <NumberCell value={r.labUnit} blankZero ariaLabel={t('labAria', { desc: r.desc })}
+                            <span className="text-[12px] text-gray-500">{t('labLabel', { unit: bt.unit(r.unit) })}</span>
+                            <NumberCell value={r.labUnit} blankZero ariaLabel={t('labAria', { desc: bt.line(r.key, r.desc) })}
                                 onCommit={v => setOverride(r.key, 'lab', v)} />
                         </label>
                     </div>

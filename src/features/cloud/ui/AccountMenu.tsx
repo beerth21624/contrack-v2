@@ -19,9 +19,6 @@ import { can } from '../permissions';
 import { useModuleEnabled, usePlatformModules } from '@/features/modules/modules';
 import { usePlatformAdminStatus } from '@/features/erp/admin/hooks';
 
-/** The language switch stays hidden until the old screens are translated, unless project-hub is active (docs/erp/PROGRESS.md D-16). */
-const LANGUAGE_SWITCH = process.env.NEXT_PUBLIC_LANGUAGE_SWITCH === '1';
-
 export function AccountMenu({ compact = false }: { compact?: boolean }) {
     const router = useRouter();
     const qc = useQueryClient();
@@ -94,17 +91,16 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
             { key: 'crews', icon: <ToolOutlined />, label: tAccount('crews') },
             { key: 'board', icon: <ScheduleOutlined />, label: tAccount('board') },
         ] : []),
-        ...(LANGUAGE_SWITCH || hubOn ? [
-            { type: 'divider' as const },
-            {
-                type: 'group' as const, key: 'lang', label: tAccount('language'),
-                children: (['th', 'en'] as const).map(l => ({
-                    key: `lang:${l}`,
-                    icon: l === locale ? <CheckOutlined className="text-orange-500" /> : <span className="inline-block w-[14px]" />,
-                    label: l === 'th' ? tCommon('thai') : tCommon('english'),
-                })),
-            },
-        ] : []),
+        // The language switch is for everyone since I-08 (docs/erp/PROGRESS.md D-16 lifted).
+        { type: 'divider' as const },
+        {
+            type: 'group' as const, key: 'lang', label: tAccount('language'),
+            children: (['th', 'en'] as const).map(l => ({
+                key: `lang:${l}`,
+                icon: l === locale ? <CheckOutlined className="text-orange-500" /> : <span className="inline-block w-[14px]" />,
+                label: l === 'th' ? tCommon('thai') : tCommon('english'),
+            })),
+        },
         { type: 'divider' },
         { key: 'logout', icon: <LogoutOutlined />, label: tAccount('signOut'), danger: true },
     ];

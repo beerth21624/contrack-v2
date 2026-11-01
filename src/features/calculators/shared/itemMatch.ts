@@ -10,7 +10,7 @@ export type SuggestionLevel = 'auto' | 'suggest' | 'none';
 /** Normalised text the cache is keyed by (same spacing rules as the catalogue lookup). */
 export const textKey = matchKey;
 
-/** ≥ AUTO: "หมายถึง X ใช่ไหม"; SUGGEST..AUTO: "อาจหมายถึง X"; below, or no catalogue item: nothing. */
+/** ≥ AUTO: "do you mean X?"; SUGGEST..AUTO: "maybe you mean X"; below, or no catalogue item: nothing. */
 export function suggestionLevel(match: ItemMatch | null | undefined): SuggestionLevel {
     if (match?.item == null || textKey(match.item) === '') return 'none';
     if (match.confidence >= ITEM_MATCH_AUTO) return 'auto';
@@ -24,10 +24,6 @@ export interface ItemSuggestion {
     /** The catalogue text, verbatim (so `selectItem` applies its unit and prices exactly). */
     item: string;
 }
-
-/** Thai line for a suggestion (the item shown trimmed). */
-export const suggestionText = (s: ItemSuggestion): string =>
-    s.level === 'auto' ? `หมายถึง "${s.item.trim()}" ใช่ไหม` : `อาจหมายถึง "${s.item.trim()}"`;
 
 /**
  * Answers remembered for the session: every model answer by normalised text (so the same text is never asked

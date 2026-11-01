@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ITEM_MATCH_AUTO, ITEM_MATCH_SUGGEST, type ItemMatch } from '@/shared/contract/ai-assist';
 import type { Catalogue } from '@/domain/calculators/shared/pick-list';
 import {
-    catalogueTexts, createMatchStore, rememberResponse, suggestionLevel, suggestionText, textKey, unmatchedTexts,
+    catalogueTexts, createMatchStore, rememberResponse, suggestionLevel, textKey, unmatchedTexts,
 } from '../itemMatch';
 
 const catalogue: Catalogue = {
@@ -28,13 +28,6 @@ describe('suggestionLevel', () => {
         expect(suggestionLevel(match('x', '  ', 0.99))).toBe('none');
         expect(suggestionLevel(undefined)).toBe('none');
         expect(suggestionLevel(null)).toBe('none');
-    });
-});
-
-describe('suggestionText', () => {
-    it('is Thai, by level, with the item trimmed', () => {
-        expect(suggestionText({ level: 'auto', item: 'อ่างล้างหน้า ' })).toBe('หมายถึง "อ่างล้างหน้า" ใช่ไหม');
-        expect(suggestionText({ level: 'suggest', item: 'ฝักบัว' })).toBe('อาจหมายถึง "ฝักบัว"');
     });
 });
 

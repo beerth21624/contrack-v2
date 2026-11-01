@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Input, Select, Spin, Tooltip, Typography } from 'antd';
 import { AuditOutlined, CaretDownOutlined, CaretRightOutlined, UndoOutlined, LinkOutlined, SearchOutlined } from '@ant-design/icons';
 import { useTranslations } from 'next-intl';
+import { useBoqText } from './useBoqText';
 import { isReadOnly, useProjectStore } from '@/store/project-store';
 import { useModuleEnabled } from '@/features/modules/modules';
 import { CreateQuotationButton } from '@/features/erp/quotations/CreateFromBoqDialog';
@@ -71,6 +72,7 @@ function Highlight({ text, q }: { text: string; q: string }) {
 export function BoqHomePage() {
     const t = useTranslations('boqHome');
     const tt = useTranslations('boqHome.tools');
+    const bt = useBoqText();
     const hasHydrated = useProjectStore(s => s.hasHydrated);
     const project = useProjectStore(s => s.project);
     const setMeta = useProjectStore(s => s.setMeta);
@@ -112,7 +114,7 @@ export function BoqHomePage() {
     const q = query.trim().toLowerCase();
     const filtering = q !== '';
     const matches = (r: BoqItemRow) =>
-        r.desc.toLowerCase().includes(q) || (r.note ?? '').toLowerCase().includes(q);
+        bt.line(r.key, r.desc).toLowerCase().includes(q) || (r.note ?? '').toLowerCase().includes(q);
     const itemsOf = (s: BoqSectionResult) => s.rows.filter((r): r is BoqItemRow => r.type === 'item');
     const visibleSections = filtering ? result.boq.sections.filter(s => itemsOf(s).some(matches)) : result.boq.sections;
     const matchCount = visibleSections.reduce((n, s) => n + itemsOf(s).filter(matches).length, 0);
@@ -189,9 +191,9 @@ export function BoqHomePage() {
                 <td className={`${cell} bg-white ${STICKY.no.className}`} />
                 <td className={`${cell} text-center text-gray-500 bg-white ${STICKY.step.className}`}>{r.itemNo}</td>
                 <td className={`${cell} min-w-[260px] bg-white ${STICKY.desc.className}`}>
-                    {rate === undefined ? <Highlight text={r.desc} q={q} /> : (
+                    {rate === undefined ? <Highlight text={bt.line(r.key, r.desc)} q={q} /> : (
                         <div className="flex items-start justify-between gap-2">
-                            <span className="min-w-0"><Highlight text={r.desc} q={q} /></span>
+                            <span className="min-w-0"><Highlight text={bt.line(r.key, r.desc)} q={q} /></span>
                             <UnitRateHint rate={rate} unit={r.unit} locked={ratesLocked}
                                 onUse={(mat, lab) => { setOverride(r.key, 'mat', mat); setOverride(r.key, 'lab', lab); }} />
                         </div>
@@ -202,14 +204,14 @@ export function BoqHomePage() {
                         ? <Tooltip title={qtyTip}>
                             <div><NumberCell value={r.qty} edited={ov.qty !== undefined} digits={r.qty % 1 === 0 ? 0 : 2}
                                 tone={r.fromCalc.qty ? 'calc' : 'input'}
-                                onCommit={v => setOverride(r.key, 'qty', v)} ariaLabel={`${r.desc} ${t('colQty')}`} /></div>
+                                onCommit={v => setOverride(r.key, 'qty', v)} ariaLabel={`${bt.line(r.key, r.desc)} ${t('colQty')}`} /></div>
                           </Tooltip>
                         : <CalcValue value={r.qtySource === 'none' ? null : r.qty} tip={qtyTip} />}
                 </td>
-                <td className={`${cell} text-center`}>{r.unit}</td>
+                <td className={`${cell} text-center`}>{bt.unit(r.unit)}</td>
                 <td className={`${num} ${editedCls(ov.waste !== undefined)}`} style={{ minWidth: 64 }}>
                     <NumberCell value={r.waste} percent edited={ov.waste !== undefined}
-                        onCommit={v => setOverride(r.key, 'waste', v)} ariaLabel={`${r.desc} ${t('colWaste')}`} />
+                        onCommit={v => setOverride(r.key, 'waste', v)} ariaLabel={`${bt.line(r.key, r.desc)} ${t('colWaste')}`} />
                 </td>
                 <td className={num} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.grossQty} /></td>
                 <td className={`${num} ${editedCls(ov.mat !== undefined)}`} style={{ minWidth: 90 }}>
@@ -220,25 +222,25 @@ export function BoqHomePage() {
                                     onPick={price => setOverride(r.key, 'mat', price)} />
                                 <div className="flex-1">
                                     <NumberCell value={r.matUnit} edited={ov.mat !== undefined} tone={r.fromCalc.mat ? 'calc' : 'input'}
-                                        onCommit={v => setOverride(r.key, 'mat', v)} ariaLabel={`${r.desc} ${t('colMat')}`} />
+                                        onCommit={v => setOverride(r.key, 'mat', v)} ariaLabel={`${bt.line(r.key, r.desc)} ${t('colMat')}`} />
                                 </div>
                             </div>
                         )
                         : (
                             <NumberCell value={r.matUnit} edited={ov.mat !== undefined} tone={r.fromCalc.mat ? 'calc' : 'input'}
-                                onCommit={v => setOverride(r.key, 'mat', v)} ariaLabel={`${r.desc} ${t('colMat')}`} />
+                                onCommit={v => setOverride(r.key, 'mat', v)} ariaLabel={`${bt.line(r.key, r.desc)} ${t('colMat')}`} />
                         )}
                 </td>
                 <td className={num} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.matTotal} /></td>
                 <td className={`${num} ${editedCls(ov.lab !== undefined)}`} style={{ minWidth: 90 }}>
                     <NumberCell value={r.labUnit} edited={ov.lab !== undefined} tone={r.fromCalc.lab ? 'calc' : 'input'}
-                        onCommit={v => setOverride(r.key, 'lab', v)} ariaLabel={`${r.desc} ${t('colLab')}`} />
+                        onCommit={v => setOverride(r.key, 'lab', v)} ariaLabel={`${bt.line(r.key, r.desc)} ${t('colLab')}`} />
                 </td>
                 <td className={num} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.labTotal} /></td>
                 <td className={`${num} font-semibold`} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.total} /></td>
                 <td className={`${cell} min-w-[160px] text-gray-600 ${editedCls(ov.note !== undefined)}`}>
                     <TextCell value={r.note ?? ''} edited={ov.note !== undefined}
-                        onCommit={v => setOverride(r.key, 'note', v)} ariaLabel={`${r.desc} ${t('colNote')}`} />
+                        onCommit={v => setOverride(r.key, 'note', v)} ariaLabel={`${bt.line(r.key, r.desc)} ${t('colNote')}`} />
                 </td>
             </tr>
         );
@@ -256,16 +258,16 @@ export function BoqHomePage() {
                     <td className={`${cell} text-center font-bold ${STICKY.no.className}`} style={{ background: SHEET_COLORS.header }}>{s.no}</td>
                     <td className={`${cell} font-bold`} colSpan={12}>
                         <div className="flex items-center gap-2">
-                            <Button type="text" size="small" aria-label={s.title}
+                            <Button type="text" size="small" aria-label={bt.section(s.no, s.title)}
                                 icon={isCollapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
                                 onClick={() => toggle(s.no)} />
-                            <span>{s.title}</span>
+                            <span>{bt.section(s.no, s.title)}</span>
                             {s.calculators.map(id => {
                                 const def = getCalculator(id);
                                 return def && CALCULATOR_PAGES[id]
                                     ? (
                                         <Link key={id} href={`/calc/${id}`} className="text-[12px] font-normal text-blue-600 hover:underline">
-                                            <LinkOutlined /> {def.title}
+                                            <LinkOutlined /> {bt.calc(def)}
                                         </Link>
                                     )
                                     : (
@@ -290,7 +292,7 @@ export function BoqHomePage() {
                         <tr key={r.key}>
                             <td className={`${cell} bg-white ${STICKY.no.className}`} />
                             <td className={`${cell} text-center text-gray-500 bg-white ${STICKY.step.className}`}>{r.itemNo}</td>
-                            <td className={`${cell} font-medium`} colSpan={11}>{r.desc}</td>
+                            <td className={`${cell} font-medium`} colSpan={11}>{bt.line(r.key, r.desc)}</td>
                         </tr>
                     )
                     : renderItem(r))}
@@ -359,7 +361,7 @@ export function BoqHomePage() {
                     value={query} onChange={e => setQuery(e.target.value)} style={{ width: 300, maxWidth: '100%' }} />
                 <Select<number> showSearch={{ optionFilterProp: 'label' }} placeholder={tt('jump')} aria-label={tt('jump')}
                     style={{ width: 260, maxWidth: '100%' }}
-                    options={visibleSections.map(s => ({ value: s.no, label: `${String(s.no)}. ${s.title}` }))}
+                    options={visibleSections.map(s => ({ value: s.no, label: `${String(s.no)}. ${bt.section(s.no, s.title)}` }))}
                     onSelect={jumpTo} />
                 {filtering && <span className="text-[13px] text-gray-500">{tt('found', { count: matchCount })}</span>}
                 <span className="ml-auto flex gap-2">

@@ -21,24 +21,30 @@ import {
 import type { UseCalculator } from '../useCalculator';
 import { useTranslations } from 'next-intl';
 import type { CalcT } from '../text';
+import { dt } from '../domainText';
 
 type Calc = UseCalculator<ElectricalPipeInput>;
 
 const opts = (xs: readonly string[]) => xs.map(value => ({ value }));
-const kindOptions = CIRCUIT_KINDS.map(k => ({ value: k.kind, label: k.label }));
+const kindOptions = () => CIRCUIT_KINDS.map(k => ({ value: k.kind, label: dt(k.label) }));
 const BREAKER_CHOICES = BREAKER_SIZES.map(b => ({ value: b as string, label: b.replace(/\.$/, '') }));
-const QUICK_KINDS = CIRCUIT_KINDS.map(k => ({ key: k.kind, label: k.label }));
+const quickKinds = () => CIRCUIT_KINDS.map(k => ({ key: k.kind, label: dt(k.label) }));
 
 const points = (c: Circuit) => c.points ?? 0;
 /** Does the card ask for the run into the lamps / points (lights and sockets, or a value already typed)? */
 const showsDeviceRun = (c: Circuit) => hasPoints(c) || c.deviceH !== 0;
+
+const pointLabelOf = (kind: CircuitKind | undefined, t: CalcT): string => {
+    const pl = kindInfo(kind)?.pointLabel;
+    return pl === undefined ? t('common.point') : dt(pl);
+};
 
 /** Plan values a circuit card still needs. */
 function missingOf(t: CalcT, c: Circuit): string[] {
     const out: string[] = [];
     if (!(c.mainH > 0)) out.push(t('electricalPipe.mainRunConduit'));
     if (hasPoints(c) && !(points(c) > 0)) {
-        const pl = kindInfo(circuitKind(c))?.pointLabel ?? t('common.point');
+        const pl = pointLabelOf(circuitKind(c), t);
         out.push(t('electricalPipe.numberOfPl', { pl }));
     }
     return out;
@@ -92,7 +98,7 @@ export function ElectricalPipeJourney({ calc }: { calc: Calc }) {
     const card = (r: Circuit, i: number) => {
         const state = states[i] ?? 'empty';
         const missing = state === 'missing' ? new Set(missingOf(t, r)) : new Set<string>();
-        const pointLabel = kindInfo(circuitKind(r))?.pointLabel ?? t('common.point');
+        const pointLabel = pointLabelOf(circuitKind(r), t);
         const total = circuitTotal(r);
         return (
             <PlanCard key={r.id} index={i + 1} state={state} compact scope={{ listKey: 'circuits', itemIndex: i }}
@@ -105,7 +111,7 @@ export function ElectricalPipeJourney({ calc }: { calc: Calc }) {
                         <JText wide label={t('electricalPipe.circuitNameAsInThe')} value={r.name} placeholder={t('electricalPipe.eGLightingBedroom1')}
                             onChange={name => patchRow(i, { name })} />
                     </div>
-                    <JSelect<CircuitKind> label={t('electricalPipe.circuitType')} value={circuitKind(r)} options={kindOptions} placeholder={t('electricalPipe.selectType')}
+                    <JSelect<CircuitKind> label={t('electricalPipe.circuitType')} value={circuitKind(r)} options={kindOptions()} placeholder={t('electricalPipe.selectType')}
                         onChange={k => { if (k !== undefined) changeKind(i, r, k); }} />
                     <PlanField label={t('electricalPipe.breaker')}>
                         <ChoiceButtons ariaLabel={t('electricalPipe.breakerSize')} size="small" options={BREAKER_CHOICES}
@@ -148,14 +154,14 @@ export function ElectricalPipeJourney({ calc }: { calc: Calc }) {
                     ? (
                         <EmptyState text={t('common.noCircuitsYet')}
                             note={t('electricalPipe.checkTheLoadScheduleOr')}
-                            actions={CIRCUIT_KINDS.map(k => ({ label: t('electricalPipe.circuitLabel', { label: k.label }), onClick: () => addKind(k.kind) }))} />
+                            actions={CIRCUIT_KINDS.map(k => ({ label: t('electricalPipe.circuitLabel', { label: dt(k.label) }), onClick: () => addKind(k.kind) }))} />
                     )
                     : (
                         <div className="flex flex-col gap-2">
                             {circuits.length >= 5 && <FillProgress {...countFill(states)} noun={t('common.circuit')} />}
                             {circuits.map(card)}
                             <div className="mt-1 rounded-lg border border-dashed border-gray-300 px-3 py-2">
-                                <QuickAddChips label={t('electricalPipe.addCircuit')} items={QUICK_KINDS}
+                                <QuickAddChips label={t('electricalPipe.addCircuit')} items={quickKinds()}
                                     onAdd={k => {
                                         const kind = CIRCUIT_KINDS.find(x => x.kind === k)?.kind;
                                         if (kind !== undefined) addKind(kind);

@@ -14,7 +14,7 @@ import {
     AddButton, ChoiceButtons, EmptyState, FillProgress, JText, PlanCard, PlanField, PlanNumber, ResultSummary, countFill,
     fillState, type FillState,
 } from '@/components/sheet/journey';
-import { BRICK_CHOICES, THICKNESS_CHOICES, wallPartChoices } from '../brick/wallParts';
+import { brickChoices, thicknessChoices, wallPartChoices } from '../brick/wallParts';
 import { duplicateOpeningRow, newOpeningRow, priceCommit } from './rows';
 import { useTranslations } from 'next-intl';
 import type { CalcT } from '../text';
@@ -22,7 +22,7 @@ import type { CalcT } from '../text';
 type Block = 'doors' | 'windows';
 
 const typeChoices = (t: CalcT) => [{ value: ALUMINIUM as string, label: t('doorWindow.aluminium') }, { value: WOOD as string, label: t('doorWindow.wood') }];
-const wallChoices = (t: CalcT) => [...BRICK_CHOICES, { value: LIGHT_WALL, label: t('doorWindow.lightWall'), hint: t('doorWindow.aLightWallDoesNot') }];
+const wallChoices = (t: CalcT) => [...brickChoices(), { value: LIGHT_WALL, label: t('doorWindow.lightWall'), hint: t('doorWindow.aLightWallDoesNot') }];
 
 interface BlockInfo {
     title: string; prefix: string; add: string; empty: string; placeholder: string;
@@ -157,7 +157,7 @@ export default function DoorWindowJourney() {
                                 value={r.brick.trim() === '' ? undefined : r.brick.trim()}
                                 onChange={brick => setRow(block, i, { brick })} />
                             {!isLight(r) && (
-                                <ChoiceButtons ariaLabel={t('doorWindow.wallThickness')} size="small" options={THICKNESS_CHOICES}
+                                <ChoiceButtons ariaLabel={t('doorWindow.wallThickness')} size="small" options={thicknessChoices()}
                                     value={r.thickness.trim() === '' ? undefined : r.thickness.trim()}
                                     onChange={thickness => setRow(block, i, { thickness })} />
                             )}

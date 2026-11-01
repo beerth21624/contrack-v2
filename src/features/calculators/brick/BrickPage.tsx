@@ -14,6 +14,7 @@ import { useCalculator } from '../useCalculator';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import BrickJourney from './BrickJourney';
 import { useTranslations } from 'next-intl';
+import { dt } from '../domainText';
 
 const opts = (list: readonly string[]) => list.map(v => ({ value: v }));
 
@@ -55,7 +56,7 @@ function BrickSheet() {
                         { kind: 'select', key: 'thickness', title: t('common.thickness'), width: 100, options: opts(BRICK_THICKNESSES),
                             get: r => r.thickness, set: (r, v) => ({ ...r, thickness: v }) },
                         { kind: 'select', key: 'shape', title: t('brick.wallShape'), width: 105,
-                            options: WALL_SHAPES.map(s => ({ value: s.value, label: s.label })),
+                            options: WALL_SHAPES.map(s => ({ value: s.value, label: dt(s.label) })),
                             get: r => r.shape ?? 'rect', set: (r, v) => ({ ...r, shape: v === 'triangle' ? 'triangle' : 'rect' }) },
                         { kind: 'number', key: 'length', title: t('common.lengthM'), width: 85,
                             get: r => r.length, set: (r, v) => ({ ...r, length: v }) },

@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { Button } from 'antd';
 import { useTranslations } from 'next-intl';
+import { useBoqText } from '@/features/boq-home/useBoqText';
 import { useProjectStore } from '@/store/project-store';
 import { calculatorInput, computeProject } from '@/domain/project';
 import type { BoqItemRow } from '@/domain/boq/types';
@@ -29,6 +30,7 @@ function useColumnCount(): number {
  */
 export function BoqLevelInputs({ sections }: { sections: number[] }) {
     const t = useTranslations('journeyUi.boqLevel');
+    const bt = useBoqText();
     const project = useProjectStore(s => s.project);
     const setOverride = useProjectStore(s => s.setBoqOverride);
     const result = useMemo(() => computeProject(project), [project]);
@@ -69,14 +71,14 @@ export function BoqLevelInputs({ sections }: { sections: number[] }) {
                             const ov = project.boqOverrides[r.key] ?? {};
                             return (
                                 <tr key={r.key}>
-                                    <td className={cell}>{r.desc}</td>
+                                    <td className={cell}>{bt.line(r.key, r.desc)}</td>
                                     <td className={num}>
                                         {r.editable.qty
                                             ? <NumberCell value={r.qty} edited={ov.qty !== undefined} digits={r.qty % 1 === 0 ? 0 : 2} blankZero
-                                                onCommit={v => setOverride(r.key, 'qty', v)} ariaLabel={t('qtyAria', { desc: r.desc })} />
+                                                onCommit={v => setOverride(r.key, 'qty', v)} ariaLabel={t('qtyAria', { desc: bt.line(r.key, r.desc) })} />
                                             : formatNumber(r.qty, r.qty % 1 === 0 ? 0 : 2)}
                                     </td>
-                                    <td className={`${cell} text-center`}>{r.unit}</td>
+                                    <td className={`${cell} text-center`}>{bt.unit(r.unit)}</td>
                                     <td className={num} style={{ background: SHEET_COLORS.calc }}>{r.total === 0 ? '' : formatNumber(r.total)}</td>
                                 </tr>
                             );
@@ -100,14 +102,14 @@ export function BoqLevelInputs({ sections }: { sections: number[] }) {
                                 const ov = project.boqOverrides[r.key] ?? {};
                                 return (
                                     <tr key={r.key}>
-                                        <td className={cell}>{r.desc} <span className="text-gray-500">/ {r.unit}</span></td>
+                                        <td className={cell}>{bt.line(r.key, r.desc)} <span className="text-gray-500">/ {bt.unit(r.unit)}</span></td>
                                         <td className={num}>
                                             <NumberCell value={r.matUnit} edited={ov.mat !== undefined}
-                                                onCommit={v => setOverride(r.key, 'mat', v)} ariaLabel={t('matAria', { desc: r.desc })} />
+                                                onCommit={v => setOverride(r.key, 'mat', v)} ariaLabel={t('matAria', { desc: bt.line(r.key, r.desc) })} />
                                         </td>
                                         <td className={num}>
                                             <NumberCell value={r.labUnit} edited={ov.lab !== undefined}
-                                                onCommit={v => setOverride(r.key, 'lab', v)} ariaLabel={t('labAria', { desc: r.desc })} />
+                                                onCommit={v => setOverride(r.key, 'lab', v)} ariaLabel={t('labAria', { desc: bt.line(r.key, r.desc) })} />
                                         </td>
                                     </tr>
                                 );

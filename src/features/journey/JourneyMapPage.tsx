@@ -12,6 +12,7 @@ import {
     phaseOf, type JourneyLevel, type JourneyPhase, type LevelState,
 } from '@/domain/journey';
 import { totalText } from './total-text';
+import { useLevelText } from './useLevelText';
 import { NewProjectButton } from './NewProjectButton';
 import { BoqExportButtons } from '@/features/export/BoqExportButtons';
 import { LevelAssignee, LevelPresenceAvatars, useCloudLevelInfo, type CloudLevelInfo } from '@/features/cloud/presence/LevelPresence';
@@ -20,6 +21,8 @@ import { useCloud } from '@/features/cloud/state';
 
 const baht = totalText;
 type Translate = ReturnType<typeof useTranslations<'journeyUi.map'>>;
+type LevelName = (l: JourneyLevel) => string;
+
 const numberOf = (level: JourneyLevel) => JOURNEY_LEVELS.indexOf(level) + 1;
 
 /** Money of a group: its steps that are not marked "ไม่มีในโครงการนี้". */
@@ -37,16 +40,16 @@ function StepMark({ state, n }: { state: LevelState; n: number }) {
 }
 
 /** "รอ: ฉาบปูน": what a locked step waits for (one or two names, else the first one and how many more). */
-function waitingText(waiting: readonly JourneyLevel[], t: Translate): string {
+function waitingText(waiting: readonly JourneyLevel[], t: Translate, name: LevelName): string {
     const [first] = waiting;
     if (first === undefined) return '';
-    if (waiting.length <= 2) return waitingList(waiting, t);
-    return t('waitingMore', { first: first.title, count: waiting.length - 1 });
+    if (waiting.length <= 2) return waitingList(waiting, t, name);
+    return t('waitingMore', { first: name(first), count: waiting.length - 1 });
 }
 
 /** "รอ: ฉาบปูน, ก่ออิฐ": every name (phones, where there is no tooltip to show the rest). */
-function waitingList(waiting: readonly JourneyLevel[], t: Translate): string {
-    return waiting.length === 0 ? '' : t('waitingList', { names: waiting.map(l => l.title).join(', ') });
+function waitingList(waiting: readonly JourneyLevel[], t: Translate, name: LevelName): string {
+    return waiting.length === 0 ? '' : t('waitingList', { names: waiting.map(name).join(', ') });
 }
 
 function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
@@ -59,6 +62,7 @@ function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
     incomplete: number;
 }) {
     const t = useTranslations('journeyUi.map');
+    const lt = useLevelText();
     const open = state !== 'locked';
     const waits = state === 'locked' && waiting.length > 0;
     const right = state === 'current'
@@ -67,7 +71,7 @@ function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
             : state === 'done' && level.kind.type !== 'meta' ? <span className="text-[13px] tabular-nums text-gray-700 whitespace-nowrap">{baht(value)}</span>
                 // Wider screens: one line beside the name (the row's tooltip names every step). Phones: under the name.
                 : waits
-                    ? <span className="hidden sm:inline text-[12px] text-gray-400 truncate max-w-[280px]">{waitingText(waiting, t)}</span>
+                    ? <span className="hidden sm:inline text-[12px] text-gray-400 truncate max-w-[280px]">{waitingText(waiting, t, lt.level)}</span>
                     : null;
     const warn = state === 'done' && incomplete > 0 && (
         <span role="img" aria-label={t('incomplete', { count: incomplete })} title={t('incomplete', { count: incomplete })}
@@ -79,9 +83,9 @@ function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
             <StepMark state={state} n={numberOf(level)} />
             <div className="min-w-0">
                 <div className={`text-[14px] leading-[22px] truncate ${open ? 'text-gray-900' : 'text-gray-400'} ${primary ? 'font-semibold' : ''}`}>
-                    {level.title}
+                    {lt.level(level)}
                 </div>
-                {waits && <div className="sm:hidden text-[12px] leading-[18px] text-gray-400 line-clamp-2">{waitingList(waiting, t)}</div>}
+                {waits && <div className="sm:hidden text-[12px] leading-[18px] text-gray-400 line-clamp-2">{waitingList(waiting, t, lt.level)}</div>}
                 {/* The assign control sits inside the row's link: its clicks (and its menu's, which bubble through the portal) must not open the step. */}
                 {team.enabled && (
                     <div className="mt-0.5" onClick={e => { e.preventDefault(); e.stopPropagation(); }}>
@@ -100,7 +104,7 @@ function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
         <li>
             {open
                 ? <Link href={`/journey/${level.id}`} aria-current={primary ? 'step' : undefined} className="block">{row}</Link>
-                : <div title={waitingList(waiting, t)}>{row}</div>}
+                : <div title={waitingList(waiting, t, lt.level)}>{row}</div>}
         </li>
     );
 }
@@ -117,6 +121,7 @@ function PhaseSection({ phase, index, states, primaryId, waiting, progress, resu
     incomplete: ReadonlyMap<string, number>;
 }) {
     const t = useTranslations('journeyUi.map');
+    const lt = useLevelText();
     const done = phase.levels.filter(l => progress[l.id] !== undefined).length;
     const all = done === phase.levels.length;
     // "กำลังทำ" marks the group of the main next step only (other groups may have steps open beside it).
@@ -129,7 +134,7 @@ function PhaseSection({ phase, index, states, primaryId, waiting, progress, resu
                 className="w-full flex items-center gap-3 px-4 py-3 text-left bg-transparent border-0 cursor-pointer hover:bg-gray-50/60">
                 <span className="text-gray-300 text-[10px] w-3">{expanded ? <DownOutlined /> : <RightOutlined />}</span>
                 <span className="text-[11px] font-semibold tabular-nums text-gray-400 w-5">{String(index + 1).padStart(2, '0')}</span>
-                <span className={`text-[15px] font-semibold ${future ? 'text-gray-500' : 'text-gray-900'}`}>{phase.title}</span>
+                <span className={`text-[15px] font-semibold ${future ? 'text-gray-500' : 'text-gray-900'}`}>{lt.phase(phase)}</span>
                 {current && <span className="text-[12px] font-medium text-orange-600 bg-orange-50 rounded px-1.5 py-0.5">{t('inProgress')}</span>}
                 <span className="ml-auto flex items-center gap-4 text-[12px] tabular-nums">
                     <span className={all ? 'text-green-700' : 'text-gray-500'}>{all ? t('allDone') : `${String(done)}/${String(phase.levels.length)}`}</span>
@@ -151,12 +156,13 @@ function PhaseSection({ phase, index, states, primaryId, waiting, progress, resu
 
 /** Progress as one bar split by group (each segment's width = its number of steps). */
 function PhaseBar({ progress }: { progress: Record<string, string> }) {
+    const lt = useLevelText();
     return (
         <div className="flex gap-1" aria-hidden>
             {JOURNEY.map(p => {
                 const done = p.levels.filter(l => progress[l.id] !== undefined).length;
                 return (
-                    <div key={p.id} className="h-1.5 rounded-full bg-gray-100 overflow-hidden" style={{ flexGrow: p.levels.length }} title={p.title}>
+                    <div key={p.id} className="h-1.5 rounded-full bg-gray-100 overflow-hidden" style={{ flexGrow: p.levels.length }} title={lt.phase(p)}>
                         <div className="h-full bg-orange-500 rounded-full" style={{ width: `${String((done / p.levels.length) * 100)}%` }} />
                     </div>
                 );
@@ -168,7 +174,8 @@ function PhaseBar({ progress }: { progress: Record<string, string> }) {
 /** Where the money goes: each group's share of the project, as thin bars. */
 function CostBreakdown({ progress, result }: { progress: Record<string, string>; result: ProjectResult }) {
     const t = useTranslations('journeyUi.map');
-    const rows = JOURNEY.map(p => ({ id: p.id, title: p.title, money: phaseMoney(p, progress, result) }));
+    const lt = useLevelText();
+    const rows = JOURNEY.map(p => ({ id: p.id, title: lt.phase(p), money: phaseMoney(p, progress, result) }));
     const max = Math.max(1, ...rows.map(r => r.money));
     const total = rows.reduce((s, r) => s + r.money, 0);
     return (
@@ -192,6 +199,7 @@ function CostBreakdown({ progress, result }: { progress: Record<string, string>;
 /** The project overview: what to do next, every step by group, and where the money stands. */
 export function JourneyMapPage() {
     const t = useTranslations('journeyUi.map');
+    const lt = useLevelText();
     const project = useProjectStore(s => s.project);
     const progress = project.journey ?? {};
     const result = useMemo(() => computeProject(project), [project]);
@@ -244,10 +252,10 @@ export function JourneyMapPage() {
                             <>
                                 <div className="min-w-0 flex-1">
                                     <div className="text-[12px] text-white/50">
-                                        {t(passed === 0 ? 'headingStart' : 'headingNext', { phase: nextPhase?.title ?? '', n: numberOf(next), total: JOURNEY_LEVELS.length })}
+                                        {t(passed === 0 ? 'headingStart' : 'headingNext', { phase: nextPhase ? lt.phase(nextPhase) : '', n: numberOf(next), total: JOURNEY_LEVELS.length })}
                                     </div>
-                                    <div className="mt-1 text-[22px] font-semibold leading-tight">{next.title}</div>
-                                    <div className="mt-1.5 text-[13px] text-white/60 line-clamp-2">{next.planHint}</div>
+                                    <div className="mt-1 text-[22px] font-semibold leading-tight">{lt.level(next)}</div>
+                                    <div className="mt-1.5 text-[13px] text-white/60 line-clamp-2">{lt.hint(next)}</div>
                                     {alsoOpen.length > 0 && (
                                         <div className="mt-3 text-[13px] text-white/50">
                                             {t('alsoOpen', { count: alsoOpen.length })}{' '}
@@ -256,7 +264,7 @@ export function JourneyMapPage() {
                                                     {i > 0 && ' · '}
                                                     <Link href={`/journey/${l.id}`}
                                                         className="!text-white/80 hover:!text-white underline decoration-white/30 underline-offset-2">
-                                                        {l.title}
+                                                        {lt.level(l)}
                                                     </Link>
                                                 </Fragment>
                                             ))}

@@ -15,11 +15,12 @@ import {
 } from '@/components/sheet/journey';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
-import { BRICK_CHOICES, THICKNESS_CHOICES, wallPartChoices, wallPartHints } from './wallParts';
+import { brickChoices, thicknessChoices, wallPartChoices, wallPartHints } from './wallParts';
 import { useTranslations } from 'next-intl';
 import type { CalcT } from '../text';
+import { dt } from '../domainText';
 
-const shapeChoices = (t: CalcT) => WALL_SHAPES.map(s => ({ value: s.value, label: s.value === 'triangle' ? t('brick.triangleGable') : s.label }));
+const shapeChoices = (t: CalcT) => WALL_SHAPES.map(s => ({ value: s.value, label: s.value === 'triangle' ? t('brick.triangleGable') : dt(s.label) }));
 
 const keyParts = (k: string) => {
     const [, wallPart = '', brickType = '', thickness = ''] = k.split('|');
@@ -106,10 +107,10 @@ export default function BrickJourney() {
                     </PlanField>
                     <PlanField className="sm:col-span-2" label={t('brick.brickType')}>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-                            <ChoiceButtons ariaLabel={t('brick.brickType')} size="small" options={BRICK_CHOICES}
+                            <ChoiceButtons ariaLabel={t('brick.brickType')} size="small" options={brickChoices()}
                                 value={w.brickType.trim() === '' ? undefined : w.brickType.trim()}
                                 onChange={brickType => setWall(i, { brickType })} />
-                            <ChoiceButtons ariaLabel={t('common.thickness')} size="small" options={THICKNESS_CHOICES}
+                            <ChoiceButtons ariaLabel={t('common.thickness')} size="small" options={thicknessChoices()}
                                 value={w.thickness.trim() === '' ? undefined : w.thickness.trim()}
                                 onChange={thickness => setWall(i, { thickness })} />
                         </div>

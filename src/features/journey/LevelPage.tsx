@@ -17,6 +17,7 @@ import {
 } from '@/domain/journey';
 import { CALCULATOR_PAGES } from '@/features/calculators/pages';
 import { totalText } from './total-text';
+import { useLevelText } from './useLevelText';
 import { RequiredContext, type RequiredState } from '@/components/sheet/journey/RequiredContext';
 import { NO_TARGETS, highlightTargets, missingSummary, targetOf, targetSelectors } from '@/components/sheet/journey/required';
 import { JourneyModeContext } from './JourneyMode';
@@ -80,14 +81,15 @@ function scrollToMissing(m: MissingValue, fallback: HTMLElement | null) {
 /** "ยังต้องกรอก 3 รายการ: …" under a failed confirm: the first few labels, the rest behind "ดูทั้งหมด". */
 function MissingList({ missing, onPick }: { missing: readonly MissingValue[]; onPick: (m: MissingValue) => void }) {
     const t = useTranslations('journeyUi.levelPage');
-    const s = missingSummary(missing);
+    const lt = useLevelText();
+    const s = missingSummary(missing, 3, lt.locale);
     const all = (
         <ul className="m-0 p-0 list-none max-h-[50vh] overflow-auto max-w-[min(420px,85vw)]">
             {missing.map((m, i) => (
                 <li key={i}>
                     <button type="button" onClick={() => onPick(m)}
                         className="w-full text-left text-[13px] leading-snug text-gray-700 bg-transparent border-0 rounded px-2 py-1.5 cursor-pointer hover:bg-gray-50">
-                        {m.label}
+                        {lt.missing(m)}
                     </button>
                 </li>
             ))}
@@ -109,16 +111,17 @@ function MissingList({ missing, onPick }: { missing: readonly MissingValue[]; on
 /** A step opened before what it waits for is passed: what is missing, and the open step to do first on the way. */
 function StepNotReady({ level, progress }: { level: JourneyLevel; progress: JourneyProgress }) {
     const t = useTranslations('journeyUi.levelPage');
+    const lt = useLevelText();
     const waiting = blockingLevels(level.id, progress);
     // May be further back than what the step waits for directly.
     const step = firstStepToward(level.id, progress);
     return (
         <Result
             icon={<LockOutlined className="!text-gray-400" />}
-            title={t('notReadyTitle', { title: level.title })}
-            subTitle={t('notReadySub', { names: waiting.map(l => l.title).join(', ') })}
+            title={t('notReadyTitle', { title: lt.level(level) })}
+            subTitle={t('notReadySub', { names: waiting.map(l => lt.level(l)).join(', ') })}
             extra={step && (
-                <Link href={`/journey/${step.id}`}><Button type="primary">{t('continueTo', { title: step.title })}</Button></Link>
+                <Link href={`/journey/${step.id}`}><Button type="primary">{t('continueTo', { title: lt.level(step) })}</Button></Link>
             )}
         />
     );
@@ -133,6 +136,7 @@ function StepBottomBar({ barRef, revealed, missing, onPick, prev, next, level, m
     onConfirm: () => void; onGoNext: () => void; onSkip: () => void;
 }) {
     const t = useTranslations('journeyUi.levelPage');
+    const lt = useLevelText();
     return (
     <div ref={barRef}
         className="fixed bottom-0 left-0 right-0 z-20 bg-white/95 backdrop-blur border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,.05)] pb-[env(safe-area-inset-bottom)]">
@@ -141,8 +145,8 @@ function StepBottomBar({ barRef, revealed, missing, onPick, prev, next, level, m
         <div className="max-w-[1248px] mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center gap-x-3 gap-y-2">
             {prev
                 ? (
-                    <Tooltip title={t('prevStepTip', { title: prev.title })} mouseEnterDelay={0.8}>
-                        <Link href={`/journey/${prev.id}`}><Button size="large" icon={<ArrowLeftOutlined />} aria-label={t('prevStepNamed', { title: prev.title })} /></Link>
+                    <Tooltip title={t('prevStepTip', { title: lt.level(prev) })} mouseEnterDelay={0.8}>
+                        <Link href={`/journey/${prev.id}`}><Button size="large" icon={<ArrowLeftOutlined />} aria-label={t('prevStepNamed', { title: lt.level(prev) })} /></Link>
                     </Tooltip>
                 )
                 : <Button size="large" icon={<ArrowLeftOutlined />} disabled aria-label={t('prevStep')} />}
@@ -173,7 +177,7 @@ function StepBottomBar({ barRef, revealed, missing, onPick, prev, next, level, m
                     ? (
                         <Button type="primary" size="large" icon={<CheckOutlined />} onClick={onConfirm} className="max-w-full">
                             <span className="truncate min-w-0 max-w-[62vw] sm:max-w-[380px]">
-                                {next ? t('confirmGoNext', { title: next.title }) : t('confirmFinish')}
+                                {next ? t('confirmGoNext', { title: lt.level(next) }) : t('confirmFinish')}
                             </span>
                         </Button>
                     )
@@ -181,7 +185,7 @@ function StepBottomBar({ barRef, revealed, missing, onPick, prev, next, level, m
                         <Tooltip title={next ? t('shortcutHint') : undefined} mouseEnterDelay={0.8}>
                             <Button type="primary" size="large" onClick={onGoNext} className="max-w-full">
                                 <span className="truncate min-w-0 max-w-[62vw] sm:max-w-[380px]">
-                                    {next ? t('goNext', { title: next.title }) : t('backToOverview')}
+                                    {next ? t('goNext', { title: lt.level(next) }) : t('backToOverview')}
                                 </span>
                                 {next && <ArrowRightOutlined />}
                             </Button>
@@ -197,6 +201,7 @@ function StepBottomBar({ barRef, revealed, missing, onPick, prev, next, level, m
 export function LevelPage({ levelId }: { levelId: string }) {
     const router = useRouter();
     const t = useTranslations('journeyUi.levelPage');
+    const lt = useLevelText();
     const project = useProjectStore(s => s.project);
     const setLevelMark = useProjectStore(s => s.setLevelMark);
     const result = useMemo(() => computeProject(project), [project]);
@@ -289,9 +294,9 @@ export function LevelPage({ levelId }: { levelId: string }) {
                     </Link>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-baseline gap-2 text-[13px] min-w-0">
-                            <span className="font-semibold text-gray-800 truncate">{level.title}</span>
+                            <span className="font-semibold text-gray-800 truncate">{lt.level(level)}</span>
                             <Text type="secondary" className="text-[12px] whitespace-nowrap">
-                                {t('stepOf', { phase: phase?.title ?? '', index: index + 1, total: JOURNEY_LEVELS.length })}
+                                {t('stepOf', { phase: phase ? lt.phase(phase) : '', index: index + 1, total: JOURNEY_LEVELS.length })}
                             </Text>
                         </div>
                         <div className="mt-1 h-1 rounded-full bg-gray-200 overflow-hidden" aria-hidden>
@@ -305,7 +310,7 @@ export function LevelPage({ levelId }: { levelId: string }) {
 
             <div className="bg-white border border-gray-200 rounded-card p-5 shadow-card">
                 <div className="flex flex-wrap items-center gap-2">
-                    <Title level={3} style={{ margin: 0 }}>{level.title}</Title>
+                    <Title level={3} style={{ margin: 0 }}>{lt.level(level)}</Title>
                     {mark === 'done' && <Tag color="green" icon={<CheckOutlined />}>{t('done')}</Tag>}
                     {mark === 'skipped' && <Tag icon={<StepForwardOutlined />}>{t('skipped')}</Tag>}
                 </div>
@@ -319,7 +324,7 @@ export function LevelPage({ levelId }: { levelId: string }) {
                     <FileSearchOutlined className="text-blue-500 text-[20px] mt-0.5" />
                     <div>
                         <div className="text-[12px] font-semibold text-blue-700">{t('fromPlan')}</div>
-                        <div className="text-[14px] text-gray-800">{level.planHint}</div>
+                        <div className="text-[14px] text-gray-800">{lt.hint(level)}</div>
                     </div>
                 </div>
             </div>

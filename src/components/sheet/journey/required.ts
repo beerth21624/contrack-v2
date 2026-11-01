@@ -1,7 +1,7 @@
 // ─── Where a required value lives on screen (pure; docs/rebuild/REQUIRED_FIELDS.md, "How it behaves") ───
 // `missingRequirements` names a value by input list, row and field key. The journey cards tag their DOM with the
 // same ids, so a failed "ยืนยัน" can ring exactly those fields and scroll to the first one.
-import type { MissingValue } from '@/domain/journey';
+import { missingLabel, type MissingValue } from '@/domain/journey';
 
 /** One row of an input list as a journey card shows it (by its stable key where the row has one). */
 export interface RowScope {
@@ -78,7 +78,7 @@ export function targetSelectors(t: HighlightTarget): string[] {
 }
 
 /** The short list under the bottom bar: the first few labels and how many more. */
-export function missingSummary(missing: readonly MissingValue[], max = 3): { count: number; shown: string[]; more: number } {
-    const shown = missing.slice(0, max).map(m => m.label);
+export function missingSummary(missing: readonly MissingValue[], max = 3, locale = 'th'): { count: number; shown: string[]; more: number } {
+    const shown = missing.slice(0, max).map(m => missingLabel(m, locale));
     return { count: missing.length, shown, more: Math.max(0, missing.length - shown.length) };
 }

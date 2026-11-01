@@ -100,6 +100,11 @@ const eslintConfig = defineConfig([
       "src/features/calculators/{brick,ceiling,column,demolition,door-window,electrical-cable,electrical-equipment,electrical-pipe,fill,floor-tile,footing,ground-beam,land-inspection,layout,load-center,misc,paint,pedestal,piles,plaster,precast-slab,roof-beam}/**/*.{ts,tsx}",
       // Track I-07: calculators set 2 (roof-slab … water-pipe; shared/, pages.ts, useCalculator.ts are I-08)
       "src/features/calculators/{roof-slab,roof-structure,roofing,sanitary-system,sanitary-ware,site-camp,slab-on-grade,stair,structure-summary,temp-utilities,toilet-tile,wall-finishing,waste-pipe,water-pipe}/**/*.{ts,tsx}",
+      // Track I-08: calculators set 3 (shared/, pages.ts, useCalculator.ts, domainText.ts) + the journey / BOQ overlay hooks
+      "src/features/calculators/shared/**/*.{ts,tsx}",
+      "src/features/calculators/{pages,useCalculator,domainText}.ts",
+      "src/features/journey/useLevelText.ts",
+      "src/features/boq-home/useBoqText.ts",
     ],
     ignores: ["**/__tests__/**", "src/features/export/baht-text.ts"],
     rules: {
