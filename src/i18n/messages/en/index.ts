@@ -6,6 +6,7 @@ import errors from './errors.json';
 import enums from './enums.json';
 import shell from './shell.json';
 import account from './account.json';
+import auth from './auth.json';
 import documents from './documents.json';
 import modules from './modules.json';
 import roles from './roles.json';
@@ -43,6 +44,7 @@ const messages = {
   enums,
   shell,
   account,
+  auth,
   documents,
   modules,
   roles,

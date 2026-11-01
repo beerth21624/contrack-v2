@@ -3,6 +3,7 @@
 // ─── Which project is open (this browser's, or a cloud project) and whether it is saved ───
 import { useRouter } from 'next/navigation';
 import { Dropdown, Tooltip, type MenuProps } from 'antd';
+import { useTranslations } from 'next-intl';
 import {
     CheckCircleFilled, ClockCircleFilled, CloudOutlined, DisconnectOutlined, FolderOpenOutlined, LaptopOutlined,
     LoadingOutlined, RollbackOutlined,
@@ -10,8 +11,8 @@ import {
 import { useProjectStore } from '@/store/project-store';
 import { useSession } from '../auth/session';
 import { closeCloudProject } from '../projects/controller';
-import { syncStatusText, useCloud } from '../state';
-import type { SyncState } from '../sync/engine';
+import { useCloud } from '../state';
+import type { SyncState, SyncStatus } from '../sync/engine';
 
 const STATUS_ICON: Record<SyncState, React.ReactNode> = {
     saved: <CheckCircleFilled style={{ color: '#52c41a' }} />,
@@ -20,9 +21,21 @@ const STATUS_ICON: Record<SyncState, React.ReactNode> = {
     offline: <DisconnectOutlined style={{ color: '#ff7875' }} />,
 };
 
-export const LOCAL_PROJECT_TEXT = 'โครงการในเครื่องนี้';
+type ShellTranslator = ReturnType<typeof useTranslations<'shell'>>;
+
+function syncText(t: ShellTranslator, s: SyncStatus): string {
+    const count = String(s.count);
+    switch (s.state) {
+        case 'saved': return t('sync.saved');
+        case 'saving': return t('sync.saving');
+        case 'pending': return t('sync.pending', { count });
+        case 'offline': return s.count > 0 ? t('sync.offlinePending', { count }) : t('sync.offline');
+    }
+}
 
 export function ProjectBadge({ compact = false }: { compact?: boolean }) {
+    const t = useTranslations('shell');
+    const tAccount = useTranslations('account');
     const router = useRouter();
     const binding = useProjectStore(s => s.binding);
     const status = useSession(s => s.status);
@@ -41,21 +54,21 @@ export function ProjectBadge({ compact = false }: { compact?: boolean }) {
         const body = (
             <span className={pill}>
                 <span className="shrink-0 flex">{opening ? <LoadingOutlined /> : <LaptopOutlined />}</span>
-                <span className={label}>{opening ? 'กำลังเปิดโครงการ…' : LOCAL_PROJECT_TEXT}</span>
+                <span className={label}>{opening ? t('openingProject') : t('localProject')}</span>
             </span>
         );
         return (
             <Tooltip title={status === 'signed-in'
-                ? 'บันทึกไว้ในเบราว์เซอร์นี้เท่านั้น — อัปโหลดขึ้นคลาวด์ ได้ที่ "โครงการทั้งหมด"'
-                : 'บันทึกไว้ในเบราว์เซอร์นี้ เข้าสู่ระบบเพื่อเก็บขึ้นคลาวด์ และทำงานเป็นทีม'}>
+                ? t('localHintSignedIn')
+                : t('localHintGuest')}>
                 {body}
             </Tooltip>
         );
     }
 
     const items: MenuProps['items'] = [
-        { key: 'projects', icon: <FolderOpenOutlined />, label: 'โครงการทั้งหมด' },
-        { key: 'local', icon: <RollbackOutlined />, label: `กลับไป${LOCAL_PROJECT_TEXT}` },
+        { key: 'projects', icon: <FolderOpenOutlined />, label: tAccount('projects') },
+        { key: 'local', icon: <RollbackOutlined />, label: t('backToLocal') },
     ];
     const onClick: MenuProps['onClick'] = ({ key }) => {
         if (key === 'projects') router.push('/projects');
@@ -64,13 +77,13 @@ export function ProjectBadge({ compact = false }: { compact?: boolean }) {
 
     return (
         <Dropdown menu={{ items, onClick }} trigger={['click']} placement="bottomRight">
-            <button type="button" className={`${pill} cursor-pointer hover:bg-white/10`} aria-label="โครงการที่เปิดอยู่"
+            <button type="button" className={`${pill} cursor-pointer hover:bg-white/10`} aria-label={t('openProjectAria')}
                 title={project?.name}>
                 <span className="shrink-0 flex"><CloudOutlined /></span>
-                <span className={`${label} font-semibold`}>{project?.name ?? 'โครงการบนคลาวด์'}</span>
+                <span className={`${label} font-semibold`}>{project?.name ?? t('cloudProject')}</span>
                 <span className="flex shrink-0 items-center gap-1 whitespace-nowrap text-white/70">
                     {STATUS_ICON[sync.state]}
-                    <span className={compact ? 'hidden' : 'hidden md:inline'}>{syncStatusText(sync)}</span>
+                    <span className={compact ? 'hidden' : 'hidden md:inline'}>{syncText(t, sync)}</span>
                 </span>
             </button>
         </Dropdown>

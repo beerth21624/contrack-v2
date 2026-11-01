@@ -5,11 +5,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Alert, Button, Form, Input, Typography } from 'antd';
+import { useTranslations } from 'next-intl';
 import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons';
 import type { LoginRequest, RegisterRequest } from '@/shared/contract';
 import { api } from '../api/routes';
-import { thaiErrorMessage } from '../api/errors';
-import { RULES, safeNext } from './form-rules';
+import { useErrorMessage } from '../api/error-message';
+import { safeNext } from './form-rules';
+import { useRules } from './use-rules';
 import { useSession } from './session';
 
 const { Title, Text } = Typography;
@@ -26,18 +28,20 @@ function AuthCard({ title, subtitle, children }: { title: string; subtitle: stri
     );
 }
 
-const GUEST_NOTE = 'ไม่เข้าสู่ระบบก็ใช้งานได้ — โครงการจะเก็บไว้ในเบราว์เซอร์นี้เหมือนเดิม และไม่หายเมื่อเข้าสู่ระบบ';
-
 function AlreadySignedIn({ next }: { next: string }) {
+    const t = useTranslations('auth');
     const user = useSession(s => s.user);
     return (
-        <AuthCard title="เข้าสู่ระบบอยู่แล้ว" subtitle={user ? `${user.displayName} (${user.email})` : ''}>
-            <Link href={next}><Button type="primary" block size="large">ไปต่อ</Button></Link>
+        <AuthCard title={t('alreadyTitle')} subtitle={user ? `${user.displayName} (${user.email})` : ''}>
+            <Link href={next}><Button type="primary" block size="large">{t('continue')}</Button></Link>
         </AuthCard>
     );
 }
 
 export function LoginPage() {
+    const t = useTranslations('auth');
+    const RULES = useRules();
+    const toText = useErrorMessage();
     const router = useRouter();
     const params = useSearchParams();
     const next = safeNext(params.get('next'));
@@ -54,28 +58,28 @@ export function LoginPage() {
             await api.auth.login({ email: values.email.trim().toLowerCase(), password: values.password });
             router.push(next);
         } catch (e) {
-            setError(thaiErrorMessage(e));
+            setError(toText(e));
         } finally {
             setBusy(false);
         }
     };
 
     return (
-        <AuthCard title="เข้าสู่ระบบ" subtitle="เก็บโครงการไว้บนคลาวด์ เปิดเครื่องไหนก็ทำต่อได้ และทำงานเป็นทีม">
+        <AuthCard title={t('login.title')} subtitle={t('login.subtitle')}>
             {error !== null && <Alert type="error" showIcon title={error} className="!mb-4" />}
             <Form<LoginRequest> layout="vertical" requiredMark={false} onFinish={(v) => { void onFinish(v); }} disabled={busy}>
-                <Form.Item name="email" label="อีเมล" rules={RULES.email}>
+                <Form.Item name="email" label={t('email')} rules={RULES.email}>
                     <Input prefix={<MailOutlined />} autoComplete="email" inputMode="email" placeholder="somchai@gmail.com" />
                 </Form.Item>
-                <Form.Item name="password" label="รหัสผ่าน" rules={RULES.loginPassword}>
+                <Form.Item name="password" label={t('password')} rules={RULES.loginPassword}>
                     <Input.Password prefix={<LockOutlined />} autoComplete="current-password" />
                 </Form.Item>
-                <Button type="primary" htmlType="submit" block size="large" loading={busy}>เข้าสู่ระบบ</Button>
+                <Button type="primary" htmlType="submit" block size="large" loading={busy}>{t('login.submit')}</Button>
             </Form>
             <div className="mt-4 text-[13px] text-center">
-                ยังไม่มีบัญชี? <Link href={`/register?next=${encodeURIComponent(next)}`}>สมัครใช้งานฟรี</Link>
+                {t('login.noAccount')} <Link href={`/register?next=${encodeURIComponent(next)}`}>{t('login.registerLink')}</Link>
             </div>
-            <div className="mt-4 text-[12px] text-gray-500 text-center">{GUEST_NOTE}</div>
+            <div className="mt-4 text-[12px] text-gray-500 text-center">{t('guestNote')}</div>
         </AuthCard>
     );
 }
@@ -83,6 +87,9 @@ export function LoginPage() {
 interface RegisterValues extends RegisterRequest { confirm: string }
 
 export function RegisterPage() {
+    const t = useTranslations('auth');
+    const RULES = useRules();
+    const toText = useErrorMessage();
     const router = useRouter();
     const params = useSearchParams();
     const next = safeNext(params.get('next'));
@@ -101,41 +108,41 @@ export function RegisterPage() {
             });
             router.push(next);
         } catch (e) {
-            setError(thaiErrorMessage(e));
+            setError(toText(e));
         } finally {
             setBusy(false);
         }
     };
 
     return (
-        <AuthCard title="สมัครใช้งาน" subtitle="ได้พื้นที่ทำงานส่วนตัวทันที เชิญทีมเข้ามาทำ BOQ ด้วยกันได้ภายหลัง">
+        <AuthCard title={t('register.title')} subtitle={t('register.subtitle')}>
             {error !== null && <Alert type="error" showIcon title={error} className="!mb-4" />}
             <Form<RegisterValues> layout="vertical" requiredMark={false} onFinish={(v) => { void onFinish(v); }} disabled={busy}>
-                <Form.Item name="displayName" label="ชื่อที่ให้ทีมเห็น" rules={RULES.displayName}>
-                    <Input prefix={<UserOutlined />} autoComplete="name" placeholder="เช่น สมชาย ใจดี" />
+                <Form.Item name="displayName" label={t('register.displayName')} rules={RULES.displayName}>
+                    <Input prefix={<UserOutlined />} autoComplete="name" placeholder={t('register.displayNamePlaceholder')} />
                 </Form.Item>
-                <Form.Item name="email" label="อีเมล" rules={RULES.email}>
+                <Form.Item name="email" label={t('email')} rules={RULES.email}>
                     <Input prefix={<MailOutlined />} autoComplete="email" inputMode="email" placeholder="somchai@gmail.com" />
                 </Form.Item>
-                <Form.Item name="password" label="รหัสผ่าน" rules={RULES.newPassword} hasFeedback>
+                <Form.Item name="password" label={t('password')} rules={RULES.newPassword} hasFeedback>
                     <Input.Password prefix={<LockOutlined />} autoComplete="new-password" />
                 </Form.Item>
-                <Form.Item name="confirm" label="ยืนยันรหัสผ่าน" dependencies={['password']} hasFeedback
+                <Form.Item name="confirm" label={t('register.confirm')} dependencies={['password']} hasFeedback
                     rules={[
-                        { required: true, message: 'กรอกรหัสผ่านอีกครั้ง' },
+                        { required: true, message: t('register.confirmRequired') },
                         ({ getFieldValue }) => ({
                             validator: (_r, value: unknown) => (value === getFieldValue('password')
-                                ? Promise.resolve() : Promise.reject(new Error('รหัสผ่านทั้งสองช่องไม่ตรงกัน'))),
+                                ? Promise.resolve() : Promise.reject(new Error(t('register.mismatch')))),
                         }),
                     ]}>
                     <Input.Password prefix={<LockOutlined />} autoComplete="new-password" />
                 </Form.Item>
-                <Button type="primary" htmlType="submit" block size="large" loading={busy}>สมัครและเข้าสู่ระบบ</Button>
+                <Button type="primary" htmlType="submit" block size="large" loading={busy}>{t('register.submit')}</Button>
             </Form>
             <div className="mt-4 text-[13px] text-center">
-                มีบัญชีแล้ว? <Link href={`/login?next=${encodeURIComponent(next)}`}>เข้าสู่ระบบ</Link>
+                {t('register.hasAccount')} <Link href={`/login?next=${encodeURIComponent(next)}`}>{t('register.loginLink')}</Link>
             </div>
-            <div className="mt-4 text-[12px] text-gray-500 text-center">{GUEST_NOTE}</div>
+            <div className="mt-4 text-[12px] text-gray-500 text-center">{t('guestNote')}</div>
         </AuthCard>
     );
 }

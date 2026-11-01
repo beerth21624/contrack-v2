@@ -2,5 +2,33 @@
   "brand": "ConTrack",
   "mainMenu": "Main menu",
   "menu": "Menu",
-  "notifications": "Notifications"
+  "notifications": "Notifications",
+  "vendorWork": "Subcontract work",
+  "localProject": "Project on this device",
+  "openingProject": "Opening project…",
+  "localHintSignedIn": "Saved in this browser only — upload it to the cloud from \"All projects\"",
+  "localHintGuest": "Saved in this browser. Sign in to keep it in the cloud and work as a team",
+  "backToLocal": "Back to the project on this device",
+  "openProjectAria": "Open project",
+  "cloudProject": "Cloud project",
+  "sync": {
+    "saved": "Saved",
+    "saving": "Saving…",
+    "pending": "{count} waiting to send",
+    "offline": "Offline",
+    "offlinePending": "Offline · {count} waiting to send"
+  },
+  "readOnlyTitle": "View only",
+  "readOnlyDescription": "You can view this project but not change the numbers (Excel export and printing work as usual). Ask the owner or an admin for edit access.",
+  "readOnlyNotice": "You have view-only access to this project and cannot edit it",
+  "cloudNewProjectNotice": "A cloud project cannot be overwritten by starting over — create a new project from \"All projects\"",
+  "calcNotFound": "This calculator does not exist yet",
+  "requireSignIn": {
+    "subtitle": "Sign in to keep projects in the cloud and work as a team — the project on this device keeps working as before",
+    "signIn": "Sign in",
+    "register": "Sign up",
+    "continueLocal": "Continue with the project on this device"
+  },
+  "markAllRead": "Mark all as read",
+  "noNotifications": "No notifications yet"
 }

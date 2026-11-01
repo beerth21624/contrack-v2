@@ -78,6 +78,14 @@ const eslintConfig = defineConfig([
       "src/app/(print)/**/*.{ts,tsx}",
       "src/app/(app)/{hub,home,p,customers,receivables,purchasing,suppliers,payables,tax-reports,finance,approvals,admin}/**/*.{ts,tsx}",
       "src/app/(app)/workspace/{company,numbering,approval-policies,pay-periods}/**/*.{ts,tsx}",
+      // Track I-01: app shell, account, auth, errors
+      "src/components/AppLayoutUI.tsx",
+      "src/features/cloud/{ui,auth}/**/*.{ts,tsx}",
+      "src/features/modules/**/*.{ts,tsx}",
+      "src/features/notifications/**/*.{ts,tsx}",
+      "src/features/cloud/api/errors.ts",
+      "src/store/{project-store,notice-texts}.ts",
+      "src/app/(app)/{login,register,invite,calc}/**/*.{ts,tsx}",
     ],
     rules: {
       "no-restricted-syntax": [

@@ -1,5 +1,6 @@
 // ─── Errors of the backend API, mapped to one shape ───
 import { errorResponseSchema, type ErrorCode } from '@/shared/contract';
+import thErrors from '@/i18n/messages/th/errors.json';
 
 /** Codes the client adds on top of the server's: no answer at all, or an answer that does not match the contract. */
 export type ClientErrorCode = 'network_error' | 'invalid_response';
@@ -41,30 +42,9 @@ export function errorFromBody(status: number, body: unknown, fallback: string): 
     return new ApiError(status, status >= 500 ? 'internal' : 'validation_failed', fallback);
 }
 
-/** Plain Thai message for people, by error code. */
+/** Plain Thai message for people, by error code (the Thai texts live in messages/th/errors.json; screens that moved use useErrorMessage). */
 export function thaiErrorMessage(e: unknown): string {
-    if (!isApiError(e)) return 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง';
-    switch (e.code) {
-        case 'network_error': return 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่';
-        case 'invalid_response': return 'เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง';
-        case 'validation_failed': return 'ข้อมูลไม่ถูกต้อง ตรวจสอบแล้วลองใหม่';
-        case 'unauthenticated':
-        case 'invalid_token': return 'กรุณาเข้าสู่ระบบอีกครั้ง';
-        case 'invalid_credentials': return 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
-        case 'email_taken': return 'อีเมลนี้มีบัญชีอยู่แล้ว ลองเข้าสู่ระบบแทน';
-        case 'forbidden': return 'คุณไม่มีสิทธิ์ทำรายการนี้';
-        case 'not_found': return 'ไม่พบข้อมูลนี้ (อาจถูกลบหรือคุณไม่ได้เป็นสมาชิก)';
-        case 'conflict': return 'ทำรายการนี้ไม่ได้ เพราะข้อมูลขัดกัน (เช่น ชื่อซ้ำ หรือโครงการถูกเก็บถาวร)';
-        case 'version_conflict': return 'มีคนอื่นแก้ข้อมูลนี้ก่อนหน้า';
-        case 'invitation_invalid': return 'ลิงก์เชิญนี้ใช้ไม่ได้แล้ว (หมดอายุ ถูกยกเลิก หรือใช้ไปแล้ว)';
-        case 'last_owner': return 'ต้องมีเจ้าของอย่างน้อย 1 คนเสมอ';
-        case 'personal_workspace': return 'พื้นที่ส่วนตัวทำรายการนี้ไม่ได้ สร้างพื้นที่ของบริษัทก่อน';
-        case 'unprocessable': return 'ข้อมูลนี้ใช้คำนวณไม่ได้ ระบบจึงไม่บันทึก';
-        case 'rate_limited': return 'ทำรายการถี่เกินไป รอสักครู่แล้วลองใหม่';
-        case 'internal': return 'เซิร์ฟเวอร์ขัดข้อง ลองใหม่อีกครั้ง';
-        case 'module_disabled': return 'ฟีเจอร์นี้ปิดใช้งานอยู่';
-        case 'otp_invalid': return 'รหัส OTP ไม่ถูกต้องหรือหมดอายุ ขอรหัสใหม่แล้วลองอีกครั้ง';
-        case 'ai_unavailable': return 'ผู้ช่วย AI ใช้งานไม่ได้ในขณะนี้ ลองใหม่อีกครั้งภายหลัง';
-        case 'ai_quota': return 'เครดิตผู้ช่วย AI หมด ติดต่อผู้ดูแลระบบ';
-    }
+    if (!isApiError(e)) return thErrors.unknown;
+    const codes: Record<string, string> = thErrors.codes;
+    return codes[e.code] ?? thErrors.unknown;
 }

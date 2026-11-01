@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { App, Button, Result } from 'antd';
 import { useTranslations } from 'next-intl';
-import { MODULE_LABEL, MODULE_REGISTRY, type ModuleId } from '@/shared/contract';
+import { MODULE_REGISTRY, type ModuleId } from '@/shared/contract';
 import { RequireSignIn, spinner } from '@/features/cloud/ui/common';
 import { useCurrentWorkspace } from '@/features/cloud/query/hooks';
 import { useErrorMessage } from '@/features/cloud/api/error-message';
@@ -12,8 +12,9 @@ import { can } from '@/features/cloud/permissions';
 import { useModuleState, useStartTrial } from './modules';
 
 export function ModuleGate({ module, next, children }: { module: ModuleId; next: string; children: React.ReactNode }) {
+    const t = useTranslations('modules');
     return (
-        <RequireSignIn next={next} title={MODULE_LABEL[module]}>
+        <RequireSignIn next={next} title={t(`${module}.label`)}>
             <Gate module={module}>{children}</Gate>
         </RequireSignIn>
     );

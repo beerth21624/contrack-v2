@@ -4,6 +4,7 @@ import { createProject, PROJECT_SCHEMA_VERSION, type Project } from '@/domain/pr
 import type { AppNotice } from '../notices';
 import type * as ProjectStoreModule from '../project-store';
 import type * as NoticesModule from '../notices';
+import { readOnlyText } from '../notice-texts';
 
 class MemoryStorage implements Storage {
     private map = new Map<string, string>();
@@ -314,7 +315,7 @@ describe('cloud binding: viewer is read-only, others can edit', () => {
         state().setLevelMark('layout', 'done');
         expect(state().project).toEqual(before);
         expect(heard).toHaveLength(6);
-        for (const n of heard) expect(n).toMatchObject({ level: 'warning', text: mod.READ_ONLY_TEXT, key: 'read-only' });
+        for (const n of heard) expect(n).toMatchObject({ level: 'warning', text: readOnlyText(), key: 'read-only' });
     });
 
     it('an editor can edit the cloud copy; nothing leaks to the guest key', () => {

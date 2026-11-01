@@ -5,17 +5,20 @@
 import { useRouter } from 'next/navigation';
 import { Badge, Button, Dropdown, Empty } from 'antd';
 import { BellOutlined } from '@ant-design/icons';
+import { useTranslations } from 'next-intl';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type MarkNotificationsReadRequest, type NotificationDto, notificationListDtoSchema } from '@/shared/contract';
 import { apiClient } from '@/features/cloud/api/client';
 import { useSession } from '@/features/cloud/auth/session';
-import { formatDateTime } from '@/features/cloud/ui/common';
+import { useFormat } from '@/i18n/useFormat';
 import { useModuleEnabled } from '@/features/modules/modules';
 import { useHasVendorWorkspace } from '@/features/subcontracting/shared/useHasVendorWorkspace';
 
 const KEY = ['notifications'] as const;
 
 export function NotificationBell({ dark = true }: { dark?: boolean }) {
+    const t = useTranslations('shell');
+    const fmt = useFormat();
     const router = useRouter();
     const qc = useQueryClient();
     const signedIn = useSession(s => s.status === 'signed-in');
@@ -51,13 +54,13 @@ export function NotificationBell({ dark = true }: { dark?: boolean }) {
             popupRender={() => (
                 <div className="w-[340px] max-w-[calc(100vw-32px)] rounded-[10px] border border-gray-200 bg-white shadow-sm">
                     <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-                        <span className="font-semibold">การแจ้งเตือน</span>
+                        <span className="font-semibold">{t('notifications')}</span>
                         {(q.data?.unread ?? 0) > 0 && (
-                            <Button type="link" size="small" onClick={() => markRead.mutate({ all: true })}>อ่านทั้งหมด</Button>
+                            <Button type="link" size="small" onClick={() => markRead.mutate({ all: true })}>{t('markAllRead')}</Button>
                         )}
                     </div>
                     {items.length === 0
-                        ? <Empty className="py-6" image={Empty.PRESENTED_IMAGE_SIMPLE} description="ยังไม่มีการแจ้งเตือน" />
+                        ? <Empty className="py-6" image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('noNotifications')} />
                         : (
                             <ul className="max-h-[420px] overflow-y-auto">
                                 {items.map(n => (
@@ -66,7 +69,7 @@ export function NotificationBell({ dark = true }: { dark?: boolean }) {
                                             className={`block w-full border-b border-gray-100 px-4 py-3 text-left hover:bg-gray-50 ${n.readAt === null ? 'bg-orange-50/50' : ''}`}>
                                             <div className={n.readAt === null ? 'font-medium' : ''}>{n.title}</div>
                                             {n.body !== '' && <div className="text-[13px] text-gray-600">{n.body}</div>}
-                                            <div className="mt-1 text-[12px] text-gray-400">{formatDateTime(n.createdAt)}</div>
+                                            <div className="mt-1 text-[12px] text-gray-400">{fmt.dateTime(n.createdAt)}</div>
                                         </button>
                                     </li>
                                 ))}
@@ -75,7 +78,7 @@ export function NotificationBell({ dark = true }: { dark?: boolean }) {
                 </div>
             )}
         >
-            <Button type="text" aria-label="การแจ้งเตือน" style={{ minWidth: 40, minHeight: 40 }}
+            <Button type="text" aria-label={t('notifications')} style={{ minWidth: 40, minHeight: 40 }}
                 icon={(
                     <Badge count={q.data?.unread ?? 0} size="small" offset={[2, -2]}>
                         <BellOutlined style={{ fontSize: 18, color: dark ? '#fff' : '#111827' }} />

@@ -9,6 +9,7 @@ import type { LevelMark } from '@/domain/journey/progress';
 import { can, type Role } from '@/shared/contract';
 import { emitNotice } from './notices';
 import { baselineLockedText } from './baseline-locked-text';
+import { cloudNewProjectText, readOnlyText } from './notice-texts';
 
 /** Field of a BOQ line the user can edit on the BOQ (Home) page. */
 export type BoqEditableField = keyof BoqLineOverride;
@@ -53,9 +54,6 @@ export interface SandboxBinding {
 export type ProjectBinding = { kind: 'guest' } | CloudBinding | SandboxBinding;
 
 const GUEST: ProjectBinding = { kind: 'guest' };
-
-export const READ_ONLY_TEXT = 'คุณมีสิทธิ์ดูอย่างเดียวในโครงการนี้ แก้ไขไม่ได้';
-export const CLOUD_NEW_PROJECT_TEXT = 'โครงการบนคลาวด์ เริ่มใหม่ทับไม่ได้ — สร้างโครงการใหม่ที่หน้า "โครงการทั้งหมด"';
 
 interface ProjectState {
     hasHydrated: boolean;
@@ -160,7 +158,7 @@ export const useProjectStore = create<ProjectState>()(
             /** Edits of the working copy; a viewer of a cloud project cannot edit (notice instead). */
             const editAny = (fn: (s: ProjectState) => Partial<ProjectState>) => {
                 if (isRoleReadOnly(get().binding)) {
-                    emitNotice({ level: 'warning', text: READ_ONLY_TEXT, key: 'read-only' });
+                    emitNotice({ level: 'warning', text: readOnlyText(), key: 'read-only' });
                     return;
                 }
                 set(fn);
@@ -175,7 +173,7 @@ export const useProjectStore = create<ProjectState>()(
             };
             const startOver = (start: ProjectStart | undefined) => {
                 if (get().binding.kind !== 'guest') {
-                    emitNotice({ level: 'warning', text: CLOUD_NEW_PROJECT_TEXT, key: 'cloud-new-project' });
+                    emitNotice({ level: 'warning', text: cloudNewProjectText(), key: 'cloud-new-project' });
                     return;
                 }
                 set({ project: createProject(start) });

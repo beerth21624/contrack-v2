@@ -32,6 +32,7 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const tNav = useTranslations('nav');
     const tApp = useTranslations('app');
+    const tShell = useTranslations('shell');
     
     const hasHydrated = useProjectStore(state => state.hasHydrated);
     // Business modules add menu entries only when they are on (docs/marketplace/README.md §1).
@@ -60,7 +61,7 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
         { key: 'schedule', icon: <ScheduleOutlined />, label: tNav('schedule'), onClick: () => router.push('/schedule') },
         { key: 'cashflow', icon: <MoneyCollectOutlined />, label: tNav('cashflow'), onClick: () => router.push('/cashflow') },
         ...(subcontracting ? [{ key: 'subcontracting', icon: <TeamOutlined />, label: tNav('subcontracting'), onClick: () => router.push('/subcontracting') }] : []),
-        ...(isVendor ? [{ key: 'vendor', icon: <ToolOutlined />, label: 'งานรับเหมาช่วง', onClick: () => router.push('/vendor') }] : []),
+        ...(isVendor ? [{ key: 'vendor', icon: <ToolOutlined />, label: tShell('vendorWork'), onClick: () => router.push('/vendor') }] : []),
     ];
 
     const boqKeys = new Set(['journey', 'boq', 'man-day', 'schedule', 'cashflow']);
@@ -145,7 +146,7 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
                         type="text"
                         icon={<MenuOutlined style={{ fontSize: 22, color: '#fff' }} />}
                         onClick={() => setDrawerOpen(true)}
-                        aria-label="เมนู"
+                        aria-label={tShell('menu')}
                         style={{
                             background: 'transparent', border: 'none',
                             minWidth: 44, minHeight: 44,

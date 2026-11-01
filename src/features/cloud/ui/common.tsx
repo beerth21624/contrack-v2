@@ -4,12 +4,14 @@
 import Link from 'next/link';
 import { Button, Result, Spin } from 'antd';
 import { LoginOutlined } from '@ant-design/icons';
+import { useTranslations } from 'next-intl';
 import { useSession } from '../auth/session';
 
 export const spinner = <div className="flex justify-center p-20"><Spin size="large" /></div>;
 
 /** Renders children only for a signed-in user; a sign-in prompt for guests (guest mode keeps working). */
 export function RequireSignIn({ children, next, title }: { children: React.ReactNode; next: string; title: string }) {
+    const t = useTranslations('shell.requireSignIn');
     const status = useSession(s => s.status);
     if (status === 'unknown') return spinner;
     if (status === 'guest') {
@@ -17,11 +19,11 @@ export function RequireSignIn({ children, next, title }: { children: React.React
             <Result
                 icon={<LoginOutlined className="!text-orange-400" />}
                 title={title}
-                subTitle="เข้าสู่ระบบเพื่อเก็บโครงการบนคลาวด์ และทำงานเป็นทีม — โครงการในเครื่องนี้ใช้ต่อได้เหมือนเดิม"
+                subTitle={t('subtitle')}
                 extra={[
-                    <Link key="login" href={`/login?next=${encodeURIComponent(next)}`}><Button type="primary">เข้าสู่ระบบ</Button></Link>,
-                    <Link key="register" href={`/register?next=${encodeURIComponent(next)}`}><Button>สมัครใช้งาน</Button></Link>,
-                    <Link key="local" href="/journey"><Button type="link">ใช้โครงการในเครื่องนี้ต่อ</Button></Link>,
+                    <Link key="login" href={`/login?next=${encodeURIComponent(next)}`}><Button type="primary">{t('signIn')}</Button></Link>,
+                    <Link key="register" href={`/register?next=${encodeURIComponent(next)}`}><Button>{t('register')}</Button></Link>,
+                    <Link key="local" href="/journey"><Button type="link">{t('continueLocal')}</Button></Link>,
                 ]}
             />
         );

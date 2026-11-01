@@ -73,7 +73,7 @@
 
 | WP | Title | Status | Commit | Notes |
 |---|---|---|---|---|
-| I-01 | เปลือกแอป บัญชี ล็อกอิน error | todo | | หลัง WP-16 |
+| I-01 | เปลือกแอป บัญชี ล็อกอิน error | done | HASH | ไม่มี migration; namespace `auth` ใหม่ + `shell.*` เพิ่ม; ESLint glob เพิ่ม; D-367…D-370 |
 | I-02 | components/sheet | todo | | |
 | I-03 | components/sheet/journey | todo | | |
 | I-04 | boq-home + journey | todo | | |
@@ -463,6 +463,10 @@
 | D-364 | 2026-11-01 | (WP-56) seed ERP สร้างโครงการ "บ้านพักอาศัย ERP ตัวอย่าง – คุณมานะ ตั้งใจ" แยกจากบ้านโชว์เคส (start `sample`) | baseline lock (ตอนออกใบเสนอราคา/เซ็นสัญญา) ทำให้ `applyProject` ของ seed-showcase เดิมเขียนเอกสารทับไม่ได้ (409 `baseline_locked`) จึงห้ามใช้บ้านเดียวกัน; idempotent ระดับโครงการ (พบชื่อใน active projects → "erp: already seeded") |
 | D-365 | 2026-11-01 | (WP-56) seed ใช้ token ของ owner ทุกขั้น (นโยบายอนุมัติ default `selfApprove` จึงอนุมัติอัตโนมัติ) และสัญญาใช้ `billingMode: progress` + terms advance 10% / retention 5% / ประกัน 12 เดือน; ไม่ seed ส่งมอบ/ปิดโครงการ | งวดแบบ milestone ต้องรอ trigger จึงเบิกไม่ได้ในสคริปต์; ส่งมอบ accepted จะย้ายโครงการเป็น warranty และสัญญา completed ทำให้เดโมเบิกเงิน/ต้นทุนต่อไม่ได้ — ให้ทำสดหน้าลูกค้า |
 | D-366 | 2026-11-01 | (WP-56) เปิดโมดูลด้วย `POST …/modules/:m/trial` ก่อน ถ้าไม่สำเร็จค่อย `PUT {enabled:true}` (ใช้ได้เมื่อ `ENTITLEMENTS=open`); โมดูลที่เปิดไม่ได้จะข้ามเฉพาะขั้นของโมดูลนั้น; ความล้มเหลวของ seed-erp เป็น warning ไม่ล้ม showcase; `--in-process` ยังใช้ `MODULES_ENABLED` default `workforce` (ไม่มี ERP) | ข้อกำหนด "env ที่ไม่มี id ERP: seed เดิมเหมือนเดิมทุกประการ" |
+| D-367 | 2026-11-01 | (I-01) `thaiErrorMessage` ยังอยู่ (ผู้เรียกใน track I ที่ยังไม่ย้าย) แต่อ่านข้อความจาก `messages/th/errors.json` (ไม่มีไทยในโค้ด); หน้าที่ย้ายแล้วใช้ `useErrorMessage()` | แหล่งข้อความเดียว; I-09…I-14 ค่อยเปลี่ยนผู้เรียก |
+| D-368 | 2026-11-01 | (I-01) `RULES` ใน `form-rules.ts` กลายเป็น `buildRules(t)` + hook `useRules()` (`auth/use-rules.ts`); `RULES` คงไว้เป็นชุดไทย (สร้างจาก `th/auth.json`) สำหรับ ProjectsPage/MembersPage/RevisionButtons/workforce ที่ I-10/I-11 จะเปลี่ยนเป็น `useRules()` | ไม่แตะไฟล์นอกขอบเขต |
+| D-369 | 2026-11-01 | (I-01) `READ_ONLY_TEXT`/`CLOUD_NEW_PROJECT_TEXT` เปลี่ยนเป็น `readOnlyText()`/`cloudNewProjectText()` ใน `src/store/notice-texts.ts` (createTranslator + คุกกี้ภาษา แบบ `baseline-locked-text.ts`); เทสต์ store 2 ไฟล์แก้ให้เรียกฟังก์ชันใหม่; `LOCAL_PROJECT_TEXT` ถูกลบ; `syncStatusText` ใน `cloud/state.ts` ไม่มีผู้ใช้แล้ว (ProjectBadge ใช้ `shell.sync.*`) ให้ I-10 ลบ | store ไม่มี React |
+| D-370 | 2026-11-01 | (I-01) `NotificationBell` ใช้ `useFormat().dateTime` (ไทย `26 ต.ค. 2026 11:17` แทน `26 ต.ค. 26 11:17`); ชื่อโมดูลใน `ModuleGate` ใช้ `modules.<id>.label` (ไทยเท่า `MODULE_LABEL`); ป้ายบทบาทใน AccountMenu ใช้ `roles.<role>.label`; ปุ่มสลับภาษาหน้า login/register ยังไม่ทำ (D-56) | |
 
 ## Handoff notes
 
@@ -1192,3 +1196,10 @@
 - เบี่ยงจากแผน: D-364 … D-366; ไม่มี migration; ไม่เขียนเทสต์ใหม่ (คำสั่งเจ้าของ)
 - WP ถัดไปต้องรู้: ไม่มี WP ถัดไปในสายหลัก; ถ้าจะ seed ส่งมอบ/ปิดโครงการให้ทำกับโครงการแยก (D-365)
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; eslint `seed-erp.ts` + `seed-showcase.ts` ผ่าน; ทดสอบด้วย jest e2e ชั่วคราว (ลบแล้ว) แบบ `PERSISTENCE=memory` + `ENTITLEMENTS=enforce` + ทุกโมดูล ERP: ทุกขั้นสำเร็จ, รันซ้ำ → "already seeded"; `MODULES_ENABLED=workforce` → "erp: skipped"; `project-hub,quotations,contracts` (ไม่มี boq-control) → เปิดได้แค่ project-hub ไม่ล้ม; ยังไม่ได้รัน `npm run db:seed:showcase` บน PostgreSQL จริง
+
+### I-01 — เปลือกแอป บัญชี ล็อกอิน error (HASH)
+- ย้ายข้อความไทยตรงตัวเข้า `shell.*` (เพิ่ม vendorWork, localProject, sync.*, readOnly*, requireSignIn.* ฯลฯ), namespace ใหม่ `auth` (login/register/rules), ใช้ `account`/`roles`/`errors` ที่มีอยู่ — th+en ครบ `check-parity` ผ่าน
+- ไฟล์: `AppLayoutUI.tsx`, `cloud/ui/*` (AccountMenu, ProjectBadge, ReadOnlyBanner, common), `cloud/auth/*` (AuthPages, form-rules, use-rules ใหม่), `modules/ModuleGate.tsx`, `notifications/NotificationBell.tsx`, `store/project-store.ts` + `store/notice-texts.ts`, `cloud/api/errors.ts`, `app/(app)/calc/[id]/page.tsx`
+- ESLint ห้ามไทยครอบไฟล์เหล่านี้แล้ว (ห้ามเติมไทยกลับ); `formatDateTime` ใน `cloud/ui/common.tsx` ยังใช้ `th-TH` (มีเทสต์เดิม; ผู้ใช้ภายนอกคือ I-10)
+- WP ถัดไปต้องรู้: ผู้เรียก `thaiErrorMessage`/`RULES` (cloud/projects, workspaces, revisions, workforce, planning, subcontracting, vendor) ยังเป็นไทยจนกว่า track I ของกลุ่มนั้นเปลี่ยนเป็น `useErrorMessage()`/`useRules()`
+- ตรวจแล้ว: tsc web ผ่าน; eslint ไฟล์ที่แก้ผ่าน; vitest `src/store src/i18n src/features/cloud/ui src/features/cloud/api` ผ่าน; ไม่เขียนเทสต์ใหม่

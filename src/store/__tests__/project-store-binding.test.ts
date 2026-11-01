@@ -2,6 +2,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createProject, PROJECT_SCHEMA_VERSION, type Project } from '@/domain/project';
 import type * as ProjectStoreModule from '../project-store';
 import type * as NoticesModule from '../notices';
+import { readOnlyText } from '../notice-texts';
 
 /** localStorage for node (the store hydrates from it when it is imported). */
 class MemoryStorage implements Storage {
@@ -104,7 +105,7 @@ describe('project store binding', () => {
         s.setBoqOverride('R13', 'qty', 3);
         const after = mod.useProjectStore.getState().project;
         expect(after).toBe(cloudProject);
-        expect(seen).toContain(mod.READ_ONLY_TEXT);
+        expect(seen).toContain(readOnlyText());
         // The sync engine still applies server documents.
         s.replaceProject({ ...cloudProject, journey: { 'project-info': 'done' } });
         expect(mod.useProjectStore.getState().project.journey).toEqual({ 'project-info': 'done' });
