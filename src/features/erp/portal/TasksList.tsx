@@ -38,6 +38,8 @@ function taskText(task: PortalTask, t: TaskTranslator, tEnums: ReturnType<typeof
             return t('tasks.pay_period_ready', { periodKey: s('periodKey') });
         case 'supplier_bill_due':
             return t('tasks.supplier_bill_due', { number: s('number'), supplierName: s('supplierName') });
+        case 'warranty_claim_open':
+            return t('tasks.warranty_claim_open', { number: s('number'), description: s('description') });
         default:
             return task.kind;
     }

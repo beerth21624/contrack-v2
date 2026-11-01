@@ -496,3 +496,22 @@ Permission `tax.reports` (accounting / owner / admin), module `payables`. Read `
 | GET | `/workspaces/:workspaceId/tax-reports/pnd3?month=` · `pnd53` | `TaxReportDto` | `ap.wht_withheld` by `data.form`, by pay date |
 | GET | `/workspaces/:workspaceId/tax-reports/wht-received?month=` | `TaxReportDto` | `ar.wht_withheld_by_customer` by receipt date (base not recorded: `net` 0) |
 | GET | `/workspaces/:workspaceId/tax-reports/summary?month=` | `TaxReportSummaryDto` | totals of the five + `vatPayable` = output − input VAT |
+
+## Handover + warranty (module `handover`; WP-53)
+Read `handover.read`; write `handover.manage`. One handover per project, made once the main contract is `signed` (else 409 `contract_not_signed`; a second one → 409 `handover_exists`). Handover `draft → scheduled → inspected → accepted`; `scheduled | inspected → rejected`; `scheduled | inspected | rejected → scheduled` (re-schedule); another move → 409 `invalid_transition`. Schedule → project `handover` (`ProjectLifecycle`). Accept (one transaction): number `HO` (issue date = handover date), `MainContracts.complete(contract, handoverDate)` (milestones with trigger `handover` become claimable; billing's retention sweep announces the release due at completion), project `warranty`, warranty `start = handoverDate`, `end = addMonths(start, terms.warrantyMonths)`. Claims: number `WC` when opened (needs the warranty, else 409 `no_warranty`); `open → assigned → in_progress → resolved → closed`, `assigned → resolved`, `resolved → in_progress`, `open | assigned → rejected`; close with `costAmount > 0` → cost ledger `actual`, `other`, source `warranty_claim`, no cost code, dated the closing day; `warranty.claim_opened` to the `handover.manage` members. Daily sweep `handover.warranty`: `warranty.expiring` once 30 days (or less) before the end date; past the end → `expired`. Files: purposes `handover_document`, `as_built` (documents), `warranty_photo` (claim photos), uploaded by the caller. Audited `handover` (`create|update|schedule|inspect|accept|reject|add_document`) and `warranty_claim` (`create|update|assign|start|resolve|close|reject`).
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/projects/:projectId/handover` | → `ProjectHandoverDto` | `{handover \| null, contract \| null, canCreate}` |
+| POST | `/projects/:projectId/handover` | `CreateHandoverRequest` `{language?, scheduledDate?, attendees?, checklist?}` → `HandoverDto` (201) | no checklist → the standard one (bilingual items) |
+| PATCH | `/handovers/:handoverId` | `PatchHandoverRequest` → `HandoverDto` | content while not accepted; `removeDocumentIds` in any status |
+| POST | `/handovers/:handoverId/schedule` | `{scheduledDate, attendees?}` → `HandoverDto` (200) | |
+| POST | `/handovers/:handoverId/inspect` | `{inspectionDate?, checklist?, attendees?, defectsNote?}` → `HandoverDto` (200) | date defaults to today |
+| POST | `/handovers/:handoverId/accept` | `{handoverDate?, acceptedByName}` → `HandoverDto` (200) | date defaults to the inspection date, else today |
+| POST | `/handovers/:handoverId/reject` | `{defectsNote?}` → `HandoverDto` (200) | |
+| POST | `/handovers/:handoverId/documents` | `{kind, fileId, title?}` → `HandoverDto` (201) | `kind` as_built / manual / warranty_card / test_report / other |
+| GET | `/projects/:projectId/warranty` | → `ProjectWarrantyDto` | `{warranty \| null}` with `daysLeft`, `openClaimCount` |
+| GET · POST | `/projects/:projectId/warranty-claims?status=` | `CreateWarrantyClaimRequest` → `WarrantyClaimDto` (201) | list → `WarrantyClaimListDto`, newest reported first |
+| PATCH | `/warranty-claims/:claimId` | `PatchWarrantyClaimRequest` → `WarrantyClaimDto` | not closed / rejected |
+| POST | `/warranty-claims/:claimId/assign` | `{assigneeUserId?, assigneeSupplierId?, dueDate?}` → `WarrantyClaimDto` (200) | member of the workspace / supplier (404 otherwise); none → 422 `assignee_required` |
+| POST | `/warranty-claims/:claimId/start` · `resolve` · `close` · `reject` | resolve / close `{resolutionNote?, costAmount?}`, reject `{resolutionNote?}` → `WarrantyClaimDto` (200) | |

@@ -59,7 +59,15 @@
     "build": "คำนวณงวด",
     "pay": "จ่ายแล้ว",
     "create_advance": "บันทึกเบิกล่วงหน้า",
-    "write_off": "ตัดหนี้สูญ"
+    "write_off": "ตัดหนี้สูญ",
+    "schedule": "นัดส่งมอบ",
+    "inspect": "ตรวจรับงาน",
+    "accept": "ลูกค้ารับมอบ",
+    "reject": "ไม่รับมอบ/ปฏิเสธ",
+    "add_document": "แนบเอกสาร",
+    "assign": "มอบหมาย",
+    "start": "เริ่มดำเนินการ",
+    "resolve": "แก้ไขเสร็จ"
   },
   "entities": {
     "approval_request": "คำขออนุมัติ",
@@ -90,6 +98,8 @@
     "cost_forecast": "ประมาณการต้นทุน",
     "cash_settings": "ตั้งค่ากระแสเงินสด",
     "supplier_bill": "บิลผู้ขาย",
-    "payment_run": "รอบจ่ายเงิน"
+    "payment_run": "รอบจ่ายเงิน",
+    "handover": "ใบส่งมอบงาน",
+    "warranty_claim": "เคลมประกัน"
   }
 }

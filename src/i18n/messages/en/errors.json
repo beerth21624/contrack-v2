@@ -152,6 +152,9 @@
     "match_note_required": "The bill does not match the purchase order or goods received. Add a note before approving",
     "supplier_required": "This subcontractor is not linked to the supplier register. Pick a supplier",
     "bill_not_payable": "This bill cannot go into a payment run: it must be approved and not in another run",
-    "nothing_to_pay": "Nothing is left to pay on this bill"
+    "nothing_to_pay": "Nothing is left to pay on this bill",
+    "handover_exists": "This project already has a handover",
+    "no_warranty": "This project is not under warranty yet (the customer has not accepted the handover)",
+    "assignee_required": "Choose who handles it (a member or a supplier)"
   }
 }

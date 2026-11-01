@@ -35,6 +35,7 @@ import { SiteDiaryModule } from './modules/site-diary/site-diary.module';
 import { LabourModule } from './modules/labour/labour.module';
 import { JobCostModule } from './modules/job-cost/job-cost.module';
 import { PayablesModule } from './modules/payables/payables.module';
+import { HandoverModule } from './modules/handover/handover.module';
 
 @Module({})
 export class AppModule {
@@ -65,6 +66,7 @@ export class AppModule {
                 LabourModule,
                 JobCostModule,
                 PayablesModule,
+                HandoverModule,
             ],
             controllers: [HealthController],
             providers: [

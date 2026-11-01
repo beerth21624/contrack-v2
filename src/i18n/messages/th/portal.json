@@ -16,7 +16,8 @@
     "purchase_order_to_receive": "ใบสั่งซื้อ {number} จาก {supplierName} รอรับของ",
     "site_report_missing": "ยังไม่ได้ส่งรายงานประจำวันของวันที่ {date}",
     "pay_period_ready": "งวดค่าแรง {periodKey} อนุมัติแล้ว รอจ่าย",
-    "supplier_bill_due": "บิลผู้ขาย {number} {supplierName} ใกล้ครบกำหนดจ่าย"
+    "supplier_bill_due": "บิลผู้ขาย {number} {supplierName} ใกล้ครบกำหนดจ่าย",
+    "warranty_claim_open": "เคลมประกัน {number} รอดำเนินการ: {description}"
   },
   "risky": {
     "title": "โครงการที่ต้องจับตา",

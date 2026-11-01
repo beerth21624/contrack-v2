@@ -59,7 +59,15 @@
     "build": "Pay period built",
     "pay": "Paid",
     "create_advance": "Wage advance recorded",
-    "write_off": "Written off"
+    "write_off": "Written off",
+    "schedule": "Handover scheduled",
+    "inspect": "Inspected",
+    "accept": "Accepted by customer",
+    "reject": "Rejected",
+    "add_document": "Document attached",
+    "assign": "Assigned",
+    "start": "Started",
+    "resolve": "Resolved"
   },
   "entities": {
     "approval_request": "Approval request",
@@ -90,6 +98,8 @@
     "cost_forecast": "Cost forecast",
     "cash_settings": "Cash settings",
     "supplier_bill": "Supplier bill",
-    "payment_run": "Payment run"
+    "payment_run": "Payment run",
+    "handover": "Handover",
+    "warranty_claim": "Warranty claim"
   }
 }
