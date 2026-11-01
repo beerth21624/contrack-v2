@@ -80,7 +80,7 @@
 | I-05 | export (BOQ print/xlsx) | done | 143319f | ไม่มี migration; namespace `export` ใหม่ (`buttons/print/sheet/summary/schedule`); ESLint glob เพิ่ม; D-375…D-377 |
 | I-06 | calculators กลุ่ม 1 | done | b524ea7 | ไม่มี migration; namespace `calculators` ใหม่ (th+en 861 ข้อความ); ESLint glob เพิ่ม; D-378…D-380 |
 | I-07 | calculators กลุ่ม 2 | done | 9a0b6d0 | ไม่มี migration; namespace `calculators` เพิ่มกลุ่ม `roofSlab…waterPipe` + `common.*` เพิ่ม; ESLint glob เพิ่ม; D-381, D-382 |
-| I-08 | calculators กลุ่ม 3 + overlay domain | done | HASH | ไม่มี migration; `shared/PickListPage` ย้ายข้อความ (`calculators.pickList.*`); overlay: `domain/journey/levels.en.ts`, `requirements.en.ts`, `domain/calculators/sections.en.ts`; BOQ page ใช้ `template.v5.en` ผ่าน `useBoqText`; ยกเลิกเงื่อนไขปุ่มภาษา (D-16); D-383…D-387 |
+| I-08 | calculators กลุ่ม 3 + overlay domain | done | 1673679 | ไม่มี migration; `shared/PickListPage` ย้ายข้อความ (`calculators.pickList.*`); overlay: `domain/journey/levels.en.ts`, `requirements.en.ts`, `domain/calculators/sections.en.ts`; BOQ page ใช้ `template.v5.en` ผ่าน `useBoqText`; ยกเลิกเงื่อนไขปุ่มภาษา (D-16); D-383…D-387 |
 | I-09 | planning | todo | | |
 | I-10 | cloud ที่เหลือ | todo | | |
 | I-11 | workforce | todo | | |
@@ -1251,7 +1251,7 @@
 - WP ถัดไป (I-08) ต้องรู้: เหลือ `shared/`, `pages.ts`, `useCalculator.ts` (ไม่มีไทยที่เป็นข้อความ UI) + overlay domain (ชื่อ/ตัวเลือก/หน่วย/หัวตารางที่มาจาก domain ยังเป็นไทย, D-382); หลัง I-08 เปิดปุ่มภาษาทั่วไป
 - ตรวจแล้ว: tsc web, eslint ไฟล์ที่แก้, `check-parity`, vitest `src/i18n src/features/calculators` ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์; ไม่เขียนเทสต์ใหม่
 
-### I-08 — calculators กลุ่ม 3 + overlay domain (HASH)
+### I-08 — calculators กลุ่ม 3 + overlay domain (1673679)
 - ย้ายข้อความของ `shared/PickListPage.tsx` เข้า `calculators.pickList.*` (th ตรงตัว + en); เพิ่ม overlay EN: journey (ชื่อ phase/level/plan hint/รายการที่ยังต้องกรอก), หน้า BOQ ใช้ `template.v5.en`, ค่าตัวเลือก calculator บางส่วน; เปิดปุ่มภาษาทั่วไป
 - WP ถัดไป (I-09…I-14) ต้องรู้: ใช้ `useBoqText()` / `useLevelText()` / `dt()`/`du()` ต่อได้; ช่องว่างที่รู้ใน D-386 (ตัวเลือก domain บางอย่างยังไทยตอนสลับ en); เทสต์ไม่เพิ่ม (ลบเทสต์ `suggestionText` เดิมเพราะฟังก์ชันถูกย้าย)
 - ตรวจแล้ว: tsc web, eslint ไฟล์ที่แก้, vitest `src/i18n src/domain/journey src/components/sheet src/features/journey src/features/calculators/shared` ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์
