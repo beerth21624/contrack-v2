@@ -6,11 +6,16 @@
 import { useCallback, useState } from 'react';
 import type { App } from 'antd';
 import { useQueryClient } from '@tanstack/react-query';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { assignmentsRootKey, workforceApi, workforceConflictMessage } from '@/features/cloud/api/workforce';
+import { workforceText } from '../text';
 import { runSaveSteps, saveFailureLines, type SaveRun, type SaveStep } from './suggest-view';
 
-export const writeError = (e: unknown): string => workforceConflictMessage(e) ?? thaiErrorMessage(e);
+/** The message for a refused write: the 409 reason when there is one, else the general message. */
+export function useWriteError(): (e: unknown) => string {
+    const errorMessage = useErrorMessage();
+    return (e: unknown) => workforceConflictMessage(e) ?? errorMessage(e);
+}
 
 export function useSaveSteps(workspaceId: string) {
     const qc = useQueryClient();
@@ -30,7 +35,10 @@ export function useSaveSteps(workspaceId: string) {
 }
 
 /** The dialog after a run stopped: which change failed, why, and what was saved before it. */
-export function showSaveFailure(modal: ReturnType<typeof App.useApp>['modal'], run: SaveRun, total: number, line: (step: SaveStep) => string): void {
+export function showSaveFailure(
+    modal: ReturnType<typeof App.useApp>['modal'], run: SaveRun, total: number, line: (step: SaveStep) => string,
+    writeError: (e: unknown) => string,
+): void {
     if (run.failed === undefined) return;
     const t = saveFailureLines(run, total);
     modal.error({
@@ -42,6 +50,6 @@ export function showSaveFailure(modal: ReturnType<typeof App.useApp>['modal'], r
                 <div className="text-gray-600">{t.saved}</div>
             </div>
         ),
-        okText: 'ตกลง',
+        okText: workforceText()('board.ok'),
     });
 }

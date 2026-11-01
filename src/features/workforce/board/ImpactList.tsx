@@ -3,6 +3,7 @@
 // ─── Before → after lines of a what-if (W3): a suggestion card and the bar panel's live preview ───
 // The lines come from suggest-view.ts (impactLines); this only lays them out. Stacked when `compact` (the drawer) or
 // on a phone; label | numbers side by side from `sm` otherwise.
+import { useTranslations } from 'next-intl';
 import type { ImpactLine, ImpactTone } from './suggest-view';
 
 const TONE: Record<ImpactTone, string> = {
@@ -12,7 +13,8 @@ const TONE: Record<ImpactTone, string> = {
 };
 
 export function ImpactList({ lines, compact = false }: { lines: readonly ImpactLine[]; compact?: boolean }) {
-    if (lines.length === 0) return <div className="text-[13px] text-gray-500">ตัวเลขในช่วงที่แสดงไม่เปลี่ยน</div>;
+    const t = useTranslations('workforce');
+    if (lines.length === 0) return <div className="text-[13px] text-gray-500">{t('board.impact.empty')}</div>;
     return (
         <dl className="flex flex-col gap-1.5 m-0 min-w-0">
             {lines.map(l => (
@@ -20,7 +22,7 @@ export function ImpactList({ lines, compact = false }: { lines: readonly ImpactL
                     <dt className={`text-gray-600 min-w-0 break-words ${compact ? '' : 'sm:w-[220px] sm:shrink-0'}`}>{l.label}</dt>
                     <dd className="m-0 flex flex-wrap items-baseline gap-x-1.5 min-w-0 tabular-nums">
                         <span className="text-gray-500">{l.before}</span>
-                        <span aria-label="เป็น" className="text-gray-400">→</span>
+                        <span aria-label={t('board.impact.to')} className="text-gray-400">→</span>
                         <span className="text-gray-900 font-medium">{l.after}</span>
                         {l.change !== '' && <span className={`ml-1 ${TONE[l.tone]}`}>{l.change}</span>}
                     </dd>

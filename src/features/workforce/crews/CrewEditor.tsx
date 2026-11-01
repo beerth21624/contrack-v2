@@ -3,16 +3,20 @@
 // ─── Add / edit a crew: a short "quick add" dialog (no names needed) and the full drawer (leader, members, note) ───
 // Both share the same fields and the live daily-cost preview; the quick dialog can open the full drawer with what was
 // typed so far.
+import { useTranslations } from 'next-intl';
 import { App, Button, Drawer, Form, Input, InputNumber, Modal, Radio, Select, type FormInstance, type SelectProps } from 'antd';
 import {
-    MAX_CREW_HEADCOUNT, WORKFORCE_TRADE_LABEL, type CrewDto, type PersonDto, type RateCardDto,
+    MAX_CREW_HEADCOUNT, type CrewDto, type PersonDto, type RateCardDto,
 } from '@/shared/contract';
 import { useCreateCrew, useUpdateCrew, workforceConflict } from '@/features/cloud/api/workforce';
 import {
     EMPTY_CREW_FORM, crewCostPreview, crewFormToRequest, crewToForm, crewUpdate, peopleForTrade, personLabel,
     type CrewFormValues,
 } from './logic';
-import { RULES, TRADE_OPTIONS, baht, bahtFormatter, bahtParser, rateCardLabel, writeErrorMessage } from './shared';
+import { tradeNameOf } from '../text';
+import {
+    baht, bahtFormatter, bahtParser, rateCardLabel, useWorkforceOptions, useWorkforceRules, useWriteErrorMessage,
+} from './shared';
 
 /** What the editor is open for: nothing, a quick add, or the full form (new with values carried over, or a crew). */
 export type CrewEditorTarget =
@@ -59,6 +63,8 @@ export function CrewEditor({ workspaceId, target, seq, people, rateCards, onChan
 /** Saves the form as a new crew or as changes to `crew`; resolves true when saved. */
 function useSaveCrew(workspaceId: string, form: FormInstance<CrewFormValues>, crew: CrewDto | undefined) {
     const { message } = App.useApp();
+    const t = useTranslations('workforce');
+    const writeErrorMessage = useWriteErrorMessage();
     const create = useCreateCrew(workspaceId);
     const update = useUpdateCrew(workspaceId);
     const save = async (): Promise<boolean> => {
@@ -74,10 +80,10 @@ function useSaveCrew(workspaceId: string, form: FormInstance<CrewFormValues>, cr
         try {
             if (crew === undefined) {
                 const saved = await create.mutateAsync(req);
-                void message.success(`เพิ่ม "${saved.name}" แล้ว`);
+                void message.success(t('shared.addedNamed', { name: saved.name }));
             } else {
                 await update.mutateAsync({ crewId: crew.id, ...crewUpdate(req, crew.wagesHidden) });
-                void message.success('บันทึกแล้ว');
+                void message.success(t('shared.saved'));
             }
             return true;
         } catch (e) {
@@ -94,19 +100,21 @@ function QuickCrewModal({ workspaceId, open, initial, rateCards, onClose, onExpa
     workspaceId: string; open: boolean; initial: CrewFormValues; rateCards: readonly RateCardDto[];
     onClose: () => void; onExpand: (values: CrewFormValues) => void;
 }) {
+    const t = useTranslations('workforce');
+    const tc = useTranslations('common');
     const [form] = Form.useForm<CrewFormValues>();
     const { save, saving } = useSaveCrew(workspaceId, form, undefined);
     return (
-        <Modal open={open} onCancel={onClose} destroyOnHidden title="เพิ่มทีม" okText="เพิ่มทีม" cancelText="ยกเลิก"
+        <Modal open={open} onCancel={onClose} destroyOnHidden title={t('crews.editor.addTitle')} okText={t('crews.editor.addOk')} cancelText={tc('cancel')}
             confirmLoading={saving} width={520}
             onOk={() => { void save().then(ok => { if (ok) onClose(); }); }}>
-            <p className="text-[13px] text-gray-600 mb-4">ไม่ต้องกรอกรายคน กรอกแค่ชื่อทีม สายงาน และจำนวนคนก็พอ</p>
+            <p className="text-[13px] text-gray-600 mb-4">{t('crews.editor.quickHint')}</p>
             <Form form={form} layout="vertical" initialValues={initial}
                 onFinish={() => { void save().then(ok => { if (ok) onClose(); }); }}>
                 <CoreFields form={form} rateCards={rateCards} showRates />
             </Form>
             <Button type="link" className="!px-0" onClick={() => onExpand({ ...initial, ...(form.getFieldsValue(true) as Partial<CrewFormValues>) })}>
-                ระบุหัวหน้าทีมและรายชื่อสมาชิก
+                {t('crews.editor.expand')}
             </Button>
         </Modal>
     );
@@ -116,6 +124,9 @@ function CrewDrawer({ workspaceId, open, initial, crew, people, rateCards, onClo
     workspaceId: string; open: boolean; initial: CrewFormValues; crew: CrewDto | undefined;
     people: readonly PersonDto[]; rateCards: readonly RateCardDto[]; onClose: () => void;
 }) {
+    const t = useTranslations('workforce');
+    const tc = useTranslations('common');
+    const RULES = useWorkforceRules();
     const [form] = Form.useForm<CrewFormValues>();
     const { save, saving } = useSaveCrew(workspaceId, form, crew);
     const trade = Form.useWatch('trade', form);
@@ -124,32 +135,32 @@ function CrewDrawer({ workspaceId, open, initial, crew, people, rateCards, onClo
     const options: SelectProps['options'] = groups.inTrade.length === 0
         ? groups.others.map(toOption)
         : [
-            { label: trade === undefined ? 'สายงานนี้' : `สาย${WORKFORCE_TRADE_LABEL[trade]}`, options: groups.inTrade.map(toOption) },
-            { label: 'สายงานอื่น', options: groups.others.map(toOption) },
+            { label: trade === undefined ? t('shared.tradeGroupThis') : t('crews.editor.groupTrade', { trade: tradeNameOf(t, trade) }), options: groups.inTrade.map(toOption) },
+            { label: t('shared.tradeGroupOther'), options: groups.others.map(toOption) },
         ];
-    const noPeople = <span className="text-[13px] text-gray-500">ยังไม่มีบุคลากร เพิ่มได้ที่แท็บบุคลากร</span>;
+    const noPeople = <span className="text-[13px] text-gray-500">{t('crews.editor.noPeople')}</span>;
     const submit = () => { void save().then(ok => { if (ok) onClose(); }); };
 
     return (
         <Drawer open={open} onClose={onClose} destroyOnHidden size="min(520px, 100vw)"
-            title={crew === undefined ? 'เพิ่มทีม' : `แก้ไข ${crew.name}`}
+            title={crew === undefined ? t('crews.editor.addTitle') : t('shared.editNamed', { name: crew.name })}
             footer={(
                 <div className="flex justify-end gap-2">
-                    <Button onClick={onClose}>ยกเลิก</Button>
-                    <Button type="primary" loading={saving} onClick={submit}>{crew === undefined ? 'เพิ่มทีม' : 'บันทึก'}</Button>
+                    <Button onClick={onClose}>{tc('cancel')}</Button>
+                    <Button type="primary" loading={saving} onClick={submit}>{crew === undefined ? t('crews.editor.addOk') : tc('save')}</Button>
                 </div>
             )}>
             <Form form={form} layout="vertical" initialValues={initial} onFinish={submit}>
                 <CoreFields form={form} rateCards={rateCards} showRates={crew?.wagesHidden !== true} />
-                <Form.Item name="leaderId" label="หัวหน้าทีม">
-                    <Select allowClear showSearch={{ optionFilterProp: 'label' }} placeholder="เลือกจากบุคลากร" options={options}
+                <Form.Item name="leaderId" label={t('crews.editor.leader')}>
+                    <Select allowClear showSearch={{ optionFilterProp: 'label' }} placeholder={t('crews.editor.leaderPlaceholder')} options={options}
                         notFoundContent={noPeople} />
                 </Form.Item>
-                <Form.Item name="memberIds" label="สมาชิก" extra={trade === undefined ? undefined : 'คนในสายงานนี้ขึ้นก่อน'}>
-                    <Select mode="multiple" allowClear showSearch={{ optionFilterProp: 'label' }} placeholder="ไม่ระบุก็ได้"
+                <Form.Item name="memberIds" label={t('crews.editor.members')} extra={trade === undefined ? undefined : t('crews.editor.membersExtra')}>
+                    <Select mode="multiple" allowClear showSearch={{ optionFilterProp: 'label' }} placeholder={t('crews.editor.membersPlaceholder')}
                         options={options} notFoundContent={noPeople} maxTagCount="responsive" />
                 </Form.Item>
-                <Form.Item name="note" label="หมายเหตุ" rules={RULES.note}>
+                <Form.Item name="note" label={t('crews.editor.note')} rules={RULES.note}>
                     <Input.TextArea autoSize={{ minRows: 2, maxRows: 5 }} />
                 </Form.Item>
             </Form>
@@ -159,6 +170,9 @@ function CrewDrawer({ workspaceId, open, initial, crew, people, rateCards, onClo
 
 /** Name, trade, counts and the rate (with its live preview): everything a quick add needs. */
 function CoreFields({ form, rateCards, showRates }: { form: FormInstance<CrewFormValues>; rateCards: readonly RateCardDto[]; showRates: boolean }) {
+    const t = useTranslations('workforce');
+    const options = useWorkforceOptions();
+    const RULES = useWorkforceRules();
     const skilledCount = Form.useWatch('skilledCount', form);
     const labourerCount = Form.useWatch('labourerCount', form);
     const source = Form.useWatch('rateSource', form);
@@ -171,53 +185,56 @@ function CoreFields({ form, rateCards, showRates }: { form: FormInstance<CrewFor
 
     return (
         <>
-            <Form.Item name="name" label="ชื่อทีม" rules={RULES.crewName}>
-                <Input placeholder="เช่น ทีมก่อฉาบช่างแดง" autoFocus />
+            <Form.Item name="name" label={t('crews.editor.name')} rules={RULES.crewName}>
+                <Input placeholder={t('crews.editor.namePlaceholder')} autoFocus />
             </Form.Item>
-            <Form.Item name="trade" label="สายงาน" rules={RULES.trade}>
-                <Select showSearch={{ optionFilterProp: 'label' }} placeholder="เลือกสายงาน" options={TRADE_OPTIONS} />
+            <Form.Item name="trade" label={t('crews.editor.trade')} rules={RULES.trade}>
+                <Select showSearch={{ optionFilterProp: 'label' }} placeholder={t('crews.editor.tradePlaceholder')} options={options.trades} />
             </Form.Item>
             <div className="grid grid-cols-2 gap-3">
-                <Form.Item name="skilledCount" label="ช่าง (คน)">
+                <Form.Item name="skilledCount" label={t('crews.editor.skilled')}>
                     <InputNumber min={0} max={MAX_CREW_HEADCOUNT} precision={0} className="!w-full" />
                 </Form.Item>
-                <Form.Item name="labourerCount" label="คนงาน (คน)">
+                <Form.Item name="labourerCount" label={t('crews.editor.labourers')}>
                     <InputNumber min={0} max={MAX_CREW_HEADCOUNT} precision={0} className="!w-full" />
                 </Form.Item>
             </div>
             {showRates && (
                 <>
-                    <Form.Item name="rateSource" label="ค่าแรงทีม">
+                    <Form.Item name="rateSource" label={t('crews.editor.rateSource')}>
                         <Radio.Group optionType="button" options={[
-                            { value: 'card', label: 'ชุดค่าแรงของบริษัท' },
-                            { value: 'lump', label: 'เหมาต่อวัน' },
+                            { value: 'card', label: t('crews.editor.sourceCard') },
+                            { value: 'lump', label: t('crews.editor.sourceLump') },
                         ]} />
                     </Form.Item>
                     {source === 'lump'
                         ? (
                             <Form.Item name="lumpSum" rules={RULES.wage} className="!-mt-2">
-                                <InputNumber<number> min={0} precision={0} className="!w-full" suffix="บาท/วัน" placeholder="เช่น 3,500"
-                                    formatter={bahtFormatter} parser={bahtParser} aria-label="ค่าแรงเหมาต่อวัน" />
+                                <InputNumber<number> min={0} precision={0} className="!w-full" suffix={t('crews.editor.lumpSuffix')} placeholder={t('crews.editor.lumpPlaceholder')}
+                                    formatter={bahtFormatter} parser={bahtParser} aria-label={t('crews.editor.lumpAria')} />
                             </Form.Item>
                         )
                         : (
                             <Form.Item name="rateCardId" className="!-mt-2">
-                                <Select allowClear placeholder="เลือกชุดค่าแรง" aria-label="ชุดค่าแรงของบริษัท"
-                                    options={rateCards.map(c => ({ value: c.id, label: rateCardLabel(c) }))}
-                                    notFoundContent={<span className="text-[13px] text-gray-500">ยังไม่มีชุดค่าแรงของบริษัท</span>} />
+                                <Select allowClear placeholder={t('crews.editor.cardPlaceholder')} aria-label={t('crews.editor.sourceCard')}
+                                    options={rateCards.map(c => ({ value: c.id, label: rateCardLabel(t, c) }))}
+                                    notFoundContent={<span className="text-[13px] text-gray-500">{t('crews.editor.noCards')}</span>} />
                             </Form.Item>
                         )}
                     <div className="-mt-2 mb-4 text-[13px] tabular-nums" aria-live="polite">
                         {preview === undefined
-                            ? <span className="text-gray-400">ค่าแรงทีมต่อวัน —</span>
+                            ? <span className="text-gray-400">{t('crews.editor.costPerDay')} —</span>
                             : (
                                 <>
-                                    <span className="text-gray-600">ค่าแรงทีมต่อวัน </span>
-                                    <span className="font-semibold text-gray-900">{baht(preview.total)} บาท</span>
+                                    <span className="text-gray-600">{t('crews.editor.costPerDay')} </span>
+                                    <span className="font-semibold text-gray-900">{t('shared.bahtAmount', { amount: baht(preview.total) })}</span>
                                     {preview.formula !== undefined && (
                                         <span className="text-gray-400">
-                                            {` (ช่าง ${String(preview.formula.skilled)} × ${baht(preview.formula.skilledRate)}`}
-                                            {` + คนงาน ${String(preview.formula.labourers)} × ${baht(preview.formula.labourerRate)})`}
+                                            {' '}
+                                            {t('crews.editor.formula', {
+                                                skilled: String(preview.formula.skilled), skilledRate: baht(preview.formula.skilledRate),
+                                                labourers: String(preview.formula.labourers), labourerRate: baht(preview.formula.labourerRate),
+                                            })}
                                         </span>
                                     )}
                                 </>

@@ -5,10 +5,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App } from 'antd';
 import { describe, expect, it } from 'vitest';
 import type { CrewDto, PersonDto } from '@/shared/contract';
-import { CrewStatusCell, CrewsTab, FIRST_CREW_HINT } from '../CrewsTab';
+import th from '@/i18n/messages/th/workforce.json';
+import { CrewStatusCell, CrewsTab } from '../CrewsTab';
 import { PeopleTab } from '../PeopleTab';
 import { ModuleOff } from '../CrewsPage';
 import type { PlaceNames } from '../logic';
+import { withIntl } from '../../test-intl';
 
 const T = '2026-10-01T00:00:00.000Z';
 const W = '00000000-0000-4000-8000-000000000001';
@@ -17,7 +19,7 @@ const TODAY = '2026-10-26';
 const names: PlaceNames = { project: () => 'บ้านคุณวิชัย', task: () => 'งานฐานราก' };
 
 const render = (el: ReactElement): string =>
-    renderToStaticMarkup(h(QueryClientProvider, { client: new QueryClient() }, h(App, null, el)));
+    renderToStaticMarkup(withIntl(h(QueryClientProvider, { client: new QueryClient() }, h(App, null, el))));
 
 const leader: PersonDto = {
     id: uuid(101), workspaceId: W, name: 'พงษ์ศักดิ์', nickname: 'พงษ์', phone: '081-234-5678', role: 'foreman',
@@ -52,7 +54,7 @@ describe('CrewStatusCell', () => {
 describe('CrewsTab', () => {
     it('first use: a manager gets the hint and one button', () => {
         const html = render(h(CrewsTab, crewsProps({ crews: { data: [], isLoading: false, error: null } })));
-        expect(html).toContain(FIRST_CREW_HINT);
+        expect(html).toContain(th.crews.empty.hint);
         expect(html).toContain('เพิ่มทีมแรก');
     });
     it('first use: a viewer gets no button', () => {

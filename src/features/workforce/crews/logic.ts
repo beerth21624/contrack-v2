@@ -1,11 +1,11 @@
 // ─── Pure helpers of the ทีมช่างและบุคลากร page: crew status today, daily-cost preview, filters, form ↔ request ───
 // No React, no API: everything here is unit tested (./__tests__/logic.test.ts).
 import {
-    WORKFORCE_TRADE_LABEL,
     type CreateCrewRequest, type CreatePersonRequest, type CrewAssignmentDto, type CrewDto, type EmploymentType,
     type PersonDto, type PersonRole, type RateCardDto, type UpdateCrewRequest, type UpdatePersonRequest,
     type WorkforceTradeId,
 } from '@/shared/contract';
+import { tradeNameOf, workforceText } from '../text';
 
 // ─── Dates ───
 
@@ -58,9 +58,10 @@ export function crewStatusOn(crewId: string, assignments: readonly CrewAssignmen
 
 /** One line for a busy place: "บ้านคุณวิชัย · งานฐานราก" and "ถึง 30/10" (or "วันนี้วันสุดท้าย"). */
 export function placeLines(place: CrewPlace, today: string): { where: string; until: string } {
+    const t = workforceText();
     return {
         where: `${place.projectName} · ${place.taskName}`,
-        until: place.end === today ? 'วันนี้วันสุดท้าย' : `ถึง ${dayMonth(place.end)}`,
+        until: place.end === today ? t('crews.status.lastDay') : t('crews.status.until', { date: dayMonth(place.end) }),
     };
 }
 
@@ -101,11 +102,11 @@ export function crewCostPreview(input: CostInput): CostPreview | undefined {
 
 // ─── Labels ───
 
-export const tradeLabel = (t: WorkforceTradeId): string => WORKFORCE_TRADE_LABEL[t];
+export const tradeLabel = (id: WorkforceTradeId): string => tradeNameOf(workforceText(), id);
 
 /** "ช่าง 3 · คนงาน 2". */
 export function headcountLabel(crew: Pick<CrewDto, 'skilledCount' | 'labourerCount'>): string {
-    return `ช่าง ${String(crew.skilledCount)} · คนงาน ${String(crew.labourerCount)}`;
+    return workforceText()('shared.headcount', { skilled: String(crew.skilledCount), labourers: String(crew.labourerCount) });
 }
 
 /** "สมชาย (ชาย)" when there is a nickname. */

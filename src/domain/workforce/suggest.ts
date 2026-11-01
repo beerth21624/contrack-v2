@@ -26,6 +26,7 @@ import { isoToSerial, serialToIso } from '../planning/calendar';
 import type { TaskLag } from '../../shared/contract/workforce';
 import { buildCrewBoard, thaiDay, thaiDayRange, type BoardAssignment, type BoardWindow } from './board';
 import { crewBusy } from './assignments';
+import { suggestWords } from './suggest-words';
 import {
     applyMoves, compareScenarios, readyDay, scenarioMetrics,
     type ChangedAssignment, type Move, type ProjectDelta, type ScenarioCrew, type WhatIf,
@@ -60,6 +61,8 @@ export interface SuggestInput<A extends BoardAssignment = BoardAssignment> {
     dismissed?: ReadonlySet<string>;
     /** Most suggestions returned (default 3). */
     limit?: number;
+    /** The language of the lines written (default 'th'); the names given in `projectName` / `taskName` must match it. */
+    locale?: string;
 }
 
 export interface Suggestion<A extends BoardAssignment = BoardAssignment> {
@@ -100,18 +103,7 @@ export interface ChangeNames {
     taskName(id: string): string;
 }
 
-// ─── Thai wording ───
-
-/** "งานฉาบปูน" (the plan names already start with งาน; a bare name gets it). */
-function job(name: string): string {
-    return name.startsWith('งาน') ? name : `งาน${name}`;
-}
-
-/** "ทีมก่อฉาบช่างดำ" (a crew name without ทีม gets it). */
-function team(name: string): string {
-    if (name.startsWith('ทีม')) return name;
-    return /^[฀-๿]/.test(name) ? `ทีม${name}` : `ทีม ${name}`;
-}
+// ─── Wording (suggest-words.ts: Thai by default, English on request) ───
 
 /** "฿1,200" (of the absolute value). */
 function baht(n: number): string {
@@ -119,43 +111,45 @@ function baht(n: number): string {
 }
 
 /** "12 → 6 ธ.ค." · "30 พ.ย. → 6 ธ.ค." · "30 ธ.ค. 26 → 2 ม.ค. 27". */
-function dayChange(from: string, to: string): string {
-    if (from.slice(0, 4) !== to.slice(0, 4)) return `${thaiDay(from, true)} → ${thaiDay(to, true)}`;
-    if (from.slice(0, 7) !== to.slice(0, 7)) return `${thaiDay(from)} → ${thaiDay(to)}`;
-    return `${String(Number(from.slice(8, 10)))} → ${thaiDay(to)}`;
+function dayChange(from: string, to: string, locale: string): string {
+    if (from.slice(0, 4) !== to.slice(0, 4)) return `${thaiDay(from, true, locale)} → ${thaiDay(to, true, locale)}`;
+    if (from.slice(0, 7) !== to.slice(0, 7)) return `${thaiDay(from, false, locale)} → ${thaiDay(to, false, locale)}`;
+    return `${String(Number(from.slice(8, 10)))} → ${thaiDay(to, false, locale)}`;
 }
 
 /** "บ้านคุณสมศรีเสร็จเร็วขึ้น 6 วัน (12 → 6 ธ.ค.)"; null when the finish did not move. */
-function finishReason(p: ProjectDelta, projectName: (id: string) => string): string | null {
+function finishReason(p: ProjectDelta, projectName: (id: string) => string, locale: string): string | null {
     if (p.days === 0 || p.finishBefore === null || p.finishAfter === null) return null;
-    const how = p.days < 0 ? 'เสร็จเร็วขึ้น' : 'เสร็จช้าลง';
-    return `${projectName(p.projectId)}${how} ${String(Math.abs(p.days))} วัน (${dayChange(p.finishBefore, p.finishAfter)})`;
+    return suggestWords(locale).finishMoved(
+        projectName(p.projectId), p.days < 0, Math.abs(p.days), dayChange(p.finishBefore, p.finishAfter, locale),
+    );
 }
 
 /**
- * One Thai line per change for the "สิ่งที่จะเปลี่ยน" list: "งานฉาบปูน บ้านคุณวิชัย: ทีมก่อฉาบช่างแดง → ทีมก่อฉาบช่างดำ",
+ * One line per change for the "สิ่งที่จะเปลี่ยน" list: "งานฉาบปูน บ้านคุณวิชัย: ทีมก่อฉาบช่างแดง → ทีมก่อฉาบช่างดำ",
  * "งานทาสีรองพื้น บ้านคุณวิชัย: เลื่อนไป 3 วัน (5–12 พ.ย.)", "งานก่ออิฐ บ้านคุณสมศรี: เหลือ 20–31 ต.ค. (เดิมถึง 3 พ.ย.)",
- * "เพิ่ม ทีมก่อฉาบช่างดำ ช่วยงานก่ออิฐ บ้านคุณสมศรี 28–31 ต.ค.".
+ * "เพิ่ม ทีมก่อฉาบช่างดำ ช่วยงานก่ออิฐ บ้านคุณสมศรี 28–31 ต.ค." (Thai unless `locale` is 'en').
  */
-export function describeChange<A extends BoardAssignment>(change: ChangedAssignment<A>, names: ChangeNames): string {
+export function describeChange<A extends BoardAssignment>(change: ChangedAssignment<A>, names: ChangeNames, locale = 'th'): string {
+    const w = suggestWords(locale);
     const a = change.after;
-    const what = `${job(names.taskName(a.taskId))} ${names.projectName(a.projectId)}`;
-    const range = thaiDayRange(a.start, a.end);
+    const what = w.what(names.taskName(a.taskId), names.projectName(a.projectId));
+    const range = thaiDayRange(a.start, a.end, locale);
     const b = change.before;
-    if (b === null) return `เพิ่ม ${team(names.crewName(a.crewId))} ช่วย${what} ${range}`;
+    if (b === null) return w.addChange(w.team(names.crewName(a.crewId)), what, range);
 
     const parts: string[] = [];
-    if (b.crewId !== a.crewId) parts.push(`${team(names.crewName(b.crewId))} → ${team(names.crewName(a.crewId))}`);
+    if (b.crewId !== a.crewId) parts.push(`${w.team(names.crewName(b.crewId))} → ${w.team(names.crewName(a.crewId))}`);
     const bs = isoToSerial(b.start);
     const as = isoToSerial(a.start);
     const be = isoToSerial(b.end);
     const ae = isoToSerial(a.end);
     const shift = bs === null || as === null ? change.shiftDays : as - bs;
-    if (shift > 0) parts.push(`เลื่อนไป ${String(shift)} วัน (${range})`);
-    else if (shift < 0) parts.push(`เร็วขึ้น ${String(-shift)} วัน (${range})`);
-    else if (be !== null && ae !== null && ae < be) parts.push(`เหลือ ${range} (เดิมถึง ${thaiDay(b.end)})`);
-    else if (be !== null && ae !== null && ae > be) parts.push(`ขยายเป็น ${range} (เดิมถึง ${thaiDay(b.end)})`);
-    if (parts.length === 0) parts.push(`ไม่เปลี่ยน (${range})`);
+    if (shift > 0) parts.push(w.pushed(shift, range));
+    else if (shift < 0) parts.push(w.earlier(-shift, range));
+    else if (be !== null && ae !== null && ae < be) parts.push(w.shortened(range, thaiDay(b.end, false, locale)));
+    else if (be !== null && ae !== null && ae > be) parts.push(w.extended(range, thaiDay(b.end, false, locale)));
+    if (parts.length === 0) parts.push(w.unchanged(range));
     return `${what}: ${parts.join(', ')}`;
 }
 
@@ -256,6 +250,9 @@ interface Candidate<A extends BoardAssignment> {
 export function suggestMoves<A extends BoardAssignment>(input: SuggestInput<A>): Suggestion<A>[] {
     const { crews, assignments, lagsByProject, window, today, projectName, taskName } = input;
     const limit = input.limit ?? SUGGESTION_LIMIT;
+    const locale = input.locale ?? 'th';
+    const sw = suggestWords(locale);
+    const day = (iso: string) => thaiDay(iso, false, locale);
     const dismissed = input.dismissed ?? new Set<string>();
     const t = isoToSerial(today);
     const ws = isoToSerial(window.from);
@@ -264,8 +261,8 @@ export function suggestMoves<A extends BoardAssignment>(input: SuggestInput<A>):
 
     const crewById = new Map(crews.map(c => [c.id, c]));
     const cost = new Map(crews.map(c => [c.id, c.dailyCost]));
-    const crewLabel = (id: string) => team(crewById.get(id)?.name ?? id);
-    const what = (a: BoardAssignment) => `${job(taskName(a.taskId))} ${projectName(a.projectId)}`;
+    const crewLabel = (id: string) => sw.team(crewById.get(id)?.name ?? id);
+    const what = (a: BoardAssignment) => sw.what(taskName(a.taskId), projectName(a.projectId));
     /** The trade a task needs: its plan trade, else the trade of the crew on it. */
     const tradeOf = (a: BoardAssignment): string | undefined => taskTrade(a.taskId) ?? crewById.get(a.crewId)?.trade;
     /** The other crews of `trade`, by name. */
@@ -284,16 +281,16 @@ export function suggestMoves<A extends BoardAssignment>(input: SuggestInput<A>):
             const xe = isoToSerial(x.end);
             const oe = isoToSerial(other.end);
             if (xs === null || xe === null || oe === null || xs < t) continue; // started: stays with its crew
-            const conflictReason = `ไม่ชนกับงาน${projectName(other.projectId)}อีก`;
+            const conflictReason = sw.noLongerClashes(projectName(other.projectId));
             // (a) another crew of the trade, free for the whole assignment.
             for (const k of sameTrade(tradeOf(x), x.crewId)) {
                 if (!crewFree(assignments, k.id, xs, xe)) continue;
                 const run = freeRun(assignments, k.id, xs, xe, t, Math.max(we, xe));
                 candidates.push({
                     id: `resolve-conflict:${x.id}:${k.id}`, kind: 'resolve-conflict', crewId: k.id, projectId: x.projectId,
-                    title: `ย้าย${what(x)} ไปให้${team(k.name)}`,
+                    title: sw.resolveMoveTitle(what(x), sw.team(k.name)),
                     lead: () => [conflictReason],
-                    tail: [`${team(k.name)}ว่างอยู่ช่วงนั้น ${String(run)} วัน`],
+                    tail: [sw.crewFreeThen(sw.team(k.name), run)],
                     moves: [{ assignmentId: x.id, crewId: k.id }], adds: [], pullSuccessors: false, about: x.id,
                 });
             }
@@ -310,13 +307,13 @@ export function suggestMoves<A extends BoardAssignment>(input: SuggestInput<A>):
             const start = serialToIso(found);
             candidates.push({
                 id: `resolve-conflict:${x.id}:${x.crewId}`, kind: 'resolve-conflict', crewId: x.crewId, projectId: x.projectId,
-                title: `เลื่อน${what(x)} ไปเริ่ม ${thaiDay(start)}`,
+                title: sw.resolveDelayTitle(what(x), day(start)),
                 lead: w => {
                     const p = w.delta.projects.find(q => q.projectId === x.projectId);
                     const same = p === undefined || p.days === 0;
-                    return [conflictReason, ...(same ? [`วันเสร็จของ${projectName(x.projectId)}ไม่เปลี่ยน`] : [])];
+                    return [conflictReason, ...(same ? [sw.finishUnchanged(projectName(x.projectId))] : [])];
                 },
-                tail: [`${crewLabel(x.crewId)}ว่างตั้งแต่ ${thaiDay(start)}`],
+                tail: [sw.crewFreeFrom(crewLabel(x.crewId), day(start))],
                 moves: [{ assignmentId: x.id, start }], adds: [], pullSuccessors: false, about: x.id,
             });
         }
@@ -348,9 +345,9 @@ export function suggestMoves<A extends BoardAssignment>(input: SuggestInput<A>):
                 });
                 candidates.push({
                     id: `help:${x.id}:${f.id}`, kind: 'help', crewId: f.id, projectId: x.projectId,
-                    title: `ให้${team(f.name)} ไปช่วย${what(x)} ${String(e2 - h + 1)} วัน`,
+                    title: sw.helpTitle(sw.team(f.name), what(x), e2 - h + 1),
                     lead: () => [],
-                    tail: [`${team(f.name)}ว่างอยู่ช่วงนั้น ${String(ge - h + 1)} วัน`, 'คิดว่าสองทีมทำงานได้เร็วพอกัน'],
+                    tail: [sw.crewFreeThen(sw.team(f.name), ge - h + 1), sw.similarPace],
                     moves: [{ assignmentId: x.id, end: serialToIso(e2) }], adds: [add], pullSuccessors: true, about: x.id,
                 });
             }
@@ -383,16 +380,16 @@ export function suggestMoves<A extends BoardAssignment>(input: SuggestInput<A>):
             const end = Math.max(...own.filter(a => a.taskId === p).map(a => isoToSerial(a.end) ?? -Infinity));
             return lag > 0 && end + lag + 1 === rd;
         });
-        const readyText = `${waited ? 'งานก่อนหน้าเสร็จและครบช่วงรอแล้ว' : 'งานก่อนหน้าเสร็จแล้ว'}ตั้งแต่ ${thaiDay(serialToIso(rd))}`;
-        const earlier = String(xs - hit.day);
+        const readyText = sw.readyFrom(waited, day(serialToIso(rd)));
+        const earlier = xs - hit.day;
         const tail = [readyText];
         if (other) {
             const run = freeRun(assignments, hit.crewId, hit.day, hit.day + len - 1, t, Math.max(we, hit.day + len - 1));
-            tail.push(`${crewLabel(hit.crewId)}ว่างอยู่ช่วงนั้น ${String(run)} วัน`);
+            tail.push(sw.crewFreeThen(crewLabel(hit.crewId), run));
         }
         candidates.push({
             id: `fill-gap:${x.id}:${hit.crewId}`, kind: 'fill-gap', crewId: hit.crewId, projectId: x.projectId,
-            title: other ? `ให้${crewLabel(hit.crewId)} ทำ${what(x)} เริ่มเร็วขึ้น ${earlier} วัน` : `เริ่ม${what(x)} เร็วขึ้น ${earlier} วัน`,
+            title: other ? sw.fillOtherTitle(crewLabel(hit.crewId), what(x), earlier) : sw.fillSameTitle(what(x), earlier),
             lead: () => [],
             tail,
             moves: [other ? { assignmentId: x.id, start, crewId: hit.crewId } : { assignmentId: x.id, start }],
@@ -431,15 +428,15 @@ export function suggestMoves<A extends BoardAssignment>(input: SuggestInput<A>):
         const pulls = result.changed.filter(ch => ch.cause === 'pull').length;
         const finish = [...delta.projects]
             .sort((x, y) => Number(y.projectId === c.projectId) - Number(x.projectId === c.projectId))
-            .map(p => finishReason(p, projectName))
+            .map(p => finishReason(p, projectName, locale))
             .filter((s): s is string => s !== null);
         const reasons = [
             ...c.lead(w),
             ...finish,
-            ...(knockOns > 0 ? [`มีงานที่ต้องเลื่อนตาม ${String(knockOns)} งาน`] : []),
-            ...(pulls > 0 ? [`งานถัดไปเริ่มเร็วขึ้นตาม ${String(pulls)} งาน`] : []),
+            ...(knockOns > 0 ? [sw.knockOns(knockOns)] : []),
+            ...(pulls > 0 ? [sw.pulls(pulls)] : []),
             ...c.tail,
-            ...(labour !== null && labour !== 0 ? [`ค่าแรง${labour > 0 ? 'เพิ่ม' : 'ลดลง'} ${baht(labour)}`] : []),
+            ...(labour !== null && labour !== 0 ? [sw.labour(labour > 0, baht(labour))] : []),
         ];
         const resolved = Math.max(0, -delta.conflicts);
         const score = resolved * 1000 + delta.daysSaved * 10 - delta.daysLost * 10 - Math.abs(labour ?? 0) / 1000 - knockOns;

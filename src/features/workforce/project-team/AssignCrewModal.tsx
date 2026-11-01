@@ -5,24 +5,26 @@
 // allowed — a crew can split its time — but the user confirms them before saving. Mounted only while open, so its
 // state starts from the task (or the edited assignment) every time.
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { App, Button, DatePicker, Input, Modal, Popconfirm, Select } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import {
-    WORKFORCE_NOTE_MAX, WORKFORCE_TRADE_LABEL, type CrewAssignmentDto, type CrewDto,
+    WORKFORCE_NOTE_MAX, type CrewAssignmentDto, type CrewDto,
 } from '@/shared/contract';
 import { crewsByFit } from '@/domain/workforce';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import {
     useCreateCrewAssignment, useCrewAssignments, useDeleteCrewAssignment, useUpdateCrewAssignment, workforceConflictMessage,
 } from '@/features/cloud/api/workforce';
 import { useProjects } from '@/features/cloud/query/hooks';
+import { usePlanningText } from '@/features/planning/usePlanningText';
+import { tradeNameOf } from '../text';
 import type { OpenCloudProject } from './project-workforce';
 import {
-    ASSIGN_PROBLEM_TEXT, assignProblems, assignmentPatch, availabilityHint, busyOf, overlapLines, type BusyContext, type TeamTaskRow,
+    assignProblemText, assignProblems, assignmentPatch, availabilityHint, busyOf, overlapLines, type BusyContext, type TeamTaskRow,
 } from './team-model';
 
-const writeError = (e: unknown) => workforceConflictMessage(e) ?? thaiErrorMessage(e);
 const FORMAT = 'DD/MM/YYYY';
 
 export function AssignCrewModal({ cloud, task, editing, crews, crewName, onClose }: {
@@ -36,6 +38,12 @@ export function AssignCrewModal({ cloud, task, editing, crews, crewName, onClose
     onClose: () => void;
 }) {
     const { message, modal } = App.useApp();
+    const t = useTranslations('workforce');
+    const tc = useTranslations('common');
+    const errorMessage = useErrorMessage();
+    const planning = usePlanningText();
+    const writeError = (e: unknown) => workforceConflictMessage(e) ?? errorMessage(e);
+    const taskName = planning.task(task.id, task.name);
     const [crewId, setCrewId] = useState<string | undefined>(editing?.crewId);
     const [start, setStart] = useState<string | null>(editing?.start ?? task.start);
     const [end, setEnd] = useState<string | null>(editing?.end ?? task.finish);
@@ -62,15 +70,17 @@ export function AssignCrewModal({ cloud, task, editing, crews, crewName, onClose
     const fits = offered.filter(c => task.trade !== undefined && c.trade === task.trade);
     const others = offered.filter(c => !fits.includes(c));
     const hints = new Map(offered.map(c => {
-        if (workspaceAssignments === undefined) return [c.id, { text: all.isError ? '' : 'กำลังตรวจสอบว่าว่างไหม…', busy: false }];
+        if (workspaceAssignments === undefined) return [c.id, { text: all.isError ? '' : t('shared.checking'), busy: false }];
         const busy = busyFor(c.id);
         return [c.id, { text: availabilityHint(busy, ctx), busy: busy.length > 0 }];
     }));
     const option = (c: CrewDto) => ({ value: c.id, label: c.name });
-    const tradeLabel = task.trade === undefined ? 'สายงานนี้' : `สายงาน${WORKFORCE_TRADE_LABEL[task.trade]}`;
+    const tradeLabel = task.trade === undefined ? t('shared.tradeGroupThis') : t('shared.tradeGroupNamed', { trade: tradeNameOf(t, task.trade) });
     const options = [
         ...(fits.length > 0 ? [{ label: tradeLabel, title: tradeLabel, options: fits.map(option) }] : []),
-        ...(others.length > 0 ? [{ label: fits.length > 0 ? 'สายงานอื่น' : 'ทุกทีม', title: 'สายงานอื่น', options: others.map(option) }] : []),
+        ...(others.length > 0 ? [{
+            label: fits.length > 0 ? t('shared.tradeGroupOther') : t('shared.allCrews'), title: t('shared.tradeGroupOther'), options: others.map(option),
+        }] : []),
     ];
 
     const selectedBusy = crewId === undefined ? [] : busyFor(crewId);
@@ -84,12 +94,12 @@ export function AssignCrewModal({ cloud, task, editing, crews, crewName, onClose
                 await create.mutateAsync({
                     projectId: cloud.projectId, taskId: task.id, crewId, start, end, note: trimmedNote === '' ? null : trimmedNote,
                 });
-                void message.success(`จัด${crewName(crewId)}เข้างาน ${task.id} แล้ว`);
+                void message.success(t('assign.done', { crew: crewName(crewId), id: task.id }));
             } else {
                 const patch = assignmentPatch(editing, { crewId, start, end, note });
                 if (patch !== undefined) {
                     await update.mutateAsync({ assignmentId: editing.id, ...patch });
-                    void message.success('บันทึกการจัดทีมแล้ว');
+                    void message.success(t('assign.saved'));
                 }
             }
             onClose();
@@ -102,17 +112,17 @@ export function AssignCrewModal({ cloud, task, editing, crews, crewName, onClose
         if (problems.length > 0) { setTried(true); return; }
         if (selectedBusy.length === 0) { void save(); return; }
         modal.confirm({
-            title: `${crewId === undefined ? 'ทีมนี้' : crewName(crewId)} ติดงานในช่วงนี้`,
+            title: crewId === undefined ? t('shared.busyTitleThis') : t('shared.busyTitle', { crew: crewName(crewId) }),
             content: (
                 <div className="flex flex-col gap-1 text-[13px]">
                     <ul className="list-disc pl-5 text-gray-700">
                         {overlapLines(selectedBusy, ctx).map(l => <li key={l}>{l}</li>)}
                     </ul>
-                    <div className="text-gray-600">บันทึกซ้อนกันได้ ทีมจะต้องแบ่งเวลาระหว่างงาน</div>
+                    <div className="text-gray-600">{t('shared.overlapOk')}</div>
                 </div>
             ),
-            okText: 'บันทึกซ้อนกัน',
-            cancelText: 'กลับไปแก้',
+            okText: t('shared.overlapSave'),
+            cancelText: t('shared.backToEdit'),
             onOk: save,
         });
     };
@@ -121,7 +131,7 @@ export function AssignCrewModal({ cloud, task, editing, crews, crewName, onClose
         if (editing === undefined) return;
         try {
             await remove.mutateAsync(editing.id);
-            void message.success(`เอา${crewName(editing.crewId)}ออกจากงาน ${task.id} แล้ว`);
+            void message.success(t('shared.removedFrom', { crew: crewName(editing.crewId), id: task.id }));
             onClose();
         } catch (e) {
             void message.error(writeError(e));
@@ -132,33 +142,36 @@ export function AssignCrewModal({ cloud, task, editing, crews, crewName, onClose
 
     return (
         <Modal open onCancel={onClose} destroyOnHidden width={520}
-            title={editing === undefined ? `จัดทีม · ${task.id} ${task.name}` : `แก้ไขทีม · ${task.id} ${task.name}`}
+            title={t(editing === undefined ? 'assign.titleNew' : 'assign.titleEdit', { id: task.id, name: taskName })}
             footer={(
                 <div className="flex items-center gap-2">
                     {editing !== undefined && (
-                        <Popconfirm title="เอาทีมนี้ออกจากงาน?" description="ลบเฉพาะการจัดทีมของงานนี้ ทีมยังอยู่ในบริษัท"
-                            okText="เอาออก" cancelText="ยกเลิก" okButtonProps={{ danger: true, loading: remove.isPending }}
+                        <Popconfirm title={t('shared.removeTitle')} description={t('shared.removeDesc')}
+                            okText={t('shared.removeOut')} cancelText={tc('cancel')} okButtonProps={{ danger: true, loading: remove.isPending }}
                             onConfirm={deleteIt}>
-                            <Button danger type="text" icon={<DeleteOutlined />}>เอาออก</Button>
+                            <Button danger type="text" icon={<DeleteOutlined />}>{t('shared.removeOut')}</Button>
                         </Popconfirm>
                     )}
                     <span className="ml-auto" />
-                    <Button onClick={onClose}>ยกเลิก</Button>
-                    <Button type="primary" loading={saving} onClick={submit}>บันทึก</Button>
+                    <Button onClick={onClose}>{tc('cancel')}</Button>
+                    <Button type="primary" loading={saving} onClick={submit}>{tc('save')}</Button>
                 </div>
             )}>
             <div className="flex flex-col gap-4 pt-1">
                 <div className="text-[13px] text-gray-600 tabular-nums">
-                    ตามแผน {task.start === null || task.finish === null ? 'ยังไม่กำหนดวัน' : `${dayjs(task.start).format(FORMAT)} – ${dayjs(task.finish).format(FORMAT)}`}
-                    {' · '}ต้องใช้ช่าง {task.skilled} · คนงาน {task.labourers}
+                    {t('assign.planned', {
+                        range: task.start === null || task.finish === null
+                            ? t('shared.noDates') : `${dayjs(task.start).format(FORMAT)} – ${dayjs(task.finish).format(FORMAT)}`,
+                    })}
+                    {' · '}{t('assign.needs', { skilled: task.skilled, labourers: task.labourers })}
                 </div>
 
                 <label className="flex flex-col gap-1">
-                    <span className="text-[13px] font-medium text-gray-700">ทีม <span className="text-gray-400">*</span></span>
-                    <Select<string> value={crewId} onChange={v => setCrewId(v)} options={options} placeholder="เลือกทีม"
+                    <span className="text-[13px] font-medium text-gray-700">{t('assign.crew')} <span className="text-gray-400">*</span></span>
+                    <Select<string> value={crewId} onChange={v => setCrewId(v)} options={options} placeholder={t('assign.crewPlaceholder')}
                         status={shown.includes('crew') ? 'error' : undefined}
-                        showSearch={{ optionFilterProp: 'label' }} aria-label="ทีม"
-                        notFoundContent={<span className="text-[13px] text-gray-500">ยังไม่มีทีมช่างในบริษัท</span>}
+                        showSearch={{ optionFilterProp: 'label' }} aria-label={t('assign.crew')}
+                        notFoundContent={<span className="text-[13px] text-gray-500">{t('assign.noCrews')}</span>}
                         optionRender={o => {
                             const id = String(o.value);
                             const h = hints.get(id);
@@ -174,8 +187,8 @@ export function AssignCrewModal({ cloud, task, editing, crews, crewName, onClose
                 </label>
 
                 <label className="flex flex-col gap-1">
-                    <span className="text-[13px] font-medium text-gray-700">ช่วงวันที่ <span className="text-gray-400">*</span></span>
-                    <DatePicker.RangePicker format={FORMAT} allowClear={false} aria-label="ช่วงวันที่"
+                    <span className="text-[13px] font-medium text-gray-700">{t('assign.dates')} <span className="text-gray-400">*</span></span>
+                    <DatePicker.RangePicker format={FORMAT} allowClear={false} aria-label={t('assign.dates')}
                         status={shown.includes('dates') || shown.includes('order') ? 'error' : undefined}
                         value={start === null || end === null ? null : [dayjs(start), dayjs(end)]}
                         onChange={v => {
@@ -189,13 +202,13 @@ export function AssignCrewModal({ cloud, task, editing, crews, crewName, onClose
                 </label>
 
                 <label className="flex flex-col gap-1">
-                    <span className="text-[13px] font-medium text-gray-700">หมายเหตุ</span>
+                    <span className="text-[13px] font-medium text-gray-700">{t('assign.note')}</span>
                     <Input.TextArea value={note} onChange={e => setNote(e.target.value)} maxLength={WORKFORCE_NOTE_MAX}
-                        autoSize={{ minRows: 2, maxRows: 4 }} placeholder="เช่น เข้าเฉพาะช่วงเทพื้น" />
+                        autoSize={{ minRows: 2, maxRows: 4 }} placeholder={t('assign.notePlaceholder')} />
                 </label>
 
                 {shown.length > 0 && (
-                    <div className="text-[13px] text-red-600" role="alert">{shown.map(p => ASSIGN_PROBLEM_TEXT[p]).join(' · ')}</div>
+                    <div className="text-[13px] text-red-600" role="alert">{shown.map(p => assignProblemText(p)).join(' · ')}</div>
                 )}
             </div>
         </Modal>

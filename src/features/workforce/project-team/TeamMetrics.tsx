@@ -6,8 +6,10 @@
 // compared has a known ฿/day (never a ฿0 standing in for a hidden or missing cost).
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { formatDate } from '@/features/planning/shared/planning-ui';
 import { PLAN_TASKS } from '@/domain/planning/tasks';
+import { usePlanningText } from '@/features/planning/usePlanningText';
 import { WORKSPACE_CREWS_HREF } from './project-workforce';
 import { bahtText, finishDeltaText, labourDeltaText, type FinishMetric, type LabourMetric } from './team-metrics';
 
@@ -30,20 +32,21 @@ export function TeamMetrics({ finish, labour }: {
     /** undefined: the viewer may not see crew costs (no labour tile). */
     labour: LabourMetric | undefined;
 }) {
+    const t = useTranslations('workforce');
     if (finish.crewedFinish === null) return null;
     const showLabour = labour !== undefined && labour.taskIds.length > 0;
     return (
         <div className={`grid grid-cols-1 gap-3 min-w-0 ${showLabour ? 'sm:grid-cols-2' : ''}`}>
-            <Tile testId="finish" label="วันเสร็จตามทีมที่จัด" value={formatDate(finish.crewedFinish)}>
+            <Tile testId="finish" label={t('team.metrics.finishLabel')} value={formatDate(finish.crewedFinish)}>
                 {finish.days !== null && finish.planFinish !== null && (
                     <span>
                         <span className={finish.days < 0 ? 'text-green-700' : finish.days > 0 ? 'text-amber-700' : 'text-gray-700'}>
                             {finishDeltaText(finish.days)}
                         </span>
-                        {' · '}แผน {formatDate(finish.planFinish)}
+                        {' · '}{t('team.metrics.planDate', { date: formatDate(finish.planFinish) })}
                     </span>
                 )}
-                {finish.partial && <span>นับเฉพาะงานที่จัดทีมแล้ว · เทียบกับแผนของงานเดียวกัน</span>}
+                {finish.partial && <span>{t('team.metrics.partial')}</span>}
             </Tile>
             {showLabour && <LabourTile labour={labour} />}
         </div>
@@ -51,28 +54,33 @@ export function TeamMetrics({ finish, labour }: {
 }
 
 function LabourTile({ labour }: { labour: LabourMetric }) {
-    const excluded = labour.excludedTaskIds.map(id => TASK_NAMES.get(id) ?? id).join(', ');
-    const scope = `เทียบเฉพาะงานที่จัดทีมแล้ว ${String(labour.taskIds.length)} งาน กับค่าแรงของงานเดียวกันใน Man-Day`;
+    const t = useTranslations('workforce');
+    const planning = usePlanningText();
+    const excluded = labour.excludedTaskIds.map(id => {
+        const name = TASK_NAMES.get(id);
+        return name === undefined ? id : planning.task(id, name);
+    }).join(', ');
+    const scope = t('team.metrics.scope', { count: labour.taskIds.length });
     if (labour.crewCost === null || labour.diff === null) {
         return (
-            <Tile testId="labour" label="ค่าแรงตามทีมที่จัด"
-                value={quiet(labour.missingCost === 'all' ? 'ทีมที่จัดยังไม่มีค่าแรงต่อวัน' : 'บางทีมยังไม่มีค่าแรง')}>
+            <Tile testId="labour" label={t('team.metrics.labourLabel')}
+                value={quiet(labour.missingCost === 'all' ? t('team.metrics.missingAll') : t('team.metrics.missingSome'))}>
                 <span>
-                    ใส่ค่าแรงต่อวันของทีมได้ที่{' '}
-                    <Link href={WORKSPACE_CREWS_HREF} className="text-blue-600 hover:underline">ทีมช่างและบุคลากร</Link>
-                    {' '}แล้วจึงเทียบกับ BOQ ได้
+                    {t.rich('team.metrics.setWage', {
+                        link: chunks => <Link href={WORKSPACE_CREWS_HREF} className="text-blue-600 hover:underline">{chunks}</Link>,
+                    })}
                 </span>
             </Tile>
         );
     }
     return (
-        <Tile testId="labour" label="ค่าแรงตามทีมที่จัด" value={bahtText(labour.crewCost)}>
+        <Tile testId="labour" label={t('team.metrics.labourLabel')} value={bahtText(labour.crewCost)}>
             <span>
                 <span className="text-gray-700">{labourDeltaText(labour.diff, labour.percent)}</span>
-                {' · '}ค่าแรงตาม BOQ (Man-Day) {bahtText(labour.boqLabour)}
+                {' · '}{t('team.metrics.boqLabour', { amount: bahtText(labour.boqLabour) })}
             </span>
             <span>{scope}</span>
-            {excluded !== '' && <span>ไม่รวม{excluded} (Man-Day ไม่คิดค่าแรงงานนี้)</span>}
+            {excluded !== '' && <span>{t('team.metrics.excluded', { names: excluded })}</span>}
         </Tile>
     );
 }

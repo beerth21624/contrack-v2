@@ -6,6 +6,7 @@
 // pages behave exactly as before the module existed.
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import type { Role } from '@/shared/contract';
 import { buildTaskCrewMap, type TaskCrewMap } from '@/domain/workforce';
 import { useSession } from '@/features/cloud/auth/session';
@@ -13,9 +14,6 @@ import { assignmentsKey, crewsKey, useWorkforceState, workforceApi } from '@/fea
 import { useProjectStore } from '@/store/project-store';
 
 export interface OpenCloudProject { workspaceId: string; projectId: string; role: Role }
-
-/** Name shown for a crew the workspace no longer lists (archived). */
-export const UNKNOWN_CREW_NAME = 'ทีมที่เก็บถาวรแล้ว';
 
 /** Where the company's crews and people are managed. */
 export const WORKSPACE_CREWS_HREF = '/workspace/crews';
@@ -47,6 +45,7 @@ export function useProjectWorkforceState(): 'off' | 'loading' | 'on' {
  * calendar stays exactly as it is without crews.
  */
 export function useProjectTaskCrews(): TaskCrewMap | undefined {
+    const t = useTranslations('workforce');
     const cloud = useOpenCloudProject();
     const on = useProjectWorkforceState() === 'on';
     const signedIn = useSession(s => s.status === 'signed-in');
@@ -67,6 +66,6 @@ export function useProjectTaskCrews(): TaskCrewMap | undefined {
     return useMemo(() => {
         if (!enabled || assignments.data === undefined || assignments.data.length === 0 || crews.data === undefined) return undefined;
         const names = new Map(crews.data.map(c => [c.id, c.name]));
-        return buildTaskCrewMap(assignments.data, id => names.get(id), UNKNOWN_CREW_NAME);
-    }, [enabled, assignments.data, crews.data]);
+        return buildTaskCrewMap(assignments.data, id => names.get(id), t('shared.archivedCrew'));
+    }, [enabled, assignments.data, crews.data, t]);
 }

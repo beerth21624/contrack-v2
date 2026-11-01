@@ -109,6 +109,8 @@ const eslintConfig = defineConfig([
       "src/features/planning/**/*.{ts,tsx}",
       // Track I-10: the rest of the cloud feature (projects, revisions, workspaces, presence, realtime, api messages)
       "src/features/cloud/**/*.{ts,tsx}",
+      // Track I-11: workforce (crews and people, project crew assignments, crew board); the domain wording lives in src/domain/workforce
+      "src/features/workforce/**/*.{ts,tsx}",
     ],
     ignores: ["**/__tests__/**", "src/features/export/baht-text.ts"],
     rules: {

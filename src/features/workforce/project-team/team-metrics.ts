@@ -9,6 +9,8 @@ import { TASK_AFTER, lagAfter, presentPredecessors } from '@/domain/workforce/ta
 import { thaiDay } from '@/domain/workforce/board';
 import { readyDay } from '@/domain/workforce/scenario';
 import type { TaskLag } from '@/shared/contract/workforce';
+import { taskNameIn } from '@/domain/planning/labels.en';
+import { workforceLocale, workforceText } from '../text';
 import type { TeamAssignment, TeamInstallment } from './team-model';
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -60,9 +62,10 @@ export function finishMetric(groups: readonly TeamInstallment[]): FinishMetric {
 
 /** "เร็วกว่าแผน 3 วัน" / "ช้ากว่าแผน 5 วัน" / "ตรงแผน". */
 export function finishDeltaText(days: number): string {
-    if (days < 0) return `เร็วกว่าแผน ${String(-days)} วัน`;
-    if (days > 0) return `ช้ากว่าแผน ${String(days)} วัน`;
-    return 'ตรงแผน';
+    const t = workforceText();
+    if (days < 0) return t('team.metrics.ahead', { days: -days });
+    if (days > 0) return t('team.metrics.behind', { days });
+    return t('team.metrics.onPlan');
 }
 
 // ─── ค่าแรงตามทีมที่จัด เทียบ ค่าแรงตาม BOQ (Man-Day) ───
@@ -127,14 +130,15 @@ export function labourMetric(
 
 const BAHT = new Intl.NumberFormat('th-TH', { maximumFractionDigits: 0 });
 /** "12,300 บาท". */
-export const bahtText = (n: number) => `${BAHT.format(Math.round(n))} บาท`;
+export const bahtText = (n: number) => workforceText()('shared.bahtAmount', { amount: BAHT.format(Math.round(n)) });
 
 /** "สูงกว่า BOQ 12,300 บาท (+8.5%)" / "ต่ำกว่า BOQ 4,000 บาท (−3.1%)" / "เท่ากับ BOQ". */
 export function labourDeltaText(diff: number, percent: number | null): string {
+    const t = workforceText();
     const rounded = Math.round(diff);
-    if (rounded === 0) return 'เท่ากับ BOQ';
+    if (rounded === 0) return t('team.metrics.equal');
     const pct = percent === null ? '' : ` (${rounded > 0 ? '+' : '−'}${Math.abs(percent).toFixed(1)}%)`;
-    return `${rounded > 0 ? 'สูงกว่า' : 'ต่ำกว่า'} BOQ ${bahtText(Math.abs(rounded))}${pct}`;
+    return t(rounded > 0 ? 'team.metrics.above' : 'team.metrics.below', { amount: bahtText(Math.abs(rounded)), pct });
 }
 
 // ─── เริ่มก่อนครบช่วงรอ: a crewed start before the tasks before it have ended and their waits have passed ───
@@ -195,22 +199,27 @@ export function earlyStarts(assignments: readonly TeamAssignment[], lags: readon
 }
 
 const TASK_NAMES = new Map(PLAN_TASKS.map(t => [t.id, t.name]));
-const taskName = (id: string) => TASK_NAMES.get(id) ?? id;
+const taskName = (id: string) => {
+    const name = TASK_NAMES.get(id);
+    return name === undefined ? id : taskNameIn(id, name, workforceLocale());
+};
 
 /** "24 ต.ค." (with the year when the two days of a line fall in different years). */
-const day = (iso: string, other: string) => thaiDay(iso, iso.slice(0, 4) !== other.slice(0, 4));
+const day = (iso: string, other: string) => thaiDay(iso, iso.slice(0, 4) !== other.slice(0, 4), workforceLocale());
 
 /**
  * Tooltip lines: "งานก่อนหน้า (งานฐานราก) จบ 24 ต.ค. + รอ 7 วัน → เริ่มได้ 1 พ.ย." per task that sets the day, then
  * "ทีมที่จัดเริ่ม 28 ต.ค. ก่อนเริ่มได้ 4 วัน".
  */
 export function earlyStartLines(e: EarlyStart): string[] {
-    const lines = e.causes.map(c => `งานก่อนหน้า (${taskName(c.taskId)}) จบ ${day(c.end, e.ready)}`
-        + `${c.wait > 0 ? ` + รอ ${String(c.wait)} วัน` : ''} → เริ่มได้ ${day(e.ready, c.end)}`);
-    if (lines.length === 0) lines.push(`เริ่มได้ ${thaiDay(e.ready)}`);
-    lines.push(`ทีมที่จัดเริ่ม ${day(e.crewStart, e.ready)} ก่อนเริ่มได้ ${String(e.days)} วัน`);
+    const t = workforceText();
+    const lines = e.causes.map(c => t(c.wait > 0 ? 'team.early.causeWait' : 'team.early.cause', {
+        task: taskName(c.taskId), end: day(c.end, e.ready), wait: c.wait, ready: day(e.ready, c.end),
+    }));
+    if (lines.length === 0) lines.push(t('team.early.readyOnly', { ready: thaiDay(e.ready, false, workforceLocale()) }));
+    lines.push(t('team.early.crewStart', { start: day(e.crewStart, e.ready), days: e.days }));
     return lines;
 }
 
 /** "เริ่มก่อนครบช่วงรอ 2 งาน"; '' when there is none. */
-export const earlyStartSummaryText = (n: number) => (n > 0 ? `เริ่มก่อนครบช่วงรอ ${String(n)} งาน` : '');
+export const earlyStartSummaryText = (n: number) => (n > 0 ? workforceText()('team.earlySummary', { count: n }) : '');

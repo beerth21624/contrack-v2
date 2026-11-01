@@ -6,16 +6,17 @@
 // those refresh (after accepting, too). Accepting saves `whatIf.result.changed` one by one (useSaveSteps); dismissing
 // keeps the id in this browser (suggest-view.ts). Roles that cannot assign see the cards without the buttons.
 import { useMemo, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { App, Button, Collapse, Spin } from 'antd';
 import type { CrewAssignmentDto, CrewDto, TaskLag } from '@/shared/contract';
 import type { BoardWindow } from '@/domain/workforce/board';
 import { SUGGESTION_LIMIT, suggestMoves, type Suggestion } from '@/domain/workforce/suggest';
 import { ImpactList } from './ImpactList';
 import {
-    SUGGESTION_KIND_LABEL, assignmentFactory, changeLine, changeNamesOf, impactLines, loadDismissed, pickSuggestions,
-    planTaskName, saveDismissed, saveSteps, withDismissed, withoutDismissed, type SaveStep,
+    assignmentFactory, changeLine, changeNamesOf, impactLines, loadDismissed, pickSuggestions,
+    planTaskName, saveDismissed, saveSteps, suggestionKindLabel, withDismissed, withoutDismissed, type SaveStep,
 } from './suggest-view';
-import { showSaveFailure, useSaveSteps } from './useSaveSteps';
+import { showSaveFailure, useSaveSteps, useWriteError } from './useSaveSteps';
 import { boardCrews, type BoardNames } from './view';
 
 type Dto = CrewAssignmentDto;
@@ -38,6 +39,10 @@ export function SuggestionsPanel({
     workspaceId, crews, assignments, ready, lagsByProject, window: win, today, names, canAct,
 }: SuggestionsPanelProps) {
     const { message, modal } = App.useApp();
+    const t = useTranslations('workforce');
+    const tc = useTranslations('common');
+    const locale = useLocale();
+    const writeError = useWriteError();
     const [dismissed, setDismissed] = useState<string[]>(() => (canAct ? loadDismissed() : []));
     const { run, saving } = useSaveSteps(workspaceId);
     const lineNames = useMemo(() => changeNamesOf(names), [names]);
@@ -47,7 +52,7 @@ export function SuggestionsPanel({
         const onBoard = boardCrews(crews, assignments, win);
         const input = {
             crews: onBoard, assignments, lagsByProject, window: win, today,
-            projectName: names.project, taskName: planTaskName,
+            projectName: names.project, taskName: planTaskName, locale,
         };
         const set = new Set(dismissed);
         // Ask for a few more than shown: suggestions for an archived crew are dropped afterwards.
@@ -59,7 +64,7 @@ export function SuggestionsPanel({
         });
         const hidden = pickSuggestions(everything, crews, everything.length).filter(s => set.has(s.id)).map(s => s.id);
         return { shown: top, hiddenIds: hidden };
-    }, [ready, assignments, crews, win, lagsByProject, today, names.project, dismissed, workspaceId]);
+    }, [ready, assignments, crews, win, lagsByProject, today, names.project, dismissed, workspaceId, locale]);
 
     const moneyVisible = crews.some(c => c.dailyCost !== null);
     const stepLine = (s: SaveStep) => changeLine(s.change, lineNames);
@@ -79,23 +84,23 @@ export function SuggestionsPanel({
         const steps = saveSteps(s.whatIf.result.changed);
         if (steps.length === 0) return;
         modal.confirm({
-            title: 'ใช้คำแนะนำนี้?',
+            title: t('board.suggest.confirmTitle'),
             width: 520,
             content: (
                 <div className="flex flex-col gap-2 text-[13px]">
                     <div className="text-gray-900 font-medium break-words">{s.title}</div>
-                    <div className="text-gray-600">จะบันทึก {steps.length} รายการตามลำดับ</div>
+                    <div className="text-gray-600">{t('board.suggest.willSave', { count: steps.length })}</div>
                     <ol className="list-decimal pl-5 flex flex-col gap-1 text-gray-800">
                         {steps.map(st => <li key={st.change.after.id} className="break-words">{stepLine(st)}</li>)}
                     </ol>
                 </div>
             ),
-            okText: 'ใช้คำแนะนำนี้',
-            cancelText: 'ยกเลิก',
+            okText: t('board.suggest.use'),
+            cancelText: tc('cancel'),
             onOk: async () => {
                 const result = await run(steps);
-                if (result.failed === undefined) void message.success(`ปรับตามคำแนะนำแล้ว ${String(steps.length)} รายการ`);
-                else showSaveFailure(modal, result, steps.length, stepLine);
+                if (result.failed === undefined) void message.success(t('board.suggest.applied', { count: steps.length }));
+                else showSaveFailure(modal, result, steps.length, stepLine, writeError);
             },
         });
     };
@@ -103,13 +108,13 @@ export function SuggestionsPanel({
     const loading = !ready || assignments === undefined;
 
     return (
-        <section className="bg-white border border-gray-200 rounded-card p-4 md:p-5 shadow-card min-w-0" aria-label="คำแนะนำ">
+        <section className="bg-white border border-gray-200 rounded-card p-4 md:p-5 shadow-card min-w-0" aria-label={t('board.suggest.title')}>
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-3">
-                <h2 className="text-[16px] font-semibold text-gray-900 m-0">คำแนะนำ</h2>
-                <span className="text-[12px] text-gray-500">ทีละจุด เทียบก่อนและหลังในช่วงที่แสดง</span>
+                <h2 className="text-[16px] font-semibold text-gray-900 m-0">{t('board.suggest.title')}</h2>
+                <span className="text-[12px] text-gray-500">{t('board.suggest.subtitle')}</span>
                 {canAct && hiddenIds.length > 0 && (
                     <Button type="link" size="small" className="!px-0 sm:ml-auto" onClick={restore}>
-                        แสดงที่ซ่อนไว้ ({hiddenIds.length})
+                        {t('board.suggest.showHidden', { count: hiddenIds.length })}
                     </Button>
                 )}
             </div>
@@ -118,8 +123,8 @@ export function SuggestionsPanel({
             ) : shown.length === 0 ? (
                 <div className="text-[13px] text-gray-500 py-2">
                     {canAct && hiddenIds.length > 0
-                        ? 'ไม่มีคำแนะนำอื่นนอกจากที่ซ่อนไว้'
-                        : 'ตอนนี้ยังไม่มีคำแนะนำ — ทีมไม่ชนกันและไม่มีงานที่เริ่มเร็วขึ้นได้'}
+                        ? t('board.suggest.onlyHidden')
+                        : t('board.suggest.none')}
                 </div>
             ) : (
                 <ul className="flex flex-col gap-3 m-0 p-0 list-none">
@@ -144,10 +149,11 @@ function SuggestionCard({ suggestion: s, lines, changes, canAct, busy, onAccept,
     onAccept: () => void;
     onDismiss: () => void;
 }) {
+    const t = useTranslations('workforce');
     return (
         <li className="border border-gray-200 rounded-[8px] p-3 md:p-4 flex flex-col gap-3 min-w-0">
             <div className="flex flex-col gap-0.5 min-w-0">
-                <span className="text-[12px] text-gray-500">{SUGGESTION_KIND_LABEL[s.kind]}</span>
+                <span className="text-[12px] text-gray-500">{suggestionKindLabel(s.kind)}</span>
                 <span className="text-[14px] font-medium text-gray-900 break-words">{s.title}</span>
             </div>
             <ImpactList lines={lines} />
@@ -160,7 +166,7 @@ function SuggestionCard({ suggestion: s, lines, changes, canAct, busy, onAccept,
                 <Collapse ghost size="small" className="!-mx-3 [&_.ant-collapse-header]:!py-1"
                     items={[{
                         key: 'changes',
-                        label: <span className="text-[13px] text-gray-700">สิ่งที่จะเปลี่ยน ({changes.length} รายการ)</span>,
+                        label: <span className="text-[13px] text-gray-700">{t('board.suggest.changes', { count: changes.length })}</span>,
                         children: (
                             <ol className="list-decimal pl-5 m-0 flex flex-col gap-1 text-[13px] text-gray-800">
                                 {changes.map(c => <li key={c.key} className="break-words">{c.text}</li>)}
@@ -170,8 +176,8 @@ function SuggestionCard({ suggestion: s, lines, changes, canAct, busy, onAccept,
             )}
             {canAct && (
                 <div className="flex flex-wrap items-center justify-end gap-2">
-                    <Button onClick={onDismiss} disabled={busy}>ไม่สนใจ</Button>
-                    <Button type="primary" onClick={onAccept} disabled={busy}>ใช้คำแนะนำนี้</Button>
+                    <Button onClick={onDismiss} disabled={busy}>{t('board.suggest.dismiss')}</Button>
+                    <Button type="primary" onClick={onAccept} disabled={busy}>{t('board.suggest.use')}</Button>
                 </div>
             )}
         </li>

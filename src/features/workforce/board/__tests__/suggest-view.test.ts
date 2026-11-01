@@ -3,7 +3,7 @@ import type { CrewAssignmentDto, CrewDto } from '@/shared/contract';
 import { whatIf, type ChangedAssignment, type ScenarioMetrics, type WhatIf } from '@/domain/workforce/scenario';
 import type { Suggestion } from '@/domain/workforce/suggest';
 import {
-    DISMISSED_KEY, DISMISSED_MAX, SUGGESTION_NOTE, assignmentFactory, changeLine, finishShift, followOns, idleValueCell,
+    DISMISSED_KEY, DISMISSED_MAX, suggestionNote, assignmentFactory, changeLine, finishShift, followOns, idleValueCell,
     impactLines, loadDismissed, money, parseDismissed, pickSuggestions, planTaskName, runSaveSteps, saveDismissed,
     changeNamesOf, saveFailureLines, saveSteps, signedMoney, touchedProjects, withDismissed, withoutDismissed,
 } from '../suggest-view';
@@ -121,7 +121,7 @@ describe('save steps', () => {
         expect(steps[0]).toMatchObject({ kind: 'update', assignmentId: 'b', body: { crewId: 'black' } });
         expect(steps[1]).toMatchObject({
             kind: 'create',
-            body: { projectId: 'somsri', taskId: '4.1', crewId: 'black', start: '2026-10-08', end: '2026-10-14', note: SUGGESTION_NOTE },
+            body: { projectId: 'somsri', taskId: '4.1', crewId: 'black', start: '2026-10-08', end: '2026-10-14', note: suggestionNote() },
         });
         expect(steps[2]).toMatchObject({ kind: 'update', assignmentId: 'p', body: { start: '2026-10-22', end: '2026-10-31' } });
         expect(steps[2]?.kind === 'update' ? Object.keys(steps[2].body) : []).toEqual(['start', 'end']);
@@ -179,7 +179,7 @@ describe('suggestions shown', () => {
         const b = make({ id: 'x', crewId: 'black', projectId: 'somsri', taskId: '4.2', start: '2026-10-08', end: '2026-10-14' });
         const c = make({ id: 'new-9', crewId: 'black', projectId: 'somsri', taskId: '4.2', start: '2026-10-08', end: '2026-10-14' });
         expect([a.id, b.id, c.id]).toEqual(['new-1', 'new-2', 'new-9']);
-        expect(a).toMatchObject({ workspaceId: 'ws', taskId: '4.1', note: SUGGESTION_NOTE });
+        expect(a).toMatchObject({ workspaceId: 'ws', taskId: '4.1', note: suggestionNote() });
         expect(assignmentFactory('ws')(a).id).toBe('new-1');
     });
 });

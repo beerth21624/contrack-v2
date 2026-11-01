@@ -3,13 +3,15 @@
 // nothing here changes a planning number.
 import type { ManDayResult, ScheduleResult } from '@/domain/planning';
 import { PLAN_TASKS } from '@/domain/planning/tasks';
+import { taskNameIn } from '@/domain/planning/labels.en';
 import {
-    DEFAULT_TASK_LAGS, assignmentCoverage, byDates, crewBusy, lagOverrides, taskTrade,
+    DEFAULT_TASK_LAGS, assignmentCoverage, byDates, crewBusy, lagOverrides, lagReasonIn, taskTrade,
     type AssignmentCoverage, type AssignmentSpan, type CrewBusySpan, type EffectiveTaskLag,
 } from '@/domain/workforce';
 import { isoToSerial, serialToIso } from '@/domain/planning/calendar';
 import { formatDayMonth } from '@/features/planning/shared/planning-format';
 import { MAX_TASK_LAG_DAYS, type TaskLag, type WorkforceTradeId } from '@/shared/contract/workforce';
+import { workforceLocale, workforceText } from '../text';
 
 /** An assignment as the page reads it (CrewAssignmentDto has these fields). */
 export interface TeamAssignment extends AssignmentSpan {
@@ -104,9 +106,10 @@ export function teamSummary(groups: readonly TeamInstallment[]): TeamSummary {
 
 /** "จัดทีมแล้ว 12 / 32 งาน · ยังไม่มีทีม 20 งาน · ทีมไม่ครบช่วงแผน 2 งาน". */
 export function teamSummaryText(s: TeamSummary): string {
-    const parts = [`จัดทีมแล้ว ${String(s.assigned)} / ${String(s.total)} งาน`];
-    parts.push(s.unassigned === 0 ? 'ครบทุกงาน' : `ยังไม่มีทีม ${String(s.unassigned)} งาน`);
-    if (s.partly > 0) parts.push(`ทีมไม่ครบช่วงแผน ${String(s.partly)} งาน`);
+    const t = workforceText();
+    const parts = [t('team.summaryAssigned', { assigned: String(s.assigned), total: String(s.total) })];
+    parts.push(s.unassigned === 0 ? t('team.summaryAll') : t('team.summaryUnassigned', { count: s.unassigned }));
+    if (s.partly > 0) parts.push(t('team.summaryPartly', { count: s.partly }));
     return parts.join(' · ');
 }
 
@@ -116,14 +119,15 @@ export function dayMonthRange(start: string, end: string): string {
 }
 
 /** "ช่าง 1 · คนงาน 5". */
-export const needText = (skilled: number, labourers: number) => `ช่าง ${String(skilled)} · คนงาน ${String(labourers)}`;
+export const needText = (skilled: number, labourers: number) =>
+    workforceText()('shared.headcount', { skilled: String(skilled), labourers: String(labourers) });
 
 const TASK_NAMES = new Map(PLAN_TASKS.map(t => [t.id, t.name]));
 
 /** "1.5 งานฐานราก" (any project: the 32 tasks are the same plan). */
 export const taskLabel = (taskId: string) => {
     const name = TASK_NAMES.get(taskId);
-    return name === undefined ? taskId : `${taskId} ${name}`;
+    return name === undefined ? taskId : workforceText()('shared.taskLabel', { id: taskId, name: taskNameIn(taskId, name, workforceLocale()) });
 };
 
 export interface BusyContext {
@@ -133,13 +137,11 @@ export interface BusyContext {
     projectName: (projectId: string) => string | undefined;
 }
 
-export const THIS_PROJECT = 'โครงการนี้';
-const OTHER_PROJECT = 'โครงการอื่น';
-
 /** "โครงการนี้" / the project's name / "โครงการอื่น". */
 export function projectLabel(projectId: string, ctx: BusyContext): string {
-    if (projectId === ctx.projectId) return THIS_PROJECT;
-    return ctx.projectName(projectId) ?? OTHER_PROJECT;
+    const t = workforceText();
+    if (projectId === ctx.projectId) return t('shared.thisProject');
+    return ctx.projectName(projectId) ?? t('shared.anotherProject');
 }
 
 /** "บ้านคุณวิชัย 1.5 งานฐานราก 22/01–31/01" — where the crew is and when (that assignment's own dates). */
@@ -150,10 +152,12 @@ export function busyPlace(b: CrewBusySpan<TeamAssignment>, ctx: BusyContext): st
 
 /** The hint beside a crew in the picker: "ว่าง", or "ติดงาน <project> <task> dd/mm–dd/mm" (+ "และอีก n งาน"). */
 export function availabilityHint(busy: readonly CrewBusySpan<TeamAssignment>[], ctx: BusyContext): string {
+    const t = workforceText();
     const [first] = busy;
-    if (first === undefined) return 'ว่าง';
+    if (first === undefined) return t('shared.free');
     const more = busy.length - 1;
-    return `ติดงาน ${busyPlace(first, ctx)}${more > 0 ? ` และอีก ${String(more)} งาน` : ''}`;
+    const place = busyPlace(first, ctx);
+    return more > 0 ? t('shared.busyHintMore', { place, more: String(more) }) : t('shared.busyHint', { place });
 }
 
 /** The crew's assignments in the workspace that share a day with [start, end] (none for an invalid range). */
@@ -166,7 +170,8 @@ export function busyOf<A extends TeamAssignment>(
 
 /** Lines of the warning shown before saving an overlapping assignment ("บ้านคุณวิชัย 1.5 งานฐานราก 22/01–31/01 (ซ้อน 3 วัน)"). */
 export function overlapLines(busy: readonly CrewBusySpan<TeamAssignment>[], ctx: BusyContext): string[] {
-    return busy.map(b => `${busyPlace(b, ctx)} (ซ้อน ${String(b.days)} วัน)`);
+    const t = workforceText();
+    return busy.map(b => t('shared.overlapLine', { place: busyPlace(b, ctx), days: b.days }));
 }
 
 export interface AssignDraft {
@@ -177,11 +182,8 @@ export interface AssignDraft {
 
 export type AssignProblem = 'crew' | 'dates' | 'order';
 
-export const ASSIGN_PROBLEM_TEXT: Record<AssignProblem, string> = {
-    crew: 'เลือกทีม',
-    dates: 'เลือกช่วงวันที่',
-    order: 'วันสิ้นสุดต้องไม่ก่อนวันเริ่ม',
-};
+/** The sentence that names a problem of the assign form. */
+export const assignProblemText = (p: AssignProblem): string => workforceText()(`assign.problem.${p}`);
 
 /** What stops the form from saving (empty = can save). */
 export function assignProblems(d: AssignDraft): AssignProblem[] {
@@ -227,8 +229,11 @@ export function chipConflicts<A extends TeamAssignment>(a: A, all: readonly A[])
 
 /** Tooltip lines of a crew chip: "ชนกับ บ้านคุณสมศรี 4.1 งานก่ออิฐ 28–30/10 (3 วัน)", the shared days of each clash. */
 export function conflictLines(busy: readonly CrewBusySpan<TeamAssignment>[], ctx: BusyContext): string[] {
-    return busy.map(b => `ชนกับ ${projectLabel(b.assignment.projectId, ctx)} ${taskLabel(b.assignment.taskId)} `
-        + `${compactDayMonthRange(b.from, b.to)} (${String(b.days)} วัน)`);
+    const t = workforceText();
+    return busy.map(b => t('shared.clashLine', {
+        project: projectLabel(b.assignment.projectId, ctx), task: taskLabel(b.assignment.taskId),
+        range: compactDayMonthRange(b.from, b.to), days: b.days,
+    }));
 }
 
 /** Chips of this project whose crew is also booked on another project on a shared day (from chipConflicts per chip). */
@@ -241,27 +246,32 @@ export function otherProjectConflictCount(
 }
 
 /** "ทีมชนกับโครงการอื่น 2 จุด"; '' when there is none. */
-export const conflictSummaryText = (n: number) => (n > 0 ? `ทีมชนกับโครงการอื่น ${String(n)} จุด` : '');
+export const conflictSummaryText = (n: number) => (n > 0 ? workforceText()('team.conflictSummary', { count: n }) : '');
 
 // ─── Waits after tasks (ช่วงรอหลังงาน): the cell and the editor ───
 
 /** "7 วัน · บ่มคอนกรีตฐานราก"; '' for no wait; "ไม่รอ" when the project removed a default wait. */
 export function waitCellText(lag: EffectiveTaskLag): string {
-    if (lag.days === 0) return lag.overridden ? 'ไม่รอ' : '';
-    const days = `${String(lag.days)} วัน`;
-    return lag.reason === '' ? days : `${days} · ${lag.reason}`;
+    const t = workforceText();
+    if (lag.days === 0) return lag.overridden ? t('wait.none') : '';
+    return lag.reason === ''
+        ? t('wait.cell', { days: lag.days })
+        : t('wait.cellReason', { days: lag.days, reason: lagReasonIn(lag.taskId, lag.reason, workforceLocale()) });
 }
 
 /** "ค่าตั้งต้น 7 วัน · บ่มคอนกรีตฐานราก" / "ค่าตั้งต้น ไม่รอ". */
 export function defaultWaitText(taskId: string): string {
+    const t = workforceText();
     const def = DEFAULT_TASK_LAGS[taskId];
-    return def === undefined ? 'ค่าตั้งต้น ไม่รอ' : `ค่าตั้งต้น ${String(def.days)} วัน · ${def.reason}`;
+    return def === undefined
+        ? t('wait.defaultNone')
+        : t('wait.defaultText', { days: String(def.days), reason: lagReasonIn(taskId, def.reason, workforceLocale()) });
 }
 
 /** What stops a wait from saving (undefined = can save): whole days from 0 to 90. */
 export function waitDaysProblem(days: number | null): string | undefined {
     if (days === null || !Number.isInteger(days) || days < 0 || days > MAX_TASK_LAG_DAYS) {
-        return `ใส่จำนวนวัน 0–${String(MAX_TASK_LAG_DAYS)}`;
+        return workforceText()('wait.problem', { max: String(MAX_TASK_LAG_DAYS) });
     }
     return undefined;
 }

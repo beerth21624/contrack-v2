@@ -8,14 +8,15 @@
 // and มูลค่าวันว่าง in the summary when wages are visible.
 import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Button, Result, Segmented, Select, Spin, Switch, Tooltip, Typography } from 'antd';
 import { InfoCircleOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
-    MAX_TASK_LAG_DAYS, WORKFORCE_TRADE_LABEL, type CrewAssignmentDto, type CrewAssignmentQuery, type TaskLag, type WorkspaceDto,
+    MAX_TASK_LAG_DAYS, type CrewAssignmentDto, type CrewAssignmentQuery, type TaskLag, type WorkspaceDto,
 } from '@/shared/contract';
 import {
-    BOARD_PRESET_LABEL, boardDays, boardQueryRange, boardTotals, buildCrewBoard, presetWindow, stepWindow,
+    boardDays, boardQueryRange, boardTotals, buildCrewBoard, presetWindow, stepWindow,
     type BoardPreset, type BoardWindow,
 } from '@/domain/workforce/board';
 import { scenarioMetrics } from '@/domain/workforce/scenario';
@@ -25,6 +26,7 @@ import {
 } from '@/features/cloud/api/workforce';
 import { useCurrentWorkspace, useProjects } from '@/features/cloud/query/hooks';
 import { RequireSignIn, spinner } from '@/features/cloud/ui/common';
+import { tradeNameOf } from '../text';
 import { ModuleOff } from '../crews/CrewsPage';
 import { isoDay } from '../crews/logic';
 import { BarPanel } from './BarPanel';
@@ -38,13 +40,13 @@ import {
 
 const { Title, Text } = Typography;
 
-export const BOARD_TITLE = 'กระดานจัดคน';
 const PRESETS: BoardPreset[] = ['2w', '1m', '3m'];
 const NO_LAGS: readonly TaskLag[] = [];
 
 export function BoardPage() {
+    const t = useTranslations('workforce');
     return (
-        <RequireSignIn next="/workspace/board" title={BOARD_TITLE}>
+        <RequireSignIn next="/workspace/board" title={t('board.title')}>
             <ModuleGate />
         </RequireSignIn>
     );
@@ -58,9 +60,10 @@ function ModuleGate() {
 }
 
 function BoardContent() {
+    const t = useTranslations('workforce');
     const { workspace, workspaces, isLoading, select } = useCurrentWorkspace();
     if (isLoading) return spinner;
-    if (workspace === undefined) return <Result status="info" title="ยังไม่มีพื้นที่ทำงาน" />;
+    if (workspace === undefined) return <Result status="info" title={t('shared.noWorkspace')} />;
     return <WorkspaceBoard key={workspace.id} workspace={workspace} workspaces={workspaces} onSelect={select} />;
 }
 
@@ -76,6 +79,7 @@ function useBoardAssignments(workspaceId: string, q: CrewAssignmentQuery) {
 function WorkspaceBoard({ workspace, workspaces, onSelect }: {
     workspace: WorkspaceDto; workspaces: WorkspaceDto[]; onSelect: (id: string) => void;
 }) {
+    const t = useTranslations('workforce');
     const abilities = workforceAbilities(workspace.role);
     const [today] = useState(() => isoDay(new Date()));
     const [preset, setPreset] = useState<BoardPreset>('1m');
@@ -96,8 +100,8 @@ function WorkspaceBoard({ workspace, workspaces, onSelect }: {
     const names = useMemo((): BoardNames => {
         const project = new Map((projects.data ?? []).map(p => [p.id, p.name]));
         const crew = new Map((crews.data ?? []).map(c => [c.id, c.name]));
-        return { project: id => project.get(id) ?? 'โครงการอื่น', crew: id => crew.get(id) ?? 'ทีม' };
-    }, [projects.data, crews.data]);
+        return { project: id => project.get(id) ?? t('shared.anotherProject'), crew: id => crew.get(id) ?? t('shared.unknownCrew') };
+    }, [projects.data, crews.data, t]);
     const peopleById = useMemo(() => new Map((people.data ?? []).map(p => [p.id, p])), [people.data]);
     // A 404 (endpoint not there yet) or any failure: every project uses the default waits.
     const lagsByProject = useMemo(
@@ -139,7 +143,7 @@ function WorkspaceBoard({ workspace, workspaces, onSelect }: {
     const disabled = [crews.error, assignments.error].some(e => isApiError(e) && e.code === 'module_disabled');
     if (disabled) return <ModuleOff />;
 
-    const wsName = workspace.kind === 'personal' ? 'พื้นที่ส่วนตัว' : workspace.name;
+    const wsName = workspace.kind === 'personal' ? t('shared.personalWorkspace') : workspace.name;
     const lagsFailed = lags.isError && !(isApiError(lags.error) && lags.error.status === 404);
     const loading = crews.isLoading || (assignments.isLoading && all === undefined);
     const noCrews = !crews.isLoading && (crews.data ?? []).filter(c => c.archivedAt === null).length === 0;
@@ -154,24 +158,24 @@ function WorkspaceBoard({ workspace, workspaces, onSelect }: {
         <div className="flex flex-col gap-4 max-w-[1200px] mx-auto w-full min-w-0">
             <div className="bg-white border border-gray-200 rounded-card p-4 md:p-5 shadow-card flex flex-col md:flex-row md:items-center gap-3">
                 <div className="flex-1 min-w-0">
-                    <Title level={3} style={{ margin: 0 }}>{BOARD_TITLE}</Title>
+                    <Title level={3} style={{ margin: 0 }}>{t('board.title')}</Title>
                     <Text type="secondary" className="text-[13px] block truncate" title={wsName}>
-                        {wsName} · ทุกทีม ทุกโครงการ{!abilities.assign && ' · ดูได้อย่างเดียว'}
+                        {wsName} · {t('board.allCrews')}{!abilities.assign && ` · ${t('board.viewOnly')}`}
                     </Text>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                    <Link href="/workspace/crews"><Button>ทีมช่างและบุคลากร</Button></Link>
+                    <Link href="/workspace/crews"><Button>{t('shared.crewsLink')}</Button></Link>
                     {workspaces.length > 1 && (
-                        <Select value={workspace.id} onChange={onSelect} aria-label="พื้นที่ทำงาน" className="w-full md:!w-[240px]"
-                            options={workspaces.map(w => ({ value: w.id, label: w.kind === 'personal' ? 'ส่วนตัว' : w.name }))} />
+                        <Select value={workspace.id} onChange={onSelect} aria-label={t('shared.workspaceAria')} className="w-full md:!w-[240px]"
+                            options={workspaces.map(w => ({ value: w.id, label: w.kind === 'personal' ? t('shared.personalShort') : w.name }))} />
                     )}
                 </div>
             </div>
 
             {noCrews ? (
                 <div className="bg-white border border-gray-200 rounded-card shadow-card">
-                    <Result status="info" title="ยังไม่มีทีมช่าง" subTitle="เพิ่มทีมแรกก่อน แล้วจัดทีมเข้างานในแท็บ ทีมงาน ของแต่ละโครงการ"
-                        extra={<Link href="/workspace/crews"><Button type="primary">ไปที่ทีมช่างและบุคลากร</Button></Link>} />
+                    <Result status="info" title={t('board.noCrewsTitle')} subTitle={t('board.noCrewsBody')}
+                        extra={<Link href="/workspace/crews"><Button type="primary">{t('board.goCrews')}</Button></Link>} />
                 </div>
             ) : (
                 <>
@@ -181,36 +185,36 @@ function WorkspaceBoard({ workspace, workspaces, onSelect }: {
                         <div className="flex flex-col gap-3 p-4 md:px-5 md:pt-5 md:pb-4">
                             <div className="flex flex-wrap items-center gap-2">
                                 <Segmented<BoardPreset> value={preset} onChange={setPresetTo}
-                                    options={PRESETS.map(p => ({ value: p, label: BOARD_PRESET_LABEL[p] }))} />
+                                    options={PRESETS.map(p => ({ value: p, label: t(`board.presets.${p}`) }))} />
                                 <div className="flex items-center gap-1">
-                                    <Button aria-label="ก่อนหน้า" icon={<LeftOutlined />} onClick={() => setWin(stepWindow(preset, win, -1))} />
-                                    <Button onClick={() => setWin(presetWindow(preset, today))}>วันนี้</Button>
-                                    <Button aria-label="ถัดไป" icon={<RightOutlined />} onClick={() => setWin(stepWindow(preset, win, 1))} />
+                                    <Button aria-label={t('board.prev')} icon={<LeftOutlined />} onClick={() => setWin(stepWindow(preset, win, -1))} />
+                                    <Button onClick={() => setWin(presetWindow(preset, today))}>{t('board.today')}</Button>
+                                    <Button aria-label={t('board.next')} icon={<RightOutlined />} onClick={() => setWin(stepWindow(preset, win, 1))} />
                                 </div>
                                 <span className="text-[14px] font-medium text-gray-900 tabular-nums">{windowLabel(win)}</span>
                                 {assignments.isPlaceholderData && <Spin size="small" />}
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
-                                <Select<string> allowClear placeholder="ทุกสายงาน" aria-label="สายงาน" className="w-full sm:!w-[200px]"
-                                    value={filter.trade} onChange={v => setFilter(f => ({ ...f, trade: tradesOnBoard.find(t => t === v) }))}
-                                    options={tradesOnBoard.map(t => ({ value: t, label: WORKFORCE_TRADE_LABEL[t] }))} />
-                                <Select<string> allowClear placeholder="ทุกโครงการ" aria-label="โครงการ" className="w-full sm:!w-[260px]"
+                                <Select<string> allowClear placeholder={t('board.allTrades')} aria-label={t('board.tradeAria')} className="w-full sm:!w-[200px]"
+                                    value={filter.trade} onChange={v => setFilter(f => ({ ...f, trade: tradesOnBoard.find(tr => tr === v) }))}
+                                    options={tradesOnBoard.map(tr => ({ value: tr, label: tradeNameOf(t, tr) }))} />
+                                <Select<string> allowClear placeholder={t('board.allProjects')} aria-label={t('board.projectAria')} className="w-full sm:!w-[260px]"
                                     value={filter.projectId} onChange={v => setFilter(f => ({ ...f, projectId: v }))}
                                     showSearch={{ optionFilterProp: 'label' }}
                                     options={shownProjects.map(id => ({ value: id, label: names.project(id) }))} />
                                 <label className="flex items-center gap-2 text-[13px] text-gray-700 cursor-pointer sm:ml-1">
                                     <Switch size="small" checked={filter.problemsOnly} onChange={v => setFilter(f => ({ ...f, problemsOnly: v }))} />
-                                    แสดงเฉพาะที่มีปัญหา
+                                    {t('board.problemsOnly')}
                                 </label>
                             </div>
                             <Legend projects={shownProjects} colours={colours} names={names} />
-                            {lagsFailed && <div className="text-[12px] text-gray-500">อ่านช่วงรอที่โครงการตั้งไว้ไม่ได้ ใช้ค่าตั้งต้นแทน</div>}
+                            {lagsFailed && <div className="text-[12px] text-gray-500">{t('board.lagsFailed')}</div>}
                         </div>
 
                         <div className="border-t border-gray-200 overflow-auto max-h-[70vh] overscroll-x-contain rounded-b-card">
                             {loading ? spinner : rows.length === 0 ? (
                                 <div className="p-10 text-center text-[13px] text-gray-500">
-                                    {filter.problemsOnly ? 'ไม่มีทีมที่มีปัญหาในช่วงนี้' : 'ไม่มีทีมตามที่เลือก'}
+                                    {filter.problemsOnly ? t('board.noProblems') : t('board.noneSelected')}
                                 </div>
                             ) : (
                                 <CrewTimeline key={`${preset}:${win.from}`} rows={rows} window={win} days={days} preset={preset} today={today} colours={colours}
@@ -222,7 +226,7 @@ function WorkspaceBoard({ workspace, workspaces, onSelect }: {
 
                     {conflicts.length > 0 && (
                         <div className="bg-white border border-gray-200 rounded-card p-4 md:p-5 shadow-card min-w-0">
-                            <div className="text-[16px] font-semibold text-gray-900 mb-3">จุดชน <span className="text-red-600 tabular-nums">{conflicts.length}</span></div>
+                            <div className="text-[16px] font-semibold text-gray-900 mb-3">{t('board.clashes')} <span className="text-red-600 tabular-nums">{conflicts.length}</span></div>
                             <ul className="flex flex-col divide-y divide-gray-100">
                                 {conflicts.map(c => (
                                     <li key={`${c.a.id}:${c.b.id}`} className="flex flex-col sm:flex-row sm:items-center gap-2 py-2.5 first:pt-0 last:pb-0">
@@ -230,7 +234,7 @@ function WorkspaceBoard({ workspace, workspaces, onSelect }: {
                                             <span aria-hidden className="inline-block w-2 h-2 rounded-full bg-red-600 mr-2 align-middle" />
                                             {conflictText(c, names)}
                                         </span>
-                                        <Button size="small" onClick={() => openAndScroll(c.a.id)} className="self-start sm:self-auto">ดูบนกระดาน</Button>
+                                        <Button size="small" onClick={() => openAndScroll(c.a.id)} className="self-start sm:self-auto">{t('board.viewOnBoard')}</Button>
                                     </li>
                                 ))}
                             </ul>
@@ -254,27 +258,26 @@ function WorkspaceBoard({ workspace, workspaces, onSelect }: {
     );
 }
 
-const IDLE_VALUE_HINT = 'คิดจากค่าแรงต่อวันของทีม × วันว่าง (กรณีจ่ายทีมทุกวัน)';
-
 function Summary({ totals, idleValue }: { totals: ReturnType<typeof boardTotals>; idleValue: ReturnType<typeof idleValueCell> }) {
+    const t = useTranslations('workforce');
     const cells: { label: string; value: string; note: string; tone?: string; hint?: string }[] = [
-        { label: 'อัตราการใช้ทีมเฉลี่ย', value: percent(totals.averageUtilisation), note: `${String(totals.crews)} ทีม ในช่วงที่แสดง` },
+        { label: t('board.summary.utilisation'), value: percent(totals.averageUtilisation), note: t('board.summary.utilisationNote', { crews: totals.crews }) },
         {
-            label: 'จุดชน', value: String(totals.conflicts),
-            note: totals.conflicts > 0 ? 'ทีมเดียวกันถูกจัดซ้อนวัน' : 'ไม่มีทีมที่ถูกจัดซ้อนวัน',
+            label: t('board.summary.clashes'), value: String(totals.conflicts),
+            note: totals.conflicts > 0 ? t('board.summary.clashesYes') : t('board.summary.clashesNo'),
             tone: totals.conflicts > 0 ? 'text-red-600' : undefined,
         },
         {
-            label: 'วันว่างรวม', value: `${String(totals.idleCrewDays)} วัน`,
-            note: totals.waitCrewDays > 0 ? `รวมช่วงรอ ${String(totals.waitCrewDays)} วัน` : 'ทุกทีมรวมกัน',
+            label: t('board.summary.idle'), value: t('shared.days', { count: totals.idleCrewDays }),
+            note: totals.waitCrewDays > 0 ? t('board.summary.idleNoteWait', { days: totals.waitCrewDays }) : t('board.summary.idleNote'),
         },
-        { label: 'ทีมที่ว่างวันนี้', value: String(totals.crewsIdleToday), note: `จาก ${String(totals.crews)} ทีม` },
+        { label: t('board.summary.idleToday'), value: String(totals.crewsIdleToday), note: t('board.summary.idleTodayNote', { crews: totals.crews }) },
     ];
     // Shown only when some crew's ฿/day is visible to this role (never ฿0 for an unknown cost).
     if (idleValue !== null) {
         cells.push({
-            label: 'มูลค่าวันว่าง', value: idleValue.value, hint: IDLE_VALUE_HINT,
-            note: idleValue.partial ? 'บางทีมไม่มีค่าแรง' : 'กรณีจ่ายทีมทุกวัน',
+            label: t('board.summary.idleValue'), value: idleValue.value, hint: t('board.summary.idleValueHint'),
+            note: idleValue.partial ? t('board.summary.idleValuePartial') : t('board.summary.idleValueNote'),
         });
     }
     const five = cells.length === 5;
@@ -301,6 +304,7 @@ function Summary({ totals, idleValue }: { totals: ReturnType<typeof boardTotals>
 function Legend({ projects, colours, names }: {
     projects: readonly string[]; colours: ReadonlyMap<string, { fill: string; accent: string }>; names: BoardNames;
 }) {
+    const t = useTranslations('workforce');
     const sorted = [...projects].sort((a, b) => names.project(a).localeCompare(names.project(b), 'th'));
     return (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-gray-600">
@@ -317,11 +321,11 @@ function Legend({ projects, colours, names }: {
             <span className="flex items-center gap-1.5">
                 <span aria-hidden className="w-5 h-3 rounded-[3px] border border-dashed border-gray-400"
                     style={{ backgroundImage: 'repeating-linear-gradient(135deg, #9CA3AF55 0 2px, transparent 2px 5px)' }} />
-                ช่วงรอ (ทีมว่าง)
+                {t('board.legendWait')}
             </span>
             <span className="flex items-center gap-1.5">
                 <span aria-hidden className="w-5 h-3 rounded-[3px] bg-red-50" style={{ boxShadow: 'inset 0 0 0 1.5px #DC2626' }} />
-                ชนกัน
+                {t('board.legendClash')}
             </span>
         </div>
     );

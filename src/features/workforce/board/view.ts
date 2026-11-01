@@ -5,6 +5,8 @@ import {
     crewHasProblem, thaiDayRange, type BoardConflict, type BoardPreset, type BoardWindow, type CrewBoardRow,
 } from '@/domain/workforce/board';
 import { PLAN_TASKS } from '@/domain/planning/tasks';
+import { taskNameIn } from '@/domain/planning/labels.en';
+import { workforceLocale, workforceText } from '../text';
 
 export type BoardRow = CrewBoardRow<CrewDto, CrewAssignmentDto>;
 
@@ -82,8 +84,9 @@ const TASK_NAME = new Map(PLAN_TASKS.map(t => [t.id, t.name]));
 
 /** "5.1 งานฉาบปูน". */
 export function taskLabel(taskId: string): string {
+    const t = workforceText();
     const name = TASK_NAME.get(taskId);
-    return name === undefined ? `งาน ${taskId}` : `${taskId} ${name}`;
+    return name === undefined ? t('shared.taskFallback', { id: taskId }) : t('shared.taskLabel', { id: taskId, name: taskNameIn(taskId, name, workforceLocale()) });
 }
 
 export interface BoardNames {
@@ -94,12 +97,14 @@ export interface BoardNames {
 /** "ทีมก่อฉาบช่างแดง ชน 3 วัน (28–30 ต.ค.): บ้านคุณวิชัย 5.1 งานฉาบปูน กับ บ้านคุณสมศรี 4.1 งานก่ออิฐ". */
 export function conflictText(c: BoardConflict, names: BoardNames): string {
     const side = (a: { projectId: string; taskId: string }) => `${names.project(a.projectId)} ${taskLabel(a.taskId)}`;
-    return `${names.crew(c.crewId)} ชน ${String(c.days)} วัน (${thaiDayRange(c.from, c.to)}): ${side(c.a)} กับ ${side(c.b)}`;
+    return workforceText()('board.view.conflict', {
+        crew: names.crew(c.crewId), days: c.days, range: thaiDayRange(c.from, c.to, workforceLocale()), a: side(c.a), b: side(c.b),
+    });
 }
 
 /** "26 ต.ค.–8 พ.ย. 26" for the window label (the year always shown once). */
 export function windowLabel(w: BoardWindow): string {
-    const text = thaiDayRange(w.from, w.to);
+    const text = thaiDayRange(w.from, w.to, workforceLocale());
     if (w.from.slice(0, 4) !== w.to.slice(0, 4)) return text;
     return `${text} ${String(Number(w.from.slice(0, 4)) % 100).padStart(2, '0')}`;
 }

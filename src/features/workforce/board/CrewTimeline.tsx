@@ -5,10 +5,11 @@
 // Sunday shading are CSS backgrounds of each row, no chart library. Scrolls inside its own box both ways, with the
 // day headers and the crew column sticky.
 import { memo, useCallback, useMemo } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { Tooltip } from 'antd';
-import { WORKFORCE_TRADE_LABEL, type CrewAssignmentDto, type PersonDto } from '@/shared/contract';
+import type { CrewAssignmentDto, PersonDto } from '@/shared/contract';
 import {
-    THAI_WEEKDAY_SHORT, monthHeaders, thaiDay, thaiDayRange, weekHeaders, type BoardDay, type BoardPreset, type BoardWindow,
+    monthHeaders, thaiDay, thaiDayRange, weekdayShort, weekHeaders, type BoardDay, type BoardPreset, type BoardWindow,
     type WaitSegment, type WorkSegment,
 } from '@/domain/workforce/board';
 import { isoToSerial } from '@/domain/planning/calendar';
@@ -16,6 +17,8 @@ import {
     BAR_HEIGHT, DAY_WIDTH, LANE_HEIGHT, barDomId, percent, rowHeight, taskLabel,
     type BoardNames, type BoardRow, type ProjectColour,
 } from './view';
+import { lagReasonIn } from '@/domain/workforce';
+import { tradeNameOf } from '../text';
 
 const NAME_COL = 'w-[148px] md:w-[232px] shrink-0';
 const MIN_ROW = 46;
@@ -96,13 +99,15 @@ function Header({ days, window: w, preset, width, today }: {
     days: readonly BoardDay[]; window: BoardWindow; preset: BoardPreset; width: number; today: string;
 }) {
     const dw = DAY_WIDTH[preset];
-    const months = monthHeaders(w);
-    const weeks = weekHeaders(w);
+    const t = useTranslations('workforce');
+    const locale = useLocale();
+    const months = monthHeaders(w, locale);
+    const weeks = weekHeaders(w, locale);
     const cell = 'absolute top-0 h-full border-l border-gray-200 px-1.5 truncate leading-6';
     return (
         <div className="sticky top-0 z-20 flex bg-white border-b border-gray-200">
             <div data-name-col className={`${NAME_COL} sticky left-0 z-30 bg-white border-r border-gray-200 px-3 flex items-end pb-1.5 text-[12px] text-gray-500`}>
-                ทีม
+                {t('board.timeline.crew')}
             </div>
             <div className="shrink-0" style={{ width }}>
                 <div className="relative h-6 text-[12px] font-medium text-gray-700">
@@ -113,7 +118,7 @@ function Header({ days, window: w, preset, width, today }: {
                 <div className="relative h-6 text-[11px] text-gray-500 border-t border-gray-100 tabular-nums">
                     {weeks.map(k => (
                         <div key={k.offset} className={cell} style={{ left: k.offset * dw, width: k.days * dw }} title={k.label}>
-                            {preset === '3m' ? (k.days >= 4 ? thaiDay(days[k.offset]?.iso ?? '') : '') : k.label}
+                            {preset === '3m' ? (k.days >= 4 ? thaiDay(days[k.offset]?.iso ?? '', false, locale) : '') : k.label}
                         </div>
                     ))}
                 </div>
@@ -125,7 +130,7 @@ function Header({ days, window: w, preset, width, today }: {
                             return (
                                 <div key={d.iso} data-day={d.iso} className={`absolute top-0 h-full flex flex-col items-center justify-center leading-[14px] ${tone}`}
                                     style={{ left: i * dw, width: dw }}>
-                                    <span className="text-[10px]">{THAI_WEEKDAY_SHORT[d.dow]}</span>
+                                    <span className="text-[10px]">{weekdayShort(d.dow, locale)}</span>
                                     <span className="text-[12px]">{d.day}</span>
                                 </div>
                             );
@@ -147,13 +152,14 @@ interface RowProps extends TimelineProps {
 const CrewRow = memo(function CrewRow({
     row, dw, grid, todayIndex, days, colours, names, peopleById, selectedId, focusProjectId, onOpen, window: w,
 }: RowProps) {
+    const t = useTranslations('workforce');
     const h = Math.max(MIN_ROW, rowHeight(row.lanes));
     const lanesHeight = row.lanes * LANE_HEIGHT - (LANE_HEIGHT - BAR_HEIGHT);
     const top0 = Math.round((h - lanesHeight) / 2);
     const leader = row.crew.leaderId === null ? undefined : peopleById.get(row.crew.leaderId);
     const ws = isoToSerial(w.from) ?? 0;
     const colourOf = (projectId: string) => colours.get(projectId) ?? GREY;
-    const sub = [WORKFORCE_TRADE_LABEL[row.crew.trade], leader === undefined ? undefined : `หัวหน้า ${leader.nickname ?? leader.name}`]
+    const sub = [tradeNameOf(t, row.crew.trade), leader === undefined ? undefined : t('board.timeline.leader', { name: leader.nickname ?? leader.name })]
         .filter((x): x is string => x !== undefined).join(' · ');
 
     return (
@@ -161,12 +167,12 @@ const CrewRow = memo(function CrewRow({
             <div className={`${NAME_COL} sticky left-0 z-10 bg-white border-r border-gray-200 px-3 flex flex-col justify-center min-w-0`}>
                 <div className="flex items-baseline gap-2 min-w-0">
                     <span className="truncate text-[13px] font-medium text-gray-900" title={row.crew.name}>{row.crew.name}</span>
-                    <span className="ml-auto shrink-0 text-[12px] tabular-nums text-gray-500" title="อัตราการใช้ทีมในช่วงที่แสดง">
+                    <span className="ml-auto shrink-0 text-[12px] tabular-nums text-gray-500" title={t('board.timeline.utilisation')}>
                         {percent(row.metrics.utilisation)}
                     </span>
                 </div>
                 <span className="truncate text-[12px] text-gray-500" title={sub}>
-                    {row.crew.archivedAt !== null && <span className="text-gray-400">เก็บถาวร · </span>}{sub}
+                    {row.crew.archivedAt !== null && <span className="text-gray-400">{t('board.timeline.archived')} · </span>}{sub}
                 </span>
             </div>
             <div className="relative shrink-0" style={grid}>
@@ -201,7 +207,7 @@ const CrewRow = memo(function CrewRow({
                     return (
                         <span key={`i:${String(s.offset)}`} className="absolute text-[11px] text-gray-400 text-center truncate pointer-events-none tabular-nums"
                             style={{ left: s.offset * dw, width: px, top: top0, lineHeight: `${String(BAR_HEIGHT)}px` }}>
-                            ว่าง {s.days} วัน
+                            {t('board.timeline.idle', { days: s.days })}
                         </span>
                     );
                 })}
@@ -215,6 +221,8 @@ function WorkBar({ seg, dw, top, colour, names, crewName, selected, dim, onOpen 
     dw: number; top: number; colour: ProjectColour; names: BoardNames; crewName: string; selected: boolean; dim: boolean;
     onOpen: (assignmentId: string) => void;
 }) {
+    const t = useTranslations('workforce');
+    const locale = useLocale();
     const clippedLeft = seg.from !== seg.start;
     const clippedRight = seg.to !== seg.end;
     const conflict = seg.conflictWith.length > 0;
@@ -228,12 +236,12 @@ function WorkBar({ seg, dw, top, colour, names, crewName, selected, dim, onOpen 
             <div className="text-[12px] leading-5">
                 <div className="font-medium">{project}</div>
                 <div>{taskLabel(seg.taskId)}</div>
-                <div className="tabular-nums">{thaiDayRange(seg.start, seg.end)} · {crewName}</div>
-                {conflict && <div className="text-red-300">ชนกับงานอื่นของทีมนี้</div>}
+                <div className="tabular-nums">{thaiDayRange(seg.start, seg.end, locale)} · {crewName}</div>
+                {conflict && <div className="text-red-300">{t('board.timeline.clashTip')}</div>}
             </div>
         )}>
             <button type="button" id={barDomId(seg.assignment.id)} data-from={seg.from} data-to={seg.to} onClick={() => onOpen(seg.assignment.id)}
-                aria-label={`${project} ${taskLabel(seg.taskId)} ${thaiDayRange(seg.start, seg.end)}${conflict ? ' ชนกับงานอื่น' : ''}`}
+                aria-label={`${project} ${taskLabel(seg.taskId)} ${thaiDayRange(seg.start, seg.end, locale)}${conflict ? ` ${t('board.timeline.clashAria')}` : ''}`}
                 className="absolute flex items-center gap-1 px-1.5 text-left text-[12px] font-medium cursor-pointer border-0 overflow-hidden whitespace-nowrap transition-opacity focus-visible:outline-2 focus-visible:outline-orange-500"
                 style={{
                     left: seg.offset * dw + 1, width: Math.max(width, 4), top, height: BAR_HEIGHT,
@@ -255,18 +263,21 @@ function WaitBar({ seg, dw, top, colour, names, dim, onOpen }: {
     seg: WaitSegment; dw: number; top: number; colour: ProjectColour; names: BoardNames; dim: boolean;
     onOpen: (assignmentId: string) => void;
 }) {
+    const t = useTranslations('workforce');
+    const locale = useLocale();
+    const reason = lagReasonIn(seg.taskId, seg.reason, locale);
     const width = seg.days * dw - 2;
     return (
         <Tooltip mouseEnterDelay={0.15} title={(
             <div className="text-[12px] leading-5">
-                <div className="font-medium">รอ {seg.lagDays} วัน · {seg.reason}</div>
-                <div>{names.project(seg.projectId)} หลัง {taskLabel(seg.taskId)}</div>
-                <div className="tabular-nums">{thaiDayRange(seg.waitStart, seg.waitEnd)}{seg.overridden ? ' · โครงการกำหนดเอง' : ''}</div>
-                <div className="text-gray-300">ทีมว่าง ย้ายไปช่วยงานอื่นได้</div>
+                <div className="font-medium">{t('board.timeline.waitTip', { lag: seg.lagDays, reason })}</div>
+                <div>{t('board.timeline.waitAfter', { project: names.project(seg.projectId), task: taskLabel(seg.taskId) })}</div>
+                <div className="tabular-nums">{thaiDayRange(seg.waitStart, seg.waitEnd, locale)}{seg.overridden ? ` · ${t('board.timeline.projectSet')}` : ''}</div>
+                <div className="text-gray-300">{t('board.timeline.waitFree')}</div>
             </div>
         )}>
             <button type="button" onClick={() => onOpen(seg.assignmentId)}
-                aria-label={`รอ ${String(seg.lagDays)} วัน ${seg.reason}`}
+                aria-label={t('board.timeline.waitAria', { lag: seg.lagDays, reason })}
                 className="absolute rounded-[4px] text-[11px] text-gray-600 cursor-pointer overflow-hidden whitespace-nowrap px-1.5 text-left tabular-nums focus-visible:outline-2 focus-visible:outline-orange-500"
                 style={{
                     left: seg.offset * dw + 1, width: Math.max(width, 4), top, height: BAR_HEIGHT,
@@ -275,7 +286,7 @@ function WaitBar({ seg, dw, top, colour, names, dim, onOpen }: {
                     border: `1px dashed ${colour.accent}80`,
                     opacity: dim ? 0.35 : 1,
                 }}>
-                {width >= 52 ? `รอ ${String(seg.days)} วัน` : ''}
+                {width >= 52 ? t('board.timeline.waitBar', { days: seg.days }) : ''}
             </button>
         </Tooltip>
     );

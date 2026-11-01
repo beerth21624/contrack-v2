@@ -4,10 +4,12 @@
 // The pick is a draft until "บันทึก", so a slip of the mouse never changes the project by itself.
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { App, Button, Select } from 'antd';
-import { PERSON_ROLE_LABEL, type PersonDto, type PersonRole } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+import type { PersonDto, PersonRole } from '@/shared/contract';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { usePeople, useProjectSupervisors, usePutProjectSupervisors } from '@/features/cloud/api/workforce';
+import { roleNameOf, workforceText } from '../text';
 import { WORKSPACE_CREWS_HREF, type OpenCloudProject } from './project-workforce';
 
 /** Most supervisors a project keeps (contract: putProjectSupervisorsRequestSchema). */
@@ -23,7 +25,7 @@ export function supervisorOptions(people: readonly PersonDto[], chosen: readonly
             const r = ROLE_ORDER[a.role] - ROLE_ORDER[b.role];
             return r !== 0 ? r : a.name.localeCompare(b.name, 'th');
         })
-        .map(p => ({ value: p.id, label: personLabel(p), role: PERSON_ROLE_LABEL[p.role] }));
+        .map(p => ({ value: p.id, label: personLabel(p), role: roleNameOf(workforceText(), p.role) }));
 }
 
 export const personLabel = (p: Pick<PersonDto, 'name' | 'nickname'>) =>
@@ -33,6 +35,9 @@ const sameSet = (a: readonly string[], b: readonly string[]) => a.length === b.l
 
 export function SupervisorsCard({ cloud, canEdit }: { cloud: OpenCloudProject; canEdit: boolean }) {
     const { message } = App.useApp();
+    const t = useTranslations('workforce');
+    const tc = useTranslations('common');
+    const errorMessage = useErrorMessage();
     const people = usePeople(cloud.workspaceId);
     const current = useProjectSupervisors(cloud.projectId);
     const put = usePutProjectSupervisors(cloud.projectId);
@@ -45,7 +50,7 @@ export function SupervisorsCard({ cloud, canEdit }: { cloud: OpenCloudProject; c
     const byId = new Map((people.data ?? []).map(p => [p.id, p]));
     const nameOf = (id: string) => {
         const p = byId.get(id);
-        return p === undefined ? 'บุคลากรที่เก็บถาวรแล้ว' : personLabel(p);
+        return p === undefined ? t('shared.archivedPerson') : personLabel(p);
     };
     const options = supervisorOptions(people.data ?? [], value);
     const loading = people.isLoading || current.isLoading;
@@ -53,49 +58,51 @@ export function SupervisorsCard({ cloud, canEdit }: { cloud: OpenCloudProject; c
     const save = () => {
         if (draft === null) return;
         put.mutateAsync(draft).then(
-            () => { setDraft(null); void message.success('บันทึกผู้คุมงานแล้ว'); },
-            (e: unknown) => { void message.error(thaiErrorMessage(e)); },
+            () => { setDraft(null); void message.success(t('team.supervisors.saved')); },
+            (e: unknown) => { void message.error(errorMessage(e)); },
         );
     };
 
     return (
-        <section aria-label="ผู้คุมงาน" className="bg-white border border-gray-200 rounded-card shadow-card px-4 sm:px-5 py-3 flex flex-col gap-2">
+        <section aria-label={t('team.supervisors.title')} className="bg-white border border-gray-200 rounded-card shadow-card px-4 sm:px-5 py-3 flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <span className="font-semibold text-[14px] text-gray-800 shrink-0">ผู้คุมงาน</span>
+                <span className="font-semibold text-[14px] text-gray-800 shrink-0">{t('team.supervisors.title')}</span>
                 {canEdit ? (
                     <Select<string[]> mode="multiple" className="min-w-0 flex-1 basis-[280px]" value={value} loading={loading}
                         onChange={v => setDraft(v)} options={options} maxCount={MAX_SUPERVISORS} allowClear
-                        placeholder={options.length === 0 && !loading ? 'ยังไม่มีบุคลากรในบริษัท' : 'เลือกผู้คุมงานของโครงการนี้'}
-                        showSearch={{ optionFilterProp: 'label' }} aria-label="ผู้คุมงาน"
+                        placeholder={options.length === 0 && !loading ? t('team.supervisors.noPeople') : t('team.supervisors.placeholder')}
+                        showSearch={{ optionFilterProp: 'label' }} aria-label={t('team.supervisors.title')}
                         labelRender={o => nameOf(String(o.value))}
                         optionRender={o => {
                             const p = byId.get(String(o.value));
                             return (
                                 <span className="flex items-baseline gap-2 min-w-0">
                                     <span className="truncate">{nameOf(String(o.value))}</span>
-                                    {p !== undefined && <span className="shrink-0 text-[12px] text-gray-500">{PERSON_ROLE_LABEL[p.role]}</span>}
+                                    {p !== undefined && <span className="shrink-0 text-[12px] text-gray-500">{roleNameOf(t, p.role)}</span>}
                                 </span>
                             );
                         }} />
                 ) : (
                     <span className="min-w-0 text-[14px] text-gray-700">
-                        {saved.length === 0 ? <span className="text-gray-400">ยังไม่ได้ระบุ</span> : saved.map(nameOf).join(', ')}
+                        {saved.length === 0 ? <span className="text-gray-400">{t('team.supervisors.none')}</span> : saved.map(nameOf).join(', ')}
                     </span>
                 )}
                 {dirty && (
                     <span className="flex gap-2 shrink-0">
-                        <Button onClick={() => setDraft(null)}>ยกเลิก</Button>
-                        <Button type="primary" loading={put.isPending} onClick={save}>บันทึก</Button>
+                        <Button onClick={() => setDraft(null)}>{tc('cancel')}</Button>
+                        <Button type="primary" loading={put.isPending} onClick={save}>{tc('save')}</Button>
                     </span>
                 )}
             </div>
             {canEdit && !loading && (people.data ?? []).length === 0 && (
                 <div className="text-[12px] text-gray-500">
-                    เพิ่มบุคลากรที่หน้า <Link href={WORKSPACE_CREWS_HREF} className="text-blue-600 hover:underline">ทีมช่างและบุคลากร</Link> ก่อน
+                    {t.rich('team.supervisors.addPeople', {
+                        link: chunks => <Link href={WORKSPACE_CREWS_HREF} className="text-blue-600 hover:underline">{chunks}</Link>,
+                    })}
                 </div>
             )}
             {(people.isError || current.isError) && (
-                <div className="text-[12px] text-red-600">{thaiErrorMessage(people.error ?? current.error)}</div>
+                <div className="text-[12px] text-red-600">{errorMessage(people.error ?? current.error)}</div>
             )}
         </section>
     );

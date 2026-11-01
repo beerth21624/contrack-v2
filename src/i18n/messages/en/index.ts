@@ -40,6 +40,7 @@ import exportMessages from './export.json';
 import calculators from './calculators.json';
 import planning from './planning.json';
 import cloud from './cloud.json';
+import workforce from './workforce.json';
 
 const messages = {
   common,
@@ -84,6 +85,7 @@ const messages = {
   calculators,
   planning,
   cloud,
+  workforce,
 };
 
 export default messages;

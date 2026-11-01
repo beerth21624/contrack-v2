@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createElement } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { createElement, type ReactElement } from 'react';
+import { renderToStaticMarkup as renderBare } from 'react-dom/server';
 import { computeProject, createProject } from '@/domain/project';
 import { crewBusy, effectiveTaskLag } from '@/domain/workforce';
 import type { PersonDto } from '@/shared/contract';
@@ -12,6 +12,10 @@ import {
 } from '../team-model';
 import { TeamTable } from '../TeamTable';
 import { supervisorOptions } from '../SupervisorsCard';
+import { withIntl } from '../../test-intl';
+
+/** Renders under the Thai messages (the components read their texts with next-intl). */
+const renderToStaticMarkup = (el: ReactElement): string => renderBare(withIntl(el));
 
 const { schedule, manday } = computeProject(createProject('sample')).planning;
 const blank = computeProject(createProject('blank')).planning;

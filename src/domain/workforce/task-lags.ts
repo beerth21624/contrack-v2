@@ -27,6 +27,36 @@ export const DEFAULT_TASK_LAGS: Readonly<Record<string, DefaultTaskLag>> = {
     '7.2': { days: 1, reason: 'สีรอบแรกแห้ง' },
 };
 
+/** English wording of the default reasons (by task id) and of the generic one. */
+const DEFAULT_LAG_REASON_EN: Readonly<Record<string, string>> = {
+    '1.5': 'Curing footing concrete',
+    '1.6': 'Curing pedestal column concrete',
+    '1.7': 'Curing ground beam concrete',
+    '2.1': 'Curing slab concrete',
+    '2.3': 'Waiting to strip column formwork',
+    '2.4': 'Waiting to remove beam and roof deck slab props',
+    '2.5': 'Curing staircase concrete',
+    '4.1': 'Masonry settling before plastering',
+    '5.1': 'Plaster drying before primer painting',
+    '6.2': 'Floor tiles setting',
+    '6.3': 'Bathroom tiles setting',
+    '6.5': 'Primer drying',
+    '7.2': 'First paint coat drying',
+};
+const GENERIC_REASON = 'รอตามที่กำหนด';
+const GENERIC_REASON_EN = 'Waiting as set';
+
+/**
+ * The reason of a wait in `locale`: the built-in Thai reasons (a default, or the generic one) have an English wording;
+ * a note the user typed is shown as typed.
+ */
+export function lagReasonIn(taskId: string, reason: string, locale: string): string {
+    if (locale !== 'en') return reason;
+    if (reason === GENERIC_REASON) return GENERIC_REASON_EN;
+    const def = DEFAULT_TASK_LAGS[taskId];
+    return def?.reason === reason ? DEFAULT_LAG_REASON_EN[taskId] ?? reason : reason;
+}
+
 export interface EffectiveTaskLag {
     taskId: string;
     days: number;
@@ -41,7 +71,7 @@ export function effectiveTaskLag(taskId: string, overrides: readonly TaskLag[]):
     const def = DEFAULT_TASK_LAGS[taskId];
     if (own !== undefined) {
         const note = (own.note ?? '').trim();
-        return { taskId, days: own.days, reason: note !== '' ? note : def?.reason ?? 'รอตามที่กำหนด', overridden: true };
+        return { taskId, days: own.days, reason: note !== '' ? note : def?.reason ?? GENERIC_REASON, overridden: true };
     }
     return { taskId, days: def?.days ?? 0, reason: def?.reason ?? '', overridden: false };
 }

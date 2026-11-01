@@ -495,7 +495,7 @@ export function boardQueryRange(w: BoardWindow, today: string, lookBack: number)
     return { from: addDays(from, -lookBack), to };
 }
 
-// ─── Thai labels ───
+// ─── Day labels (Thai by default, English on request) ───
 
 export const THAI_MONTH_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'] as const;
 export const THAI_MONTH_LONG = [
@@ -505,25 +505,37 @@ export const THAI_MONTH_LONG = [
 /** By dayOfWeek (0 = Sunday). */
 export const THAI_WEEKDAY_SHORT = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'] as const;
 
+const EN_MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
+const EN_MONTH_LONG = [
+    'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December',
+] as const;
+const EN_WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+
+const isEn = (locale: string): boolean => locale === 'en';
+const monthShort = (m: number, locale: string): string => (isEn(locale) ? EN_MONTH_SHORT : THAI_MONTH_SHORT)[m] ?? '';
+
+/** Weekday abbreviation by dayOfWeek (0 = Sunday). */
+export const weekdayShort = (dow: number, locale = 'th'): string => (isEn(locale) ? EN_WEEKDAY_SHORT : THAI_WEEKDAY_SHORT)[dow] ?? '';
+
 /** Year, 2 digits ("26" for 2026): the app shows the Christian-era year everywhere (calendar, S-Curve, dates). */
 const yy2 = (y: number) => String(y % 100).padStart(2, '0');
 
-/** "28 ต.ค." (with " 26" when `withYear`). */
-export function thaiDay(iso: string, withYear = false): string {
+/** "28 ต.ค." / "28 Oct" (with " 26" when `withYear`). */
+export function thaiDay(iso: string, withYear = false, locale = 'th'): string {
     const p = parts(iso);
     if (p === null) return iso;
-    return `${String(p.d)} ${THAI_MONTH_SHORT[p.m] ?? ''}${withYear ? ` ${yy2(p.y)}` : ''}`;
+    return `${String(p.d)} ${monthShort(p.m, locale)}${withYear ? ` ${yy2(p.y)}` : ''}`;
 }
 
-/** "28–30 ต.ค." · "30 ต.ค.–2 พ.ย." · "30 ธ.ค. 69–2 ม.ค. 70" · "28 ต.ค." for one day. */
-export function thaiDayRange(from: string, to: string): string {
+/** "28–30 ต.ค." · "30 ต.ค.–2 พ.ย." · "30 ธ.ค. 69–2 ม.ค. 70" · "28 ต.ค." for one day (English: "28–30 Oct" …). */
+export function thaiDayRange(from: string, to: string, locale = 'th'): string {
     const a = parts(from);
     const b = parts(to);
     if (a === null || b === null) return `${from}–${to}`;
-    if (from === to) return thaiDay(from);
-    if (a.y !== b.y) return `${thaiDay(from, true)}–${thaiDay(to, true)}`;
-    if (a.m !== b.m) return `${thaiDay(from)}–${thaiDay(to)}`;
-    return `${String(a.d)}–${String(b.d)} ${THAI_MONTH_SHORT[a.m] ?? ''}`;
+    if (from === to) return thaiDay(from, false, locale);
+    if (a.y !== b.y) return `${thaiDay(from, true, locale)}–${thaiDay(to, true, locale)}`;
+    if (a.m !== b.m) return `${thaiDay(from, false, locale)}–${thaiDay(to, false, locale)}`;
+    return `${String(a.d)}–${String(b.d)} ${monthShort(a.m, locale)}`;
 }
 
 export interface BoardDay {
@@ -556,11 +568,11 @@ export function boardDays(w: BoardWindow): BoardDay[] {
 }
 
 /** Month headers over the window: "ตุลาคม 2026". */
-export function monthHeaders(w: BoardWindow): BoardSpanHeader[] {
+export function monthHeaders(w: BoardWindow, locale = 'th'): BoardSpanHeader[] {
     const out: BoardSpanHeader[] = [];
     boardDays(w).forEach((d, i) => {
         const last = out[out.length - 1];
-        const label = `${THAI_MONTH_LONG[d.month] ?? ''} ${String(d.year)}`;
+        const label = `${(isEn(locale) ? EN_MONTH_LONG : THAI_MONTH_LONG)[d.month] ?? ''} ${String(d.year)}`;
         if (last?.label === label) last.days++;
         else out.push({ label, offset: i, days: 1 });
     });
@@ -568,7 +580,7 @@ export function monthHeaders(w: BoardWindow): BoardSpanHeader[] {
 }
 
 /** Week headers (Monday to Sunday, cut at the window's ends): "26 ต.ค.–1 พ.ย.". */
-export function weekHeaders(w: BoardWindow): BoardSpanHeader[] {
+export function weekHeaders(w: BoardWindow, locale = 'th'): BoardSpanHeader[] {
     const days = boardDays(w);
     const out: BoardSpanHeader[] = [];
     let start = 0;
@@ -576,7 +588,7 @@ export function weekHeaders(w: BoardWindow): BoardSpanHeader[] {
         const next = days[i + 1];
         if (next === undefined || next.dow === 1) {
             const first = days[start];
-            if (first !== undefined) out.push({ label: thaiDayRange(first.iso, d.iso), offset: start, days: i - start + 1 });
+            if (first !== undefined) out.push({ label: thaiDayRange(first.iso, d.iso, locale), offset: start, days: i - start + 1 });
             start = i + 1;
         }
     });

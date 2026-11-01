@@ -8,6 +8,8 @@ import { thaiDay, type BoardAssignment } from '@/domain/workforce/board';
 import type { ChangedAssignment, ScenarioMetrics, WhatIf } from '@/domain/workforce/scenario';
 import { describeChange, type ChangeNames, type Suggestion, type SuggestionKind } from '@/domain/workforce/suggest';
 import { PLAN_TASKS } from '@/domain/planning/tasks';
+import { taskNameIn } from '@/domain/planning/labels.en';
+import { workforceLocale, workforceText } from '../text';
 import type { BoardNames } from './view';
 
 // ─── Money and day wording ───
@@ -15,7 +17,7 @@ import type { BoardNames } from './view';
 const BAHT = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 
 /** "฿12,500" (whole baht). */
-export const money = (n: number): string => `฿${BAHT.format(Math.round(n))}`;
+export const money = (n: number): string => `\u0E3F${BAHT.format(Math.round(n))}`;
 
 /** "+฿3,200" · "−฿3,200" · "฿0". */
 export const signedMoney = (n: number): string =>
@@ -23,19 +25,17 @@ export const signedMoney = (n: number): string =>
 
 /** A finish moved by `days`: "เร็วขึ้น 6 วัน" (negative = earlier) · "ช้าลง 2 วัน" · "เท่าเดิม". */
 export function finishShift(days: number): string {
-    if (days < 0) return `เร็วขึ้น ${String(-days)} วัน`;
-    if (days > 0) return `ช้าลง ${String(days)} วัน`;
-    return 'เท่าเดิม';
+    const t = workforceText();
+    if (days < 0) return t('board.impact.earlier', { days: -days });
+    if (days > 0) return t('board.impact.later', { days });
+    return t('board.impact.same');
 }
 
 /** "28 ต.ค." — with the 2-digit year when it is not the year of `today`. */
-const day = (iso: string, today: string): string => thaiDay(iso, iso.slice(0, 4) !== today.slice(0, 4));
+const day = (iso: string, today: string): string => thaiDay(iso, iso.slice(0, 4) !== today.slice(0, 4), workforceLocale());
 
-export const SUGGESTION_KIND_LABEL: Record<SuggestionKind, string> = {
-    'resolve-conflict': 'แก้จุดชน',
-    help: 'ส่งทีมไปช่วย',
-    'fill-gap': 'ใช้ช่วงทีมว่าง',
-};
+/** The name of a suggestion kind ("แก้จุดชน" …). */
+export const suggestionKindLabel = (kind: SuggestionKind): string => workforceText()(`board.suggest.kind.${kind}`);
 
 // ─── Before → after lines ───
 
@@ -61,10 +61,11 @@ export interface ImpactOptions {
 const toneOf = (delta: number, lowerIsBetter = true): ImpactTone =>
     (delta === 0 ? 'neutral' : (delta < 0) === lowerIsBetter ? 'good' : 'bad');
 
-function countChange(delta: number, unit: string): string {
-    if (delta < 0) return `ลดลง ${String(-delta)} ${unit}`;
-    if (delta > 0) return `เพิ่มขึ้น ${String(delta)} ${unit}`;
-    return 'เท่าเดิม';
+function countChange(delta: number, kind: 'clashes' | 'idle'): string {
+    const t = workforceText();
+    if (delta < 0) return kind === 'clashes' ? t('board.impact.clashesDown', { count: -delta }) : t('board.impact.idleDown', { count: -delta });
+    if (delta > 0) return kind === 'clashes' ? t('board.impact.clashesUp', { count: delta }) : t('board.impact.idleUp', { count: delta });
+    return t('board.impact.same');
 }
 
 /** Projects a change touches (before and after side), in first-seen order, plus any whose finish or cost moved. */
@@ -85,6 +86,7 @@ export function touchedProjects(w: Pick<WhatIf, 'result' | 'delta'>): string[] {
  * ฿0 for an unknown cost: unknown means no line.
  */
 export function impactLines(w: Pick<WhatIf, 'result' | 'before' | 'after' | 'delta'>, o: ImpactOptions): ImpactLine[] {
+    const t = workforceText();
     const lines: ImpactLine[] = [];
     const before = new Map(w.before.projects.map(p => [p.projectId, p]));
     const after = new Map(w.after.projects.map(p => [p.projectId, p]));
@@ -96,10 +98,10 @@ export function impactLines(w: Pick<WhatIf, 'result' | 'before' | 'after' | 'del
         const days = w.delta.projects.find(p => p.projectId === id)?.days ?? 0;
         lines.push({
             key: `project:${id}`,
-            label: `${o.projectName(id)} เสร็จ`,
+            label: t('board.impact.finishes', { project: o.projectName(id) }),
             before: fb === null ? '—' : day(fb, o.today),
             after: fa === null ? '—' : day(fa, o.today),
-            change: fb === null || fa === null ? (fb === fa ? 'เท่าเดิม' : '') : finishShift(days),
+            change: fb === null || fa === null ? (fb === fa ? t('board.impact.same') : '') : finishShift(days),
             tone: toneOf(days),
         });
     }
@@ -107,17 +109,17 @@ export function impactLines(w: Pick<WhatIf, 'result' | 'before' | 'after' | 'del
     const dc = w.after.conflicts - w.before.conflicts;
     if (w.before.conflicts > 0 || w.after.conflicts > 0) {
         lines.push({
-            key: 'conflicts', label: 'จุดชน', before: String(w.before.conflicts), after: String(w.after.conflicts),
-            change: countChange(dc, 'จุด'), tone: toneOf(dc),
+            key: 'conflicts', label: t('board.impact.clashes'), before: String(w.before.conflicts), after: String(w.after.conflicts),
+            change: countChange(dc, 'clashes'), tone: toneOf(dc),
         });
     }
 
     const di = w.after.idleCrewDays - w.before.idleCrewDays;
     if (di !== 0) {
         lines.push({
-            key: 'idle', label: 'วันว่างรวมของทีม',
-            before: `${String(w.before.idleCrewDays)} วัน`, after: `${String(w.after.idleCrewDays)} วัน`,
-            change: countChange(di, 'วัน'), tone: toneOf(di),
+            key: 'idle', label: t('board.impact.idle'),
+            before: t('board.impact.idleValue', { count: w.before.idleCrewDays }), after: t('board.impact.idleValue', { count: w.after.idleCrewDays }),
+            change: countChange(di, 'idle'), tone: toneOf(di),
         });
     }
 
@@ -125,7 +127,7 @@ export function impactLines(w: Pick<WhatIf, 'result' | 'before' | 'after' | 'del
         const dv = w.after.idleValue - w.before.idleValue;
         if (Math.round(dv) !== 0) {
             lines.push({
-                key: 'idleValue', label: 'มูลค่าวันว่าง', before: money(w.before.idleValue), after: money(w.after.idleValue),
+                key: 'idleValue', label: t('board.impact.idleMoney'), before: money(w.before.idleValue), after: money(w.after.idleValue),
                 change: signedMoney(dv), tone: toneOf(dv),
             });
         }
@@ -139,7 +141,7 @@ export function impactLines(w: Pick<WhatIf, 'result' | 'before' | 'after' | 'del
         }
         if (cb !== null && ca !== null && Math.round(ca - cb) !== 0) {
             lines.push({
-                key: 'labour', label: 'ค่าแรงของโครงการที่เกี่ยวข้อง', before: money(cb), after: money(ca),
+                key: 'labour', label: t('board.impact.labour'), before: money(cb), after: money(ca),
                 change: signedMoney(ca - cb), tone: toneOf(ca - cb),
             });
         }
@@ -154,9 +156,10 @@ export const changeNamesOf = (names: BoardNames): ChangeNames =>
     ({ crewName: names.crew, projectName: names.project, taskName: planTaskName });
 
 const PLAN_TASK_NAME = new Map(PLAN_TASKS.map(t => [t.id, t.name]));
-/** The plan's task name ("งานฉาบปูน"), "งาน 9.9" for an unknown id (what the suggester writes into titles). */
+/** The plan's task name ("งานฉาบปูน"), "งาน 9.9" for an unknown id (what the suggester writes into titles), in the UI language. */
 export function planTaskName(taskId: string): string {
-    return PLAN_TASK_NAME.get(taskId) ?? `งาน ${taskId}`;
+    const name = PLAN_TASK_NAME.get(taskId);
+    return name === undefined ? workforceText()('shared.taskFallback', { id: taskId }) : taskNameIn(taskId, name, workforceLocale());
 }
 
 /**
@@ -164,7 +167,7 @@ export function planTaskName(taskId: string): string {
  * ทีมก่อฉาบช่างดำ" (src/domain/workforce/suggest.ts describeChange).
  */
 export function changeLine<A extends BoardAssignment>(c: ChangedAssignment<A>, n: ChangeNames): string {
-    return describeChange(c, n);
+    return describeChange(c, n, workforceLocale());
 }
 
 /** The changes not asked for: later tasks pushed (or brought) along. */
@@ -173,8 +176,8 @@ export const followOns = <A extends BoardAssignment>(changed: readonly ChangedAs
 
 // ─── Saving: one request per change, in order ───
 
-/** Note on an assignment created by accepting a suggestion. */
-export const SUGGESTION_NOTE = 'ช่วยงาน (คำแนะนำ)';
+/** Note on an assignment created by accepting a suggestion (in the UI language of whoever accepts it). */
+export const suggestionNote = (): string => workforceText()('board.suggest.note');
 
 export type SaveStep =
     | { kind: 'create'; change: ChangedAssignment<CrewAssignmentDto>; body: CreateCrewAssignmentRequest }
@@ -187,7 +190,7 @@ const CAUSE_RANK: Record<ChangedAssignment['cause'], number> = { move: 0, add: 1
  * fields that differ; nothing-changed entries are skipped. Order: the asked moves, then the adds, then the follow-ons
  * (stable within each, which keeps the task order of the follow-ons).
  */
-export function saveSteps(changed: readonly ChangedAssignment<CrewAssignmentDto>[], note: string = SUGGESTION_NOTE): SaveStep[] {
+export function saveSteps(changed: readonly ChangedAssignment<CrewAssignmentDto>[], note: string = suggestionNote()): SaveStep[] {
     const ordered = changed.map((c, i) => ({ c, i }))
         .sort((x, y) => CAUSE_RANK[x.c.cause] - CAUSE_RANK[y.c.cause] || x.i - y.i)
         .map(x => x.c);
@@ -233,12 +236,11 @@ export async function runSaveSteps(steps: readonly SaveStep[], exec: (step: Save
 
 /** "บันทึกรายการที่ 2 จาก 3 ไม่สำเร็จ" + what was saved before it. */
 export function saveFailureLines(run: SaveRun, total: number): { title: string; saved: string } {
+    const t = workforceText();
     const index = run.failed?.index ?? 0;
     return {
-        title: `บันทึกรายการที่ ${String(index + 1)} จาก ${String(total)} ไม่สำเร็จ`,
-        saved: run.saved > 0
-            ? `${String(run.saved)} รายการก่อนหน้าบันทึกแล้ว รายการที่เหลือยังไม่ได้บันทึก`
-            : 'ยังไม่มีรายการใดถูกบันทึก',
+        title: t('board.suggest.failTitle', { index: String(index + 1), total: String(total) }),
+        saved: run.saved > 0 ? t('board.suggest.failSaved', { count: run.saved }) : t('board.suggest.failNone'),
     };
 }
 
@@ -267,7 +269,7 @@ export function assignmentFactory(workspaceId: string): (a: BoardAssignment) => 
         return {
             id: a.id.startsWith('new-') ? a.id : `new-${String(n)}`,
             workspaceId, projectId: a.projectId, taskId: a.taskId, crewId: a.crewId, start: a.start, end: a.end,
-            note: SUGGESTION_NOTE, createdBy: '', createdAt: '', updatedAt: '',
+            note: suggestionNote(), createdBy: '', createdAt: '', updatedAt: '',
         };
     };
 }
