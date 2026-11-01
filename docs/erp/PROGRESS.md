@@ -78,7 +78,7 @@
 | I-03 | components/sheet/journey | done | 0ab4816 | ไม่มี migration; namespace `journeyUi` ใหม่; ESLint glob เพิ่ม; D-372 |
 | I-04 | boq-home + journey | done | 0b518b0 | ไม่มี migration; namespaces `boqHome`/`journeyUi` ขยาย; ESLint glob เพิ่ม; D-373, D-374 |
 | I-05 | export (BOQ print/xlsx) | done | 143319f | ไม่มี migration; namespace `export` ใหม่ (`buttons/print/sheet/summary/schedule`); ESLint glob เพิ่ม; D-375…D-377 |
-| I-06 | calculators กลุ่ม 1 | done | HASH | ไม่มี migration; namespace `calculators` ใหม่ (th+en 861 ข้อความ); ESLint glob เพิ่ม; D-378…D-380 |
+| I-06 | calculators กลุ่ม 1 | done | b524ea7 | ไม่มี migration; namespace `calculators` ใหม่ (th+en 861 ข้อความ); ESLint glob เพิ่ม; D-378…D-380 |
 | I-07 | calculators กลุ่ม 2 | todo | | |
 | I-08 | calculators กลุ่ม 3 + overlay domain | todo | | หลังข้อนี้เปิดปุ่มภาษาทั่วไป |
 | I-09 | planning | todo | | |
@@ -1234,7 +1234,7 @@
 - WP ถัดไปต้องรู้: เรียกตัวสร้างเอกสารพร้อม `locale` ของเอกสาร (ใบเสนอราคา/เอกสาร ERP ใช้ `documentTranslator` ของตัวเอง ไม่ต้องใช้ตัวนี้); I-09 ต้องแปลข้อมูลจาก planning ที่เอกสารตารางงานใช้ (เดือน/วัน/ป้ายงวด/`formatDate`/`crewText`) และข้อความใน `SchedulePrintButton.tsx`; เนื้อหา BOQ ภาษาอังกฤษจะสมบูรณ์เมื่อ I-08 (overlay ที่ใช้อยู่คือ `template.v5.en.ts` เดิม)
 - ตรวจแล้ว: tsc web, eslint ไฟล์ที่แก้, vitest `src/features/export src/i18n` ผ่าน; ไม่เขียนเทสต์ใหม่
 
-### I-06 — calculators กลุ่ม 1 (HASH)
+### I-06 — calculators กลุ่ม 1 (b524ea7)
 - ย้ายไทยตรงตัวของ `CalculatorShell.tsx` และโฟลเดอร์ `brick, ceiling, column, demolition, door-window, electrical-cable, electrical-equipment, electrical-pipe, fill, floor-tile, footing, ground-beam, land-inspection, layout, load-center, misc, paint, pedestal, piles, plaster, precast-slab, roof-beam` เข้า `calculators.json` (th+en 861 ข้อความ, parity + ICU parse ผ่าน); ESLint glob เพิ่มแล้ว (ห้ามเติมไทยกลับ); ไฟล์ใหม่ `src/features/calculators/text.ts` (`CalcT`)
 - WP ถัดไป (I-07, I-08) ต้องรู้: ใช้ namespace `calculators` ต่อ โดยใส่กลุ่มของโฟลเดอร์ตัวเอง (`roofSlab.*` ฯลฯ) หรือ `common.*` ถ้าใช้ซ้ำ; ตัวช่วยที่รับ `t: CalcT` ไม่ต้องเรียก hook; `wallPartChoices(t)`/`wallPartHints(t)` แทน `WALL_PART_CHOICES`/`WALL_PART_HINTS` (ถ้าไฟล์ในกลุ่ม 2/3 นำเข้า); ค่าข้อมูลโดเมนที่เป็นไทย (D-380) รอ overlay ของ I-08; หัวตาราง/ป้ายที่มาจาก domain ยังเป็นไทย
 - ตรวจแล้ว: tsc web, eslint ไฟล์ที่แก้, `check-parity`, vitest `src/i18n src/features/calculators` ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์; ไม่เขียนเทสต์ใหม่
