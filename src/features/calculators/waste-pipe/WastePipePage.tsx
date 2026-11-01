@@ -6,15 +6,17 @@ import {
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
 import { PipeRunsSheet } from './PipeRunsSheet';
+import { useTranslations } from 'next-intl';
 
 export default function WastePipePage() {
+    const t = useTranslations('calculators');
     const { input, update, reset, result, isDefault } = useCalculator(wastePipe);
 
     return (
         <CalculatorShell def={wastePipe} result={result} isDefault={isDefault} onReset={reset}>
             <PipeRunsSheet def={wastePipe} input={input} onChange={runs => update({ runs })} result={result}
                 subtitle={WASTE_PIPE_SUBTITLE} items={WASTE_PIPE_ITEMS} sizes={WASTE_PIPE_SIZES} lines={WASTE_PIPE_BOQ_LINES}
-                plain={WASTE_PIPE_PLAIN} noun="ท่อน้ำทิ้ง" />
+                plain={WASTE_PIPE_PLAIN} noun={t('wastePipe.drainPipe')} />
         </CalculatorShell>
     );
 }

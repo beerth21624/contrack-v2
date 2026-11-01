@@ -13,13 +13,15 @@ import { CountStepper, PlanField, ResultSummary } from '@/components/sheet/journ
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
+import { useTranslations } from 'next-intl';
+import type { CalcT } from '../text';
 
 /** Room-count inputs with the sheet's hints (deck p16). */
-const ROOM_FIELDS: { key: CampGroupDef['rooms']; label: string; hint: string; size: string }[] = [
-    { key: 'workerRooms', label: 'จำนวนห้องพักคนงาน', hint: 'ฐานตัวอย่าง: 4 ห้อง ขนาด 2.4 x 3.6 ม.', size: 'ห้องละ 2.4 x 3.6 ม.' },
-    { key: 'toilets', label: 'จำนวนห้องน้ำ', hint: 'ฐานตัวอย่าง: 2 ห้อง ขนาด 1.2 x 1.2 ม.', size: 'ห้องละ 1.2 x 1.2 ม.' },
-    { key: 'showers', label: 'จำนวนห้องอาบน้ำ', hint: 'ฐานตัวอย่าง: 1 ห้อง ขนาด 1.5 x 3.0 ม.', size: 'ห้องละ 1.5 x 3.0 ม.' },
-    { key: 'stores', label: 'จำนวนสโตร์เก็บของ', hint: 'ฐานตัวอย่าง: 1 ห้อง ขนาด 2.4 x 2.4 ม.', size: 'ห้องละ 2.4 x 2.4 ม.' },
+const roomFields = (t: CalcT): { key: CampGroupDef['rooms']; label: string; hint: string; size: string }[] => [
+    { key: 'workerRooms', label: t('siteCamp.numberOfWorkerRooms'), hint: t('siteCamp.sampleBase4RoomsOf'), size: t('siteCamp.eachRoom24X') },
+    { key: 'toilets', label: t('siteCamp.numberOfToilets'), hint: t('siteCamp.sampleBase2RoomsOf'), size: t('siteCamp.eachRoom12X') },
+    { key: 'showers', label: t('siteCamp.numberOfShowerRooms'), hint: t('siteCamp.sampleBase1RoomOf'), size: t('siteCamp.eachRoom15X') },
+    { key: 'stores', label: t('siteCamp.numberOfStorerooms'), hint: t('siteCamp.sampleBase1RoomOf2'), size: t('siteCamp.eachRoom24X2') },
 ];
 
 const td = 'border border-gray-200 px-2 py-1 text-[13px]';
@@ -28,6 +30,7 @@ const tdNum = `${td} text-right tabular-nums whitespace-nowrap`;
 type Calc = UseCalculator<SiteCampInput>;
 
 export default function SiteCampPage() {
+    const t = useTranslations('calculators');
     const calc = useCalculator(siteCamp);
     const inJourney = useJourneyMode();
     const { input, update, reset, outputs, result, isDefault } = calc;
@@ -37,20 +40,19 @@ export default function SiteCampPage() {
             aside={inJourney ? undefined : <TakeOffSummary outputs={outputs} input={input} />}>
             {inJourney ? <JourneyView calc={calc} /> : (
                 <>
-                    <SheetCard title="ข้อมูลที่ต้องกรอก" extra={<span className="text-[12px] text-gray-500">หมวด 3 : เตรียมพื้นที่หน้างาน</span>}>
-                        {ROOM_FIELDS.map(f => (
-                            <InputNumberField key={f.key} label={f.label} value={input[f.key]} digits={0} unit="ห้อง" hint={f.hint}
+                    <SheetCard title={t('common.requiredInput')} extra={<span className="text-[12px] text-gray-500">{t('siteCamp.section3SitePreparation')}</span>}>
+                        {roomFields(t).map(f => (
+                            <InputNumberField key={f.key} label={f.label} value={input[f.key]} digits={0} unit={t('common.room')} hint={f.hint}
                                 onChange={v => update({ [f.key]: v } as Partial<SiteCampInput>)} />
                         ))}
                         <Allowances calc={calc} />
                     </SheetCard>
 
-                    <SheetCard title="รายการวัสดุ">
+                    <SheetCard title={t('common.materialItems')}>
                         <MaterialTables calc={calc}
-                            emptyText="ยังไม่มีรายการ — กดเพิ่มรายการเพื่อกรอกเอง" />
+                            emptyText={t('siteCamp.noItemsYetTapAdd')} />
                         <p className="mt-3 text-[12px] text-gray-500">
-                            ปริมาณคำนวณ = ปริมาณฐาน × จำนวนที่กรอก ÷ ฐานต่อ · ปริมาณรวมเผื่อ = ปัดขึ้น(ปริมาณคำนวณ × (1 + เผื่อ)) ·
-                            รวมวัสดุ = ปริมาณรวมเผื่อ × ราคาต่อหน่วย
+                            {t('siteCamp.calculatedQuantityBaseQuantityQuantity')}
                         </p>
                     </SheetCard>
                 </>
@@ -61,13 +63,14 @@ export default function SiteCampPage() {
 
 /** เผื่อวัสดุสูญเสีย and ค่าแรงติดตั้ง %. */
 function Allowances({ calc }: { calc: Calc }) {
+    const t = useTranslations('calculators');
     const { input, update } = calc;
     return (
         <>
             {/* Sheet hint "แก้เป็น 0.05 = 5%" is for a fraction cell; this field is typed in percent. */}
-            <InputNumberField label="เผื่อวัสดุสูญเสีย" value={input.waste} percent unit="%" hint="แก้เป็น 5 = 5%"
+            <InputNumberField label={t('common.materialWastage')} value={input.waste} percent unit="%" hint={t('siteCamp.enter5For5')}
                 onChange={v => update({ waste: v })} />
-            <InputNumberField label="ค่าแรงติดตั้ง" value={input.labourRate} percent unit="% ของค่าวัสดุ" hint="ใช้คำนวณ BOQ รวม"
+            <InputNumberField label={t('siteCamp.installationLabour')} value={input.labourRate} percent unit={t('siteCamp.ofMaterialCost')} hint={t('siteCamp.usedInTheOverallBOQ')}
                 onChange={v => update({ labourRate: v })} />
         </>
     );
@@ -75,6 +78,7 @@ function Allowances({ calc }: { calc: Calc }) {
 
 /** The take-off table, one block per หมวด. */
 function MaterialTables({ calc, emptyText }: { calc: Calc; emptyText: string }) {
+    const t = useTranslations('calculators');
     const { input, update, outputs } = calc;
 
     /** Replace one group's rows, keeping the table ordered by group. */
@@ -90,10 +94,10 @@ function MaterialTables({ calc, emptyText }: { calc: Calc; emptyText: string }) 
                 return (
                     <div key={g.id}>
                         <div className="flex items-baseline gap-2 mb-1">
-                            <span className="font-semibold text-[13px] text-gray-800">หมวด: {g.label}</span>
-                            <span className="text-[12px] text-gray-500">จำนวนที่กรอก {formatNumber(input[g.rooms], 0)} ห้อง</span>
+                            <span className="font-semibold text-[13px] text-gray-800">{t('siteCamp.section')}{g.label}</span>
+                            <span className="text-[12px] text-gray-500">{t('siteCamp.quantityEntered')}{formatNumber(input[g.rooms], 0)}{t('siteCamp.rooms')}</span>
                             <span className="ml-auto text-[13px] tabular-nums">
-                                รวมวัสดุ <b>{formatNumber(outputs[`mat_${g.id}`])}</b> บาท
+                                {t('siteCamp.materialTotal')}<b>{formatNumber(outputs[`mat_${g.id}`])}</b>{t('common.baht2')}
                             </span>
                         </div>
                         {rows.length === 0 && <p className="text-[12px] text-gray-500 mb-1">{emptyText}</p>}
@@ -101,19 +105,19 @@ function MaterialTables({ calc, emptyText }: { calc: Calc; emptyText: string }) 
                             rows={rows}
                             onChange={r => setGroupRows(g.id, r)}
                             newRow={() => ({ group: g.id, code: '', item: '', unit: '', baseQty: 0, basePer: input[g.rooms] > 0 ? input[g.rooms] : 1, unitPrice: 0 })}
-                            addLabel={`+ เพิ่มรายการ (${g.label})`}
+                            addLabel={t('siteCamp.addItem', { label: g.label })}
                             columns={[
-                                { kind: 'text', key: 'code', title: 'รหัส', width: 130, get: r => r.code, set: (r, v) => ({ ...r, code: v }) },
-                                { kind: 'text', key: 'item', title: 'รายการวัสดุ', get: r => r.item, set: (r, v) => ({ ...r, item: v }) },
-                                { kind: 'text', key: 'unit', title: 'หน่วย', width: 64, get: r => r.unit, set: (r, v) => ({ ...r, unit: v }) },
-                                { kind: 'number', key: 'baseQty', title: 'ปริมาณฐาน', width: 84, get: r => r.baseQty, set: (r, v) => ({ ...r, baseQty: v }) },
-                                { kind: 'number', key: 'basePer', title: 'ฐานต่อ', width: 64, digits: 0, get: r => r.basePer, set: (r, v) => ({ ...r, basePer: v }) },
-                                { kind: 'calc', key: 'rooms', title: 'จำนวนที่กรอก', width: 72, digits: 0, get: r => campLine(r, input).rooms },
-                                { kind: 'calc', key: 'calcQty', title: 'ปริมาณคำนวณ', width: 84, get: r => campLine(r, input).calcQty },
-                                { kind: 'calc', key: 'grossQty', title: 'ปริมาณรวมเผื่อ', width: 84, get: r => campLine(r, input).grossQty },
-                                { kind: 'number', key: 'unitPrice', title: 'ราคาต่อหน่วย', width: 90, get: r => r.unitPrice, set: (r, v) => ({ ...r, unitPrice: v }) },
-                                { kind: 'calc', key: 'total', title: 'รวมวัสดุ', width: 96, get: r => campLine(r, input).total },
-                                { kind: 'text', key: 'note', title: 'หมายเหตุ', width: 100, get: r => r.note ?? '', set: (r, v) => ({ ...r, note: v || undefined }) },
+                                { kind: 'text', key: 'code', title: t('siteCamp.code'), width: 130, get: r => r.code, set: (r, v) => ({ ...r, code: v }) },
+                                { kind: 'text', key: 'item', title: t('common.materialItems'), get: r => r.item, set: (r, v) => ({ ...r, item: v }) },
+                                { kind: 'text', key: 'unit', title: t('common.unit'), width: 64, get: r => r.unit, set: (r, v) => ({ ...r, unit: v }) },
+                                { kind: 'number', key: 'baseQty', title: t('siteCamp.baseQuantity'), width: 84, get: r => r.baseQty, set: (r, v) => ({ ...r, baseQty: v }) },
+                                { kind: 'number', key: 'basePer', title: t('siteCamp.perBase'), width: 64, digits: 0, get: r => r.basePer, set: (r, v) => ({ ...r, basePer: v }) },
+                                { kind: 'calc', key: 'rooms', title: t('siteCamp.quantityEntered2'), width: 72, digits: 0, get: r => campLine(r, input).rooms },
+                                { kind: 'calc', key: 'calcQty', title: t('siteCamp.calculatedQuantity'), width: 84, get: r => campLine(r, input).calcQty },
+                                { kind: 'calc', key: 'grossQty', title: t('siteCamp.totalWithWastage'), width: 84, get: r => campLine(r, input).grossQty },
+                                { kind: 'number', key: 'unitPrice', title: t('common.pricePerUnit'), width: 90, get: r => r.unitPrice, set: (r, v) => ({ ...r, unitPrice: v }) },
+                                { kind: 'calc', key: 'total', title: t('siteCamp.materialTotal2'), width: 96, get: r => campLine(r, input).total },
+                                { kind: 'text', key: 'note', title: t('common.remark'), width: 100, get: r => r.note ?? '', set: (r, v) => ({ ...r, note: v || undefined }) },
                             ]}
                         />
                     </div>
@@ -131,6 +135,7 @@ function boqRow(result: ProjectResult, line: CampGroupDef['boqLine']): BoqItemRo
 
 /** Guided journey: how many rooms of each kind; the take-off recipe, waste and labour % are folded. */
 function JourneyView({ calc }: { calc: Calc }) {
+    const t = useTranslations('calculators');
     const { input, update, result } = calc;
     const groups = CAMP_GROUPS.map(g => {
         const row = boqRow(result, g.boqLine);
@@ -139,21 +144,21 @@ function JourneyView({ calc }: { calc: Calc }) {
     const anyRoom = groups.some(x => x.rooms > 0);
     return (
         <>
-            <SheetCard title="สิ่งที่ต้องสร้างในไซต์">
+            <SheetCard title={t('siteCamp.thingsToBuildOnSite')}>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3">
-                    {ROOM_FIELDS.map(f => (
+                    {roomFields(t).map(f => (
                         <PlanField key={f.key} label={f.label} hint={f.size}>
-                            <CountStepper value={input[f.key]} unit="ห้อง" ariaLabel={f.label}
+                            <CountStepper value={input[f.key]} unit={t('common.room')} ariaLabel={f.label}
                                 onChange={v => update({ [f.key]: v } as Partial<SiteCampInput>)} />
                         </PlanField>
                     ))}
                 </div>
             </SheetCard>
 
-            <AdvancedSection title="รายการวัสดุและค่าตั้งต้น">
+            <AdvancedSection title={t('siteCamp.materialItemsAndDefaults')}>
                 <Allowances calc={calc} />
                 <div className="mt-3">
-                    <MaterialTables calc={calc} emptyText="ยังไม่มีรายการวัสดุของหมวดนี้ เพิ่มได้ถ้าต้องการ" />
+                    <MaterialTables calc={calc} emptyText={t('siteCamp.noMaterialItemsInThis')} />
                 </div>
             </AdvancedSection>
 
@@ -161,26 +166,27 @@ function JourneyView({ calc }: { calc: Calc }) {
             <ResultSummary
                 items={anyRoom
                     ? groups.filter(x => x.rooms > 0).map(x => ({
-                        label: x.g.boqDesc, value: x.rooms, unit: 'ห้อง', digits: 0,
-                        detail: `ห้องละ ${formatNumber(x.perRoom, 0)} บาท`,
+                        label: x.g.boqDesc, value: x.rooms, unit: t('common.room'), digits: 0,
+                        detail: t('siteCamp.bahtPerRoom', { v: formatNumber(x.perRoom, 0) }),
                     }))
                     : []}
-                empty="กรอกจำนวนห้องพัก ห้องน้ำ ห้องอาบน้ำ หรือสโตร์ที่ต้องสร้าง ระบบจะคิดราคาให้" />
+                empty={t('siteCamp.enterTheNumberOfWorker')} />
         </>
     );
 }
 
 /** Take-off totals per group, for reference: the BOQ prices are not linked yet. */
 function TakeOffSummary({ outputs, input }: { outputs: Record<string, number>; input: SiteCampInput }) {
+    const t = useTranslations('calculators');
     const pct = formatNumber(input.labourRate * 100, 0);
     return (
-        <SheetCard title="สรุปค่าวัสดุจากรายการคำนวณ (อ้างอิง)">
+        <SheetCard title={t('siteCamp.materialCostSummaryFromThe')}>
             <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                     <thead>
                         <tr className="bg-gray-50 text-[12px] text-gray-700">
-                            <th className={td}>หมวด</th><th className={td}>ห้อง</th><th className={td}>รวมวัสดุ</th>
-                            <th className={td}>ค่าแรง {pct}%</th><th className={td}>วัสดุ / ห้อง</th><th className={td}>ค่าแรง / ห้อง</th>
+                            <th className={td}>{t('siteCamp.section2')}</th><th className={td}>{t('common.room')}</th><th className={td}>{t('siteCamp.materialTotal2')}</th>
+                            <th className={td}>{t('siteCamp.labour')}{pct}%</th><th className={td}>{t('siteCamp.materialRoom')}</th><th className={td}>{t('siteCamp.labourRoom')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -195,18 +201,16 @@ function TakeOffSummary({ outputs, input }: { outputs: Record<string, number>; i
                             </tr>
                         ))}
                         <tr className="font-semibold">
-                            <td className={td} colSpan={2}>รวม</td>
+                            <td className={td} colSpan={2}>{t('common.total')}</td>
                             <td className={tdNum}>{formatNumber(outputs.materialTotal)}</td>
                             <td className={tdNum}>{formatNumber(outputs.labour)}</td>
-                            <td className={`${td} text-right`} colSpan={2}>รวมทั้งหมด {formatNumber(outputs.total)}</td>
+                            <td className={`${td} text-right`} colSpan={2}>{t('siteCamp.grandTotal')}{formatNumber(outputs.total)}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
             <p className="mt-2 text-[12px] text-gray-500">
-                จำนวนห้องส่งเข้า BOQ (ปริมาณแถว ห้องพักคนงาน / ห้องน้ำคนงาน / ห้องอาบน้ำ / สโตร์เก็บของ) ส่วนราคาวัสดุและค่าแรงต่อห้อง
-                ยังกำหนดที่หน้า BOQ (เทมเพลตตั้งไว้ 7,000 / 4,700 / 4,500 / 7,000) จนกว่าจะได้ชีตคำนวณฉบับเต็ม
-                ยอดในตารางนี้ใช้อ้างอิงเท่านั้น
+                {t('siteCamp.theNumberOfRoomsIs')}
             </p>
         </SheetCard>
     );

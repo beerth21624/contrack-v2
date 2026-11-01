@@ -12,15 +12,18 @@ import {
     AddButton, BarField, ChoiceButtons, EmptyState, FillProgress, PlanCard, PlanField, PlanGroup, PlanNumber, ResultSummary,
     blankIfZero, countFill, insertAfter, isPositive, planChecks, rebarSummaryItem, removeAt, resultText,
 } from '@/components/sheet/journey';
+import { useTranslations } from 'next-intl';
+import type { CalcT } from '../text';
 
 const nameOptions = SLAB_NAMES.map(v => ({ value: v as string, label: v }));
-const layerOptions = SLAB_LAYERS.map(v => ({ value: v as number, label: `${v} ชั้น` }));
+const layerOptionsOf = (t: CalcT) => SLAB_LAYERS.map(v => ({ value: v as number, label: t('common.layers', { v: String(v) }) }));
 /** Show the fill progress only once the list is long enough to lose track of. */
 const PROGRESS_FROM = 5;
 
-const L = { width: 'ความกว้าง', length: 'ความยาว', thickness: 'ความหนา', bars: 'เหล็กเสริม' } as const;
+const labelsOf = (t: CalcT) => ({ width: t('common.width2'), length: t('common.length'), thickness: t('common.thickness'), bars: t('common.reinforcement') }) as const;
+type Labels = ReturnType<typeof labelsOf>;
 
-const checksOf = (r: SlabRow) => planChecks([
+const checksOf = (L: Labels, r: SlabRow) => planChecks([
     { label: L.width, ok: isPositive(r.width) },
     { label: L.length, ok: isPositive(r.length) },
     { label: L.thickness, ok: isPositive(r.thickness) },
@@ -31,6 +34,7 @@ const checksOf = (r: SlabRow) => planChecks([
 export function SlabOnGradeJourney({ input, outputs, onChange }: {
     input: SlabOnGradeInput; outputs: Record<string, number>; onChange: (slabs: SlabRow[]) => void;
 }) {
+    const t = useTranslations('calculators');
     const rows = input.slabs;
     const set = (i: number, patch: Partial<SlabRow>) => onChange(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
     const add = () => onChange([...rows, newSlabRow(rows[rows.length - 1])]);
@@ -39,47 +43,49 @@ export function SlabOnGradeJourney({ input, outputs, onChange }: {
 
     if (rows.length === 0) {
         return (
-            <EmptyState text="ยังไม่มีพื้น — ดูแปลนพื้น แล้วเพิ่มทีละผืน (กว้าง × ยาว × หนา และเหล็กเสริม)"
-                addLabel="เพิ่มพื้นผืนแรก" onAdd={add} />
+            <EmptyState text={t('slabOnGrade.noSlabYetCheckThe')}
+                addLabel={t('common.addTheFirstSlabPanel')} onAdd={add} />
         );
     }
 
-    const checks = rows.map(checksOf);
+    const L = labelsOf(t);
+    const layerOptions = layerOptionsOf(t);
+    const checks = rows.map(r => checksOf(L, r));
 
     return (
         <div className="flex flex-col gap-3">
             {rows.length >= PROGRESS_FROM && (
-                <FillProgress {...countFill(checks.map(c => c.state))} noun="ผืน" doneText="ครบทุกผืนแล้ว" />
+                <FillProgress {...countFill(checks.map(c => c.state))} noun={t('common.panels')} doneText={t('common.allPanelsAreComplete')} />
             )}
 
             {rows.map((r, i) => {
                 const c = slabRowCalc(r);
-                const k = checks[i] ?? checksOf(r);
+                const k = checks[i] ?? checksOf(L, r);
                 return (
                     <PlanCard key={i} index={i + 1} scope={{ listKey: 'slabs', itemIndex: i }} state={k.state} hasData={k.hasData} missingText={k.missingText} compact
-                        title={`ผืนที่ ${String(i + 1)}`}
+                        title={t('common.panel', { v: String(i + 1) })}
                         result={k.state === 'empty' ? undefined : resultText([
-                            { label: 'คอนกรีต', value: c.concrete, unit: 'ลบ.ม.' },
-                            { label: 'เหล็ก', value: c.weight, unit: 'กก.', digits: 1 },
+                            { label: t('common.concrete'), value: c.concrete, unit: t('common.cuM') },
+                            { label: t('common.steel'), value: c.weight, unit: t('common.kg'), digits: 1 },
                         ])}
                         onDuplicate={() => duplicate(r, i)}
-                        onDelete={() => onChange(removeAt(rows, i))} deleteTitle={`ลบพื้นผืนที่ ${i + 1}?`}>
-                        <PlanGroup title="ขนาดผืน (จากแปลนพื้น)">
-                            <PlanField label="ชื่อพื้น">
-                                <ChoiceButtons<string> size="small" ariaLabel="ชื่อพื้น" value={r.name === '' ? undefined : r.name}
+                        onDelete={() => onChange(removeAt(rows, i))} deleteTitle={t('common.deleteSlabPanel', { v: String(i + 1) })}>
+                        <PlanGroup title={t('slabOnGrade.panelSizeFromTheSlab')}>
+                            <PlanField label={t('common.slabName')}>
+                                <ChoiceButtons<string> size="small" ariaLabel={t('common.slabName')} value={r.name === '' ? undefined : r.name}
                                     options={nameOptions} onChange={v => set(i, { name: v })} />
                             </PlanField>
-                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit="ม." onChange={v => set(i, { width: v })} />
-                            <PlanNumber label={L.length} fieldKey="length" value={r.length} unit="ม." onChange={v => set(i, { length: v })} />
-                            <PlanNumber label={L.thickness} fieldKey="thickness" value={r.thickness} unit="ม." presets={[0.1, 0.12, 0.15]} range={[0.05, 0.4]}
+                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit={t('common.m')} onChange={v => set(i, { width: v })} />
+                            <PlanNumber label={L.length} fieldKey="length" value={r.length} unit={t('common.m')} onChange={v => set(i, { length: v })} />
+                            <PlanNumber label={L.thickness} fieldKey="thickness" value={r.thickness} unit={t('common.m')} presets={[0.1, 0.12, 0.15]} range={[0.05, 0.4]}
                                 onChange={v => set(i, { thickness: v })} />
                         </PlanGroup>
-                        <PlanGroup title="เหล็กเสริม" hint="เช่น RB9 @0.20 ม. 2 ชั้น" layout="wide">
+                        <PlanGroup title={t('common.reinforcement')} hint={t('common.eGRB9020')} layout="wide">
                             <BarField label={L.bars} sizes={SLAB_BAR_SIZES} size={r.barSize} onSize={v => set(i, { barSize: v })}
-                                amount={r.spacing} onAmount={v => set(i, { spacing: v })} amountLabel="ระยะห่าง @" amountUnit="ม."
+                                amount={r.spacing} onAmount={v => set(i, { spacing: v })} amountLabel={t('common.spacing')} amountUnit={t('common.m')}
                                 amountDigits={2} presets={[0.15, 0.2]} range={[0.05, 0.5]} />
-                            <PlanField label="วางเหล็ก">
-                                <ChoiceButtons<number> size="small" ariaLabel="วางเหล็ก" value={r.layers} options={layerOptions}
+                            <PlanField label={t('common.barLayers')}>
+                                <ChoiceButtons<number> size="small" ariaLabel={t('common.barLayers')} value={r.layers} options={layerOptions}
                                     onChange={v => set(i, { layers: v })} />
                             </PlanField>
                         </PlanGroup>
@@ -87,40 +93,40 @@ export function SlabOnGradeJourney({ input, outputs, onChange }: {
                 );
             })}
 
-            <AddButton label="เพิ่มพื้นอีกผืน" onClick={add} />
+            <AddButton label={t('common.addAnotherSlabPanel')} onClick={add} />
 
-            <AdvancedSection title="ดินถมใต้พื้น และทรายรองพื้น">
+            <AdvancedSection title={t('slabOnGrade.backfillUnderTheSlabAnd')}>
                 <EditableTable<SlabRow>
                     rows={rows}
                     onChange={onChange}
                     canDelete={false}
                     columns={[
-                        { kind: 'label', key: 'panel', title: 'พื้น', width: 120,
-                            get: (r, i) => `${String(i + 1)}. ${r.name} ${formatNumber(r.width)} × ${formatNumber(r.length)} ม.` },
-                        { kind: 'number', key: 'fillDepth', title: 'ดินถมกลับใต้พื้น ลึก (ม.)', width: 110,
+                        { kind: 'label', key: 'panel', title: t('common.slab'), width: 120,
+                            get: (r, i) => t('slabOnGrade.m', { v: String(i + 1), name: r.name, v2: formatNumber(r.width), v3: formatNumber(r.length) }) },
+                        { kind: 'number', key: 'fillDepth', title: t('slabOnGrade.backfillUnderTheSlabDepth'), width: 110,
                             get: r => r.fillDepth, set: (r, v) => ({ ...r, fillDepth: v }) },
-                        { kind: 'calc', key: 'backfill', title: 'ดินถม (ลบ.ม.)', width: 90, get: r => blankIfZero(slabRowCalc(r).backfill) },
-                        { kind: 'number', key: 'sandThickness', title: 'ทรายหยาบรองพื้น หนา (ม.)', width: 110,
+                        { kind: 'calc', key: 'backfill', title: t('slabOnGrade.backfillCuM'), width: 90, get: r => blankIfZero(slabRowCalc(r).backfill) },
+                        { kind: 'number', key: 'sandThickness', title: t('slabOnGrade.coarseSandBeddingThicknessM'), width: 110,
                             get: r => r.sandThickness, set: (r, v) => ({ ...r, sandThickness: v }) },
-                        { kind: 'calc', key: 'sand', title: 'ทราย (ลบ.ม.)', width: 90, get: r => blankIfZero(slabRowCalc(r).sand) },
+                        { kind: 'calc', key: 'sand', title: t('slabOnGrade.sandCuM'), width: 90, get: r => blankIfZero(slabRowCalc(r).sand) },
                     ]}
                 />
                 <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
-                    <li>คอนกรีต = กว้าง × ยาว × หนา</li>
-                    <li>เหล็กเสริม = กว้าง × ยาว ÷ ระยะห่าง × 2 ทิศทาง × จำนวนชั้น (ม.) × น้ำหนักเหล็กต่อเมตร</li>
-                    <li>ดินถมกลับ = กว้าง × ยาว × ลึก · ทรายหยาบ = กว้าง × ยาว × หนา + เผื่อ 25% · พลาสติกกันชื้น = กว้าง × ยาว</li>
+                    <li>{t('slabOnGrade.concreteWidthLengthThickness')}</li>
+                    <li>{t('common.reinforcementWidthLengthSpacing2')}</li>
+                    <li>{t('slabOnGrade.backfillWidthLengthDepthCoarse')}</li>
                 </ul>
             </AdvancedSection>
 
             <ResultSummary
                 items={[
-                    { label: 'คอนกรีต', value: outputs.concrete ?? 0, unit: 'ลบ.ม.' },
+                    { label: t('common.concrete'), value: outputs.concrete ?? 0, unit: t('common.cuM') },
                     rebarSummaryItem(outputs),
                 ]}
                 minor={[
-                    { label: 'ทรายหยาบ', value: outputs.sand ?? 0, unit: 'ลบ.ม.' },
-                    { label: 'ดินถมกลับ', value: outputs.backfill ?? 0, unit: 'ลบ.ม.' },
-                    { label: 'พลาสติกกันชื้น', value: outputs.plastic ?? 0, unit: 'ตร.ม.' },
+                    { label: t('slabOnGrade.coarseSand'), value: outputs.sand ?? 0, unit: t('common.cuM') },
+                    { label: t('slabOnGrade.backfill'), value: outputs.backfill ?? 0, unit: t('common.cuM') },
+                    { label: t('slabOnGrade.moistureBarrier'), value: outputs.plastic ?? 0, unit: t('common.sqM') },
                 ]}
             />
         </div>

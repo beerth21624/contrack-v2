@@ -19,6 +19,7 @@ import { useCalculator } from '../useCalculator';
 import {
     EmptyState, FieldNote, FromLevel, Hint, JNumber, PlanNumber, ResultSummary, blankIfZero, outOfRange,
 } from '@/components/sheet/journey';
+import { useTranslations } from 'next-intl';
 
 const th = 'border border-gray-200 px-2 py-1 text-[12px] font-semibold text-gray-700 bg-gray-50 text-center';
 const td = 'border border-gray-200 px-1 py-0.5 text-[13px] align-middle';
@@ -37,7 +38,8 @@ function NumSelect({ value, options, onChange, label, digits = 0 }: {
 function LengthLine({ label, hint, lengths, total, onChange }: {
     label: string; hint: string; lengths: number[]; total: number | undefined; onChange: (lengths: number[]) => void;
 }) {
-    const note = outOfRange(total ?? 0, 1, 500, 'ม.');
+    const t = useTranslations('calculators');
+    const note = outOfRange(total ?? 0, 1, 500, t('common.m'));
     return (
         <div className="py-1">
             <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_260px_110px] items-center gap-2">
@@ -47,7 +49,7 @@ function LengthLine({ label, hint, lengths, total, onChange }: {
                 </div>
                 <LengthsCell lengths={lengths} ariaLabel={label} onChange={onChange} />
                 <span className="text-right tabular-nums px-1 rounded-sm text-[13px]" style={{ background: SHEET_COLORS.calc }}>
-                    {(total ?? 0) === 0 ? '' : `${formatNumber(total)} ม.`}
+                    {(total ?? 0) === 0 ? '' : t('common.m2', { v: formatNumber(total) })}
                 </span>
             </div>
             {note !== undefined && <FieldNote>{note}</FieldNote>}
@@ -56,6 +58,7 @@ function LengthLine({ label, hint, lengths, total, onChange }: {
 }
 
 export default function RoofStructureJourney() {
+    const t = useTranslations('calculators');
     const { input, update, reset, outputs, result, isDefault } = useCalculator(roofStructure);
     const roofSlope = useProjectStore(s => calculatorInput(s.project, roofing).slopeDeg);
     const linked = outputs.linkedSlopeArea ?? 0;
@@ -65,7 +68,7 @@ export default function RoofStructureJourney() {
     }
     const setParts = (parts: KingPostPart[]) => update(p => ({ ...p, kingPosts: { ...p.kingPosts, parts } }));
     const newPart = (parts: KingPostPart[]): KingPostPart =>
-        ({ desc: `ดั้ง ${parts.length + 1}`, c: parts[parts.length - 1]?.c ?? 2, length: 0, count: 1 });
+        ({ desc: t('roofStructure.kingPost', { v: String(parts.length + 1) }), c: parts[parts.length - 1]?.c ?? 2, length: 0, count: 1 });
     const addPart = () => update(p => ({ ...p, kingPosts: { ...p.kingPosts, parts: [...p.kingPosts.parts, newPart(p.kingPosts.parts)] } }));
     const parts = input.kingPosts.parts;
 
@@ -73,30 +76,30 @@ export default function RoofStructureJourney() {
     const lengthSpec = (key: 'wallPlate' | 'ridge', name: string, m: LengthMember): ReactNode => (
         <tr key={key}>
             <td className={td}>{name}</td>
-            <td className={td} style={{ background: SHEET_COLORS.input }}><TextCell value={m.desc} ariaLabel={`ขนาดเหล็ก${name}`} onCommit={v => set(key, { desc: v ?? '' })} /></td>
-            <td className={td}><NumSelect value={m.c} options={DOUBLE_C_OPTIONS} label="ซีคู่" onChange={c => set(key, { c })} /></td>
+            <td className={td} style={{ background: SHEET_COLORS.input }}><TextCell value={m.desc} ariaLabel={t('roofStructure.barSize', { name })} onCommit={v => set(key, { desc: v ?? '' })} /></td>
+            <td className={td}><NumSelect value={m.c} options={DOUBLE_C_OPTIONS} label={t('roofStructure.doubleC')} onChange={c => set(key, { c })} /></td>
             <td className={`${td} text-center text-gray-400`}>-</td>
             <td className={`${td} text-center text-gray-400`}>-</td>
-            <td className={td}><NumberCell value={m.count} digits={0} ariaLabel="จำนวนเส้น" onCommit={v => set(key, { count: v ?? 1 })} /></td>
+            <td className={td}><NumberCell value={m.count} digits={0} ariaLabel={t('roofStructure.numberOfBars')} onCommit={v => set(key, { count: v ?? 1 })} /></td>
         </tr>
     );
     const areaSpec = (key: 'rafter' | 'purlin', name: string, m: AreaMember): ReactNode => (
         <tr key={key}>
             <td className={td}>{name}</td>
-            <td className={td} style={{ background: SHEET_COLORS.input }}><TextCell value={m.desc} ariaLabel={`ขนาดเหล็ก${name}`} onCommit={v => set(key, { desc: v ?? '' })} /></td>
-            <td className={td}><NumSelect value={m.c} options={DOUBLE_C_OPTIONS} label="ซีคู่" onChange={c => set(key, { c })} /></td>
-            <td className={td}><NumSelect value={m.factor} options={ROOF_FACTOR_OPTIONS} digits={2} label="ตัวคูณหลังคา" onChange={factor => set(key, { factor })} /></td>
-            <td className={td}><NumberCell value={m.spacing} ariaLabel={`ระยะห่าง${name} (ม.)`} onCommit={v => set(key, { spacing: v ?? 0 })} /></td>
+            <td className={td} style={{ background: SHEET_COLORS.input }}><TextCell value={m.desc} ariaLabel={t('roofStructure.barSize', { name })} onCommit={v => set(key, { desc: v ?? '' })} /></td>
+            <td className={td}><NumSelect value={m.c} options={DOUBLE_C_OPTIONS} label={t('roofStructure.doubleC')} onChange={c => set(key, { c })} /></td>
+            <td className={td}><NumSelect value={m.factor} options={ROOF_FACTOR_OPTIONS} digits={2} label={t('roofStructure.roofFactor')} onChange={factor => set(key, { factor })} /></td>
+            <td className={td}><NumberCell value={m.spacing} ariaLabel={t('roofStructure.spacingM', { name })} onCommit={v => set(key, { spacing: v ?? 0 })} /></td>
             <td className={`${td} text-center text-gray-400`}>-</td>
         </tr>
     );
     const areaOverride = (key: 'rafter' | 'purlin', name: string, m: AreaMember) => (
         <div className="grid grid-cols-[minmax(0,1fr)_120px_auto] items-center gap-2 py-1">
-            <span className="text-[13px] text-gray-700">พื้นที่หลังคาที่ใช้คิด{name}</span>
+            <span className="text-[13px] text-gray-700">{t('roofStructure.roofAreaUsed')}{name}</span>
             <NumberCell value={outputs[`${key}.area`] ?? 0} tone={m.area === null ? 'calc' : 'input'} edited={m.area !== null}
-                ariaLabel={`พื้นที่หลังคาที่ใช้คิด${name} (ตร.ม.)`}
+                ariaLabel={t('roofStructure.roofAreaUsedSqM', { name })}
                 onCommit={v => set(key, { area: v ?? null })} />
-            <span className="text-[12px] text-gray-500">ตร.ม. {m.area === null ? '(จากขั้นตอนวัสดุมุงหลังคา)' : '(พิมพ์เอง — ลบค่าเพื่อกลับไปใช้ค่าจากหลังคา)'}</span>
+            <span className="text-[12px] text-gray-500">{t('roofStructure.sqM')}{m.area === null ? t('roofStructure.fromTheRoofingMaterialStep') : t('roofStructure.typedManuallyClearTheValue')}</span>
         </div>
     );
 
@@ -104,87 +107,87 @@ export default function RoofStructureJourney() {
         <CalculatorShell def={roofStructure} result={result} isDefault={isDefault} onReset={reset}>
             <FromLevel levelId="roofing">
                 {linked > 0
-                    ? <>พื้นที่หลังคาตามแนวลาด <b>{formatNumber(linked)} ตร.ม.</b> — จันทัน แป และค่าแรงโครงหลังคาคิดจากพื้นที่นี้ให้เอง ไม่ต้องกรอกซ้ำ</>
-                    : <>ยังไม่มีพื้นที่หลังคา — กรอกขนาดหลังคาในขั้นตอนวัสดุมุงหลังคาก่อน แล้วระบบจะคิดจันทันและแปให้อัตโนมัติ</>}
+                    ? <>{t('roofStructure.slopedRoofArea')}<b>{formatNumber(linked)}{t('common.sqM2')}</b>{t('roofStructure.raftersPurlinsAndRoofFrame')}</>
+                    : <>{t('roofStructure.noRoofAreaYetEnter')}</>}
             </FromLevel>
 
-            <SheetCard title="อะเสและอกไก่">
-                <Hint>พิมพ์ความยาวแต่ละช่วงต่อกันด้วย + ได้ เช่น 12.5+11+4.5</Hint>
-                <LengthLine label="อะเส" hint="ความยาวคานเหล็กรับโครงหลังคาบนหัวเสา รอบอาคาร"
+            <SheetCard title={t('roofStructure.wallPlatesAndRidge')}>
+                <Hint>{t('roofStructure.youCanTypeTheLength')}</Hint>
+                <LengthLine label={t('roofStructure.wallPlate')} hint={t('roofStructure.lengthOfTheSteelBeam')}
                     lengths={input.wallPlate.lengths} total={outputs['wallPlate.length']}
                     onChange={lengths => set('wallPlate', { lengths })} />
-                <LengthLine label="อกไก่" hint="ความยาวสันหลังคา (ตัวบนสุดของโครง)"
+                <LengthLine label={t('roofStructure.ridge')} hint={t('roofStructure.roofRidgeLengthTheTopmost')}
                     lengths={input.ridge.lengths} total={outputs['ridge.length']}
                     onChange={lengths => set('ridge', { lengths })} />
             </SheetCard>
 
-            <SheetCard title="ดั้ง (เสาค้ำอกไก่)">
+            <SheetCard title={t('roofStructure.kingPostsColumnsSupportingThe')}>
                 {parts.length === 0
-                    ? <EmptyState text="ยังไม่มีดั้ง — ดูรูปตัดโครงหลังคา: ความสูงดั้งแต่ละแบบ และจำนวนต้น" addLabel="เพิ่มดั้ง" onAdd={addPart} />
+                    ? <EmptyState text={t('roofStructure.noKingPostsYetCheck')} addLabel={t('roofStructure.addKingPost')} onAdd={addPart} />
                     : (
                         <EditableTable<KingPostPart>
                             rows={parts}
                             onChange={setParts}
                             newRow={() => newPart(parts)}
-                            addLabel="+ เพิ่มดั้ง"
+                            addLabel={t('roofStructure.addKingPost2')}
                             columns={[
-                                { kind: 'text', key: 'desc', title: 'ชื่อ', width: 140, get: p => p.desc, set: (p, v) => ({ ...p, desc: v }) },
-                                { kind: 'number', key: 'length', title: 'ความสูง/ความยาว (ม.)', width: 120, get: p => p.length, set: (p, v) => ({ ...p, length: v }) },
-                                { kind: 'number', key: 'count', title: 'จำนวน (ต้น)', width: 90, digits: 0, get: p => p.count, set: (p, v) => ({ ...p, count: v }) },
-                                { kind: 'calc', key: 'total', title: 'ความยาวรวม (ม.)', width: 110, get: p => blankIfZero(partTotal(p)) },
+                                { kind: 'text', key: 'desc', title: t('roofStructure.name'), width: 140, get: p => p.desc, set: (p, v) => ({ ...p, desc: v }) },
+                                { kind: 'number', key: 'length', title: t('roofStructure.heightLengthM'), width: 120, get: p => p.length, set: (p, v) => ({ ...p, length: v }) },
+                                { kind: 'number', key: 'count', title: t('roofStructure.quantityPcs'), width: 90, digits: 0, get: p => p.count, set: (p, v) => ({ ...p, count: v }) },
+                                { kind: 'calc', key: 'total', title: t('roofStructure.totalLengthM'), width: 110, get: p => blankIfZero(partTotal(p)) },
                             ]}
                         />
                     )}
             </SheetCard>
 
-            <SheetCard title="ตะเข้ราง">
-                <Hint>ถ้าหลังคาไม่มีตะเข้ (รางน้ำระหว่างหลังคา 2 ผืน) ปล่อยว่างได้</Hint>
+            <SheetCard title={t('roofStructure.valley')}>
+                <Hint>{t('roofStructure.ifTheRoofHasNo')}</Hint>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-3 mt-2 items-start">
-                    <PlanNumber label="ระยะตามแนวราบ ด้านที่ 1" value={input.valley.runA} unit="ม." range={[0.5, 30]}
+                    <PlanNumber label={t('roofStructure.horizontalRunSide1')} value={input.valley.runA} unit={t('common.m')} range={[0.5, 30]}
                         onChange={runA => set('valley', { runA })} />
-                    <PlanNumber label="ระยะตามแนวราบ ด้านที่ 2" value={input.valley.runB} unit="ม." range={[0.5, 30]}
+                    <PlanNumber label={t('roofStructure.horizontalRunSide2')} value={input.valley.runB} unit={t('common.m')} range={[0.5, 30]}
                         onChange={runB => set('valley', { runB })} />
-                    <JNumber label="จำนวนตะเข้" value={input.valley.count} unit="เส้น" digits={0} onChange={count => set('valley', { count })} />
-                    <PlanNumber label="ความชันหลังคา" value={input.valley.deg} unit="องศา" digits={0} range={[5, 60]}
+                    <JNumber label={t('roofStructure.numberOfValleys')} value={input.valley.count} unit={t('common.pcs2')} digits={0} onChange={count => set('valley', { count })} />
+                    <PlanNumber label={t('common.roofPitch')} value={input.valley.deg} unit={t('common.degrees')} digits={0} range={[5, 60]}
                         onChange={deg => set('valley', { deg })}
                         hint={roofSlope > 0 && input.valley.deg !== roofSlope
                             ? (
                                 <Button size="small" type="link" className="!px-0" onClick={() => set('valley', { deg: roofSlope })}>
-                                    ใช้ความชันเดียวกับหลังคา ({formatNumber(roofSlope, 0)}°)
+                                    {t('roofStructure.useTheSamePitchAs')}{formatNumber(roofSlope, 0)}°)
                                 </Button>
                             )
                             : undefined} />
                 </div>
                 {(outputs['valley.length'] ?? 0) > 0 && (
                     <div className="mt-2 text-[13px] text-gray-700">
-                        ความยาวตะเข้ต่อเส้น <b className="tabular-nums">{formatNumber(outputs['valley.length'])} ม.</b>
+                        {t('roofStructure.valleyLengthPerPiece')}<b className="tabular-nums">{formatNumber(outputs['valley.length'])}{t('common.m3')}</b>
                     </div>
                 )}
             </SheetCard>
 
-            <AdvancedSection title="ขนาดเหล็กและระยะห่าง">
+            <AdvancedSection title={t('roofStructure.steelSizeAndSpacing')}>
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
                             <tr>
-                                <th className={th} style={{ width: 80 }}>รายการ</th>
-                                <th className={th} style={{ minWidth: 200 }}>ขนาดเหล็ก</th>
-                                <th className={th} style={{ width: 70 }}>ซีคู่</th>
-                                <th className={th} style={{ width: 80 }}>ตัวคูณหลังคา</th>
-                                <th className={th} style={{ width: 90 }}>ระยะห่าง (ม.)</th>
-                                <th className={th} style={{ width: 80 }}>จำนวนเส้น</th>
+                                <th className={th} style={{ width: 80 }}>{t('common.item')}</th>
+                                <th className={th} style={{ minWidth: 200 }}>{t('roofStructure.steelSize')}</th>
+                                <th className={th} style={{ width: 70 }}>{t('roofStructure.doubleC')}</th>
+                                <th className={th} style={{ width: 80 }}>{t('roofStructure.roofFactor')}</th>
+                                <th className={th} style={{ width: 90 }}>{t('common.spacingM')}</th>
+                                <th className={th} style={{ width: 80 }}>{t('roofStructure.numberOfBars')}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {lengthSpec('wallPlate', 'อะเส', input.wallPlate)}
+                            {lengthSpec('wallPlate', t('roofStructure.wallPlate'), input.wallPlate)}
                             <tr>
-                                <td className={td}>ดั้ง</td>
+                                <td className={td}>{t('roofStructure.kingPost2')}</td>
                                 <td className={td} style={{ background: SHEET_COLORS.input }}>
-                                    <TextCell value={input.kingPosts.desc} ariaLabel="ขนาดเหล็กดั้ง" onCommit={v => set('kingPosts', { desc: v ?? '' })} />
+                                    <TextCell value={input.kingPosts.desc} ariaLabel={t('roofStructure.kingPostSteelSize')} onCommit={v => set('kingPosts', { desc: v ?? '' })} />
                                 </td>
                                 <td className={td}>
                                     {parts.length > 0
-                                        ? <NumSelect value={parts[0]?.c ?? 2} options={DOUBLE_C_OPTIONS} label="ซีคู่ดั้ง"
+                                        ? <NumSelect value={parts[0]?.c ?? 2} options={DOUBLE_C_OPTIONS} label={t('roofStructure.doubleCKingPost')}
                                             onChange={c => setParts(parts.map(p => ({ ...p, c })))} />
                                         : <span className="block text-center text-gray-400">-</span>}
                                 </td>
@@ -192,41 +195,41 @@ export default function RoofStructureJourney() {
                                 <td className={`${td} text-center text-gray-400`}>-</td>
                                 <td className={`${td} text-center text-gray-400`}>-</td>
                             </tr>
-                            {lengthSpec('ridge', 'อกไก่', input.ridge)}
+                            {lengthSpec('ridge', t('roofStructure.ridge'), input.ridge)}
                             <tr>
-                                <td className={td}>ตะเข้ราง</td>
+                                <td className={td}>{t('roofStructure.valley')}</td>
                                 <td className={td} style={{ background: SHEET_COLORS.input }}>
-                                    <TextCell value={input.valley.desc} ariaLabel="ขนาดเหล็กตะเข้ราง" onCommit={v => set('valley', { desc: v ?? '' })} />
+                                    <TextCell value={input.valley.desc} ariaLabel={t('roofStructure.valleySteelSize')} onCommit={v => set('valley', { desc: v ?? '' })} />
                                 </td>
-                                <td className={td}><NumSelect value={input.valley.c} options={DOUBLE_C_OPTIONS} label="ซีคู่" onChange={c => set('valley', { c })} /></td>
+                                <td className={td}><NumSelect value={input.valley.c} options={DOUBLE_C_OPTIONS} label={t('roofStructure.doubleC')} onChange={c => set('valley', { c })} /></td>
                                 <td className={`${td} text-center text-gray-400`}>-</td>
                                 <td className={`${td} text-center text-gray-400`}>-</td>
                                 <td className={`${td} text-center text-gray-400`}>-</td>
                             </tr>
-                            {areaSpec('rafter', 'จันทัน', input.rafter)}
-                            {areaSpec('purlin', 'แป', input.purlin)}
+                            {areaSpec('rafter', t('roofStructure.rafter'), input.rafter)}
+                            {areaSpec('purlin', t('roofStructure.purlin'), input.purlin)}
                         </tbody>
                     </table>
                 </div>
                 <div className="mt-2 max-w-2xl">
-                    {areaOverride('rafter', 'จันทัน', input.rafter)}
-                    {areaOverride('purlin', 'แป', input.purlin)}
+                    {areaOverride('rafter', t('roofStructure.rafter'), input.rafter)}
+                    {areaOverride('purlin', t('roofStructure.purlin'), input.purlin)}
                 </div>
                 <div className="mt-2 text-[12px] text-gray-500">
-                    ซีคู่ 2 = เหล็กตัวซีประกบคู่ · Factor Roof = เผื่อเหล็กจันทัน/แปตามรูปหลังคา · เหล็กยาวท่อนละ {STICK_LENGTH} ม.
+                    {t('roofStructure.doubleC2CSections')}{STICK_LENGTH}{t('common.m3')}
                 </div>
             </AdvancedSection>
 
             <ResultSummary
                 items={[
-                    { label: 'อะเส', value: outputs.R152, unit: 'ท่อน', digits: 0 },
-                    { label: 'ดั้ง', value: outputs.R153, unit: 'ท่อน', digits: 0 },
-                    { label: 'อกไก่', value: outputs.R154, unit: 'ท่อน', digits: 0 },
-                    { label: 'ตะเข้ราง', value: outputs.R155, unit: 'ท่อน', digits: 0 },
-                    { label: 'จันทัน', value: outputs.R156, unit: 'ท่อน', digits: 0 },
-                    { label: 'แป', value: outputs.R157, unit: 'ท่อน', digits: 0 },
+                    { label: t('roofStructure.wallPlate'), value: outputs.R152, unit: t('roofStructure.pieces'), digits: 0 },
+                    { label: t('roofStructure.kingPost2'), value: outputs.R153, unit: t('roofStructure.pieces'), digits: 0 },
+                    { label: t('roofStructure.ridge'), value: outputs.R154, unit: t('roofStructure.pieces'), digits: 0 },
+                    { label: t('roofStructure.valley'), value: outputs.R155, unit: t('roofStructure.pieces'), digits: 0 },
+                    { label: t('roofStructure.rafter'), value: outputs.R156, unit: t('roofStructure.pieces'), digits: 0 },
+                    { label: t('roofStructure.purlin'), value: outputs.R157, unit: t('roofStructure.pieces'), digits: 0 },
                 ]}
-                note={<>เหล็กโครงหลังคาท่อนละ {STICK_LENGTH} ม. · ค่าแรงโครงหลังคาคิดจากพื้นที่หลังคา {formatNumber(outputs.R159)} ตร.ม.</>} />
+                note={<>{t('roofStructure.roofFrameSteelPerPiece')}{STICK_LENGTH}{t('roofStructure.mRoofFrameLabourIs')}{formatNumber(outputs.R159)}{t('common.sqM2')}</>} />
         </CalculatorShell>
     );
 }

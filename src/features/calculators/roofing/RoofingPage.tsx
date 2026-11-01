@@ -13,6 +13,7 @@ import { useCalculator } from '../useCalculator';
 import { LengthsCell } from '@/components/sheet/LengthsCell';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import RoofingJourney from './RoofingJourney';
+import { useTranslations } from 'next-intl';
 
 const opts = (xs: readonly string[]) => xs.map(value => ({ value }));
 
@@ -22,35 +23,36 @@ const sourceOf = (t: RoofingTakeoff) => (t.kind === 'row' ? `row:${t.ref}` : t.k
 function TakeoffCell({ row, index, rows, value, onChange }: {
     row: RoofingRow; index: number; rows: RoofingRow[]; value: number; onChange: (t: RoofingTakeoff) => void;
 }) {
-    const t = row.takeoff;
-    const lengths = t.kind === 'lengths' || t.kind === 'rake' ? t.lengths : [value];
+    const t = useTranslations('calculators');
+    const tk = row.takeoff;
+    const lengths = tk.kind === 'lengths' || tk.kind === 'rake' ? tk.lengths : [value];
     const options = [
-        { value: 'lengths', label: 'กรอกเอง' },
-        { value: 'rake', label: 'กรอกเอง ÷ cos(องศา)' },
-        { value: 'slope', label: 'พื้นที่ตามแนวลาดเอียง (K7)' },
-        ...rows.flatMap((r, j) => (j === index ? [] : [{ value: `row:${r.key}`, label: `= แถว ${j + 1} ${r.item}` }])),
+        { value: 'lengths', label: t('roofing.enterManually') },
+        { value: 'rake', label: t('roofing.enterManuallyCosDegrees') },
+        { value: 'slope', label: t('roofing.slopedAreaK7') },
+        ...rows.flatMap((r, j) => (j === index ? [] : [{ value: `row:${r.key}`, label: t('roofing.row', { v: String(j + 1), item: r.item }) }])),
     ];
     const setSource = (s: string) => {
         if (s === 'slope') onChange({ kind: 'slope' });
         else if (s === 'lengths') onChange({ kind: 'lengths', lengths });
-        else if (s === 'rake') onChange({ kind: 'rake', lengths, deg: t.kind === 'rake' ? t.deg : 40 });
+        else if (s === 'rake') onChange({ kind: 'rake', lengths, deg: tk.kind === 'rake' ? tk.deg : 40 });
         else onChange({ kind: 'row', ref: s.slice(4) });
     };
     return (
         <div className="flex flex-col gap-0.5">
-            <Select size="small" variant="borderless" value={sourceOf(t)} options={options} onChange={setSource}
-                popupMatchSelectWidth={false} className="text-[11px]" style={{ width: '100%' }} aria-label="ที่มาของปริมาณถอดแบบ" />
-            {t.kind === 'lengths' && (
-                <LengthsCell lengths={t.lengths} ariaLabel="ปริมาณถอดแบบ" onChange={ls => onChange({ kind: 'lengths', lengths: ls })} />
+            <Select size="small" variant="borderless" value={sourceOf(tk)} options={options} onChange={setSource}
+                popupMatchSelectWidth={false} className="text-[11px]" style={{ width: '100%' }} aria-label={t('roofing.sourceOfTheTakeOff')} />
+            {tk.kind === 'lengths' && (
+                <LengthsCell lengths={tk.lengths} ariaLabel={t('roofing.takeOffQuantity')} onChange={ls => onChange({ kind: 'lengths', lengths: ls })} />
             )}
-            {t.kind === 'rake' && (
+            {tk.kind === 'rake' && (
                 <div className="grid grid-cols-[minmax(0,1fr)_auto_56px] items-center gap-1">
-                    <LengthsCell lengths={t.lengths} ariaLabel="ความยาวตามแนวราบ" onChange={ls => onChange({ ...t, lengths: ls })} />
+                    <LengthsCell lengths={tk.lengths} ariaLabel={t('roofing.horizontalLength')} onChange={ls => onChange({ ...tk, lengths: ls })} />
                     <span className="text-[11px] text-gray-500">÷cos</span>
-                    <NumberCell value={t.deg} digits={0} ariaLabel="องศา" onCommit={v => onChange({ ...t, deg: v ?? 40 })} />
+                    <NumberCell value={tk.deg} digits={0} ariaLabel={t('common.degrees')} onCommit={v => onChange({ ...tk, deg: v ?? 40 })} />
                 </div>
             )}
-            {(t.kind !== 'lengths' || t.lengths.length > 1) && (
+            {(tk.kind !== 'lengths' || tk.lengths.length > 1) && (
                 <span className="text-right tabular-nums px-1 rounded-sm" style={{ background: SHEET_COLORS.calc }}>
                     {formatNumber(value)}
                 </span>
@@ -65,6 +67,7 @@ export default function RoofingPage() {
 
 /** The Excel-mirror sheet (/calc/roofing). */
 function RoofingSheet() {
+    const t = useTranslations('calculators');
     const { input, update, reset, outputs, result, isDefault } = useCalculator(roofing);
 
     const setRow = (i: number, patch: Partial<RoofingRow>) =>
@@ -77,21 +80,20 @@ function RoofingSheet() {
 
     return (
         <CalculatorShell def={roofing} result={result} isDefault={isDefault} onReset={reset}>
-            <SheetCard title="[ โปรแกรมเสริม : คำนวณพื้นที่หลังคา ]">
+            <SheetCard title={t('roofing.addOnRoofAreaCalculation')}>
                 <div className="max-w-lg">
-                    <InputNumberField label="พื้นที่ตามแนวราบ (ตร.ม)" value={input.planArea} unit="ตร.ม."
+                    <InputNumberField label={t('roofing.horizontalAreaSqM')} value={input.planArea} unit={t('common.sqM')}
                         onChange={v => update({ planArea: v })} />
-                    <InputNumberField label="ความลาดเอียงหลังคา (องศา)" value={input.slopeDeg} unit="องศา"
+                    <InputNumberField label={t('roofing.roofPitchDegrees')} value={input.slopeDeg} unit={t('common.degrees')}
                         onChange={v => update({ slopeDeg: v })} />
-                    <CalcField label="พื้นที่ตามแนวลาดเอียง (ตร.ม)" value={outputs.slopeArea} unit="ตร.ม." strong />
+                    <CalcField label={t('roofing.slopedAreaSqM')} value={outputs.slopeArea} unit={t('common.sqM')} strong />
                 </div>
                 <p className="mt-2 text-[12px] text-gray-500">
-                    พื้นที่ตามแนวลาดเอียง = พื้นที่ตามแนวราบ ÷ cos(ความลาดเอียง) — ใช้กับกระเบื้อง, แผ่นสะท้อนความร้อน,
-                    ค่าแรงมุงหลังคา และจันทัน/แปในชีตโครงสร้างหลังคา
+                    {t('roofing.slopedAreaHorizontalAreaCos')}
                 </p>
             </SheetCard>
 
-            <SheetCard title=": ตารางคำนวณปริมาณวัสดุมุงหลังคา (หลังคาซีแพค)">
+            <SheetCard title={t('roofing.roofingMaterialQuantityCalculationTable')}>
                 <EditableTable<RoofingRow>
                     rows={input.rows}
                     onChange={rows => update({ rows })}
@@ -100,54 +102,52 @@ function RoofingSheet() {
                         key: newKey(), item: '', factor: 0, factorUnit: '', takeoff: { kind: 'lengths', lengths: [] },
                         takeoffUnit: '', unit: '',
                     })}
-                    addLabel="+ เพิ่มรายการ"
+                    addLabel={t('common.addItem')}
                     columns={[
                         {
-                            kind: 'select', key: 'item', title: 'รายการวัสดุมุงและครอบ', width: 230, options: opts(ROOFING_ITEMS),
+                            kind: 'select', key: 'item', title: t('roofing.roofingAndCappingMaterials'), width: 230, options: opts(ROOFING_ITEMS),
                             get: r => r.item, set: (r, v) => ({ ...r, item: v }),
                         },
-                        { kind: 'number', key: 'factor', title: 'ปริมาณ ต่อหน่วย', width: 80, get: r => r.factor, set: (r, v) => ({ ...r, factor: v }) },
+                        { kind: 'number', key: 'factor', title: t('roofing.quantityPerUnit'), width: 80, get: r => r.factor, set: (r, v) => ({ ...r, factor: v }) },
                         {
-                            kind: 'select', key: 'factorUnit', title: 'หน่วย', width: 105, options: opts(ROOFING_FACTOR_UNITS),
+                            kind: 'select', key: 'factorUnit', title: t('common.unit'), width: 105, options: opts(ROOFING_FACTOR_UNITS),
                             get: r => r.factorUnit, set: (r, v) => ({ ...r, factorUnit: v }),
                         },
                         {
-                            kind: 'label', key: 'takeoff', title: 'ปริมาณ ถอดแบบ', width: 190,
+                            kind: 'label', key: 'takeoff', title: t('roofing.takeOffQuantity2'), width: 190,
                             get: (r, i) => (
                                 <TakeoffCell row={r} index={i} rows={input.rows} value={outputs[`takeoff.${i}`] ?? 0}
                                     onChange={takeoff => setRow(i, { takeoff })} />
                             ),
                         },
                         {
-                            kind: 'select', key: 'takeoffUnit', title: 'หน่วย', width: 80, options: opts(ROOFING_TAKEOFF_UNITS),
+                            kind: 'select', key: 'takeoffUnit', title: t('common.unit'), width: 80, options: opts(ROOFING_TAKEOFF_UNITS),
                             get: r => r.takeoffUnit, set: (r, v) => ({ ...r, takeoffUnit: v }),
                         },
                         {
-                            kind: 'calc', key: 'qty', title: 'ปริมาณ BOQ', width: 80, digits: 0,
+                            kind: 'calc', key: 'qty', title: t('roofing.bOQQuantity'), width: 80, digits: 0,
                             get: (_, i) => outputs[`qty.${i}`] ?? 0,
                         },
                         {
-                            kind: 'select', key: 'unit', title: 'หน่วย', width: 80, options: opts(ROOFING_BOQ_UNITS),
+                            kind: 'select', key: 'unit', title: t('common.unit'), width: 80, options: opts(ROOFING_BOQ_UNITS),
                             get: r => r.unit, set: (r, v) => ({ ...r, unit: v }),
                         },
                     ]}
                 />
                 <ul className="mt-2 text-[12px] text-gray-500 list-disc pl-5 space-y-0.5">
                     <li>
-                        ปริมาณ BOQ = ROUNDUP(ปริมาณถอดแบบ × ปริมาณต่อหน่วย) เมื่อหน่วยเป็น แผ่น/ตร.ม., แผ่น/ม., แผ่น และ
-                        ROUNDUP(ปริมาณถอดแบบ ÷ ปริมาณต่อหน่วย) เมื่อหน่วยเป็น ม./แผ่น, ตร.ม./ม้วน
+                        {t('roofing.bOQQuantityROUNDUPTakeOff')}
                     </li>
-                    <li>แถว 1–{ROOFING_BOQ_ROWS} ส่งเข้า BOQ หมวด 16 ตามลำดับแถว (ตามวิธีคิดของระบบ); แถวที่เพิ่มเองคำนวณให้แต่ไม่ส่งเข้า BOQ</li>
+                    <li>{t('common.rows1')}{ROOFING_BOQ_ROWS}{t('roofing.areSentToBOQSection')}</li>
                     <li>
-                        ค่าแรงมุงหลังคา = พื้นที่ตามแนวลาดเอียง {formatNumber(outputs.R175)} ตร.ม.;
-                        ค่าแรงติดตั้งไม้เชิงชาย = ปริมาณถอดแบบแถว 12 ({input.rows[11]?.item ?? 'ไม้เชิงชาย'}) {formatNumber(outputs.R176)} ม.
+                        {t('roofing.roofingLabourSlopedArea')}{formatNumber(outputs.R175)}{t('roofing.sqMFasciaBoardInstallation')}{input.rows[11]?.item ?? t('roofing.fasciaBoard')}) {formatNumber(outputs.R176)}{t('common.m3')}
                     </li>
                     <li>
-                        ครอบข้างจั่ว: ความยาวตามแนวราบ ÷ cos(องศา) — ใช้ 40° ตายตัว ไม่ได้ลิงก์กับความลาดเอียงด้านบน
+                        {t('roofing.gableVergeHorizontalLengthCos')}
                     </li>
                 </ul>
                 {input.rows.some(r => r.factorUnit !== '' && roofingOp(r.factorUnit) === 'div' && r.factor === 0) && (
-                    <p className="mt-1 text-[12px] text-red-500">มีแถวที่หาร แต่ปริมาณต่อหน่วยเป็น 0 — ปริมาณ BOQ เป็น 0</p>
+                    <p className="mt-1 text-[12px] text-red-500">{t('roofing.aRowDividesButIts')}</p>
                 )}
             </SheetCard>
         </CalculatorShell>

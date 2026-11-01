@@ -15,6 +15,7 @@ import { useCalculator } from '../useCalculator';
 import { LengthsCell } from '@/components/sheet/LengthsCell';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import RoofStructureJourney from './RoofStructureJourney';
+import { useTranslations } from 'next-intl';
 
 const th = 'border border-gray-200 px-2 py-1 text-[12px] font-semibold text-gray-700 bg-gray-50 text-center';
 const td = 'border border-gray-200 px-1 py-0.5 text-[13px] align-middle';
@@ -42,9 +43,10 @@ function NumSelect({ value, options, onChange, label, digits = 0 }: {
 }
 
 function DescCell({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+    const t = useTranslations('calculators');
     return (
         <td className={td} style={yellow}>
-            <TextCell value={value} ariaLabel="รายการ" onCommit={v => onChange(v ?? '')} />
+            <TextCell value={value} ariaLabel={t('common.item')} onCommit={v => onChange(v ?? '')} />
         </td>
     );
 }
@@ -59,6 +61,7 @@ export default function RoofStructurePage() {
 
 /** The Excel-mirror sheet (/calc/roof-structure). */
 function RoofStructureSheet() {
+    const t = useTranslations('calculators');
     const { input, update, reset, outputs, result, isDefault } = useCalculator(roofStructure);
     const linked = outputs.linkedSlopeArea;
 
@@ -75,7 +78,7 @@ function RoofStructureSheet() {
         ...p,
         kingPosts: {
             ...p.kingPosts,
-            parts: [...p.kingPosts.parts, { desc: `- ดั้ง-${p.kingPosts.parts.length + 1}`, c: 2, length: 0, count: 0 }],
+            parts: [...p.kingPosts.parts, { desc: t('roofStructure.kingPost3', { v: String(p.kingPosts.parts.length + 1) }), c: 2, length: 0, count: 0 }],
         },
     }));
 
@@ -83,15 +86,15 @@ function RoofStructureSheet() {
         <tr key={key}>
             <td className={`${td} text-center`}>{no}</td>
             <DescCell value={m.desc} onChange={desc => set(key, { desc })} />
-            <NumSelect value={m.c} options={DOUBLE_C_OPTIONS} label="ซีคู่" onChange={c => set(key, { c })} />
+            <NumSelect value={m.c} options={DOUBLE_C_OPTIONS} label={t('roofStructure.doubleC')} onChange={c => set(key, { c })} />
             <Blank /><Dash /><Dash />
             <td className={td}>
-                <LengthsCell lengths={m.lengths} ariaLabel="ความยาว (ม.)" onChange={lengths => set(key, { lengths })} />
+                <LengthsCell lengths={m.lengths} ariaLabel={t('common.lengthM')} onChange={lengths => set(key, { lengths })} />
                 {m.lengths.length > 1 && (
                     <div className="text-right tabular-nums px-1 text-[12px]" style={green}>{formatNumber(outputs[`${key}.length`])}</div>
                 )}
             </td>
-            <NumInput value={m.count} label="จำนวน (เส้น)" digits={0} onChange={count => set(key, { count })} />
+            <NumInput value={m.count} label={t('common.numberBars')} digits={0} onChange={count => set(key, { count })} />
             <Calc value={outputs[`${key}.total`]} />
             <Calc value={outputs[line]} strong />
         </tr>
@@ -101,10 +104,10 @@ function RoofStructureSheet() {
         <tr key={key}>
             <td className={`${td} text-center`}>{no}</td>
             <DescCell value={m.desc} onChange={desc => set(key, { desc })} />
-            <NumSelect value={m.c} options={DOUBLE_C_OPTIONS} label="ซีคู่" onChange={c => set(key, { c })} />
-            <NumSelect value={m.factor} options={ROOF_FACTOR_OPTIONS} digits={2} label="ตัวคูณหลังคา" onChange={factor => set(key, { factor })} />
+            <NumSelect value={m.c} options={DOUBLE_C_OPTIONS} label={t('roofStructure.doubleC')} onChange={c => set(key, { c })} />
+            <NumSelect value={m.factor} options={ROOF_FACTOR_OPTIONS} digits={2} label={t('roofStructure.roofFactor')} onChange={factor => set(key, { factor })} />
             <td className={td}>
-                <NumberCell value={outputs[`${key}.area`] ?? 0} ariaLabel="พื้นที่หลังคา (ตร.ม.)" tone={m.area === null ? 'calc' : 'input'}
+                <NumberCell value={outputs[`${key}.area`] ?? 0} ariaLabel={t('roofStructure.roofAreaSqM')} tone={m.area === null ? 'calc' : 'input'}
                     onCommit={v => {
                         // NumberCell commits on blur even when only focused (draft rounded to 6 decimals):
                         // an unchanged linked value must keep the link to the Roofing sheet.
@@ -113,7 +116,7 @@ function RoofStructureSheet() {
                         set(key, { area: v ?? null });
                     }} />
             </td>
-            <NumInput value={m.spacing} label="ระยะห่าง (ม.)" onChange={spacing => set(key, { spacing })} />
+            <NumInput value={m.spacing} label={t('common.spacingM')} onChange={spacing => set(key, { spacing })} />
             <Dash /><Dash />
             <Calc value={outputs[`${key}.total`]} />
             <Calc value={outputs[line]} strong />
@@ -122,21 +125,21 @@ function RoofStructureSheet() {
 
     return (
         <CalculatorShell def={roofStructure} result={result} isDefault={isDefault} onReset={reset}>
-            <SheetCard title=": ตารางคำนวณปริมาณเหล็กโครงหลังคา (จำนวนท่อน)">
+            <SheetCard title={t('roofStructure.roofFrameSteelQuantityCalculation')}>
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
                             <tr>
-                                <th className={th} style={{ width: 40 }}>ลำดับ</th>
-                                <th className={th} style={{ minWidth: 200 }}>รายการ</th>
-                                <th className={th} style={{ width: 60 }}>ซีคู่</th>
-                                <th className={th} style={{ width: 75 }}>ตัวคูณหลังคา</th>
-                                <th className={th} style={{ width: 90 }}>พื้นที่หลังคา (ตร.ม.)</th>
-                                <th className={th} style={{ width: 70 }}>ระยะห่าง (ม.)</th>
-                                <th className={th} style={{ width: 150 }}>ความยาว (ม.)</th>
-                                <th className={th} style={{ width: 65 }}>จำนวน (เส้น)</th>
-                                <th className={th} style={{ width: 85 }}>ความยาวรวม (ม.)</th>
-                                <th className={th} style={{ width: 70 }}>จำนวน (ท่อน)</th>
+                                <th className={th} style={{ width: 40 }}>{t('roofStructure.no')}</th>
+                                <th className={th} style={{ minWidth: 200 }}>{t('common.item')}</th>
+                                <th className={th} style={{ width: 60 }}>{t('roofStructure.doubleC')}</th>
+                                <th className={th} style={{ width: 75 }}>{t('roofStructure.roofFactor')}</th>
+                                <th className={th} style={{ width: 90 }}>{t('roofStructure.roofAreaSqM')}</th>
+                                <th className={th} style={{ width: 70 }}>{t('common.spacingM')}</th>
+                                <th className={th} style={{ width: 150 }}>{t('common.lengthM')}</th>
+                                <th className={th} style={{ width: 65 }}>{t('common.numberBars')}</th>
+                                <th className={th} style={{ width: 85 }}>{t('roofStructure.totalLengthM')}</th>
+                                <th className={th} style={{ width: 70 }}>{t('roofStructure.quantityPieces')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -152,14 +155,14 @@ function RoofStructureSheet() {
                             {input.kingPosts.parts.map((p, i) => (
                                 <tr key={`part-${i}`}>
                                     <td className={`${td} text-center`}>
-                                        <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label="ลบแถวดั้ง"
+                                        <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label={t('roofStructure.deleteKingPostRow')}
                                             onClick={() => removePart(i)} />
                                     </td>
                                     <DescCell value={p.desc} onChange={desc => setPart(i, { desc })} />
-                                    <NumSelect value={p.c} options={DOUBLE_C_OPTIONS} label="ซีคู่" onChange={c => setPart(i, { c })} />
+                                    <NumSelect value={p.c} options={DOUBLE_C_OPTIONS} label={t('roofStructure.doubleC')} onChange={c => setPart(i, { c })} />
                                     <Blank /><Dash /><Dash />
-                                    <NumInput value={p.length} label="ความยาว (ม.)" onChange={length => setPart(i, { length })} />
-                                    <NumInput value={p.count} label="จำนวน (เส้น)" digits={0} onChange={count => setPart(i, { count })} />
+                                    <NumInput value={p.length} label={t('common.lengthM')} onChange={length => setPart(i, { length })} />
+                                    <NumInput value={p.count} label={t('common.numberBars')} digits={0} onChange={count => setPart(i, { count })} />
                                     <Calc value={partTotal(p)} />
                                     <Blank />
                                 </tr>
@@ -167,7 +170,7 @@ function RoofStructureSheet() {
                             <tr>
                                 <td className={td} />
                                 <td className={td} colSpan={9}>
-                                    <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addPart}>เพิ่มดั้ง</Button>
+                                    <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addPart}>{t('roofStructure.addKingPost')}</Button>
                                 </td>
                             </tr>
 
@@ -176,10 +179,10 @@ function RoofStructureSheet() {
                             <tr>
                                 <td className={`${td} text-center`}>4</td>
                                 <DescCell value={input.valley.desc} onChange={desc => set('valley', { desc })} />
-                                <NumSelect value={input.valley.c} options={DOUBLE_C_OPTIONS} label="ซีคู่" onChange={c => set('valley', { c })} />
+                                <NumSelect value={input.valley.c} options={DOUBLE_C_OPTIONS} label={t('roofStructure.doubleC')} onChange={c => set('valley', { c })} />
                                 <Blank /><Dash /><Dash />
                                 <Calc value={outputs['valley.length']} />
-                                <NumInput value={input.valley.count} label="จำนวน (เส้น)" digits={0} onChange={count => set('valley', { count })} />
+                                <NumInput value={input.valley.count} label={t('common.numberBars')} digits={0} onChange={count => set('valley', { count })} />
                                 <Calc value={outputs['valley.total']} />
                                 <Calc value={outputs.R155} strong />
                             </tr>
@@ -190,26 +193,26 @@ function RoofStructureSheet() {
                     </table>
                 </div>
                 <ul className="mt-2 text-[12px] text-gray-500 list-disc pl-5 space-y-0.5">
-                    <li>ความยาวรวม = ความยาว × จำนวน × ซีคู่ (อะเส, ดั้ง, อกไก่, ตะเข้ราง) หรือ พื้นที่หลังคา ÷ ระยะห่าง × ตัวคูณหลังคา × ซีคู่ (จันทัน, แป)</li>
-                    <li>จำนวน (ท่อน) = ROUNDUP(ความยาวรวม ÷ {STICK_LENGTH}) — เหล็กยาวท่อนละ {STICK_LENGTH} ม.</li>
+                    <li>{t('roofStructure.totalLengthLengthQuantityDouble')}</li>
+                    <li>{t('roofStructure.quantityPiecesROUNDUPTotalLength')}{STICK_LENGTH}{t('roofStructure.steelLengthPerPiece')}{STICK_LENGTH}{t('common.m3')}</li>
                     <li>
-                        พื้นที่หลังคา (สีเขียว) = พื้นที่ตามแนวลาดเอียง {formatNumber(linked)} ตร.ม. จาก
-                        {' '}<Link href="/calc/roofing" className="text-blue-600 hover:underline">ชีตมุงหลังคา</Link>{' '}
-                        — พิมพ์ทับได้, ล้างช่องเพื่อกลับไปใช้ค่าที่ลิงก์
+                        {t('roofStructure.roofAreaGreenSlopedArea')}{formatNumber(linked)}{t('roofStructure.sqMFrom')}
+                        {' '}<Link href="/calc/roofing" className="text-blue-600 hover:underline">{t('roofStructure.theRoofingSheet')}</Link>{' '}
+                        {t('roofStructure.canBeOvertypedClearThe')}
                     </li>
-                    <li>ความยาว (อะเส, อกไก่) พิมพ์เป็นผลรวมช่วงได้ เช่น 12.5+11+4.5</li>
+                    <li>{t('roofStructure.lengthsWallPlateRidgeCan')}</li>
                 </ul>
             </SheetCard>
 
-            <SheetCard title="ความยาวตะเข้ราง (ต่อเส้น) = √(ระยะราบ 1² + ระยะราบ 2²) ÷ cos(องศา)">
+            <SheetCard title={t('roofStructure.valleyLengthPerPieceHorizontal')}>
                 <div className="max-w-lg">
-                    <InputNumberField label="ระยะราบ 1" value={input.valley.runA} unit="ม." onChange={runA => set('valley', { runA })} />
-                    <InputNumberField label="ระยะราบ 2" value={input.valley.runB} unit="ม." onChange={runB => set('valley', { runB })} />
-                    <InputNumberField label="ความลาดเอียง" value={input.valley.deg} unit="องศา" digits={0} onChange={deg => set('valley', { deg })} />
-                    <CalcField label="ความยาวตะเข้ราง" value={outputs['valley.length']} unit="ม." strong />
+                    <InputNumberField label={t('roofStructure.horizontalRun1')} value={input.valley.runA} unit={t('common.m')} onChange={runA => set('valley', { runA })} />
+                    <InputNumberField label={t('roofStructure.horizontalRun2')} value={input.valley.runB} unit={t('common.m')} onChange={runB => set('valley', { runB })} />
+                    <InputNumberField label={t('roofStructure.pitch')} value={input.valley.deg} unit={t('common.degrees')} digits={0} onChange={deg => set('valley', { deg })} />
+                    <CalcField label={t('roofStructure.valleyLength')} value={outputs['valley.length']} unit={t('common.m')} strong />
                 </div>
                 <p className="mt-2 text-[12px] text-gray-500">
-                    เทมเพลตตั้งสูตรไว้ตายตัว =(SQRT((3.6^2)+(3.6^2)))/COS(RADIANS(40)) ไม่ได้ลิงก์กับความลาดเอียงในชีตมุงหลังคา
+                    {t('roofStructure.theTemplateHasAFixed')}
                 </p>
             </SheetCard>
         </CalculatorShell>

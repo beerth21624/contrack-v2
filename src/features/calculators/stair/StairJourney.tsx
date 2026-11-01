@@ -11,22 +11,25 @@ import {
     AddButton, BarField, ChoiceButtons, EmptyState, PlanCard, PlanField, PlanGroup, PlanNumber, ResultSummary, isPositive,
     nextFreeName, planChecks, rebarSummaryItem, removeAt, resultText,
 } from '@/components/sheet/journey';
+import { useTranslations } from 'next-intl';
+import type { CalcT } from '../text';
 
 const nameOptions = STAIR_NAMES.map(v => ({ value: v as string, label: v }));
 const sizeOptions = STAIR_BAR_SIZES.map(s => ({ value: s as string, label: s }));
-const label = (r: StairRow, i: number) => (r.name === '' ? `บันได ${i + 1}` : r.name);
+const labelOf = (t: CalcT, r: StairRow, i: number) => (r.name === '' ? t('stair.stair', { v: String(i + 1) }) : r.name);
 
 const rowKg = (r: StairRow) => {
     const c = stairRow(r);
     return c.waistMain.kg + c.waistTemp.kg + c.stepMain.kg + c.stepTemp.kg;
 };
 
-const L = {
-    steps: 'จำนวนขั้น', riser: 'ลูกตั้ง สูง', tread: 'ลูกนอน กว้าง', width: 'ความกว้างบันได', waist: 'ท้องบันได หนา',
-    rise: 'สูงรวม', run: 'ยาวแนวราบ',
-} as const;
+const labelsOf = (t: CalcT) => ({
+    steps: t('stair.numberOfSteps'), riser: t('stair.riserHeight'), tread: t('stair.treadWidth'), width: t('stair.stairWidth'), waist: t('stair.waistSlabThickness'),
+    rise: t('stair.totalRise'), run: t('stair.horizontalRun'),
+}) as const;
+type Labels = ReturnType<typeof labelsOf>;
 
-const checksOf = (r: StairRow) => planChecks([
+const checksOf = (L: Labels, r: StairRow) => planChecks([
     { label: L.steps, ok: isPositive(r.steps) },
     { label: L.riser, ok: isPositive(r.riser) },
     { label: L.tread, ok: isPositive(r.tread) },
@@ -40,6 +43,8 @@ const checksOf = (r: StairRow) => planChecks([
 export function StairJourney({ input, outputs, onChange }: {
     input: StairInput; outputs: Record<string, number>; onChange: (rows: StairRow[]) => void;
 }) {
+    const t = useTranslations('calculators');
+    const L = labelsOf(t);
     const rows = input.rows;
     const replace = (i: number, row: StairRow) => onChange(rows.map((r, j) => (j === i ? row : r)));
     const set = (i: number, patch: Partial<StairRow>) => onChange(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
@@ -47,8 +52,8 @@ export function StairJourney({ input, outputs, onChange }: {
 
     if (rows.length === 0) {
         return (
-            <EmptyState text="ยังไม่มีบันได — ดูรูปขยายบันได แล้วเพิ่มทีละชุด (จำนวนขั้น ลูกตั้ง ลูกนอน และความกว้าง)"
-                addLabel="เพิ่มบันไดชุดแรก" onAdd={add} />
+            <EmptyState text={t('stair.noStairsYetCheckThe')}
+                addLabel={t('stair.addTheFirstStair')} onAdd={add} />
         );
     }
 
@@ -56,48 +61,48 @@ export function StairJourney({ input, outputs, onChange }: {
         <div className="flex flex-col gap-4">
             {rows.map((r, i) => {
                 const c = stairRow(r);
-                const k = checksOf(r);
+                const k = checksOf(L, r);
                 return (
                     <PlanCard key={i} index={i + 1} scope={{ listKey: 'rows', itemIndex: i }} state={k.state} hasData={k.hasData} missingText={k.missingText}
-                        title={label(r, i)}
+                        title={labelOf(t, r, i)}
                         result={k.state === 'empty' ? undefined : resultText([
-                            { label: 'คอนกรีต', value: c.concrete, unit: 'ลบ.ม.' },
-                            { label: 'เหล็ก', value: rowKg(r), unit: 'กก.', digits: 1 },
+                            { label: t('common.concrete'), value: c.concrete, unit: t('common.cuM') },
+                            { label: t('common.steel'), value: rowKg(r), unit: t('common.kg'), digits: 1 },
                         ])}
-                        onDelete={() => onChange(removeAt(rows, i))} deleteTitle={`ลบ${label(r, i)}?`}>
-                        <PlanGroup title="ลูกบันได (จากรูปขยายบันได)">
-                            <PlanField label="ชื่อบันได" className="col-span-2 sm:col-span-3 lg:col-span-4">
-                                <ChoiceButtons<string> size="small" ariaLabel="ชื่อบันได" value={r.name === '' ? undefined : r.name}
+                        onDelete={() => onChange(removeAt(rows, i))} deleteTitle={t('stair.delete', { v: labelOf(t, r, i) })}>
+                        <PlanGroup title={t('stair.stepsFromTheStairDetail')}>
+                            <PlanField label={t('stair.stairName')} className="col-span-2 sm:col-span-3 lg:col-span-4">
+                                <ChoiceButtons<string> size="small" ariaLabel={t('stair.stairName')} value={r.name === '' ? undefined : r.name}
                                     options={nameOptions} onChange={v => set(i, { name: v })} />
                             </PlanField>
-                            <PlanNumber label={L.steps} fieldKey="steps" value={r.steps} unit="ขั้น" digits={0}
+                            <PlanNumber label={L.steps} fieldKey="steps" value={r.steps} unit={t('stair.steps')} digits={0}
                                 onChange={v => replace(i, withStepChange(r, { steps: v }))} />
-                            <PlanNumber label={L.riser} value={r.riser} unit="ม." range={[0.1, 0.3]}
+                            <PlanNumber label={L.riser} value={r.riser} unit={t('common.m')} range={[0.1, 0.3]}
                                 onChange={v => replace(i, withStepChange(r, { riser: v }))} />
-                            <PlanNumber label={L.tread} value={r.tread} unit="ม." range={[0.15, 0.5]}
+                            <PlanNumber label={L.tread} value={r.tread} unit={t('common.m')} range={[0.15, 0.5]}
                                 onChange={v => replace(i, withStepChange(r, { tread: v }))} />
                         </PlanGroup>
-                        <PlanGroup title="แม่บันได" hint="สูงรวมและยาวแนวราบ ระบบเติมจากจำนวนขั้นให้ — แก้เองได้ถ้ามีชานพัก">
-                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit="ม." range={[0.5, 5]} onChange={v => set(i, { width: v })} />
-                            <PlanNumber label={L.waist} value={r.waist} unit="ม." range={[0.05, 0.4]} onChange={v => set(i, { waist: v })} />
-                            <PlanNumber label={L.rise} value={r.rise} unit="ม." onChange={v => set(i, { rise: v })} />
-                            <PlanNumber label={L.run} value={r.run} unit="ม." onChange={v => set(i, { run: v })} />
+                        <PlanGroup title={t('stair.stringer')} hint={t('stair.totalRiseAndHorizontalRun')}>
+                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit={t('common.m')} range={[0.5, 5]} onChange={v => set(i, { width: v })} />
+                            <PlanNumber label={L.waist} value={r.waist} unit={t('common.m')} range={[0.05, 0.4]} onChange={v => set(i, { waist: v })} />
+                            <PlanNumber label={L.rise} value={r.rise} unit={t('common.m')} onChange={v => set(i, { rise: v })} />
+                            <PlanNumber label={L.run} value={r.run} unit={t('common.m')} onChange={v => set(i, { run: v })} />
                         </PlanGroup>
-                        <PlanGroup title="เหล็กเสริม" hint="ตั้งไว้ RB9 @0.15 ม. — แก้ตามรูปขยายบันได" layout="wide">
-                            <BarField label="ท้องบันได เหล็กหลัก" sizes={STAIR_BAR_SIZES} size={r.waistMainSize}
+                        <PlanGroup title={t('common.reinforcement')} hint={t('stair.presetToRB9015')} layout="wide">
+                            <BarField label={t('stair.waistSlabMainBars')} sizes={STAIR_BAR_SIZES} size={r.waistMainSize}
                                 onSize={v => set(i, { waistMainSize: v })} amount={r.waistMainSpacing}
-                                onAmount={v => set(i, { waistMainSpacing: v })} amountLabel="ระยะห่าง @" amountUnit="ม." amountDigits={2}
+                                onAmount={v => set(i, { waistMainSpacing: v })} amountLabel={t('common.spacing')} amountUnit={t('common.m')} amountDigits={2}
                                 presets={[0.15, 0.2]} range={[0.05, 0.5]} />
-                            <BarField label="ท้องบันได เหล็กกันร้าว" sizes={STAIR_BAR_SIZES} size={r.waistTempSize}
+                            <BarField label={t('stair.waistSlabCrackControlBars')} sizes={STAIR_BAR_SIZES} size={r.waistTempSize}
                                 onSize={v => set(i, { waistTempSize: v })} amount={r.waistTempSpacing}
-                                onAmount={v => set(i, { waistTempSpacing: v })} amountLabel="ระยะห่าง @" amountUnit="ม." amountDigits={2}
+                                onAmount={v => set(i, { waistTempSpacing: v })} amountLabel={t('common.spacing')} amountUnit={t('common.m')} amountDigits={2}
                                 presets={[0.15, 0.2]} range={[0.05, 0.5]} />
-                            <BarField label="ลูกบันได เหล็กหลัก" sizes={STAIR_BAR_SIZES} size={r.stepMainSize}
+                            <BarField label={t('stair.stepMainBars')} sizes={STAIR_BAR_SIZES} size={r.stepMainSize}
                                 onSize={v => set(i, { stepMainSize: v })} amount={r.stepMainSpacing}
-                                onAmount={v => set(i, { stepMainSpacing: v })} amountLabel="ระยะห่าง @" amountUnit="ม." amountDigits={2}
+                                onAmount={v => set(i, { stepMainSpacing: v })} amountLabel={t('common.spacing')} amountUnit={t('common.m')} amountDigits={2}
                                 presets={[0.15, 0.2]} range={[0.05, 0.5]} />
-                            <PlanField label="ลูกบันได เหล็กกันร้าว" hint="คิดขั้นละ 2 เส้น">
-                                <ChoiceButtons<string> size="small" ariaLabel="ลูกบันได เหล็กกันร้าว ขนาดเหล็ก"
+                            <PlanField label={t('stair.stepCrackControlBars')} hint={t('stair.n2BarsPerStep')}>
+                                <ChoiceButtons<string> size="small" ariaLabel={t('stair.stepCrackControlBarsBar')}
                                     value={r.stepTempSize === '' ? undefined : r.stepTempSize} options={sizeOptions}
                                     onChange={v => set(i, { stepTempSize: v })} />
                             </PlanField>
@@ -106,22 +111,22 @@ export function StairJourney({ input, outputs, onChange }: {
                 );
             })}
 
-            <AddButton label="เพิ่มบันไดอีกชุด" onClick={add} />
+            <AddButton label={t('stair.addAnotherStair')} onClick={add} />
 
-            <AdvancedSection title="วิธีคิด" hint="ระบบคิดให้อัตโนมัติ">
+            <AdvancedSection title={t('common.howItIsCalculated')} hint={t('common.calculatedAutomatically')}>
                 <ul className="list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
-                    <li>ยาวแนวเอียง = √(ยาวแนวราบ² + สูงรวม²)</li>
-                    <li>คอนกรีต = ท้องบันได (หนา × ยาวแนวเอียง × กว้าง) + ลูกบันได (จำนวนขั้น × ½ × ลูกนอน × ลูกตั้ง × กว้าง)</li>
-                    <li>ไม้แบบ = ท้อง + ข้างท้องบันได + ข้างลูกบันได + ไม้กั้นขั้น · ไม้ค้ำยัน = ปัดขึ้น (พื้นที่ท้อง ÷ 0.6) ต้น</li>
-                    <li>เหล็กหลักท้องบันได = ปัดขึ้น (กว้าง ÷ ระยะห่าง) เส้น × (ยาวแนวเอียง + {STAIR_ANCHORAGE} ม. ระยะฝัง)</li>
-                    <li>เหล็กกันร้าวท้องบันได = ปัดขึ้น (ยาวแนวเอียง ÷ ระยะห่าง) เส้น × กว้าง</li>
-                    <li>เหล็กหลักลูกบันได = ปัดขึ้น (กว้าง ÷ ระยะห่าง) เส้น × (ยาวแนวราบ + สูงรวม) · เหล็กกันร้าวลูกบันได = 2 × จำนวนขั้น × กว้าง</li>
+                    <li>{t('stair.slopedLengthHorizontalRunTotal')}</li>
+                    <li>{t('stair.concreteWaistSlabThicknessSloped')}</li>
+                    <li>{t('stair.formworkSoffitWaistSlabSides')}</li>
+                    <li>{t('stair.waistSlabMainBarsRound')}{STAIR_ANCHORAGE}{t('stair.mEmbedment')}</li>
+                    <li>{t('stair.waistSlabCrackControlBars2')}</li>
+                    <li>{t('stair.stepMainBarsRoundUp')}</li>
                 </ul>
             </AdvancedSection>
 
             <ResultSummary items={[
-                { label: 'คอนกรีต', value: outputs.concrete ?? 0, unit: 'ลบ.ม.' },
-                { label: 'ไม้แบบ', value: outputs.formwork ?? 0, unit: 'ตร.ม.' },
+                { label: t('common.concrete'), value: outputs.concrete ?? 0, unit: t('common.cuM') },
+                { label: t('common.formwork'), value: outputs.formwork ?? 0, unit: t('common.sqM') },
                 rebarSummaryItem(outputs),
             ]} />
         </div>

@@ -98,6 +98,8 @@ const eslintConfig = defineConfig([
       // Track I-06: calculators set 1 (CalculatorShell + brick … roof-beam; the rest of the folder is I-07/I-08)
       "src/features/calculators/CalculatorShell.tsx",
       "src/features/calculators/{brick,ceiling,column,demolition,door-window,electrical-cable,electrical-equipment,electrical-pipe,fill,floor-tile,footing,ground-beam,land-inspection,layout,load-center,misc,paint,pedestal,piles,plaster,precast-slab,roof-beam}/**/*.{ts,tsx}",
+      // Track I-07: calculators set 2 (roof-slab … water-pipe; shared/, pages.ts, useCalculator.ts are I-08)
+      "src/features/calculators/{roof-slab,roof-structure,roofing,sanitary-system,sanitary-ware,site-camp,slab-on-grade,stair,structure-summary,temp-utilities,toilet-tile,wall-finishing,waste-pipe,water-pipe}/**/*.{ts,tsx}",
     ],
     ignores: ["**/__tests__/**", "src/features/export/baht-text.ts"],
     rules: {

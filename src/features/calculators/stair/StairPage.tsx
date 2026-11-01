@@ -11,6 +11,8 @@ import { useCalculator } from '../useCalculator';
 import { RebarSummary } from '@/components/sheet/RebarSummary';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { StairJourney } from './StairJourney';
+import { useTranslations } from 'next-intl';
+import type { CalcT } from '../text';
 
 const sizeOptions = STAIR_BAR_SIZES.map(value => ({ value }));
 const nameOptions = STAIR_NAMES.map(value => ({ value }));
@@ -21,12 +23,12 @@ const head = (group: string, label: string): ReactNode => (
 );
 
 /** Short group names for the column headers of the rebar table. */
-const GROUP_SHORT = {
-    waistMain: 'เหล็กเสริมหลัก - แม่บันได',
-    waistTemp: 'เหล็กกันร้าว - แม่บันได',
-    stepMain: 'เหล็กเสริมหลัก - ลูกบันได',
-    stepTemp: 'เหล็กกันร้าว - ลูกบันได',
-} as const;
+const groupShortOf = (t: CalcT) => ({
+    waistMain: t('stair.mainReinforcementStringer'),
+    waistTemp: t('stair.crackControlBarsStringer'),
+    stepMain: t('stair.mainReinforcementSteps'),
+    stepTemp: t('stair.crackControlBarsSteps'),
+}) as const;
 
 const emptyRow = (): StairRow => ({
     name: '', width: 0, waist: 0, rise: 0, run: 0, steps: 0, riser: 0, tread: 0,
@@ -35,6 +37,7 @@ const emptyRow = (): StairRow => ({
 });
 
 export default function StairPage() {
+    const t = useTranslations('calculators');
     const { input, update, reset, outputs, result, isDefault } = useCalculator(stair);
     const inJourney = useJourneyMode();
     if (inJourney) {
@@ -49,88 +52,89 @@ export default function StairPage() {
     const res = (i: number) => rows[i];
     const onChange = (next: StairRow[]) => update({ rows: next });
 
-    const W = 'ขนาดแม่บันได';
-    const S = 'ขนาดลูกบันได';
+    const W = t('stair.stringerSize');
+    const S = t('stair.stepSize');
+    const groupShort = groupShortOf(t);
     const sizeColumns: SheetColumn<StairRow>[] = [
-        { kind: 'select', key: 'name', title: 'ชื่อบันได', width: 130, options: nameOptions,
+        { kind: 'select', key: 'name', title: t('stair.stairName'), width: 130, options: nameOptions,
             get: r => r.name, set: (r, v) => ({ ...r, name: v }) },
-        { kind: 'number', key: 'width', title: head(W, 'กว้าง (ม.)'), width: 70, get: r => r.width, set: (r, v) => ({ ...r, width: v }) },
-        { kind: 'number', key: 'waist', title: head(W, 'หนา (ม.)'), width: 70, get: r => r.waist, set: (r, v) => ({ ...r, waist: v }) },
-        { kind: 'number', key: 'rise', title: head(W, 'สูง (ม.)'), width: 70, get: r => r.rise, set: (r, v) => ({ ...r, rise: v }) },
-        { kind: 'number', key: 'run', title: head(W, 'ยาว แนวราบ (ม.)'), width: 70, get: r => r.run, set: (r, v) => ({ ...r, run: v }) },
-        { kind: 'calc', key: 'inclined', title: head(W, 'ยาว แนวเอียง (ม.)'), width: 80, get: (_, i) => res(i)?.inclined ?? null },
-        { kind: 'number', key: 'steps', title: head(S, 'จำนวน (ขั้น)'), width: 70, digits: 0, get: r => r.steps, set: (r, v) => ({ ...r, steps: v }) },
-        { kind: 'number', key: 'riser', title: head(S, 'สูง ลูกตั้ง (ม.)'), width: 70, get: r => r.riser, set: (r, v) => ({ ...r, riser: v }) },
-        { kind: 'number', key: 'tread', title: head(S, 'กว้าง ลูกนอน (ม.)'), width: 70, get: r => r.tread, set: (r, v) => ({ ...r, tread: v }) },
+        { kind: 'number', key: 'width', title: head(W, t('common.widthM')), width: 70, get: r => r.width, set: (r, v) => ({ ...r, width: v }) },
+        { kind: 'number', key: 'waist', title: head(W, t('common.thicknessM')), width: 70, get: r => r.waist, set: (r, v) => ({ ...r, waist: v }) },
+        { kind: 'number', key: 'rise', title: head(W, t('common.heightM')), width: 70, get: r => r.rise, set: (r, v) => ({ ...r, rise: v }) },
+        { kind: 'number', key: 'run', title: head(W, t('common.horizontalRunM')), width: 70, get: r => r.run, set: (r, v) => ({ ...r, run: v }) },
+        { kind: 'calc', key: 'inclined', title: head(W, t('stair.slopedLengthM')), width: 80, get: (_, i) => res(i)?.inclined ?? null },
+        { kind: 'number', key: 'steps', title: head(S, t('stair.quantitySteps')), width: 70, digits: 0, get: r => r.steps, set: (r, v) => ({ ...r, steps: v }) },
+        { kind: 'number', key: 'riser', title: head(S, t('stair.riserHeightM')), width: 70, get: r => r.riser, set: (r, v) => ({ ...r, riser: v }) },
+        { kind: 'number', key: 'tread', title: head(S, t('stair.treadWidthM')), width: 70, get: r => r.tread, set: (r, v) => ({ ...r, tread: v }) },
     ];
 
     const rebarColumns: SheetColumn<StairRow>[] = [
-        { kind: 'label', key: 'name', title: 'ชื่อบันได', width: 110, get: r => r.name },
+        { kind: 'label', key: 'name', title: t('stair.stairName'), width: 110, get: r => r.name },
         ...STAIR_GROUPS.flatMap((grp): SheetColumn<StairRow>[] => {
-            const g = GROUP_SHORT[grp.key];
+            const g = groupShort[grp.key];
             return [
-                { kind: 'select', key: `${grp.key}-size`, title: head(g, 'ขนาด'), width: 85, options: sizeOptions,
+                { kind: 'select', key: `${grp.key}-size`, title: head(g, t('common.size')), width: 85, options: sizeOptions,
                     get: r => r[grp.size], set: (r, v) => ({ ...r, [grp.size]: v }) },
-                { kind: 'number', key: `${grp.key}-spacing`, title: head(g, 'ระยะห่าง (ม.)'), width: 70,
+                { kind: 'number', key: `${grp.key}-spacing`, title: head(g, t('common.spacingM')), width: 70,
                     get: r => r[grp.spacing], set: (r, v) => ({ ...r, [grp.spacing]: v }) },
-                { kind: 'calc', key: `${grp.key}-count`, title: head(g, 'จำนวน (เส้น)'), width: 65, digits: 0,
+                { kind: 'calc', key: `${grp.key}-count`, title: head(g, t('common.numberBars')), width: 65, digits: 0,
                     get: (_, i) => res(i)?.[grp.key].count ?? null },
-                { kind: 'calc', key: `${grp.key}-length`, title: head(g, 'ยาว รวม (ม.)'), width: 75,
+                { kind: 'calc', key: `${grp.key}-length`, title: head(g, t('common.totalLengthM2')), width: 75,
                     get: (_, i) => res(i)?.[grp.key].length ?? null },
-                { kind: 'calc', key: `${grp.key}-kg`, title: head(g, 'น้ำหนัก (กก.)'), width: 75,
+                { kind: 'calc', key: `${grp.key}-kg`, title: head(g, t('common.weightKg')), width: 75,
                     get: (_, i) => res(i)?.[grp.key].kg ?? null },
             ];
         }),
     ];
 
-    const FW = 'ไม้แบบ (ตร.ม.)';
-    const CO = 'คอนกรีตโครงสร้าง (ลบ.ม.)';
+    const FW = t('common.formworkSqM');
+    const CO = t('stair.structuralConcreteCuM');
     const formworkColumns: SheetColumn<StairRow>[] = [
-        { kind: 'label', key: 'name', title: 'ชื่อบันได', width: 110, get: r => r.name },
-        { kind: 'calc', key: 'props', title: 'ไม้ค้ำยัน (ต้น)', width: 70, digits: 0, get: (_, i) => res(i)?.props ?? null },
-        { kind: 'calc', key: 'soffit', title: head(FW, 'ท้อง แม่บันได'), width: 80, get: (_, i) => res(i)?.soffit ?? null },
-        { kind: 'calc', key: 'waistSides', title: head(FW, 'ข้าง แม่บันได'), width: 80, get: (_, i) => res(i)?.waistSides ?? null },
-        { kind: 'calc', key: 'stepSides', title: head(FW, 'ข้าง ลูกบันได'), width: 80, get: (_, i) => res(i)?.stepSides ?? null },
-        { kind: 'calc', key: 'risers', title: head(FW, 'กั้น ขั้นบันได'), width: 80, get: (_, i) => res(i)?.risers ?? null },
-        { kind: 'calc', key: 'formwork', title: head(FW, 'รวม'), width: 80, get: (_, i) => res(i)?.formwork ?? null },
-        { kind: 'calc', key: 'waistConcrete', title: head(CO, 'แม่บันได'), width: 80, digits: 3, get: (_, i) => res(i)?.waistConcrete ?? null },
-        { kind: 'calc', key: 'stepConcrete', title: head(CO, 'ลูกบันได'), width: 80, digits: 3, get: (_, i) => res(i)?.stepConcrete ?? null },
-        { kind: 'calc', key: 'concrete', title: head(CO, 'รวม'), width: 80, digits: 3, get: (_, i) => res(i)?.concrete ?? null },
+        { kind: 'label', key: 'name', title: t('stair.stairName'), width: 110, get: r => r.name },
+        { kind: 'calc', key: 'props', title: t('common.propsPcs'), width: 70, digits: 0, get: (_, i) => res(i)?.props ?? null },
+        { kind: 'calc', key: 'soffit', title: head(FW, t('stair.soffitOfStringer')), width: 80, get: (_, i) => res(i)?.soffit ?? null },
+        { kind: 'calc', key: 'waistSides', title: head(FW, t('stair.sidesOfStringer')), width: 80, get: (_, i) => res(i)?.waistSides ?? null },
+        { kind: 'calc', key: 'stepSides', title: head(FW, t('stair.sidesOfSteps')), width: 80, get: (_, i) => res(i)?.stepSides ?? null },
+        { kind: 'calc', key: 'risers', title: head(FW, t('stair.stepRisers')), width: 80, get: (_, i) => res(i)?.risers ?? null },
+        { kind: 'calc', key: 'formwork', title: head(FW, t('common.total')), width: 80, get: (_, i) => res(i)?.formwork ?? null },
+        { kind: 'calc', key: 'waistConcrete', title: head(CO, t('stair.stringer')), width: 80, digits: 3, get: (_, i) => res(i)?.waistConcrete ?? null },
+        { kind: 'calc', key: 'stepConcrete', title: head(CO, t('stair.steps2')), width: 80, digits: 3, get: (_, i) => res(i)?.stepConcrete ?? null },
+        { kind: 'calc', key: 'concrete', title: head(CO, t('common.total')), width: 80, digits: 3, get: (_, i) => res(i)?.concrete ?? null },
     ];
 
     return (
         <CalculatorShell def={stair} result={result} isDefault={isDefault} onReset={reset}>
-            <SheetCard title="สรุปปริมาณงานงานบันได">
+            <SheetCard title={t('stair.stairQuantitySummary')}>
                 <RebarSummary groups={STAIR_GROUPS.map(grp => ({ label: grp.title, kg: totals.groups[grp.key] }))} />
                 <div className="mt-3 max-w-md ml-auto">
-                    <CalcField label="ไม้ค้ำยัน (ต้น)" value={outputs.props} unit="ต้น" digits={0} strong />
-                    <CalcField label="ไม้แบบ (ตร.ม.)" value={outputs.formwork} unit="ตร.ม." strong />
-                    <CalcField label="คอนกรีตโครงสร้าง (ลบ.ม.)" value={outputs.concrete} unit="ลบ.ม." digits={3} strong />
+                    <CalcField label={t('common.propsPcs')} value={outputs.props} unit={t('common.pcs')} digits={0} strong />
+                    <CalcField label={t('common.formworkSqM')} value={outputs.formwork} unit={t('common.sqM')} strong />
+                    <CalcField label={t('stair.structuralConcreteCuM')} value={outputs.concrete} unit={t('common.cuM')} digits={3} strong />
                 </div>
             </SheetCard>
 
-            <SheetCard title="ขนาดบันได">
-                <EditableTable<StairRow> rows={input.rows} onChange={onChange} newRow={emptyRow} addLabel="+ เพิ่มบันได"
+            <SheetCard title={t('stair.stairSize')}>
+                <EditableTable<StairRow> rows={input.rows} onChange={onChange} newRow={emptyRow} addLabel={t('stair.addStair')}
                     columns={sizeColumns} />
             </SheetCard>
 
-            <SheetCard title="เหล็กเสริม">
+            <SheetCard title={t('common.reinforcement')}>
                 <EditableTable<StairRow> rows={input.rows} onChange={onChange} canDelete={false} columns={rebarColumns} />
                 <div className="mt-3 text-[12px] text-gray-500 space-y-1">
-                    <p>เหล็กเสริมหลัก - แม่บันได: จำนวน = ปัดขึ้น(กว้าง ÷ ระยะห่าง), ยาวรวม = (ยาวแนวเอียง + {STAIR_ANCHORAGE} ม.) × จำนวน</p>
-                    <p>เหล็กกันร้าว - แม่บันได: จำนวน = ปัดขึ้น(ยาวแนวเอียง ÷ ระยะห่าง), ยาวรวม = กว้าง × จำนวน</p>
-                    <p>เหล็กเสริมหลัก - ลูกบันได: จำนวน = ปัดขึ้น(กว้าง ÷ ระยะห่าง), ยาวรวม = จำนวน × (ยาวแนวราบ + สูง)</p>
-                    <p>เหล็กกันร้าว - ลูกบันได: จำนวน = 2 × จำนวนขั้น (ไม่ใช้ระยะห่าง), ยาวรวม = จำนวน × กว้าง</p>
-                    <p>เหล็กเสริมส่งเข้า BOQ แยกตามขนาด พร้อม %เผื่อตามขนาด (RB6 6 %, RB9 9 %, DB12–DB20 12 %) และลวดผูกเหล็ก 3 %</p>
+                    <p>{t('stair.mainReinforcementStringerQuantityRound')}{STAIR_ANCHORAGE}{t('stair.mQuantity')}</p>
+                    <p>{t('stair.crackControlBarsStringerQuantity')}</p>
+                    <p>{t('stair.mainReinforcementStepsQuantityRound')}</p>
+                    <p>{t('stair.crackControlBarsStepsQuantity')}</p>
+                    <p>{t('stair.reinforcementIsSentToThe')}</p>
                 </div>
             </SheetCard>
 
-            <SheetCard title="ไม้แบบ / คอนกรีต">
+            <SheetCard title={t('stair.formworkConcrete')}>
                 <EditableTable<StairRow> rows={input.rows} onChange={onChange} canDelete={false} columns={formworkColumns} />
                 <div className="mt-3 text-[12px] text-gray-500 space-y-1">
-                    <p>ไม้ค้ำยัน = ปัดขึ้น(ท้องแม่บันได ÷ 0.6) ต้น · ท้อง = กว้าง × ยาวแนวเอียง · ข้างแม่บันได = 2 × หนา × ยาวแนวเอียง</p>
-                    <p>ข้างลูกบันได = 2 × สูงลูกตั้ง × ยาวแนวเอียง · กั้นขั้นบันได = จำนวนขั้น × สูงลูกตั้ง × กว้าง</p>
-                    <p>คอนกรีต แม่บันได = หนา × ยาวแนวเอียง × กว้าง · ลูกบันได = จำนวนขั้น × ½ × ลูกนอน × ลูกตั้ง × กว้าง</p>
+                    <p>{t('stair.propsRoundUpStringerSoffit')}</p>
+                    <p>{t('stair.stepSides2RiserHeight')}</p>
+                    <p>{t('stair.stringerConcreteThicknessSlopedLength')}</p>
                 </div>
             </SheetCard>
         </CalculatorShell>
