@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import type {
     AcceptHandoverRequest, AddHandoverDocumentRequest, AssignWarrantyClaimRequest, CloseWarrantyClaimRequest, CreateHandoverRequest,
-    CreateWarrantyClaimRequest, InspectHandoverRequest, PatchHandoverRequest, PatchWarrantyClaimRequest, RejectHandoverRequest,
+    CreateWarrantyClaimRequest, FinalizeCloseoutRequest, InspectHandoverRequest, PatchCloseoutRequest, PatchHandoverRequest, PatchWarrantyClaimRequest, RejectHandoverRequest,
     RejectWarrantyClaimRequest, ResolveWarrantyClaimRequest, ScheduleHandoverRequest,
 } from '@/shared/contract';
 import { useSession } from '@/features/cloud/auth/session';
@@ -13,6 +13,7 @@ export const handoverKeys = {
     forProject: (projectId: string) => ['projects', projectId, 'handover'] as const,
     warranty: (projectId: string) => ['projects', projectId, 'warranty'] as const,
     claims: (projectId: string) => ['projects', projectId, 'warranty-claims'] as const,
+    closeout: (projectId: string) => ['projects', projectId, 'closeout'] as const,
 };
 
 function useSignedIn(): boolean {
@@ -44,6 +45,17 @@ export function useWarrantyClaims(projectId: string | undefined) {
     return useQuery({
         queryKey: handoverKeys.claims(projectId ?? ''),
         queryFn: () => handoverApi.claims(projectId ?? ''),
+        enabled: signedIn && projectId !== undefined,
+        staleTime: 0,
+    });
+}
+
+/** The closeout (live draft until final); `undefined` = do not ask (no `cost.read`). */
+export function useCloseout(projectId: string | undefined) {
+    const signedIn = useSignedIn();
+    return useQuery({
+        queryKey: handoverKeys.closeout(projectId ?? ''),
+        queryFn: () => handoverApi.closeout(projectId ?? ''),
         enabled: signedIn && projectId !== undefined,
         staleTime: 0,
     });
@@ -107,5 +119,20 @@ export function useWarrantyClaimAction(projectId: string) {
             case 'close': return handoverApi.close(v.claimId, v.body);
             case 'reject': return handoverApi.rejectClaim(v.claimId, v.body);
         }
+    });
+}
+
+export function usePatchCloseout(projectId: string) {
+    return useHandoverMutation(projectId, (body: PatchCloseoutRequest) => handoverApi.patchCloseout(projectId, body));
+}
+export function useFinalizeCloseout(projectId: string) {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (body: FinalizeCloseoutRequest) => handoverApi.finalizeCloseout(projectId, body),
+        onSuccess: () => {
+            refreshProject(qc, projectId);
+            // New unit rates for every BOQ page of the workspace.
+            void qc.invalidateQueries({ predicate: q => q.queryKey[0] === 'workspaces' && q.queryKey[2] === 'unit-rates' });
+        },
     });
 }

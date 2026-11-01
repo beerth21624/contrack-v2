@@ -260,3 +260,30 @@ export const putCashSettingsRequestSchema = z.object({
     minBalance: signedAmountSchema,
 });
 export type PutCashSettingsRequest = z.infer<typeof putCashSettingsRequestSchema>;
+
+// ── Unit rate history (ราคาจริงล่าสุด, WP-55): written by the closeout, read by the BOQ page ──
+
+/** Projects averaged per line key (the most recent by observed date). */
+export const UNIT_RATE_HISTORY_PROJECTS = 3;
+
+/** GET /workspaces/:workspaceId/unit-rates?lineKeys=a,b — without `lineKeys`: every line key with a history. */
+export const unitRatesQuerySchema = z.object({
+    lineKeys: z.string().max(50_000).optional()
+        .transform(s => (s === undefined ? undefined : [...new Set(s.split(',').map(k => k.trim()).filter(k => k !== ''))].slice(0, 2000))),
+});
+export type UnitRatesQuery = z.infer<typeof unitRatesQuerySchema>;
+
+export const unitRateDtoSchema = z.object({
+    lineKey: z.string(),
+    descTh: z.string(),
+    unit: z.string(),
+    /** Mean actual material cost per unit (without VAT). */
+    matUnit: z.number(),
+    labUnit: z.number(),
+    projectCount: z.number().int(),
+    lastObservedDate: businessDateSchema,
+});
+export type UnitRateDto = z.infer<typeof unitRateDtoSchema>;
+
+export const unitRatesDtoSchema = z.object({ items: z.array(unitRateDtoSchema) });
+export type UnitRatesDto = z.infer<typeof unitRatesDtoSchema>;

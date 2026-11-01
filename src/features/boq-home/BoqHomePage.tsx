@@ -8,6 +8,10 @@ import { isReadOnly, useProjectStore } from '@/store/project-store';
 import { useModuleEnabled } from '@/features/modules/modules';
 import { CreateQuotationButton } from '@/features/erp/quotations/CreateFromBoqDialog';
 import { PriceReferenceButton } from '@/features/erp/price-reference/PriceReferencePicker';
+import { useUnitRates } from '@/features/erp/job-cost/hooks';
+import { UnitRateHint } from '@/features/erp/job-cost/UnitRateHint';
+import { useErpWorkspace } from '@/features/erp/shared/useErpWorkspace';
+import { can } from '@/shared/contract';
 import { computeProject } from '@/domain/project';
 import type { BoqItemRow, BoqSectionResult } from '@/domain/boq/types';
 import { BOQ_TEMPLATE_V5 } from '@/domain/boq/template.v5';
@@ -97,6 +101,12 @@ export function BoqHomePage() {
     const showPriceRef = hub.enabled && priceWorkspaceId !== undefined;
     // "Create quotation from BOQ" (WP-24): a cloud project; the button itself checks the module and the role.
     const cloud = useProjectStore(s => (s.binding.kind === 'cloud' ? s.binding : undefined));
+    // "ราคาจริงล่าสุด" (WP-55): cloud project, `handover` active, the caller may read costs; "use" only while the BOQ is editable.
+    const handover = useModuleEnabled('handover', cloud?.workspaceId);
+    const erpWs = useErpWorkspace(cloud?.workspaceId);
+    const showUnitRates = cloud !== undefined && handover.enabled && can(erpWs.role, 'cost.read');
+    const unitRates = useUnitRates(showUnitRates ? cloud.workspaceId : undefined);
+    const ratesLocked = useProjectStore(s => isReadOnly(s.binding));
     const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
     const [query, setQuery] = useState('');
     const [flashKey, setFlashKey] = useState<string | null>(null);
@@ -190,13 +200,22 @@ export function BoqHomePage() {
 
     const renderItem = (r: BoqItemRow) => {
         const ov = overrides[r.key] ?? {};
+        const rate = showUnitRates ? unitRates.data?.get(r.key) : undefined;
         const qtyTip = r.qtySource === 'calc' ? t('fromCalc') : r.qtySource === 'line' || r.qtySource === 'sumLines' ? t('fromLine') : undefined;
         return (
             <tr key={r.key} data-boq-row={r.key}
                 className={`hover:bg-orange-50/40 [&>td]:transition-colors [&>td]:duration-500 ${flashCls(flashKey === r.key)}`}>
                 <td className={`${cell} bg-white ${STICKY.no.className}`} />
                 <td className={`${cell} text-center text-gray-500 bg-white ${STICKY.step.className}`}>{r.itemNo}</td>
-                <td className={`${cell} min-w-[260px] bg-white ${STICKY.desc.className}`}><Highlight text={r.desc} q={q} /></td>
+                <td className={`${cell} min-w-[260px] bg-white ${STICKY.desc.className}`}>
+                    {rate === undefined ? <Highlight text={r.desc} q={q} /> : (
+                        <div className="flex items-start justify-between gap-2">
+                            <span className="min-w-0"><Highlight text={r.desc} q={q} /></span>
+                            <UnitRateHint rate={rate} unit={r.unit} locked={ratesLocked}
+                                onUse={(mat, lab) => { setOverride(r.key, 'mat', mat); setOverride(r.key, 'lab', lab); }} />
+                        </div>
+                    )}
+                </td>
                 <td className={`${num} ${editedCls(ov.qty !== undefined)}`} style={{ background: r.editable.qty ? undefined : SHEET_COLORS.calc, minWidth: 90 }}>
                     {r.editable.qty
                         ? <Tooltip title={qtyTip}>

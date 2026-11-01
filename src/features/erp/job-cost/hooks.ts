@@ -11,6 +11,7 @@ export const jobCostKeys = {
     projectCash: (projectId: string, weeks: number, pastWeeks: number) => ['projects', projectId, 'cash-flow', weeks, pastWeeks] as const,
     companyCash: (workspaceId: string, weeks: number, pastWeeks: number) => ['workspaces', workspaceId, 'cash-flow', weeks, pastWeeks] as const,
     settings: (workspaceId: string) => ['workspaces', workspaceId, 'cash-settings'] as const,
+    unitRates: (workspaceId: string) => ['workspaces', workspaceId, 'unit-rates'] as const,
 };
 
 function useSignedIn(): boolean {
@@ -76,5 +77,17 @@ export function usePutCashSettings(workspaceId: string) {
             void qc.invalidateQueries({ queryKey: ['workspaces', workspaceId, 'cash-flow'] });
             void qc.invalidateQueries({ queryKey: jobCostKeys.settings(workspaceId) });
         },
+    });
+}
+
+/** Latest actual unit rates of the workspace's closed projects, by BOQ line key; `undefined` = do not ask. */
+export function useUnitRates(workspaceId: string | undefined) {
+    const signedIn = useSignedIn();
+    return useQuery({
+        queryKey: jobCostKeys.unitRates(workspaceId ?? ''),
+        queryFn: () => jobCostApi.unitRates(workspaceId ?? ''),
+        enabled: signedIn && workspaceId !== undefined,
+        staleTime: 5 * 60_000,
+        select: data => new Map(data.items.map(r => [r.lineKey, r])),
     });
 }

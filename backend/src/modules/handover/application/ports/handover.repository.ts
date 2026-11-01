@@ -1,5 +1,5 @@
 import type {
-    DocLanguage, HandoverAttendee, HandoverChecklistItem, HandoverDocumentKind, HandoverStatus, WarrantyClaimChannel, WarrantyClaimPhoto,
+    CloseoutStatus, CloseoutSummaryDto, DocLanguage, HandoverAttendee, HandoverChecklistItem, HandoverDocumentKind, HandoverStatus, WarrantyClaimChannel, WarrantyClaimPhoto,
     WarrantyClaimSeverity, WarrantyClaimStatus, WarrantyStatus,
 } from '@contrack/contract';
 import type { ProjectId, UserId, WorkspaceId } from '../../../../shared/domain/ids';
@@ -78,6 +78,21 @@ export interface WarrantyClaimRecord {
     updatedAt: Date;
 }
 
+/** One `ho_closeouts` row (WP-55); `summary` = the full figures (quoted margin included, masked per caller in the DTO). */
+export interface CloseoutRecord {
+    id: string;
+    workspaceId: WorkspaceId;
+    projectId: ProjectId;
+    status: CloseoutStatus;
+    asOf: string | null;
+    summary: CloseoutSummaryDto | null;
+    lessons: string;
+    finalizedBy: UserId | null;
+    finalizedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 /** Tables `ho_*`. Every method filters by workspace except the by-id lookups and the sweep (callers then check access). */
 export abstract class HandoverRepository {
     abstract findHandover(handoverId: string): Promise<HandoverRecord | undefined>;
@@ -111,6 +126,10 @@ export abstract class HandoverRepository {
     ): Promise<WarrantyClaimRecord[]>;
     abstract insertClaim(c: WarrantyClaimRecord): Promise<void>;
     abstract saveClaim(c: WarrantyClaimRecord): Promise<void>;
+
+    abstract closeoutForProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<CloseoutRecord | undefined>;
+    /** Insert or replace by project. */
+    abstract saveCloseout(c: CloseoutRecord): Promise<void>;
 
     /** Memory adapter only (PostgreSQL cascades from projects). */
     abstract deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void>;

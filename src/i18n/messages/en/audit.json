@@ -67,7 +67,8 @@
     "add_document": "Document attached",
     "assign": "Assigned",
     "start": "Started",
-    "resolve": "Resolved"
+    "resolve": "Resolved",
+    "finalize": "Close out"
   },
   "entities": {
     "approval_request": "Approval request",
@@ -100,6 +101,7 @@
     "supplier_bill": "Supplier bill",
     "payment_run": "Payment run",
     "handover": "Handover",
-    "warranty_claim": "Warranty claim"
+    "warranty_claim": "Warranty claim",
+    "closeout": "Project closeout"
   }
 }

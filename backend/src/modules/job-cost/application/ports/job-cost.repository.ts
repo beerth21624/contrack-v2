@@ -38,7 +38,21 @@ export interface CashSettingsRecord {
     updatedAt: Date;
 }
 
-/** `jc_forecasts`, `jc_alerts`, `jc_cash_settings`. Every query filters by workspace. */
+/** `jc_unit_rates` (WP-55): one observation of a line key in a closed project. */
+export interface UnitRateRecord {
+    id: string;
+    workspaceId: WorkspaceId;
+    projectId: ProjectId;
+    lineKey: string;
+    descTh: string;
+    unit: string;
+    qty: number;
+    actualMatUnit: number;
+    actualLabUnit: number;
+    observedDate: string;
+}
+
+/** `jc_forecasts`, `jc_alerts`, `jc_cash_settings`, `jc_unit_rates`. Every query filters by workspace. */
 export abstract class JobCostRepository {
     /** Serializes the job-cost writers of a project (subcontract sync, alerts) until the transaction ends (memory: no-op). */
     abstract lockProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void>;
@@ -57,6 +71,10 @@ export abstract class JobCostRepository {
     abstract cashSettings(workspaceId: WorkspaceId): Promise<CashSettingsRecord | undefined>;
     /** Insert or replace by workspace. */
     abstract saveCashSettings(record: CashSettingsRecord): Promise<void>;
+    /** Deletes the project's unit rates and inserts `rows`. */
+    abstract replaceUnitRates(workspaceId: WorkspaceId, projectId: ProjectId, rows: readonly UnitRateRecord[]): Promise<void>;
+    /** Unit rates of the workspace (only `lineKeys` when given), newest observed first, at most `limit`. */
+    abstract unitRates(workspaceId: WorkspaceId, lineKeys: readonly string[] | undefined, limit: number): Promise<UnitRateRecord[]>;
     /** Memory adapter only (PostgreSQL cascades from projects). */
     abstract deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void>;
 }

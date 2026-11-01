@@ -1,12 +1,12 @@
-import type { WarrantyClaimStatus } from '@contrack/contract';
+import type { CloseoutSummaryDto, WarrantyClaimStatus } from '@contrack/contract';
 import { and, asc, desc, eq, inArray, lte } from 'drizzle-orm';
 import { type ProjectId, type WorkspaceId, asProjectId, asUserId, asWorkspaceId } from '../../../../shared/domain/ids';
 import type { DatabaseContext } from '../../../../shared/infrastructure/database/database';
 import {
-    hoHandoverDocuments, hoHandovers, hoWarranties, hoWarrantyClaims,
+    hoCloseouts, hoHandoverDocuments, hoHandovers, hoWarranties, hoWarrantyClaims,
 } from '../../../../shared/infrastructure/database/schema-handover';
 import {
-    type HandoverDocumentRecord, type HandoverRecord, HandoverRepository, type WarrantyClaimRecord, type WarrantyRecord,
+    type CloseoutRecord, type HandoverDocumentRecord, type HandoverRecord, HandoverRepository, type WarrantyClaimRecord, type WarrantyRecord,
 } from '../../application/ports/handover.repository';
 
 type HandoverRow = typeof hoHandovers.$inferSelect;
@@ -155,6 +155,23 @@ export class DrizzleHandoverRepository extends HandoverRepository {
         const { id, workspaceId, createdAt: _c, ...rest } = c;
         await this.ctx.executor.update(hoWarrantyClaims).set(rest)
             .where(and(eq(hoWarrantyClaims.workspaceId, workspaceId), eq(hoWarrantyClaims.id, id)));
+    }
+
+    async closeoutForProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<CloseoutRecord | undefined> {
+        const [row] = await this.ctx.executor.select().from(hoCloseouts)
+            .where(and(eq(hoCloseouts.workspaceId, workspaceId), eq(hoCloseouts.projectId, projectId))).limit(1);
+        if (row === undefined) return undefined;
+        const summary = Object.keys(row.summary).length === 0 ? null : row.summary as unknown as CloseoutSummaryDto;
+        return {
+            ...row, workspaceId: asWorkspaceId(row.workspaceId), projectId: asProjectId(row.projectId), summary,
+            finalizedBy: row.finalizedBy === null ? null : asUserId(row.finalizedBy),
+        };
+    }
+
+    async saveCloseout(c: CloseoutRecord): Promise<void> {
+        const values = { ...c, summary: (c.summary ?? {}) as unknown as Record<string, unknown> };
+        const { id: _id, workspaceId: _w, projectId: _p, createdAt: _c, ...set } = values;
+        await this.ctx.executor.insert(hoCloseouts).values(values).onConflictDoUpdate({ target: hoCloseouts.projectId, set });
     }
 
     // PostgreSQL drops the rows with the project (tenant FK cascade).

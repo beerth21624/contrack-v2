@@ -515,3 +515,13 @@ Read `handover.read`; write `handover.manage`. One handover per project, made on
 | PATCH | `/warranty-claims/:claimId` | `PatchWarrantyClaimRequest` → `WarrantyClaimDto` | not closed / rejected |
 | POST | `/warranty-claims/:claimId/assign` | `{assigneeUserId?, assigneeSupplierId?, dueDate?}` → `WarrantyClaimDto` (200) | member of the workspace / supplier (404 otherwise); none → 422 `assignee_required` |
 | POST | `/warranty-claims/:claimId/start` · `resolve` · `close` · `reject` | resolve / close `{resolutionNote?, costAmount?}`, reject `{resolutionNote?}` → `WarrantyClaimDto` (200) | |
+
+### Closeout + unit rate history (WP-55)
+Closeout reads need `handover.read` + `cost.read`; writes `handover.manage` + `cost.read` (module `handover`). The draft summary is computed live: per BOQ section `estimate` (Σ baseline_total), `budget` (Σ budget_total, VO included), `actual` (ledger `actual` rows split material / labour / subcontract / equipment / other), `variance = budget − actual`; ledger rows without a cost code form the row `sectionNo: null`, so Σ actual = the project's ledger actual. Revenue = contract `current_value` (signed / completed / closed), `billing` from BillingTotals (billing active), `profit = revenue − actual`, `quotedMarginPct` / `quotedProfit` only for `quotations.seeMargins`. Finalize (handover `accepted`, else 409 `handover_not_accepted`; once, again → 409 `invalid_transition`) in one transaction: summary frozen (`status: final`), `jc_unit_rates` replaced for the project (per line key: Σ material / Σ labour actual ÷ (baseline_qty + vo_qty), only qty > 0 with some cost; dated `asOf`), warranty `closed`, project `closed`. Audited `closeout` (`update|finalize`).
+
+| Method | Path | Body → Response | Notes |
+|---|---|---|---|
+| GET | `/projects/:projectId/closeout` | → `CloseoutDto` | live draft until final (`id` null before anything is saved) |
+| PATCH | `/projects/:projectId/closeout` | `{lessons}` → `CloseoutDto` | draft only (409 `invalid_transition` when final) |
+| POST | `/projects/:projectId/closeout/finalize` | `{lessons?, asOf?}` → `CloseoutDto` (200) | |
+| GET | `/workspaces/:workspaceId/unit-rates?lineKeys=a,b` | → `UnitRatesDto` `{items: {lineKey, descTh, unit, matUnit, labUnit, projectCount, lastObservedDate}[]}` | `cost.read`, module `handover` (controller in job-cost); per line key the mean of the latest 3 projects by observed date; no `lineKeys` = every line key with a history |

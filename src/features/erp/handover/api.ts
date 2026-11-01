@@ -1,4 +1,7 @@
 import {
+    type CloseoutDto, type FinalizeCloseoutRequest, type PatchCloseoutRequest, closeoutDtoSchema,
+} from '@/shared/contract';
+import {
     type AcceptHandoverRequest, type AddHandoverDocumentRequest, type AssignWarrantyClaimRequest, type CloseWarrantyClaimRequest,
     type CreateHandoverRequest, type CreateWarrantyClaimRequest, type HandoverDto, type InspectHandoverRequest,
     type PatchHandoverRequest, type PatchWarrantyClaimRequest, type ProjectHandoverDto, type ProjectWarrantyDto,
@@ -50,4 +53,11 @@ export const handoverApi = {
         apiClient.request('POST', apiPath('warranty-claims', claimId, 'close'), { body, ...claim }),
     rejectClaim: (claimId: string, body: RejectWarrantyClaimRequest): Promise<WarrantyClaimDto> =>
         apiClient.request('POST', apiPath('warranty-claims', claimId, 'reject'), { body, ...claim }),
+
+    closeout: (projectId: string): Promise<CloseoutDto> =>
+        apiClient.request('GET', projectPath(projectId, 'closeout'), { schema: closeoutDtoSchema }),
+    patchCloseout: (projectId: string, body: PatchCloseoutRequest): Promise<CloseoutDto> =>
+        apiClient.request('PATCH', projectPath(projectId, 'closeout'), { body, schema: closeoutDtoSchema }),
+    finalizeCloseout: (projectId: string, body: FinalizeCloseoutRequest): Promise<CloseoutDto> =>
+        apiClient.request('POST', projectPath(projectId, 'closeout', 'finalize'), { body, schema: closeoutDtoSchema }),
 };

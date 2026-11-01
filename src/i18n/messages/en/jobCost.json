@@ -157,5 +157,12 @@
       "in": "In",
       "out": "Out"
     }
+  },
+  "unitRateHint": {
+    "label": "Latest actual",
+    "tip": "Mean actual cost of the latest {count} projects (last {date}) · material {mat} · labour {lab} per {unit}",
+    "use": "Use this price",
+    "locked": "The BOQ is locked as a baseline; prices cannot change",
+    "applied": "Latest actual price applied"
   }
 }

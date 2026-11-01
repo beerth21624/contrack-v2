@@ -1,7 +1,7 @@
 import type { WarrantyClaimStatus } from '@contrack/contract';
 import type { ProjectId, WorkspaceId } from '../../../../shared/domain/ids';
 import {
-    type HandoverDocumentRecord, type HandoverRecord, HandoverRepository, type WarrantyClaimRecord, type WarrantyRecord,
+    type CloseoutRecord, type HandoverDocumentRecord, type HandoverRecord, HandoverRepository, type WarrantyClaimRecord, type WarrantyRecord,
 } from '../../application/ports/handover.repository';
 
 const clone = <T>(v: T): T => structuredClone(v);
@@ -13,6 +13,7 @@ export class InMemoryHandoverRepository extends HandoverRepository {
     private readonly documents = new Map<string, HandoverDocumentRecord>();
     private readonly warranties = new Map<string, WarrantyRecord>();
     private readonly claims = new Map<string, WarrantyClaimRecord>();
+    private readonly closeouts = new Map<string, CloseoutRecord>();
 
     findHandover(handoverId: string): Promise<HandoverRecord | undefined> {
         const h = this.handovers.get(handoverId);
@@ -132,7 +133,20 @@ export class InMemoryHandoverRepository extends HandoverRepository {
         return Promise.resolve();
     }
 
+    closeoutForProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<CloseoutRecord | undefined> {
+        const c = this.closeouts.get(projectId);
+        return Promise.resolve(c?.workspaceId === workspaceId ? clone(c) : undefined);
+    }
+
+    saveCloseout(c: CloseoutRecord): Promise<void> {
+        const prev = this.closeouts.get(c.projectId);
+        if (prev !== undefined && prev.workspaceId !== c.workspaceId) return Promise.reject(new Error(`closeout of another workspace ${c.projectId}`));
+        this.closeouts.set(c.projectId, clone({ ...c, id: prev?.id ?? c.id, createdAt: prev?.createdAt ?? c.createdAt }));
+        return Promise.resolve();
+    }
+
     deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void> {
+        if (this.closeouts.get(projectId)?.workspaceId === workspaceId) this.closeouts.delete(projectId);
         const handoverIds = new Set<string>();
         for (const [id, h] of this.handovers) {
             if (h.workspaceId === workspaceId && h.projectId === projectId) {

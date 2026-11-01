@@ -8,7 +8,7 @@
 import { z } from 'zod';
 import { isoDateTimeSchema, uuidSchema } from '../common';
 import { fileDtoSchema } from '../files';
-import { amountSchema, businessDateSchema, docLanguageSchema } from './common';
+import { amountSchema, businessDateSchema, docLanguageSchema, signedAmountSchema } from './common';
 import { mainContractStatusSchema } from './main-contracts';
 
 export const HANDOVER_STATUSES = ['draft', 'scheduled', 'inspected', 'accepted', 'rejected'] as const;
@@ -298,3 +298,81 @@ export type CloseWarrantyClaimRequest = ResolveWarrantyClaimRequest;
 /** POST /warranty-claims/:claimId/reject — outside the warranty's terms. */
 export const rejectWarrantyClaimRequestSchema = z.object({ resolutionNote: z.string().trim().max(5000).optional() });
 export type RejectWarrantyClaimRequest = z.infer<typeof rejectWarrantyClaimRequestSchema>;
+
+// ── Closeout (ปิดโครงการ, WP-55) ──
+// A draft summary computed live (estimate / budget / actual per BOQ section, revenue, billing, profit) until it is
+// finalized: the summary is frozen, the project moves to `closed`, the warranty is closed and the actual unit rates per
+// BOQ line key are written to the history the BOQ page shows ("ราคาจริงล่าสุด"). Needs `cost.read`; writing `handover.manage`.
+
+export const CLOSEOUT_STATUSES = ['draft', 'final'] as const;
+export const closeoutStatusSchema = z.enum(CLOSEOUT_STATUSES);
+export type CloseoutStatus = z.infer<typeof closeoutStatusSchema>;
+
+export const closeoutAmountsSchema = z.object({
+    material: signedAmountSchema,
+    labour: signedAmountSchema,
+    subcontract: signedAmountSchema,
+    equipment: signedAmountSchema,
+    other: signedAmountSchema,
+    total: signedAmountSchema,
+});
+export type CloseoutAmountsDto = z.infer<typeof closeoutAmountsSchema>;
+
+export const closeoutSectionDtoSchema = z.object({
+    /** null = the "unassigned" row (ledger rows without a cost code: overhead, warranty claims). */
+    sectionNo: z.number().int().nullable(),
+    lineCount: z.number().int(),
+    estimate: signedAmountSchema,
+    budget: signedAmountSchema,
+    actual: closeoutAmountsSchema,
+    variance: signedAmountSchema,
+});
+export type CloseoutSectionDto = z.infer<typeof closeoutSectionDtoSchema>;
+
+export const closeoutSummaryDtoSchema = z.object({
+    sections: z.array(closeoutSectionDtoSchema),
+    totals: z.object({ estimate: signedAmountSchema, budget: signedAmountSchema, actual: closeoutAmountsSchema, variance: signedAmountSchema }),
+    revenue: signedAmountSchema.nullable(),
+    originalValue: signedAmountSchema.nullable(),
+    billing: z.object({
+        billed: signedAmountSchema, received: signedAmountSchema, retentionHeld: signedAmountSchema,
+        advanceOutstanding: signedAmountSchema, outstanding: signedAmountSchema,
+    }).nullable(),
+    /** Only for roles with `quotations.seeMargins` (null otherwise). */
+    quotedMarginPct: z.number().nullable(),
+    quotedProfit: signedAmountSchema.nullable(),
+    profit: signedAmountSchema.nullable(),
+    marginPct: z.number().nullable(),
+    unitRateCount: z.number().int(),
+});
+export type CloseoutSummaryDto = z.infer<typeof closeoutSummaryDtoSchema>;
+
+export const closeoutDtoSchema = z.object({
+    /** null while nothing is saved yet (a live draft). */
+    id: uuidSchema.nullable(),
+    projectId: uuidSchema,
+    status: closeoutStatusSchema,
+    asOf: businessDateSchema,
+    summary: closeoutSummaryDtoSchema,
+    lessons: z.string(),
+    handoverStatus: handoverStatusSchema.nullable(),
+    finalizedBy: uuidSchema.nullable(),
+    finalizedByName: z.string(),
+    finalizedAt: isoDateTimeSchema.nullable(),
+    updatedAt: isoDateTimeSchema.nullable(),
+    canEdit: z.boolean(),
+    /** Draft, handover accepted, caller manages handovers. */
+    canFinalize: z.boolean(),
+});
+export type CloseoutDto = z.infer<typeof closeoutDtoSchema>;
+
+/** PATCH /projects/:projectId/closeout — lessons learned of the draft. */
+export const patchCloseoutRequestSchema = z.object({ lessons: z.string().trim().max(20000) });
+export type PatchCloseoutRequest = z.infer<typeof patchCloseoutRequestSchema>;
+
+/** POST /projects/:projectId/closeout/finalize — once (409 `invalid_transition` again); needs the handover accepted. */
+export const finalizeCloseoutRequestSchema = z.object({
+    lessons: z.string().trim().max(20000).optional(),
+    asOf: businessDateSchema.optional(),
+});
+export type FinalizeCloseoutRequest = z.infer<typeof finalizeCloseoutRequestSchema>;

@@ -155,6 +155,7 @@
     "nothing_to_pay": "Nothing is left to pay on this bill",
     "handover_exists": "This project already has a handover",
     "no_warranty": "This project is not under warranty yet (the customer has not accepted the handover)",
-    "assignee_required": "Choose who handles it (a member or a supplier)"
+    "assignee_required": "Choose who handles it (a member or a supplier)",
+    "handover_not_accepted": "The customer has not accepted the handover yet, so the project cannot be closed"
   }
 }

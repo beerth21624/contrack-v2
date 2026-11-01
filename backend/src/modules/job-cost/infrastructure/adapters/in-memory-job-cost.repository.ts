@@ -1,6 +1,6 @@
 import type { ProjectId, WorkspaceId } from '../../../../shared/domain/ids';
 import {
-    type AlertRecord, type CashSettingsRecord, type ForecastRecord, JobCostRepository,
+    type AlertRecord, type CashSettingsRecord, type ForecastRecord, JobCostRepository, type UnitRateRecord,
 } from '../../application/ports/job-cost.repository';
 
 const copyForecast = (r: ForecastRecord): ForecastRecord => ({ ...r, updatedAt: new Date(r.updatedAt.getTime()) });
@@ -16,6 +16,7 @@ export class InMemoryJobCostRepository extends JobCostRepository {
     private readonly forecastRows = new Map<string, ForecastRecord>();
     private readonly alertRows = new Map<string, AlertRecord>();
     private readonly cashRows = new Map<string, CashSettingsRecord>();
+    private unitRateRows: UnitRateRecord[] = [];
 
     lockProject(): Promise<void> {
         return Promise.resolve();
@@ -78,7 +79,25 @@ export class InMemoryJobCostRepository extends JobCostRepository {
         return Promise.resolve();
     }
 
+    replaceUnitRates(workspaceId: WorkspaceId, projectId: ProjectId, rows: readonly UnitRateRecord[]): Promise<void> {
+        this.unitRateRows = [
+            ...this.unitRateRows.filter(r => !(r.workspaceId === workspaceId && r.projectId === projectId)),
+            ...rows.map(r => ({ ...r })),
+        ];
+        return Promise.resolve();
+    }
+
+    unitRates(workspaceId: WorkspaceId, lineKeys: readonly string[] | undefined, limit: number): Promise<UnitRateRecord[]> {
+        const keys = lineKeys === undefined ? undefined : new Set(lineKeys);
+        return Promise.resolve(this.unitRateRows
+            .filter(r => r.workspaceId === workspaceId && (keys === undefined || keys.has(r.lineKey)))
+            .sort((a, b) => b.observedDate.localeCompare(a.observedDate))
+            .slice(0, limit)
+            .map(r => ({ ...r })));
+    }
+
     deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void> {
+        this.unitRateRows = this.unitRateRows.filter(r => !(r.workspaceId === workspaceId && r.projectId === projectId));
         for (const [k, r] of [...this.forecastRows]) if (r.workspaceId === workspaceId && r.projectId === projectId) this.forecastRows.delete(k);
         for (const [k, r] of [...this.alertRows]) if (r.workspaceId === workspaceId && r.projectId === projectId) this.alertRows.delete(k);
         return Promise.resolve();

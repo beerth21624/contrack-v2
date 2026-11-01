@@ -1,6 +1,7 @@
 'use client';
 
-// ─── /p/[projectId]/handover: the handover (schedule → inspect → customer accepts → paper) and the warranty (countdown, claims) ───
+// ─── /p/[projectId]/handover: the handover (schedule → inspect → customer accepts → paper), the warranty (countdown, claims)
+// and the closeout (WP-55) ───
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -16,6 +17,7 @@ import { EmptyState } from '../shared/EmptyState';
 import { SectionCard } from '../shared/SectionCard';
 import { StatusTag } from '../shared/StatusTag';
 import { useErpWorkspace } from '../shared/useErpWorkspace';
+import { CloseoutPanel } from './CloseoutPanel';
 import { HandoverChecklist } from './HandoverChecklist';
 import { HandoverDocuments } from './HandoverDocuments';
 import {
@@ -325,7 +327,7 @@ function WarrantyTab({ projectId, workspaceId, canManage }: { projectId: string;
 
 // ── page ──
 
-const TAB_KEYS = ['handover', 'warranty'] as const;
+const TAB_KEYS = ['handover', 'warranty', 'closeout'] as const;
 type TabKey = typeof TAB_KEYS[number];
 
 function HandoverTabs({ projectId }: { projectId: string }) {
@@ -342,6 +344,7 @@ function HandoverTabs({ projectId }: { projectId: string }) {
             items={[
                 { key: 'handover', label: t('tabs.handover'), children: <HandoverTab projectId={projectId} workspaceId={ws.workspaceId} /> },
                 { key: 'warranty', label: t('tabs.warranty'), children: <WarrantyTab projectId={projectId} workspaceId={ws.workspaceId} canManage={can(ws.role, 'handover.manage')} /> },
+                { key: 'closeout', label: t('tabs.closeout'), children: <CloseoutPanel projectId={projectId} role={ws.role} /> },
             ]}
         />
     );

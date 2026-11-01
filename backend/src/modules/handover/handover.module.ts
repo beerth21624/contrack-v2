@@ -2,7 +2,8 @@
 // The handover of a project with a signed main contract: schedule (project → `handover`, ProjectLifecycle), inspect,
 // accept (number `HO` via DocumentNumbering, contract completed via MainContracts, project → `warranty`, warranty
 // period), and the warranty claims (number `WC`, cost of a closed claim → CostLedger). Registers HubRollups (alerts),
-// PortalSources (claims being worked on), DailySweeps ('handover.warranty') and ProjectDependents. Deleting a project
+// PortalSources (claims being worked on), DailySweeps ('handover.warranty') and ProjectDependents. WP-55: the closeout
+// (summary from CostCodeLookup / CostLedger / MainContracts / BillingTotals; finalize → project `closed`, UnitRateHistory). Deleting a project
 // with a handover / claim number is refused by numbering's guard, so no ProjectDeletionGuards entry here.
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
 import { DailySweeps, HubRollups, PortalSources, ProjectDependents } from '../../shared/application/ports';
@@ -15,6 +16,9 @@ import {
     AcceptHandoverUseCase, AddHandoverDocumentUseCase, CreateHandoverUseCase, GetProjectHandoverUseCase, InspectHandoverUseCase,
     PatchHandoverUseCase, RejectHandoverUseCase, ScheduleHandoverUseCase,
 } from './application/use-cases/handover.use-cases';
+import {
+    CloseoutCalculator, CloseoutViews, FinalizeCloseoutUseCase, GetCloseoutUseCase, PatchCloseoutUseCase,
+} from './application/use-cases/closeout.use-cases';
 import {
     ClaimWriter, CreateWarrantyClaimUseCase, GetProjectWarrantyUseCase, ListWarrantyClaimsUseCase, PatchWarrantyClaimUseCase,
     WarrantyClaimActions,
@@ -46,6 +50,11 @@ import { HandoverController } from './presentation/handover.controller';
         ClaimWriter,
         PatchWarrantyClaimUseCase,
         WarrantyClaimActions,
+        CloseoutCalculator,
+        CloseoutViews,
+        GetCloseoutUseCase,
+        PatchCloseoutUseCase,
+        FinalizeCloseoutUseCase,
     ],
 })
 export class HandoverModule implements OnModuleInit {

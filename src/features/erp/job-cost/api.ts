@@ -1,7 +1,7 @@
 import {
     type CashFlowDto, type CashSettingsDto, type CostLedgerDto, type JobCostReportDto, type PutCashSettingsRequest,
     type PutJobCostForecastRequest, cashFlowDtoSchema, cashSettingsDtoSchema, costLedgerDtoSchema, jobCostReportDtoSchema,
-    putCashSettingsRequestSchema, putJobCostForecastRequestSchema,
+    putCashSettingsRequestSchema, putJobCostForecastRequestSchema, type UnitRatesDto, unitRatesDtoSchema,
 } from '@/shared/contract';
 import { apiClient } from '@/features/cloud/api/client';
 import { projectPath, workspacePath } from '../shared/apiPaths';
@@ -25,6 +25,9 @@ export const jobCostApi = {
         apiClient.request('GET', `${workspacePath(workspaceId, 'cash-flow')}?weeks=${String(weeks)}&pastWeeks=${String(pastWeeks)}`, cash),
     getSettings: (workspaceId: string): Promise<CashSettingsDto> =>
         apiClient.request('GET', workspacePath(workspaceId, 'cash-settings'), settings),
+    /** Every line key with a history (the BOQ page filters its rows; D-362). */
+    unitRates: (workspaceId: string): Promise<UnitRatesDto> =>
+        apiClient.request('GET', workspacePath(workspaceId, 'unit-rates'), { schema: unitRatesDtoSchema }),
     putSettings: (workspaceId: string, body: PutCashSettingsRequest): Promise<CashSettingsDto> =>
         apiClient.request('PUT', workspacePath(workspaceId, 'cash-settings'), { body: putCashSettingsRequestSchema.parse(body), ...settings }),
 };

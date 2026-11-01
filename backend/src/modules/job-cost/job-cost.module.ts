@@ -7,9 +7,10 @@
 // DailySweeps and ProjectDependents. WP-47: cash flow per project / company (CashPlanSources of the modules +
 // FinancialEvents cash; registers the `subcontracting` source through SubcontractCashPlan), cash settings, the daily
 // sweep `job-cost.cash` (negative_cash alerts, `cash.negative_forecast`) and the portal's cash outlook (PortalCashOutlook).
+// WP-55: provides UnitRateHistory (`jc_unit_rates`, written by the closeout) and GET /workspaces/:id/unit-rates.
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
 import {
-    CashPlanSources, DailySweeps, HubRollups, PortalCashOutlook, ProjectDependents, SubcontractCashPlan,
+    CashPlanSources, DailySweeps, HubRollups, PortalCashOutlook, ProjectDependents, SubcontractCashPlan, UnitRateHistory,
 } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
 import { CASH_SWEEP, CashFlowEngine } from './application/cash-flow.service';
@@ -17,6 +18,7 @@ import { ALERTS_SWEEP, JobCostHandlers } from './application/job-cost-handlers';
 import { JobCostEngine, MODULE } from './application/job-cost.service';
 import { JobCostRepository } from './application/ports/job-cost.repository';
 import { SubcontractCostSync } from './application/subcontract-cost-sync';
+import { GetUnitRatesUseCase, RepositoryUnitRateHistory } from './application/unit-rates';
 import {
     GetCashSettingsUseCase, GetCompanyCashFlowUseCase, GetProjectCashFlowUseCase, PutCashSettingsUseCase,
 } from './application/use-cases/cash-flow.use-cases';
@@ -26,10 +28,11 @@ import {
 import { DrizzleJobCostRepository } from './infrastructure/adapters/drizzle-job-cost.repository';
 import { InMemoryJobCostRepository } from './infrastructure/adapters/in-memory-job-cost.repository';
 import { JobCostController } from './presentation/job-cost.controller';
+import { UnitRatesController } from './presentation/unit-rates.controller';
 
 @Global()
 @Module({
-    controllers: [JobCostController],
+    controllers: [JobCostController, UnitRatesController],
     providers: [
         persistence(JobCostRepository, () => new InMemoryJobCostRepository(), ctx => new DrizzleJobCostRepository(ctx)),
         SubcontractCostSync,
@@ -44,7 +47,10 @@ import { JobCostController } from './presentation/job-cost.controller';
         GetCompanyCashFlowUseCase,
         GetCashSettingsUseCase,
         PutCashSettingsUseCase,
+        { provide: UnitRateHistory, useClass: RepositoryUnitRateHistory },
+        GetUnitRatesUseCase,
     ],
+    exports: [UnitRateHistory],
 })
 export class JobCostModule implements OnModuleInit {
     constructor(

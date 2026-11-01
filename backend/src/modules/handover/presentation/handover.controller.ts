@@ -1,5 +1,8 @@
 import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import {
+    type CloseoutDto, type FinalizeCloseoutRequest, type PatchCloseoutRequest, finalizeCloseoutRequestSchema, patchCloseoutRequestSchema,
+} from '@contrack/contract';
+import {
     type AcceptHandoverRequest, type AddHandoverDocumentRequest, type AssignWarrantyClaimRequest, type CloseWarrantyClaimRequest,
     type CreateHandoverRequest, type CreateWarrantyClaimRequest, type HandoverDto, type InspectHandoverRequest, type PatchHandoverRequest,
     type PatchWarrantyClaimRequest, type ProjectHandoverDto, type ProjectWarrantyDto, type RejectHandoverRequest,
@@ -18,6 +21,7 @@ import {
     AcceptHandoverUseCase, AddHandoverDocumentUseCase, CreateHandoverUseCase, GetProjectHandoverUseCase, InspectHandoverUseCase,
     PatchHandoverUseCase, RejectHandoverUseCase, ScheduleHandoverUseCase,
 } from '../application/use-cases/handover.use-cases';
+import { FinalizeCloseoutUseCase, GetCloseoutUseCase, PatchCloseoutUseCase } from '../application/use-cases/closeout.use-cases';
 import {
     CreateWarrantyClaimUseCase, GetProjectWarrantyUseCase, ListWarrantyClaimsUseCase, PatchWarrantyClaimUseCase, WarrantyClaimActions,
 } from '../application/use-cases/warranty.use-cases';
@@ -41,7 +45,36 @@ export class HandoverController {
         private readonly createClaim: CreateWarrantyClaimUseCase,
         private readonly patchClaim: PatchWarrantyClaimUseCase,
         private readonly claimActions: WarrantyClaimActions,
+        private readonly getCloseout: GetCloseoutUseCase,
+        private readonly patchCloseout: PatchCloseoutUseCase,
+        private readonly finalizeCloseout: FinalizeCloseoutUseCase,
     ) {}
+
+    // ── closeout (WP-55) ──
+
+    @Get('projects/:projectId/closeout')
+    async getProjectCloseout(@CurrentUser() user: AuthenticatedUser, @Param('projectId') projectId: string): Promise<CloseoutDto> {
+        return unwrap(await this.getCloseout.execute(user.userId, projectIdParam(projectId)));
+    }
+
+    @Patch('projects/:projectId/closeout')
+    async patchProjectCloseout(
+        @CurrentUser() user: AuthenticatedUser,
+        @Param('projectId') projectId: string,
+        @Body(new ZodPipe(patchCloseoutRequestSchema)) body: PatchCloseoutRequest,
+    ): Promise<CloseoutDto> {
+        return unwrap(await this.patchCloseout.execute({ userId: user.userId, projectId: projectIdParam(projectId), body }));
+    }
+
+    @Post('projects/:projectId/closeout/finalize')
+    @HttpCode(200)
+    async finalizeProjectCloseout(
+        @CurrentUser() user: AuthenticatedUser,
+        @Param('projectId') projectId: string,
+        @Body(new ZodPipe(finalizeCloseoutRequestSchema)) body: FinalizeCloseoutRequest,
+    ): Promise<CloseoutDto> {
+        return unwrap(await this.finalizeCloseout.execute({ userId: user.userId, projectId: projectIdParam(projectId), body }));
+    }
 
     // ── handover ──
 

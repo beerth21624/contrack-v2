@@ -67,7 +67,8 @@
     "add_document": "แนบเอกสาร",
     "assign": "มอบหมาย",
     "start": "เริ่มดำเนินการ",
-    "resolve": "แก้ไขเสร็จ"
+    "resolve": "แก้ไขเสร็จ",
+    "finalize": "ปิดโครงการ"
   },
   "entities": {
     "approval_request": "คำขออนุมัติ",
@@ -100,6 +101,7 @@
     "supplier_bill": "บิลผู้ขาย",
     "payment_run": "รอบจ่ายเงิน",
     "handover": "ใบส่งมอบงาน",
-    "warranty_claim": "เคลมประกัน"
+    "warranty_claim": "เคลมประกัน",
+    "closeout": "สรุปปิดโครงการ"
   }
 }

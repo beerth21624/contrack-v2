@@ -3,7 +3,8 @@
   "retry": "Try again",
   "tabs": {
     "handover": "Handover",
-    "warranty": "Warranty"
+    "warranty": "Warranty",
+    "closeout": "Closeout"
   },
   "languages": {
     "th": "Thai",
@@ -174,5 +175,79 @@
   "print": {
     "notFound": "Handover note not found",
     "draftTitle": "Handover note (draft)"
+  },
+  "closeout": {
+    "title": "Project closeout",
+    "noAccess": "You need permission to view costs (cost.read) to see the closeout",
+    "statusDraft": "Draft (live figures)",
+    "statusFinal": "Closed",
+    "asOf": "Figures as of {date}",
+    "finalizedBy": "Closed by {name} on {date}",
+    "needsHandover": "The project can be closed once the customer has accepted the handover",
+    "kpi": {
+      "revenue": "Revenue (contract value)",
+      "actual": "Actual cost",
+      "profit": "Actual profit",
+      "margin": "Actual margin",
+      "quotedMargin": "Quoted margin",
+      "quotedProfit": "Quoted profit",
+      "variance": "Budget left (budget − actual)",
+      "noContract": "No signed contract yet"
+    },
+    "billing": {
+      "title": "Billing and collection",
+      "billed": "Billed",
+      "received": "Received",
+      "outstanding": "Outstanding",
+      "retentionHeld": "Retention held by the customer",
+      "advanceOutstanding": "Advance not yet recovered",
+      "off": "The billing module is not on"
+    },
+    "table": {
+      "title": "Estimate vs actual cost per section",
+      "section": "Section",
+      "sectionNo": "Section {no}",
+      "unassigned": "Unassigned",
+      "estimate": "Estimate",
+      "budget": "Budget (incl. variations)",
+      "material": "Material",
+      "labour": "Labour",
+      "subcontract": "Subcontract",
+      "equipment": "Equipment",
+      "other": "Other",
+      "actual": "Actual total",
+      "variance": "Variance",
+      "total": "Project total",
+      "empty": "No cost figures yet"
+    },
+    "chart": {
+      "title": "Estimate, budget and actual cost per section",
+      "label": "Cost per section chart",
+      "estimate": "Estimate",
+      "budget": "Budget",
+      "actual": "Actual"
+    },
+    "lessons": {
+      "title": "Lessons learned",
+      "placeholder": "What went well, what went wrong, what to change on the next project",
+      "save": "Save lessons",
+      "saved": "Lessons saved",
+      "empty": "No lessons recorded"
+    },
+    "unitRates": "{count} actual unit rates will be saved for the BOQ page of later projects",
+    "unitRatesFinal": "{count} actual unit rates saved for the BOQ page",
+    "actions": {
+      "finalize": "Close project",
+      "print": "Print summary"
+    },
+    "confirm": {
+      "title": "Close the project?",
+      "body": "The figures are frozen as of today, the warranty is closed and the project status becomes \"Closed\". This cannot be repeated.",
+      "ok": "Close project",
+      "done": "Project closed"
+    },
+    "print": {
+      "notFound": "Closeout not found"
+    }
   }
 }

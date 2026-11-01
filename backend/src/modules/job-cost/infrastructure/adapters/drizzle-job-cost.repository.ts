@@ -1,9 +1,9 @@
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { type ProjectId, type WorkspaceId, asProjectId, asUserId, asWorkspaceId } from '../../../../shared/domain/ids';
 import type { DatabaseContext } from '../../../../shared/infrastructure/database/database';
-import { jcAlerts, jcCashSettings, jcForecasts } from '../../../../shared/infrastructure/database/schema-job-cost';
+import { jcAlerts, jcCashSettings, jcForecasts, jcUnitRates } from '../../../../shared/infrastructure/database/schema-job-cost';
 import {
-    type AlertRecord, type CashSettingsRecord, type ForecastRecord, JobCostRepository,
+    type AlertRecord, type CashSettingsRecord, type ForecastRecord, JobCostRepository, type UnitRateRecord,
 } from '../../application/ports/job-cost.repository';
 
 const toForecast = (r: typeof jcForecasts.$inferSelect): ForecastRecord => ({
@@ -93,6 +93,19 @@ export class DrizzleJobCostRepository extends JobCostRepository {
                     updatedBy: record.updatedBy, updatedAt: record.updatedAt,
                 },
             });
+    }
+
+    async replaceUnitRates(workspaceId: WorkspaceId, projectId: ProjectId, rows: readonly UnitRateRecord[]): Promise<void> {
+        await this.ctx.executor.delete(jcUnitRates).where(and(eq(jcUnitRates.workspaceId, workspaceId), eq(jcUnitRates.projectId, projectId)));
+        for (let i = 0; i < rows.length; i += 500) await this.ctx.executor.insert(jcUnitRates).values(rows.slice(i, i + 500).map(r => ({ ...r })));
+    }
+
+    async unitRates(workspaceId: WorkspaceId, lineKeys: readonly string[] | undefined, limit: number): Promise<UnitRateRecord[]> {
+        if (lineKeys?.length === 0) return [];
+        const rows = await this.ctx.executor.select().from(jcUnitRates)
+            .where(and(eq(jcUnitRates.workspaceId, workspaceId), lineKeys === undefined ? undefined : inArray(jcUnitRates.lineKey, [...lineKeys])))
+            .orderBy(desc(jcUnitRates.observedDate), desc(jcUnitRates.createdAt)).limit(limit);
+        return rows.map(({ createdAt: _c, ...r }) => ({ ...r, workspaceId: asWorkspaceId(r.workspaceId), projectId: asProjectId(r.projectId) }));
     }
 
     async deleteByProject(): Promise<void> {

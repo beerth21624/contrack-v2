@@ -1412,6 +1412,25 @@ export abstract class BillingTotals {
     abstract totalsByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<ProjectBillingTotals>;
 }
 
+// ── Unit rate history (WP-55): actual unit rates of a closed project, per BOQ line key (`jc_unit_rates`) ──
+
+export interface UnitRateObservation {
+    lineKey: string;
+    descTh: string;
+    unit: string;
+    qty: number;
+    actualMatUnit: number;
+    actualLabUnit: number;
+}
+
+/** Provided by job-cost. No module check (the caller checked its own). Joins the caller's `uow.run`. */
+export abstract class UnitRateHistory {
+    /** Replaces the project's observations with `rows`, all dated `observedDate`. */
+    abstract record(
+        workspaceId: WorkspaceId, projectId: ProjectId, observedDate: string, rows: readonly UnitRateObservation[],
+    ): Promise<void>;
+}
+
 // ── Suppliers (WP-37, docs/erp/02-domain-model.md §7.1) ──
 
 /** One entry of a buyer workspace's subcontracting vendor list (ทะเบียนทีมช่าง), as the supplier register imports it. */
