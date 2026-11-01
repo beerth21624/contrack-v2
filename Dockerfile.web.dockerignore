@@ -1,7 +1,7 @@
 **/node_modules
 **/.next
 **/dist
-**/.env
+**/.env*
 **/.data
 **/coverage
 .git
@@ -11,3 +11,8 @@ docs
 **/*.test.ts
 **/*.test.tsx
 *.xlsx
+.claude
+*.pdf
+pdf_*.txt
+goverment_price.json
+tests

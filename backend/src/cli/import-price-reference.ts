@@ -1,6 +1,7 @@
-// ─── `npm run db:import-prices [-- --file <path>]`: imports the government green price catalogue (WP-21) ───
+// ─── `npm run db:import-prices [-- --file <path>] [--if-missing]`: imports the government green price catalogue (WP-21) ───
 // Reads goverment_price.json (default ../goverment_price.json from backend/), skips the rows without a numeric price,
 // and replaces the platform book of the same source + year inside one transaction (re-running never duplicates).
+// --if-missing (used by the Docker entrypoint on every start): does nothing when that platform book already exists.
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -83,6 +84,15 @@ async function main(): Promise<void> {
     const pool = createPool(url);
     try {
         const db = createDatabase(pool);
+        if (process.argv.includes('--if-missing')) {
+            const existing = await db.select({ id: priceReferenceBooks.id }).from(priceReferenceBooks).where(and(
+                eq(priceReferenceBooks.source, SOURCE), eq(priceReferenceBooks.year, year), isNull(priceReferenceBooks.workspaceId),
+            )).limit(1);
+            if (existing.length > 0) {
+                console.log(`price book ${SOURCE} ${year} already imported, skipping`);
+                return;
+            }
+        }
         await db.transaction(async tx => {
             await tx.delete(priceReferenceBooks).where(and(
                 eq(priceReferenceBooks.source, SOURCE), eq(priceReferenceBooks.year, year), isNull(priceReferenceBooks.workspaceId),

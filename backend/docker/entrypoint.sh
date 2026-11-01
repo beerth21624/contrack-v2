@@ -9,6 +9,13 @@ cd /app/backend
 echo "contrack-api: applying database migrations"
 node dist/backend/src/shared/infrastructure/database/migrate.js
 
+# Government reference prices (WP-21): imported once into an empty price book; later starts skip it.
+if [ -f /app/goverment_price.json ]; then
+    echo "contrack-api: government price list"
+    node dist/backend/src/cli/import-price-reference.js --file /app/goverment_price.json --if-missing \
+        || echo "contrack-api: WARNING government price import failed (the API starts anyway)"
+fi
+
 if [ "${SEED_DEMO:-false}" = "true" ]; then
     if node docker/demo-seeded.cjs; then
         echo "contrack-api: demo data already present, not seeding"

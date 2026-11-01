@@ -32,6 +32,8 @@ COPY --from=build /app/backend/node_modules ./node_modules
 COPY --from=build /app/backend/dist ./dist
 COPY --from=build /app/backend/drizzle ./drizzle
 COPY backend/docker ./docker
+# Government reference prices, imported by the entrypoint into an empty price book (WP-21).
+COPY goverment_price.json /app/goverment_price.json
 RUN mkdir -p /data/files && chown -R node:node /data
 USER node
 VOLUME ["/data/files"]
