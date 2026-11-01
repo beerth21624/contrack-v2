@@ -1,6 +1,6 @@
 # ERP — บันทึกความคืบหน้า
 
-อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **เริ่มลงมือ (WP-01 … WP-55 done)**
+อัปเดตล่าสุด: 2026-11-01 · branch: `epic/erp` · สถานะ: **implementation complete (WP-01 … WP-56 และ I-01 … I-14 done; ตรวจรวม integration ผ่าน)**
 
 วิธีอัปเดต (ทุก WP):
 1. เริ่มงาน: เปลี่ยน status เป็น `in-progress`
@@ -504,6 +504,7 @@
 | D-405 | 2026-11-01 | (I-14) ฟังก์ชัน pure ของ vendor (`format.ts`, `inbox.ts`, `contract-math.ts`, `bid-form.ts` `checkBid`, `profile-rules.ts`, `images.ts`) อ่านภาษาจากคุกกี้ผ่าน `vendor/text.ts` (`vText()`/`vLocale()`) และรับ `t`/`locale` ท้ายสุดเป็นค่าเลือก (คง signature เดิมและเทสต์เดิม); ตาราง `*_TEXT`/`*_LABEL` → ฟังก์ชัน (`supplyModeText()`, `invitationStatusText()`, `claimStatusText()` ฯลฯ); วันที่ en = `en-GB` ปีเต็ม, เงิน en = `THB 125,000`, ตัวเลข en = `en-US`, ไทยคงเดิมทุกตัวอักษร | คงไทยตรงตัว |
 | D-406 | 2026-11-01 | (I-14) รายชื่อจังหวัดตามภาค ย้ายไป `src/domain/subcontracting/vendor-provinces.ts` (`features/vendor/provinces.ts` re-export) และรายการเครื่องมือแนะนำไป `domain/subcontracting/vendor-tools.ts` (ค่าที่เก็บยังเป็นไทย, en แสดงชื่ออังกฤษผ่าน `toolLabel()` / `provinceName()` ที่ใช้ `PROVINCE_NAMES_EN`); ชื่อสายงานใช้ `tradeName()` ของ buyer (`subcontracting.buyer.labels.trade`) | ข้อมูลโดเมนไม่ใช่ข้อความหน้าจอ |
 | D-407 | 2026-11-01 | (I-14) vendor ใช้ `useErrorMessage()` แทน `thaiErrorMessage` (`uploadErrorText` ใช้ `errorText` เมื่อไม่ได้ส่งตัวแปลงมา); เนื้อสัญญา HTML จาก server, ชื่อทีม/ชื่องาน/หมวดงาน/คำถามที่ผู้ใช้หรือ buyer พิมพ์ ไม่แปล; ปุ่มสลับภาษา (D-56) อยู่ใน header ของ vendor shell (`shell.otherLanguage`) | ตามแผน 03-i18n §2 ข้อ 8 |
+| D-408 | 2026-11-01 | (integration) ตรวจรวมทั้ง epic: `tsc` backend+web, `eslint src` backend+root, `nest build` (tsc + tsc-alias), `next build`, `check-parity.mjs` ผ่านทั้งหมดโดยไม่ต้องแก้โค้ด; migration 0000…0033 ครบ 34 ไฟล์ตรงกับ `_journal.json`; ไม่รันเทสต์ทั้งชุดตามข้อจำกัดฮาร์ดแวร์ | ของพร้อมเดโมลูกค้า |
 
 ## Handoff notes
 
@@ -1307,3 +1308,7 @@
 - ไม่มีไทยตายตัวเหลือในโค้ดที่ lint; ข้อมูลโดเมนที่ยังเป็นไทยตอนสลับ en: เช็คลิสต์/คำถามแนะนำต่อสายงาน (D-401), เนื้อสัญญาจากแม่แบบ server, ชื่อ/ชื่องานที่ผู้ใช้พิมพ์, ช่องทางจ่ายเงินที่ buyer บันทึกไว้
 - Track I ครบ I-01…I-14: WP ถัดไปห้ามเติมไทยตายตัวกลับในไฟล์ที่อยู่ใน glob; หน้าเดิมเมื่อภาษาไทยแสดงเหมือนเดิมทุกตัวอักษร (เทสต์ vendor/i18n เดิมผ่าน); ไม่เขียนเทสต์ใหม่
 - ตรวจแล้ว: tsc web, eslint (vendor, app/(vendor), domain ใหม่, eslint.config.mjs), check-parity, vitest `src/features/vendor src/i18n` ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์
+
+### Integration check (final)
+- รันทีละคำสั่ง: `npx tsc --noEmit -p backend/tsconfig.json`, `npx tsc --noEmit -p tsconfig.json`, `cd backend && npx eslint src`, `npx eslint src`, `cd backend && npm run build`, `npm run build` (next), `node scripts/i18n/check-parity.mjs` — ผ่านทั้งหมด ไม่มี error/warning ที่ต้องแก้
+- ทุกแถวใน ledger สายหลักและ Track I เป็น `done`; ยังไม่ได้รันเทสต์ jest/vitest ทั้งชุด และยังไม่ได้ทดสอบ e2e (Robot) หรือทดสอบกับฐานข้อมูลจริง — เป็นงานของรอบทดสอบหลังลูกค้าอนุมัติ (D-408)
