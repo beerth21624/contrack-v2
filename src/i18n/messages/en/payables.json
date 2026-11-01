@@ -1,0 +1,263 @@
+{
+  "title": "Payables",
+  "subtitle": "Supplier bills, subcontract and labour periods, payment runs, payment vouchers and withholding tax certificates (50 bis)",
+  "tabs": {
+    "due": "To pay / to bill",
+    "bills": "Supplier bills",
+    "runs": "Payment runs"
+  },
+  "match": {
+    "desc": "Description",
+    "category": "Category",
+    "qty": "Qty",
+    "unitPrice": "Unit price",
+    "poPrice": "PO price",
+    "billable": "Received, not billed",
+    "amount": "Amount",
+    "match": "3-way match",
+    "empty": "No lines yet"
+  },
+  "bill": {
+    "title": "Supplier bill",
+    "breadcrumb": "Payables",
+    "labourBill": "Labour pay period",
+    "loadFailed": "Could not load the bill",
+    "retry": "Retry",
+    "saved": "Bill saved",
+    "approved": "Bill approved",
+    "submitted": "Bill sent for approval",
+    "save": "Save",
+    "approve": "Approve bill",
+    "pendingHint": "This bill is waiting for approval; once approved it joins the list to pay",
+    "yes": "Yes",
+    "no": "No",
+    "details": {
+      "title": "Bill details"
+    },
+    "fields": {
+      "project": "Project",
+      "overhead": "Company overhead (no project)",
+      "billDate": "Bill date",
+      "dueDate": "Due date",
+      "supplierInvoiceNo": "Supplier invoice no.",
+      "supplierInvoiceDate": "Invoice date",
+      "taxInvoiceNo": "Tax invoice no.",
+      "taxInvoiceDate": "Tax invoice date",
+      "inputVatClaimable": "Input VAT claimable",
+      "vatOn": "VAT 7%",
+      "discount": "Discount",
+      "vat": "VAT (as on the tax invoice)",
+      "whtPreset": "Withholding tax",
+      "note": "Note",
+      "order": "Purchase order",
+      "voidReason": "Void reason"
+    },
+    "lines": {
+      "title": "Bill lines",
+      "empty": "No lines yet; add a line to give the bill an amount",
+      "desc": "Description",
+      "qty": "Qty",
+      "unit": "Unit",
+      "unitPrice": "Unit price (before VAT)",
+      "category": "Cost category",
+      "costCode": "Cost code",
+      "noProject": "Choose a project to pick a cost code",
+      "remove": "Remove line",
+      "add": "Add line"
+    },
+    "match": {
+      "title": "3-way match (PO / goods received / bill)",
+      "saveToRefresh": "Save the bill to refresh the match of changed lines",
+      "noteRequired": "There are exceptions: add a note before approving",
+      "exceptionsHint": "There are exceptions; approval is allowed because a note is given"
+    },
+    "totals": {
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "vat": "VAT",
+      "total": "Total",
+      "wht": "Withholding tax {rate}%",
+      "retention": "Retention",
+      "payable": "Payable",
+      "paid": "Paid"
+    },
+    "void": {
+      "button": "Void bill",
+      "title": "Void supplier bill",
+      "hint": "A bill in a payment run or already paid cannot be voided; cost postings are reversed",
+      "ok": "Void bill",
+      "done": "Bill voided"
+    }
+  },
+  "bills": {
+    "labourBill": "Labour pay period",
+    "loadFailed": "Could not load the bills",
+    "retry": "Retry",
+    "columns": {
+      "number": "No.",
+      "supplier": "Supplier",
+      "invoiceNo": "Supplier invoice",
+      "kind": "Type",
+      "status": "Status",
+      "match": "3-way match",
+      "dueDate": "Due",
+      "total": "Total",
+      "outstanding": "Outstanding"
+    },
+    "filters": {
+      "open": "To pay",
+      "approved": "Approved (can join a run)",
+      "draft": "Draft",
+      "pending": "Pending approval",
+      "paid": "Paid",
+      "all": "All"
+    },
+    "createRun": "Create payment run ({count})",
+    "new": {
+      "button": "New expense bill",
+      "title": "New supplier bill",
+      "ok": "Create bill",
+      "kind": "Bill type",
+      "supplier": "Supplier",
+      "project": "Project",
+      "overhead": "Company overhead (no project)"
+    },
+    "empty": {
+      "title": "No supplier bills yet",
+      "hint": "Create a bill from a purchase order, subcontract claim, labour period, or enter a general expense"
+    }
+  },
+  "due": {
+    "loadFailed": "Could not load the list",
+    "retry": "Retry",
+    "billCreated": "Bill created",
+    "createBill": "Create bill",
+    "bills": {
+      "title": "Bills due",
+      "totalDue": "Due within 30 days",
+      "totalOverdue": "Overdue",
+      "empty": "No bills to pay in this period"
+    },
+    "claims": {
+      "title": "Subcontract claims to bill",
+      "contract": "Subcontract",
+      "project": "Project",
+      "vendor": "Subcontractor",
+      "installment": "Installment",
+      "approvedOn": "Approved on",
+      "net": "Net"
+    },
+    "periods": {
+      "title": "Labour periods to bill",
+      "period": "Period",
+      "dates": "Dates",
+      "net": "Net"
+    },
+    "orders": {
+      "title": "Purchase orders to bill (received, not billed yet)",
+      "number": "PO no.",
+      "project": "Project",
+      "supplier": "Supplier",
+      "total": "Total",
+      "empty": "No purchase orders waiting for a bill"
+    },
+    "pickSupplier": {
+      "title": "Choose the supplier for the bill",
+      "hint": "Subcontractor \"{vendor}\" is not linked to the supplier register yet; choose or create a supplier to bill"
+    }
+  },
+  "runs": {
+    "columns": {
+      "payDate": "Pay date",
+      "status": "Status",
+      "method": "Method",
+      "bills": "Bills",
+      "wht": "WHT",
+      "cash": "Cash paid"
+    },
+    "filters": {
+      "all": "All statuses",
+      "draft": "Draft",
+      "pending_approval": "Pending approval",
+      "approved": "Approved, to pay",
+      "paid": "Paid",
+      "cancelled": "Cancelled"
+    },
+    "loadFailed": "Could not load the payment runs",
+    "retry": "Retry",
+    "empty": {
+      "title": "No payment runs yet",
+      "hint": "Select approved bills on the Supplier bills tab and press \"Create payment run\""
+    },
+    "new": {
+      "title": "Create a payment run from {count} bills",
+      "ok": "Create run",
+      "payDate": "Pay date",
+      "method": "Payment method",
+      "note": "Note"
+    }
+  },
+  "run": {
+    "title": "Payment run",
+    "breadcrumb": "Payables",
+    "loadFailed": "Could not load the payment run",
+    "retry": "Retry",
+    "approve": "Approve run",
+    "approved": "Payment run approved",
+    "submitted": "Payment run sent for approval",
+    "pendingHint": "This payment run is waiting for approval",
+    "cancelledHint": "This payment run was cancelled; its bills are approved again and can join a new run",
+    "pay": {
+      "button": "Pay",
+      "title": "Confirm payment",
+      "ok": "Confirm payment",
+      "summary": "Paying {count} payees; payment vouchers and withholding tax certificates are issued",
+      "payDate": "Pay date",
+      "bankRef": "Transfer / cheque reference",
+      "done": "Payment recorded"
+    },
+    "settings": {
+      "title": "Run settings",
+      "payDate": "Pay date",
+      "method": "Payment method",
+      "note": "Note",
+      "save": "Save",
+      "saved": "Payment run saved"
+    },
+    "payments": {
+      "title": "Payment vouchers and withholding tax certificates",
+      "number": "Voucher no.",
+      "payee": "Payee",
+      "wht": "WHT",
+      "cash": "Cash paid",
+      "voucher": "Print voucher",
+      "certificate": "Print 50 bis"
+    },
+    "groups": {
+      "title": "Payees",
+      "payee": "Payee",
+      "bills": "Bills",
+      "wht": "WHT",
+      "cash": "Cash paid"
+    },
+    "totals": {
+      "title": "Run summary",
+      "bills": "Bills",
+      "wht": "Total WHT",
+      "cash": "Total cash paid"
+    },
+    "bills": {
+      "title": "Bills in the run",
+      "remove": "Remove the bill from the run"
+    },
+    "cancel": {
+      "button": "Cancel run",
+      "confirm": "Cancel this payment run?",
+      "hint": "All its bills go back to approved",
+      "done": "Payment run cancelled"
+    }
+  },
+  "print": {
+    "loadFailed": "Could not load the document"
+  }
+}

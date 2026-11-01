@@ -389,5 +389,59 @@
     "site_diary": "Site diary",
     "warranty_claim": "Warranty claim",
     "manual": "Manual"
+  },
+  "supplierBillStatus": {
+    "draft": "Draft",
+    "pending_approval": "Pending approval",
+    "approved": "Approved, to pay",
+    "scheduled": "In a payment run",
+    "paid": "Paid",
+    "voided": "Voided"
+  },
+  "supplierBillKind": {
+    "material": "Materials",
+    "subcontract": "Subcontract",
+    "service": "Service",
+    "labour": "Labour",
+    "expense": "General expense"
+  },
+  "billMatchStatus": {
+    "not_applicable": "Not applicable",
+    "matched": "Matched",
+    "exceptions": "Exceptions"
+  },
+  "billLineMatch": {
+    "matched": "Matched",
+    "qty_exceeds_received": "More than received",
+    "price_differs": "Price differs from PO",
+    "no_po": "No PO"
+  },
+  "paymentRunStatus": {
+    "draft": "Draft",
+    "pending_approval": "Pending approval",
+    "approved": "Approved, to pay",
+    "paid": "Paid",
+    "cancelled": "Cancelled"
+  },
+  "apPaymentMethod": {
+    "transfer": "Bank transfer",
+    "cheque": "Cheque",
+    "cash": "Cash"
+  },
+  "whtForm": {
+    "pnd3": "PND 3",
+    "pnd53": "PND 53"
+  },
+  "whtIncomeType": {
+    "service": "Service fees",
+    "transport": "Transport",
+    "advertising": "Advertising",
+    "rent": "Rent",
+    "other": "Other"
+  },
+  "whtCondition": {
+    "withheld": "Withheld at source",
+    "paid_always": "Paid by the payer every time",
+    "paid_once": "Paid by the payer once"
   }
 }

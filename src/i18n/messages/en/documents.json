@@ -302,5 +302,79 @@
     "requestedBy": "Requested by",
     "signedBy": "Quoted by",
     "draftNote": "Draft, not numbered yet"
+  },
+  "whtCertificate": {
+    "title": "Withholding Tax Certificate",
+    "subtitle": "Under Section 50 bis of the Revenue Code",
+    "bookNo": "Book no.",
+    "number": "No.",
+    "payer": "Withholding agent (payer)",
+    "payee": "Person whose tax is withheld",
+    "name": "Name",
+    "address": "Address",
+    "formTitle": "Tax return form",
+    "forms": {
+      "pnd1a": "PND 1 Kor",
+      "pnd1aSpecial": "PND 1 Kor (special)",
+      "pnd2": "PND 2",
+      "pnd3": "PND 3",
+      "pnd2a": "PND 2 Kor",
+      "pnd3a": "PND 3 Kor",
+      "pnd53": "PND 53"
+    },
+    "incomeColumn": "Type of income paid",
+    "payDateColumn": "Date paid",
+    "amountColumn": "Amount paid",
+    "taxColumn": "Tax withheld and remitted",
+    "incomeRows": {
+      "salary": "Salary, wages, allowances, bonus etc. (Section 40 (1))",
+      "fee": "Fees, commissions etc. (Section 40 (2))",
+      "royalty": "Royalties etc. (Section 40 (3))",
+      "interest": "Interest etc. (Section 40 (4) (a))",
+      "directive": "Other income taxable at source by a Revenue Department directive (Section 3 tredecim)",
+      "other": "Other (specify)"
+    },
+    "incomeTypes": {
+      "service": "Service fees",
+      "transport": "Transport",
+      "advertising": "Advertising",
+      "rent": "Rent",
+      "other": "Other"
+    },
+    "total": "Total paid and tax withheld",
+    "totalWords": "Total tax withheld (in words)",
+    "rate": "Tax rate",
+    "condition": "Payer",
+    "conditions": {
+      "withheld": "Withheld at source",
+      "paid_always": "Paid by the payer every time",
+      "paid_once": "Paid by the payer once"
+    },
+    "certify": "I certify that the statements and figures above are true and correct in every respect.",
+    "signer": "Signed, payer",
+    "issueDate": "Date of issue",
+    "remark": "Note: state what the payment is for, e.g. contract work, services, rent, transport, advertising."
+  },
+  "paymentVoucher": {
+    "title": "Payment Voucher",
+    "payTo": "Pay to",
+    "method": "Payment method",
+    "bankRef": "Transfer / cheque reference",
+    "whtCertificate": "WHT certificate no.",
+    "methods": {
+      "transfer": "Bank transfer",
+      "cheque": "Cheque",
+      "cash": "Cash"
+    },
+    "no": "No.",
+    "billNo": "Payable bill no.",
+    "invoiceNo": "Supplier invoice no.",
+    "settled": "Settled",
+    "wht": "Withholding tax",
+    "cash": "Net paid",
+    "total": "Total",
+    "preparedBy": "Prepared by",
+    "approvedBy": "Approved by",
+    "receivedBy": "Received by"
   }
 }

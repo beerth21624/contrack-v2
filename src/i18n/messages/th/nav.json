@@ -38,5 +38,6 @@
   "suppliers": "ผู้ขาย",
   "purchasing": "ใบสั่งซื้อ",
   "payPeriods": "งวดค่าแรง",
-  "companyCashFlow": "กระแสเงินสด"
+  "companyCashFlow": "กระแสเงินสด",
+  "payables": "เจ้าหนี้"
 }

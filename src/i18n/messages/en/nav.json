@@ -38,5 +38,6 @@
   "suppliers": "Suppliers",
   "purchasing": "Purchase orders",
   "payPeriods": "Pay periods",
-  "companyCashFlow": "Cash flow"
+  "companyCashFlow": "Cash flow",
+  "payables": "Payables"
 }

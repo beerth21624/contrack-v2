@@ -389,5 +389,59 @@
     "site_diary": "รายงานประจำวัน",
     "warranty_claim": "เคลมประกัน",
     "manual": "บันทึกเอง"
+  },
+  "supplierBillStatus": {
+    "draft": "ฉบับร่าง",
+    "pending_approval": "รออนุมัติ",
+    "approved": "อนุมัติแล้ว รอจ่าย",
+    "scheduled": "อยู่ในรอบจ่าย",
+    "paid": "จ่ายแล้ว",
+    "voided": "ยกเลิก"
+  },
+  "supplierBillKind": {
+    "material": "วัสดุ",
+    "subcontract": "จ้างช่วง",
+    "service": "ค่าบริการ/ค่าจ้างทำของ",
+    "labour": "ค่าแรง",
+    "expense": "ค่าใช้จ่ายทั่วไป"
+  },
+  "billMatchStatus": {
+    "not_applicable": "ไม่ต้องเทียบ",
+    "matched": "ตรงกัน",
+    "exceptions": "มีรายการผิดปกติ"
+  },
+  "billLineMatch": {
+    "matched": "ตรงกัน",
+    "qty_exceeds_received": "เกินจำนวนที่รับ",
+    "price_differs": "ราคาต่างจาก PO",
+    "no_po": "ไม่มี PO"
+  },
+  "paymentRunStatus": {
+    "draft": "ฉบับร่าง",
+    "pending_approval": "รออนุมัติ",
+    "approved": "อนุมัติแล้ว รอจ่าย",
+    "paid": "จ่ายแล้ว",
+    "cancelled": "ยกเลิก"
+  },
+  "apPaymentMethod": {
+    "transfer": "โอนเงิน",
+    "cheque": "เช็ค",
+    "cash": "เงินสด"
+  },
+  "whtForm": {
+    "pnd3": "ภ.ง.ด.3",
+    "pnd53": "ภ.ง.ด.53"
+  },
+  "whtIncomeType": {
+    "service": "ค่าจ้างทำของ/ค่าบริการ",
+    "transport": "ค่าขนส่ง",
+    "advertising": "ค่าโฆษณา",
+    "rent": "ค่าเช่า",
+    "other": "อื่น ๆ"
+  },
+  "whtCondition": {
+    "withheld": "หักภาษี ณ ที่จ่าย",
+    "paid_always": "ออกภาษีให้ตลอดไป",
+    "paid_once": "ออกภาษีให้ครั้งเดียว"
   }
 }
