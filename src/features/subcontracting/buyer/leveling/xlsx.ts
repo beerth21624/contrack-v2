@@ -3,6 +3,7 @@ import type { Borders, Cell, Workbook } from 'exceljs';
 import type { LevelingDto } from '@/shared/contract';
 import { XLSX_MIME } from '@/features/export/xlsx';
 import { fmtDay } from '../format';
+import { scLocale, scText } from '../text';
 import { bidderDiffPct, bidderOrder, installmentsText, isBlankCell, levelingFileName, toneArgb, type BidderOrder } from './model';
 
 const FONT = 'TH Sarabun New';
@@ -34,11 +35,12 @@ function put(target: Cell, spec: CellSpec) {
 
 /** The workbook of one comparison: lines × (estimate + each bidder), then the footer rows. */
 export async function levelingWorkbook(leveling: LevelingDto, title: string, order: BidderOrder): Promise<Workbook> {
+    const t = scText();
     const { default: lib } = await import('exceljs');
     const wb = new lib.Workbook();
     wb.creator = 'ConTrack';
     wb.created = new Date();
-    const ws = wb.addWorksheet('เทียบราคา', {
+    const ws = wb.addWorksheet(t('buyer.xlsx.sheetName'), {
         views: [{ state: 'frozen', xSplit: 5, ySplit: 4, showGridLines: false }],
         pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
     });
@@ -51,25 +53,25 @@ export async function levelingWorkbook(leveling: LevelingDto, title: string, ord
     ];
 
     const titleCell = ws.getCell(1, 1);
-    titleCell.value = `เทียบราคา: ${title}`;
+    titleCell.value = t('buyer.xlsx.title', { title });
     titleCell.font = { name: FONT, size: 18, bold: true };
     const sub = ws.getCell(2, 1);
-    sub.value = `ฉบับที่ ${String(leveling.version)} · ส่งออกเมื่อ ${new Date().toLocaleString('th-TH')}`;
+    sub.value = t('buyer.xlsx.subtitle', { version: leveling.version, date: new Date().toLocaleString(scLocale() === 'th' ? 'th-TH' : 'en-GB') });
     sub.font = { name: FONT, size: 14 };
 
     // Two header rows.
     const h1 = ws.getRow(3);
     const h2 = ws.getRow(4);
-    ['รายการ', 'หน่วย', 'ปริมาณ'].forEach((t, c) => {
-        put(h1.getCell(c + 1), { value: t, bold: true, align: 'center' });
+    [t('buyer.xlsx.item'), t('buyer.xlsx.unit'), t('buyer.xlsx.quantity')].forEach((head, c) => {
+        put(h1.getCell(c + 1), { value: head, bold: true, align: 'center' });
         put(h2.getCell(c + 1), { value: null });
         ws.mergeCells(3, c + 1, 4, c + 1);
     });
-    put(h1.getCell(4), { value: 'ประเมิน (BOQ)', bold: true, align: 'center' });
+    put(h1.getCell(4), { value: t('buyer.xlsx.estimateBoq'), bold: true, align: 'center' });
     put(h1.getCell(5), { value: null });
     ws.mergeCells(3, 4, 3, 5);
-    put(h2.getCell(4), { value: 'ต่อหน่วย', bold: true, align: 'center' });
-    put(h2.getCell(5), { value: 'รวม', bold: true, align: 'center' });
+    put(h2.getCell(4), { value: t('buyer.xlsx.perUnit'), bold: true, align: 'center' });
+    put(h2.getCell(5), { value: t('buyer.xlsx.total'), bold: true, align: 'center' });
     ks.forEach((k, pos) => {
         const b = leveling.bidders[k];
         const c = colOf(pos, 0);
@@ -77,9 +79,9 @@ export async function levelingWorkbook(leveling: LevelingDto, title: string, ord
         put(h1.getCell(c + 1), { value: null });
         put(h1.getCell(c + 2), { value: null });
         ws.mergeCells(3, c, 3, c + 2);
-        put(h2.getCell(c), { value: b?.mode === 'lump' ? 'เหมารวม' : 'ต่อหน่วย', bold: true, align: 'center' });
-        put(h2.getCell(c + 1), { value: 'รวม', bold: true, align: 'center' });
-        put(h2.getCell(c + 2), { value: 'ต่าง', bold: true, align: 'center' });
+        put(h2.getCell(c), { value: b?.mode === 'lump' ? t('buyer.xlsx.lumpSum') : t('buyer.xlsx.perUnit'), bold: true, align: 'center' });
+        put(h2.getCell(c + 1), { value: t('buyer.xlsx.total'), bold: true, align: 'center' });
+        put(h2.getCell(c + 2), { value: t('buyer.xlsx.diff'), bold: true, align: 'center' });
     });
 
     let r = 5;
@@ -104,7 +106,7 @@ export async function levelingWorkbook(leveling: LevelingDto, title: string, ord
             }
             const fill = toneArgb(cell.flag);
             put(row.getCell(c), cell.excluded
-                ? { value: 'ไม่รวม', italic: true, align: 'center' }
+                ? { value: t('buyer.xlsx.excluded'), italic: true, align: 'center' }
                 : { value: cell.unitPrice, fmt: MONEY_FMT, italic: cell.filled, fill });
             put(row.getCell(c + 1), { value: cell.total, fmt: MONEY_FMT, italic: cell.filled, fill });
             put(row.getCell(c + 2), { value: b.outdated ? null : cell.diffPct, fmt: PCT_FMT, italic: cell.filled, fill });
@@ -126,26 +128,26 @@ export async function levelingWorkbook(leveling: LevelingDto, title: string, ord
         r += 1;
     };
     const bidder = (k: number) => leveling.bidders[k];
-    footer('รวม', leveling.estimateTotal, k => ({ value: bidder(k)?.total ?? null, fmt: MONEY_FMT, bold: true, align: 'right' }));
-    footer('รวมหลังปรับให้เทียบได้', leveling.estimateTotal, k => ({
+    footer(t('buyer.xlsx.total'), leveling.estimateTotal, k => ({ value: bidder(k)?.total ?? null, fmt: MONEY_FMT, bold: true, align: 'right' }));
+    footer(t('buyer.xlsx.normalizedTotal'), leveling.estimateTotal, k => ({
         value: bidder(k)?.normalizedTotal ?? null, fmt: MONEY_FMT, bold: true, align: 'right', fill: toneArgb(bidder(k)?.flag ?? null),
     }));
-    footer('ต่างจากประเมิน', null, k => {
+    footer(t('buyer.xlsx.diffFromEstimate'), null, k => {
         const b = bidder(k);
         return { value: b === undefined ? null : bidderDiffPct(b), fmt: PCT_FMT, align: 'right' };
     });
-    footer('จำนวนวัน', null, k => ({ value: bidder(k)?.days ?? null, align: 'right' }));
-    footer('เริ่มได้', null, k => ({ value: fmtDay(bidder(k)?.earliestStart), align: 'right' }));
-    footer('ช่าง / คนงาน', null, k => ({ value: crewText(bidder(k)), align: 'right' }));
-    footer('ราคายืนถึง', null, k => ({
-        value: `${fmtDay(bidder(k)?.validUntil)}${bidder(k)?.expired === true ? ' (หมดอายุ)' : ''}`, align: 'right',
+    footer(t('buyer.xlsx.days'), null, k => ({ value: bidder(k)?.days ?? null, align: 'right' }));
+    footer(t('buyer.xlsx.canStart'), null, k => ({ value: fmtDay(bidder(k)?.earliestStart), align: 'right' }));
+    footer(t('buyer.xlsx.crew'), null, k => ({ value: crewText(bidder(k)), align: 'right' }));
+    footer(t('buyer.xlsx.validUntil'), null, k => ({
+        value: `${fmtDay(bidder(k)?.validUntil)}${bidder(k)?.expired === true ? t('buyer.xlsx.expired') : ''}`, align: 'right',
     }));
-    footer('งวดจ่าย', null, k => {
+    footer(t('buyer.xlsx.paymentStages'), null, k => {
         const p = bidder(k)?.installmentsProposal ?? null;
-        return { value: p === null ? 'ตามที่เรากำหนด' : `เสนอ ${installmentsText(p)}`, align: 'right' };
+        return { value: p === null ? t('buyer.xlsx.asWeSet') : t('buyer.xlsx.proposed', { stages: installmentsText(p) }), align: 'right' };
     });
-    footer('ระดับยืนยัน', null, k => ({ value: bidder(k)?.tier ?? 'ยังไม่มีบัญชี', align: 'right' }));
-    footer('คะแนนจากเรา', null, k => {
+    footer(t('buyer.xlsx.tier'), null, k => ({ value: bidder(k)?.tier ?? t('buyer.xlsx.noAccount'), align: 'right' }));
+    footer(t('buyer.xlsx.rating'), null, k => {
         const rating = bidder(k)?.ratingFromUs ?? null;
         return { value: rating === null ? '–' : `${rating.toFixed(1)} / 5`, align: 'right' };
     });

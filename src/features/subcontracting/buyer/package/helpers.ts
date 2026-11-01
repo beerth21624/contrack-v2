@@ -5,7 +5,7 @@ import type {
 } from '@/shared/contract';
 import { priceLine, round2 } from '@/domain/subcontracting/snapshot';
 import { money0, pct } from '../format';
-
+import { scText, type ScT } from '../text';
 // ── state of the package ──
 
 /** Package sent and not decided yet (invitations, bids and addenda still move). */
@@ -207,11 +207,11 @@ export function manualBidRequest(form: ManualBidForm): ManualBidRequest {
 
 // ── text ──
 
-export function penaltyText(p: Penalty): string {
+export function penaltyText(p: Penalty, t: ScT = scText()): string {
     switch (p.kind) {
-        case 'none': return 'ไม่มี';
-        case 'per_day': return `${money0(p.amount)} บาท/วัน`;
-        case 'pct_per_day': return `${pct(p.rate)} ของมูลค่าสัญญา/วัน`;
+        case 'none': return t('buyer.helpers.penaltyNone');
+        case 'per_day': return t('buyer.helpers.penaltyPerDay', { amount: money0(p.amount) });
+        case 'pct_per_day': return t('buyer.helpers.penaltyPctPerDay', { rate: pct(p.rate) });
     }
 }
 

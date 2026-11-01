@@ -8,14 +8,14 @@ import type {
 import type { BoqResult } from '@/domain/boq/types';
 import type { ScheduleTaskResult } from '@/domain/planning/schedule';
 import { buildSnapshot, subcontractableRows, type IndexedBoqRow } from '@/domain/subcontracting/snapshot';
-import { getTrade, tasksOfTrade, tradeLabel } from '@/domain/subcontracting/trades';
-import { daysBetween, defaultBidDeadline, defaultInstallments, defaultPriceValidUntil, installmentsValid } from '../format';
+import { getTrade, tasksOfTrade } from '@/domain/subcontracting/trades';
+import { daysBetween, defaultBidDeadline, defaultInstallments, defaultPriceValidUntil, installmentsValid, tradeName } from '../format';
+import { scLocale, scText, type ScT } from '../text';
 
 // ── quick-start templates (plan §3.3) ──
 
 export interface PackageTemplate {
     id: string;
-    label: string;
     /** Trade of the package. */
     trade: TradeId;
     /** Trades whose BOQ rows the template lists and ticks. */
@@ -23,14 +23,17 @@ export interface PackageTemplate {
 }
 
 export const TEMPLATES: readonly PackageTemplate[] = [
-    { id: 'structure-all', label: 'โครงสร้างทั้งหมด', trade: 'structure', trades: ['piling', 'structure', 'roof-structure'] },
-    { id: 'masonry', label: 'ก่ออิฐ + ฉาบ', trade: 'masonry', trades: ['masonry'] },
-    { id: 'electrical', label: 'ระบบไฟฟ้าทั้งหลัง', trade: 'electrical', trades: ['electrical'] },
-    { id: 'plumbing', label: 'ระบบประปา-สุขาภิบาล', trade: 'plumbing', trades: ['plumbing'] },
-    { id: 'roof', label: 'หลังคา (โครง + มุง)', trade: 'roof-structure', trades: ['roof-structure', 'roofing'] },
-    { id: 'interior', label: 'งานสถาปัตย์ภายใน', trade: 'tiling', trades: ['ceiling', 'tiling', 'painting'] },
-    { id: 'doors-windows', label: 'ประตู-หน้าต่าง', trade: 'doors-windows', trades: ['doors-windows'] },
+    { id: 'structure-all', trade: 'structure', trades: ['piling', 'structure', 'roof-structure'] },
+    { id: 'masonry', trade: 'masonry', trades: ['masonry'] },
+    { id: 'electrical', trade: 'electrical', trades: ['electrical'] },
+    { id: 'plumbing', trade: 'plumbing', trades: ['plumbing'] },
+    { id: 'roof', trade: 'roof-structure', trades: ['roof-structure', 'roofing'] },
+    { id: 'interior', trade: 'tiling', trades: ['ceiling', 'tiling', 'painting'] },
+    { id: 'doors-windows', trade: 'doors-windows', trades: ['doors-windows'] },
 ];
+
+/** Name of a quick-start template in the UI language. */
+export const templateLabel = (tpl: PackageTemplate, t: ScT = scText()): string => t(`buyer.templates.${tpl.id as 'roof'}`);
 
 // ── draft ──
 
@@ -235,7 +238,7 @@ export function toggleKeys(selected: readonly string[], keys: readonly string[],
  * when the buyer hides the owner identity.
  */
 export function defaultTitle(trade: TradeId): string {
-    return tradeLabel(trade).slice(0, 160);
+    return tradeName(trade).slice(0, 160);
 }
 
 export function titleOf(draft: Draft): string {
@@ -315,10 +318,10 @@ export function sortVendors(list: readonly VendorListEntryDto[], province: strin
 export const MAX_RFQ = 8;
 
 /** How many invitees the mode needs: direct exactly 1, rfq 2–8. */
-export function inviteeProblem(mode: DirectOrRfq, count: number): string | null {
-    if (mode === 'direct') return count === 1 ? null : 'จ้างตรงเลือกผู้รับ 1 ราย';
-    if (count < 2) return 'ขอราคาเทียบเลือกอย่างน้อย 2 ราย';
-    if (count > MAX_RFQ) return `ขอราคาเทียบเลือกได้ไม่เกิน ${String(MAX_RFQ)} ราย`;
+export function inviteeProblem(mode: DirectOrRfq, count: number, t: ScT = scText()): string | null {
+    if (mode === 'direct') return count === 1 ? null : t('buyer.wizardState.directNeedsOne');
+    if (count < 2) return t('buyer.wizardState.rfqNeedsTwo');
+    if (count > MAX_RFQ) return t('buyer.wizardState.rfqMax', { max: MAX_RFQ });
     return null;
 }
 
@@ -364,35 +367,34 @@ export function buildRequest(draft: Draft, ctx: RequestContext): CreatePackageRe
 }
 
 /** What still blocks sending (empty = ready). `forDraft` skips the invitee rule (saving a draft). */
-export function sendProblems(req: CreatePackageRequest, draft: Draft, now: Date, forDraft: boolean): string[] {
+export function sendProblems(req: CreatePackageRequest, draft: Draft, now: Date, forDraft: boolean, t: ScT = scText()): string[] {
     const out: string[] = [];
-    if (req.lineKeys.length + req.customLines.length === 0) out.push('เลือกงานอย่างน้อย 1 รายการ');
-    if (req.title === '') out.push('ตั้งชื่อแพ็กเกจ');
-    if (!installmentsValid(req.installments)) out.push('งวดจ่ายต้องรวมได้ 100% และระบุเงื่อนไขทุกงวด');
-    if (new Date(req.bidDeadline).getTime() <= now.getTime()) out.push('วันปิดรับราคาต้องเป็นเวลาข้างหน้า');
+    if (req.lineKeys.length + req.customLines.length === 0) out.push(t('buyer.wizardState.pickOneItem'));
+    if (req.title === '') out.push(t('buyer.wizardState.nameThePackage'));
+    if (!installmentsValid(req.installments)) out.push(t('buyer.wizardState.stagesMustTotal'));
+    if (new Date(req.bidDeadline).getTime() <= now.getTime()) out.push(t('buyer.wizardState.deadlineInFuture'));
     if (req.schedule.start !== null && req.schedule.finish !== null && req.schedule.finish < req.schedule.start) {
-        out.push('วันจบต้องไม่ก่อนวันเริ่ม');
+        out.push(t('buyer.wizardState.finishAfterStart'));
     }
     if (!forDraft) {
-        const p = inviteeProblem(draft.sourcingMode, draft.invitees.length);
+        const p = inviteeProblem(draft.sourcingMode, draft.invitees.length, t);
         if (p !== null) out.push(p);
     }
     return out;
 }
 
-const FIELD_LABEL: Record<string, string> = {
-    title: 'ชื่อแพ็กเกจ', lineKeys: 'รายการงาน', customLines: 'แถวกรอกเอง', terms: 'เงื่อนไข', schedule: 'กำหนดเวลา',
-    installments: 'งวดจ่าย', location: 'สถานที่', bidDeadline: 'วันปิดรับราคา', priceValidUntil: 'ราคายืนถึง',
-    description: 'รายละเอียด', materialByLine: 'วัสดุโดย',
-};
+const FIELD_KEYS = [
+    'title', 'lineKeys', 'customLines', 'terms', 'schedule', 'installments', 'location', 'bidDeadline', 'priceValidUntil',
+    'description', 'materialByLine',
+] as const;
 
-/** One zod issue → a short Thai line. */
-export function issueText(issue: { path: (string | number)[]; message: string } | undefined): string {
-    if (issue === undefined) return 'ข้อมูลไม่ครบ ตรวจอีกครั้ง';
-    if (/[฀-๿]/.test(issue.message)) return issue.message;
+/** One zod issue → a short line (a Thai message from the schema is shown as is only in the Thai interface). */
+export function issueText(issue: { path: (string | number)[]; message: string } | undefined, t: ScT = scText()): string {
+    if (issue === undefined) return t('buyer.wizardState.incomplete');
+    if (/[\u0E00-\u0E7F]/.test(issue.message) && scLocale() === 'th') return issue.message;
     const head = issue.path[0];
-    const label = typeof head === 'string' ? FIELD_LABEL[head] : undefined;
-    return label === undefined ? 'ข้อมูลไม่ครบ ตรวจอีกครั้ง' : `ตรวจ "${label}" อีกครั้ง`;
+    const field = typeof head === 'string' ? FIELD_KEYS.find(k => k === head) : undefined;
+    return field === undefined ? t('buyer.wizardState.incomplete') : t('buyer.wizardState.checkField', { field: t(`buyer.wizardState.fields.${field}`) });
 }
 
 /** Local id for a new editor row. */

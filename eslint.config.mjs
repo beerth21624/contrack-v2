@@ -111,6 +111,9 @@ const eslintConfig = defineConfig([
       "src/features/cloud/**/*.{ts,tsx}",
       // Track I-11: workforce (crews and people, project crew assignments, crew board); the domain wording lives in src/domain/workforce
       "src/features/workforce/**/*.{ts,tsx}",
+      // Track I-12: subcontracting buyer screens (overview, crew register, package wizard and page, price comparison); trade
+      // checklists / suggested questions and the import vocabulary stay in src/domain/subcontracting
+      "src/features/subcontracting/buyer/**/*.{ts,tsx}",
     ],
     ignores: ["**/__tests__/**", "src/features/export/baht-text.ts"],
     rules: {

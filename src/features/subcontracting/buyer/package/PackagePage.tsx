@@ -3,20 +3,21 @@
 // ─── /subcontracting/packages/[packageId]: one package while it waits for prices (plan §4.4) ───
 // Header (status, deadline countdown, estimate), one primary action that follows the state, tabs for invitees,
 // lines, terms, files and Q&A. Polls every 30 s (no realtime yet).
+import { useTranslations } from 'next-intl';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Alert, App, Button, Dropdown, Result, Tabs, type MenuProps } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 import type { BuyerPackageDto, ScInvitationDto } from '@/shared/contract';
-import { tradeLabel } from '@/domain/subcontracting/trades';
-import { isApiError, thaiErrorMessage } from '@/features/cloud/api/errors';
+import { isApiError } from '@/features/cloud/api/errors';
 import { isModuleDisabled } from '../../contracts/logic';
 import { spinner } from '@/features/cloud/ui/common';
 import { scApi } from '../api';
 import { ModuleOffState, useBuyerRights } from '../../contracts/ui';
 import { useDeletePackage, useInvitations, usePackage, useQuestions } from '../hooks';
-import { countdown, fmtDateTime, money0, SOURCING_MODE_LABEL } from '../format';
+import { countdown, fmtDateTime, money0, sourcingModeLabel, tradeName } from '../format';
 import { InvitationLinksModal, type LinkRow } from '../LinksModal';
 import { PackageStatusTag, PageHead, ScPage } from '../ui';
 import { AddendumModal } from './AddendumModal';
@@ -51,21 +52,25 @@ function useMinuteClock(): Date {
 }
 
 function PackageContent({ packageId }: { packageId: string }) {
+    const tx = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const pkg = usePackage(packageId);
     if (pkg.isLoading) return spinner;
     if (pkg.data === undefined) {
         if (isModuleDisabled(pkg.error)) return <ModuleOffState />;
         const notFound = isApiError(pkg.error) && pkg.error.status === 404;
         return (
-            <Result status={notFound ? '404' : 'warning'} title={notFound ? 'ไม่พบแพ็กเกจนี้' : 'โหลดแพ็กเกจไม่สำเร็จ'}
-                subTitle={notFound ? 'อาจถูกลบไปแล้ว หรือคุณไม่ได้เป็นสมาชิกของพื้นที่ทำงานนี้' : thaiErrorMessage(pkg.error)}
-                extra={<Link href="/subcontracting"><Button>กลับไปหน้าจ้างช่วง</Button></Link>} />
+            <Result status={notFound ? '404' : 'warning'} title={notFound ? tx('buyer.package.packageNotFound') : tx('buyer.package.couldNotLoadThePackage')}
+                subTitle={notFound ? tx('buyer.package.itMayHaveBeenDeleted') : toText(pkg.error)}
+                extra={<Link href="/subcontracting"><Button>{tx('buyer.package.backToSubcontracting')}</Button></Link>} />
         );
     }
     return <PackageView pkg={pkg.data} />;
 }
 
 function PackageView({ pkg }: { pkg: BuyerPackageDto }) {
+    const tx = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message, modal } = App.useApp();
     const router = useRouter();
     // Role, rights and settings of the workspace that owns the package (not the switcher's current workspace).
@@ -101,26 +106,26 @@ function PackageView({ pkg }: { pkg: BuyerPackageDto }) {
                 rows.push({ invitationId: id, displayName: res.invitation.displayName, phone: res.invitation.phone, url: res.link.url });
             }
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         } finally {
             setResending(false);
             void invitationsQ.refetch();
         }
-        if (rows.length > 0) setLinks({ rows, title: 'ลิงก์ใหม่ของคนที่ยังไม่เปิด' });
+        if (rows.length > 0) setLinks({ rows, title: tx('buyer.package.newLinksForThoseWho') });
     };
 
     const deleteDraft = () => {
         modal.confirm({
-            title: 'ลบร่างแพ็กเกจนี้?',
-            content: 'ยังไม่ได้ส่งให้ใคร ลบแล้วแถว BOQ กลับไปจัดหาใหม่ได้',
-            okText: 'ลบร่าง', okButtonProps: { danger: true }, cancelText: 'ยกเลิก',
+            title: tx('buyer.package.deleteThisDraftPackage'),
+            content: tx('buyer.package.itHasNotBeenSent'),
+            okText: tx('buyer.package.deleteDraft'), okButtonProps: { danger: true }, cancelText: tx('buyer.package.cancel'),
             onOk: async () => {
                 try {
                     await remove.mutateAsync(pkg.id);
-                    void message.success('ลบร่างแล้ว');
+                    void message.success(tx('buyer.package.draftDeleted'));
                     router.push('/subcontracting');
                 } catch (e) {
-                    void message.error(thaiErrorMessage(e));
+                    void message.error(toText(e));
                 }
             },
         });
@@ -129,31 +134,31 @@ function PackageView({ pkg }: { pkg: BuyerPackageDto }) {
     // ── actions ──
     let primary: React.ReactNode = null;
     if (action.kind === 'invite' && canManage) {
-        primary = <Button type="primary" size="large" onClick={() => setDialog('invite')}>ส่งคำเชิญ</Button>;
+        primary = <Button type="primary" size="large" onClick={() => setDialog('invite')}>{tx('buyer.package.sendInvitations')}</Button>;
     } else if (action.kind === 'leveling' && canSeePrices) {
         primary = (
             <Link href={`/subcontracting/packages/${pkg.id}/leveling`}>
-                <Button type="primary" size="large">เปิดตารางเทียบ ({bidCount(invitations)} ราย)</Button>
+                <Button type="primary" size="large">{tx('buyer.package.openComparison')}{bidCount(invitations)} {tx('buyer.package.bidders')}</Button>
             </Link>
         );
     } else if (action.kind === 'resend' && canManage) {
         primary = (
             <Button type="primary" size="large" loading={resending} onClick={() => { void resendUnopened(action.ids); }}>
-                ส่งซ้ำให้คนที่ยังไม่เปิด ({action.ids.length})
+                {tx('buyer.package.resendToThoseWhoHave')}{action.ids.length})
             </Button>
         );
     } else if (action.kind === 'contracts') {
-        primary = <Link href="/subcontracting/contracts"><Button type="primary" size="large">ดูสัญญา</Button></Link>;
+        primary = <Link href="/subcontracting/contracts"><Button type="primary" size="large">{tx('buyer.package.viewContract')}</Button></Link>;
     }
 
     const menu: NonNullable<MenuProps['items']> = [];
-    if (canManage && pkg.status === 'draft') menu.push({ key: 'edit', label: 'แก้ไขร่าง' });
-    if (canManage && live) menu.push({ key: 'extend', label: 'ขยายวันปิดรับ' });
-    if (canManage && live && room > 0) menu.push({ key: 'invite', label: 'เชิญเพิ่ม' });
-    if (canSeePrices && live && action.kind !== 'leveling') menu.push({ key: 'leveling', label: 'ตารางเทียบราคา' });
+    if (canManage && pkg.status === 'draft') menu.push({ key: 'edit', label: tx('buyer.package.editDraft') });
+    if (canManage && live) menu.push({ key: 'extend', label: tx('buyer.package.extendDeadline') });
+    if (canManage && live && room > 0) menu.push({ key: 'invite', label: tx('buyer.package.inviteMore') });
+    if (canSeePrices && live && action.kind !== 'leveling') menu.push({ key: 'leveling', label: tx('buyer.package.priceComparison') });
     if (canManage && (pkg.status === 'draft' || live)) menu.push({ type: 'divider' });
-    if (canManage && live) menu.push({ key: 'cancel', label: 'ยกเลิกแพ็กเกจ', danger: true });
-    if (canManage && pkg.status === 'draft') menu.push({ key: 'delete', label: 'ลบร่าง', danger: true });
+    if (canManage && live) menu.push({ key: 'cancel', label: tx('buyer.package.cancelPackage'), danger: true });
+    if (canManage && pkg.status === 'draft') menu.push({ key: 'delete', label: tx('buyer.package.deleteDraft'), danger: true });
     const onMenu: MenuProps['onClick'] = ({ key }) => {
         if (key === 'leveling') router.push(`/subcontracting/packages/${pkg.id}/leveling`);
         else if (key === 'delete') deleteDraft();
@@ -165,27 +170,27 @@ function PackageView({ pkg }: { pkg: BuyerPackageDto }) {
     const sub = (
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <PackageStatusTag status={pkg.status} />
-            <span>{tradeLabel(pkg.trade)}</span>
-            <span className="text-gray-500">{SOURCING_MODE_LABEL[pkg.sourcingMode]}</span>
-            {pkg.version > 1 && <span className="text-gray-500">ฉบับที่ {pkg.version}</span>}
-            {pkg.status === 'draft' && <span className="text-gray-500">ปิดรับ {fmtDateTime(pkg.bidDeadline)}</span>}
+            <span>{tradeName(pkg.trade)}</span>
+            <span className="text-gray-500">{sourcingModeLabel(pkg.sourcingMode)}</span>
+            {pkg.version > 1 && <span className="text-gray-500">{tx('buyer.package.version')} {pkg.version}</span>}
+            {pkg.status === 'draft' && <span className="text-gray-500">{tx('buyer.package.bidsClose')} {fmtDateTime(pkg.bidDeadline)}</span>}
             {live && (
                 <span className={cd.passed ? 'text-red-600' : cd.soon ? 'text-amber-600' : 'text-gray-600'} title={fmtDateTime(pkg.bidDeadline)}>
-                    {cd.passed ? `ปิดรับแล้ว ${fmtDateTime(pkg.bidDeadline)}` : `ปิดรับ${cd.text}`}
+                    {cd.passed ? tx('buyer.package.closed', { bidDeadline: fmtDateTime(pkg.bidDeadline) }) : tx('buyer.package.bidsClose2', { text: cd.text })}
                 </span>
             )}
-            {canSeePrices && <span className="tabular-nums text-gray-600">ประเมิน {money0(pkg.estimateTotal)} บาท</span>}
+            {canSeePrices && <span className="tabular-nums text-gray-600">{tx('buyer.package.estimate')} {money0(pkg.estimateTotal)} {tx('buyer.package.thb')}</span>}
         </span>
     );
 
     return (
         <>
-            <PageHead back={{ href: '/subcontracting', label: 'จ้างช่วง' }} title={pkg.title} sub={sub}
+            <PageHead back={{ href: '/subcontracting', label: tx('buyer.package.subcontracting') }} title={pkg.title} sub={sub}
                 extra={(
                     <>
                         {hasMenu && (
                             <Dropdown trigger={['click']} menu={{ items: menu, onClick: onMenu }}>
-                                <Button size="large">จัดการ <DownOutlined /></Button>
+                                <Button size="large">{tx('buyer.package.manage')} <DownOutlined /></Button>
                             </Dropdown>
                         )}
                         {primary}
@@ -193,18 +198,18 @@ function PackageView({ pkg }: { pkg: BuyerPackageDto }) {
                 )} />
 
             {pkg.status === 'cancelled' && (
-                <Alert type="info" showIcon title="แพ็กเกจนี้ถูกยกเลิกแล้ว"
-                    description={pkg.cancelReason !== null && pkg.cancelReason !== '' ? `เหตุผล: ${pkg.cancelReason}` : undefined} />
+                <Alert type="info" showIcon title={tx('buyer.package.thisPackageHasBeenCancelled')}
+                    description={pkg.cancelReason !== null && pkg.cancelReason !== '' ? tx('buyer.package.reason', { cancelReason: pkg.cancelReason }) : undefined} />
             )}
             {needsMoreBids(pkg, invitations, now) && canManage && (
-                <Alert type="warning" showIcon title={`ปิดรับแล้ว ได้ราคา ${String(bidCount(invitations))} ราย`}
-                    description="ขยายเวลา เชิญเพิ่ม หรือไปต่อด้วยราคาที่มี"
+                <Alert type="warning" showIcon title={tx('buyer.package.closedWith', { invitations: bidCount(invitations) })}
+                    description={tx('buyer.package.extendTheDeadlineInviteMore')}
                     action={(
                         <div className="flex flex-wrap gap-2">
-                            <Button size="small" onClick={() => setDialog('extend')}>ขยายเวลา</Button>
-                            {room > 0 && <Button size="small" onClick={() => setDialog('invite')}>เชิญเพิ่ม</Button>}
+                            <Button size="small" onClick={() => setDialog('extend')}>{tx('buyer.package.extendDeadline2')}</Button>
+                            {room > 0 && <Button size="small" onClick={() => setDialog('invite')}>{tx('buyer.package.inviteMore')}</Button>}
                             {bidCount(invitations) > 0 && canSeePrices && (
-                                <Link href={`/subcontracting/packages/${pkg.id}/leveling`}><Button size="small">ไปต่อด้วยราคาที่มี</Button></Link>
+                                <Link href={`/subcontracting/packages/${pkg.id}/leveling`}><Button size="small">{tx('buyer.package.continueWithThePricesReceived')}</Button></Link>
                             )}
                         </div>
                     )} />
@@ -213,26 +218,26 @@ function PackageView({ pkg }: { pkg: BuyerPackageDto }) {
             <div className="bg-white border border-gray-200 rounded-card px-5 pb-5 max-md:px-4 shadow-card">
                 <Tabs activeKey={tab} onChange={setTab} items={[
                     {
-                        key: 'invitees', label: `ผู้รับคำเชิญ${invitations.length > 0 ? ` (${String(invitations.length)})` : ''}`,
+                        key: 'invitees', label: invitations.length > 0 ? tx('buyer.package.tabInviteesCount', { count: invitations.length }) : tx('buyer.package.tabInvitees'),
                         children: (
                             <InviteesTab pkg={pkg} invitations={invitations} loading={invitationsQ.isLoading}
-                                error={invitationsQ.isError ? thaiErrorMessage(invitationsQ.error) : null}
+                                error={invitationsQ.isError ? toText(invitationsQ.error) : null}
                                 canManage={canManage} canSeePrices={canSeePrices}
                                 onLinks={(rows, title) => setLinks({ rows, title })} onManualBid={setManualFor}
                                 onInviteMore={room > 0 ? () => setDialog('invite') : null} />
                         ),
                     },
                     {
-                        key: 'lines', label: `รายการงาน (${String(pkg.lines.length)})`,
+                        key: 'lines', label: tx('buyer.package.workItems', { count: pkg.lines.length }),
                         children: <LinesTab pkg={pkg} canSeePrices={canSeePrices} canManage={canManage} onAddendum={() => setDialog('addendum')} />,
                     },
-                    { key: 'terms', label: 'เงื่อนไข', children: <TermsTab pkg={pkg} /> },
-                    { key: 'files', label: `ไฟล์${pkg.files.length > 0 ? ` (${String(pkg.files.length)})` : ''}`, children: <FilesTab pkg={pkg} canManage={canManage} /> },
+                    { key: 'terms', label: tx('buyer.package.terms'), children: <TermsTab pkg={pkg} /> },
+                    { key: 'files', label: pkg.files.length > 0 ? tx('buyer.package.tabFilesCount', { count: pkg.files.length }) : tx('buyer.package.tabFiles'), children: <FilesTab pkg={pkg} canManage={canManage} /> },
                     {
-                        key: 'qa', label: `คำถาม-คำตอบ${unansweredCount > 0 ? ` (รอตอบ ${String(unansweredCount)})` : ''}`,
+                        key: 'qa', label: unansweredCount > 0 ? tx('buyer.package.tabQaPending', { count: unansweredCount }) : tx('buyer.package.tabQa'),
                         children: (
                             <QaTab packageId={pkg.id} questions={questionsQ.data ?? []} loading={questionsQ.isLoading}
-                                error={questionsQ.isError ? thaiErrorMessage(questionsQ.error) : null}
+                                error={questionsQ.isError ? toText(questionsQ.error) : null}
                                 canAnswer={canManage && pkg.status !== 'cancelled'} />
                         ),
                     },
@@ -242,7 +247,7 @@ function PackageView({ pkg }: { pkg: BuyerPackageDto }) {
             {/* Mounted only while open, so each opening starts from the package as it is now. */}
             {dialog === 'invite' && (
                 <InviteModal open onClose={() => setDialog(null)} pkg={pkg}
-                    invitations={invitations} onSent={rows => setLinks({ rows, title: 'ส่งคำเชิญแล้ว' })} />
+                    invitations={invitations} onSent={rows => setLinks({ rows, title: tx('buyer.package.invitationsSent') })} />
             )}
             {dialog === 'extend' && <ExtendDeadlineModal open onClose={() => setDialog(null)} pkg={pkg} />}
             {dialog === 'cancel' && <CancelPackageModal open onClose={() => setDialog(null)} pkg={pkg} />}

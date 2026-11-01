@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { LevelingDto } from '@/shared/contract';
 import {
     allocationOf, awardErrorInfo, bidderDiffPct, bidderOrder, buildAwardRequest, canWinLine, chooseLine, chooseWhole, EMPTY_CHOICE,
-    hasVeryLow, installmentsText, isAwardable, isBlankCell, levelingFileName, OUTDATED_NOTE, setMode, toneClass, winnableIdxs, winnersOf,
+    hasVeryLow, installmentsText, isAwardable, isBlankCell, levelingFileName, outdatedNote, setMode, toneClass, winnableIdxs, winnersOf,
 } from '../leveling/model';
 import { ApiError } from '@/features/cloud/api/errors';
 
@@ -173,7 +173,7 @@ describe('award errors', () => {
     it('conflicts refetch with one calm message', () => {
         expect(awardErrorInfo(err(409, 'package_not_open'))).toEqual({ text: 'ข้อมูลเปลี่ยนแล้ว ลองอีกครั้ง', refetch: true });
         expect(awardErrorInfo(err(409, 'bid_changed'))).toEqual({ text: 'ข้อมูลเปลี่ยนแล้ว ลองอีกครั้ง', refetch: true });
-        expect(awardErrorInfo(err(422, 'bid_outdated'))).toEqual({ text: OUTDATED_NOTE, refetch: true });
+        expect(awardErrorInfo(err(422, 'bid_outdated'))).toEqual({ text: outdatedNote(), refetch: true });
     });
     it('negative total explains itself; anything else falls back', () => {
         expect(awardErrorInfo(err(422, 'negative_total'))?.refetch).toBe(false);

@@ -1,9 +1,10 @@
 'use client';
 
 // ─── รายการงาน: the frozen lines of the current version, grouped by BOQ section; BOQ drift → addendum ───
+import { useTranslations } from 'next-intl';
 import { Alert, Button } from 'antd';
 import type { BuyerPackageDto, BuyerPackageLineDto } from '@/shared/contract';
-import { fmtDateTime, money, money0, PROVIDER_LABEL, qty } from '../format';
+import { fmtDateTime, money, money0, providerLabel, qty } from '../format';
 import { groupLines, isSentUndecided } from './helpers';
 
 export function LinesTab({ pkg, canSeePrices, canManage, onAddendum }: {
@@ -12,6 +13,7 @@ export function LinesTab({ pkg, canSeePrices, canManage, onAddendum }: {
     canManage: boolean;
     onAddendum: () => void;
 }) {
+    const t = useTranslations('subcontracting');
     const perLine = pkg.supplyMode === 'per_line';
     const cols = 3 + (perLine ? 1 : 0) + (canSeePrices ? 2 : 0);
     const drift = pkg.boqDrift.length;
@@ -19,20 +21,20 @@ export function LinesTab({ pkg, canSeePrices, canManage, onAddendum }: {
     return (
         <div className="flex flex-col gap-3">
             {drift > 0 && isSentUndecided(pkg.status) && (
-                <Alert type="warning" showIcon title={`BOQ เปลี่ยนแล้ว ${String(drift)} แถว — ออกฉบับแก้ไข?`}
-                    description="ผู้รับเสนอราคาตามปริมาณเดิม ออกฉบับแก้ไขเพื่อให้ทุกรายใช้ปริมาณเดียวกัน"
-                    action={canManage ? <Button size="small" onClick={onAddendum}>ออกฉบับแก้ไข</Button> : undefined} />
+                <Alert type="warning" showIcon title={t('buyer.linesTab.theBoqChangedOnIssue', { drift })}
+                    description={t('buyer.linesTab.recipientsQuoteOnTheOriginal')}
+                    action={canManage ? <Button size="small" onClick={onAddendum}>{t('buyer.linesTab.issueAddendum')}</Button> : undefined} />
             )}
             <div className="overflow-x-auto border border-gray-200 rounded-card">
                 <table className="w-full text-body min-w-[640px]">
                     <thead className="bg-gray-50 text-secondary text-gray-600">
                         <tr>
-                            <th className="text-left font-medium px-3 py-2">รายการ</th>
-                            <th className="text-right font-medium px-3 py-2 w-32">ปริมาณ</th>
-                            <th className="text-left font-medium px-3 py-2 w-20">หน่วย</th>
-                            {perLine && <th className="text-left font-medium px-3 py-2 w-28">วัสดุ</th>}
-                            {canSeePrices && <th className="text-right font-medium px-3 py-2 w-32">ค่าแรง/หน่วย</th>}
-                            {canSeePrices && <th className="text-right font-medium px-3 py-2 w-32">ประเมินรวม</th>}
+                            <th className="text-left font-medium px-3 py-2">{t('buyer.linesTab.item')}</th>
+                            <th className="text-right font-medium px-3 py-2 w-32">{t('buyer.linesTab.quantity')}</th>
+                            <th className="text-left font-medium px-3 py-2 w-20">{t('buyer.linesTab.unit')}</th>
+                            {perLine && <th className="text-left font-medium px-3 py-2 w-28">{t('buyer.linesTab.material')}</th>}
+                            {canSeePrices && <th className="text-right font-medium px-3 py-2 w-32">{t('buyer.linesTab.labourUnit')}</th>}
+                            {canSeePrices && <th className="text-right font-medium px-3 py-2 w-32">{t('buyer.linesTab.estimatedTotal')}</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -44,7 +46,7 @@ export function LinesTab({ pkg, canSeePrices, canManage, onAddendum }: {
                     {canSeePrices && (
                         <tfoot>
                             <tr className="border-t border-gray-200 font-medium">
-                                <td className="px-3 py-2" colSpan={cols - 1}>รวมประเมิน</td>
+                                <td className="px-3 py-2" colSpan={cols - 1}>{t('buyer.linesTab.estimateTotal')}</td>
                                 <td className="px-3 py-2 text-right tabular-nums">{money0(pkg.estimateTotal)}</td>
                             </tr>
                         </tfoot>
@@ -53,11 +55,11 @@ export function LinesTab({ pkg, canSeePrices, canManage, onAddendum }: {
             </div>
             {pkg.versions.length > 1 && (
                 <div className="text-secondary text-gray-600">
-                    <div className="font-medium text-gray-900 mb-1">ฉบับแก้ไข</div>
+                    <div className="font-medium text-gray-900 mb-1">{t('buyer.linesTab.addendum')}</div>
                     <ul className="m-0 pl-4 flex flex-col gap-0.5">
                         {pkg.versions.map(v => (
                             <li key={v.version}>
-                                ฉบับที่ {v.version} · {fmtDateTime(v.createdAt)}{v.note !== '' ? ` · ${v.note}` : ''}
+                                {t('buyer.linesTab.version')} {v.version} · {fmtDateTime(v.createdAt)}{v.note !== '' ? ` · ${v.note}` : ''}
                             </li>
                         ))}
                     </ul>
@@ -84,7 +86,7 @@ function Group({ title, lines, cols, perLine, canSeePrices }: {
                     <td className="px-3 py-2">{l.desc}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{qty(l.qtyPriced)}</td>
                     <td className="px-3 py-2">{l.unit}</td>
-                    {perLine && <td className="px-3 py-2 text-secondary">{PROVIDER_LABEL[l.materialBy]}</td>}
+                    {perLine && <td className="px-3 py-2 text-secondary">{providerLabel(l.materialBy)}</td>}
                     {canSeePrices && <td className="px-3 py-2 text-right tabular-nums">{money(l.estLabUnit)}</td>}
                     {canSeePrices && <td className="px-3 py-2 text-right tabular-nums">{money(l.estTotal)}</td>}
                 </tr>

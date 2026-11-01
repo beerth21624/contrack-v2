@@ -1,16 +1,17 @@
 'use client';
 
 // ─── /subcontracting/packages/[id]/leveling: every bid against the BOQ estimate, negotiate, award (plan §4.5–4.6) ───
+import { useTranslations } from 'next-intl';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Fragment, useMemo, useState } from 'react';
 import { Alert, App, Button, Empty, Radio, Segmented } from 'antd';
 import { FileExcelOutlined } from '@ant-design/icons';
 import type { AwardResponse, BuyerPackageDto, LevelingDto, PackageStatus } from '@/shared/contract';
-import { tradeLabel } from '@/domain/subcontracting/trades';
-import { isApiError, thaiErrorMessage } from '@/features/cloud/api/errors';
+import { isApiError } from '@/features/cloud/api/errors';
 import { spinner } from '@/features/cloud/ui/common';
-import { fmtDay, money, money0, pct, qty } from '../format';
+import { fmtDay, money, money0, pct, qty, tradeName } from '../format';
 import { isModuleDisabled } from '../../contracts/logic';
 import { ModuleOffState, useBuyerRights } from '../../contracts/ui';
 import { useLeveling, usePackage } from '../hooks';
@@ -19,7 +20,7 @@ import { AwardModal } from './AwardModal';
 import { NegotiationDrawer } from './NegotiationDrawer';
 import {
     allocationOf, bidderDiffPct, bidderOrder, canWinLine, chooseLine, chooseWhole, EMPTY_CHOICE, hasVeryLow, installmentsText,
-    isAwardable, isBlankCell, OUTDATED_NOTE, setMode, toneClass, winnersOf, type AwardChoice, type AwardMode, type Bidder, type BidderOrder, type LevelingLine,
+    isAwardable, isBlankCell, outdatedNote, setMode, toneClass, winnersOf, type AwardChoice, type AwardMode, type Bidder, type BidderOrder, type LevelingLine,
 } from './model';
 
 const AWARDABLE: readonly PackageStatus[] = ['open', 'reviewing', 'expired'];
@@ -33,6 +34,8 @@ export function LevelingPage({ packageId }: { packageId: string }) {
 }
 
 function Content({ packageId }: { packageId: string }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message } = App.useApp();
     const pkg = usePackage(packageId);
     // Rights (widened by the settings) of the workspace that owns the package, not the switcher's current one.
@@ -45,7 +48,7 @@ function Content({ packageId }: { packageId: string }) {
     if (pkg.isLoading || (pkg.data !== undefined && rights.loading)) return spinner;
     if (pkg.data === undefined) {
         if (isModuleDisabled(pkg.error)) return <ModuleOffState />;
-        return <Card><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={thaiErrorMessage(pkg.error)} /></Card>;
+        return <Card><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={toText(pkg.error)} /></Card>;
     }
     const p = pkg.data;
     const forbidden = !readPrices || (isApiError(leveling.error) && leveling.error.code === 'forbidden');
@@ -56,7 +59,7 @@ function Content({ packageId }: { packageId: string }) {
             const { downloadLevelingXlsx } = await import('./xlsx');
             await downloadLevelingXlsx(data, p.title, order);
         } catch {
-            void message.error('สร้างไฟล์ Excel ไม่สำเร็จ');
+            void message.error(t('buyer.leveling.couldNotCreateTheExcel'));
         } finally {
             setExporting(false);
         }
@@ -65,20 +68,20 @@ function Content({ packageId }: { packageId: string }) {
     return (
         <>
             <PageHead
-                back={{ href: `/subcontracting/packages/${packageId}`, label: 'แพ็กเกจ' }}
-                title={`เทียบราคา: ${p.title}`}
+                back={{ href: `/subcontracting/packages/${packageId}`, label: t('buyer.leveling.package') }}
+                title={t('buyer.leveling.priceComparison', { title: p.title })}
                 sub={(
                     <span className="flex flex-wrap items-center gap-2">
-                        <span>{tradeLabel(p.trade)}</span>
+                        <span>{tradeName(p.trade)}</span>
                         <PackageStatusTag status={p.status} />
-                        {readPrices && <span>ประเมิน <Num>{money0(p.estimateTotal)}</Num> บาท</span>}
-                        {p.version > 1 && <span>ฉบับที่ {p.version}</span>}
+                        {readPrices && <span>{t('buyer.leveling.estimate')} <Num>{money0(p.estimateTotal)}</Num> {t('buyer.leveling.thb')}</span>}
+                        {p.version > 1 && <span>{t('buyer.leveling.version')} {p.version}</span>}
                     </span>
                 )}
                 extra={leveling.data !== undefined && leveling.data.bidders.length > 0 && (
                     <Button icon={<FileExcelOutlined />} loading={exporting}
                         onClick={() => { void exportXlsx(leveling.data); }}>
-                        ส่งออก Excel
+                        {t('buyer.leveling.exportExcel')}
                     </Button>
                 )}
             />
@@ -86,22 +89,22 @@ function Content({ packageId }: { packageId: string }) {
                 <Card>
                     <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={(
                         <div className="flex flex-col gap-1">
-                            <span className="text-gray-900">ไม่มีสิทธิ์ดูราคา</span>
-                            <span className="text-secondary text-gray-500">ผู้ดูแลพื้นที่ทำงานเปิดสิทธิ์ให้ได้ในตั้งค่าจ้างช่วง</span>
+                            <span className="text-gray-900">{t('buyer.leveling.youCannotViewPrices')}</span>
+                            <span className="text-secondary text-gray-500">{t('buyer.leveling.aWorkspaceAdminCanGrant')}</span>
                         </div>
                     )} />
                 </Card>
             )}
             {!forbidden && leveling.isLoading && spinner}
             {!forbidden && leveling.isError && (
-                <Card><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={thaiErrorMessage(leveling.error)} /></Card>
+                <Card><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={toText(leveling.error)} /></Card>
             )}
             {!forbidden && leveling.data !== undefined && (
                 leveling.data.bidders.length === 0
                     ? (
                         <Card>
-                            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ยังไม่มีผู้รับส่งราคา">
-                                <Link href={`/subcontracting/packages/${packageId}`}><Button>ดูผู้รับคำเชิญ</Button></Link>
+                            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('buyer.leveling.noRecipientHasSubmittedA')}>
+                                <Link href={`/subcontracting/packages/${packageId}`}><Button>{t('buyer.leveling.viewInvitees')}</Button></Link>
                             </Empty>
                         </Card>
                     )
@@ -123,6 +126,7 @@ function Comparison({ pkg, leveling, order, onOrder, awardAllowed, canNegotiate 
     awardAllowed: boolean;
     canNegotiate: boolean;
 }) {
+    const t = useTranslations('subcontracting');
     const router = useRouter();
     const [choice, setChoice] = useState<AwardChoice>(EMPTY_CHOICE);
     const [negotiate, setNegotiate] = useState<Bidder | null>(null);
@@ -143,14 +147,14 @@ function Comparison({ pkg, leveling, order, onOrder, awardAllowed, canNegotiate 
     return (
         <>
             {pkg.status === 'awarded' && (
-                <Alert type="success" showIcon title="ตกลงจ้างแล้ว"
-                    description={<Link href="/subcontracting/contracts">ดูสัญญาของโครงการ</Link>} />
+                <Alert type="success" showIcon title={t('buyer.leveling.alreadyAwarded')}
+                    description={<Link href="/subcontracting/contracts">{t('buyer.leveling.viewProjectContracts')}</Link>} />
             )}
             <Card
-                title={`ราคาจาก ${String(leveling.bidders.length)} ราย`}
+                title={t('buyer.leveling.pricesFrom', { count: leveling.bidders.length })}
                 extra={(
                     <Segmented<BidderOrder> size="small" value={order} onChange={onOrder}
-                        options={[{ value: 'normalized', label: 'ถูกสุดก่อน' }, { value: 'original', label: 'ตามลำดับที่ส่ง' }]} />
+                        options={[{ value: 'normalized', label: t('buyer.leveling.cheapestFirst') }, { value: 'original', label: t('buyer.leveling.inOrderReceived') }]} />
                 )}
             >
                 <div className="overflow-x-auto border border-gray-200 rounded-card">
@@ -158,9 +162,9 @@ function Comparison({ pkg, leveling, order, onOrder, awardAllowed, canNegotiate 
                         <thead className="bg-gray-50 text-secondary text-gray-600">
                             <tr>
                                 <th rowSpan={2} className="sticky left-0 z-10 bg-gray-50 text-left font-medium px-3 py-2 border-b border-r border-gray-200 min-w-[260px] max-w-[320px]">
-                                    รายการ
+                                    {t('buyer.leveling.item')}
                                 </th>
-                                <th colSpan={2} className="font-medium px-3 py-2 border-b border-r border-gray-200">ประเมิน (BOQ)</th>
+                                <th colSpan={2} className="font-medium px-3 py-2 border-b border-r border-gray-200">{t('buyer.leveling.estimateBoq')}</th>
                                 {ks.map(k => {
                                     const b = leveling.bidders[k];
                                     if (b === undefined) return null;
@@ -175,8 +179,8 @@ function Comparison({ pkg, leveling, order, onOrder, awardAllowed, canNegotiate 
                                 })}
                             </tr>
                             <tr>
-                                <th className="font-normal px-3 py-1 border-b border-gray-200 text-right">ต่อหน่วย</th>
-                                <th className="font-normal px-3 py-1 border-b border-r border-gray-200 text-right">รวม</th>
+                                <th className="font-normal px-3 py-1 border-b border-gray-200 text-right">{t('buyer.leveling.perUnit')}</th>
+                                <th className="font-normal px-3 py-1 border-b border-r border-gray-200 text-right">{t('buyer.leveling.total')}</th>
                                 {ks.map(k => (
                                     <SubHeads key={leveling.bidders[k]?.bidId ?? k} lump={leveling.bidders[k]?.mode === 'lump'} />
                                 ))}
@@ -193,10 +197,10 @@ function Comparison({ pkg, leveling, order, onOrder, awardAllowed, canNegotiate 
                     </table>
                 </div>
                 <div className="flex flex-col gap-1 mt-3 text-caption text-gray-500">
-                    {hasVeryLow(leveling) && <span><span className="inline-block w-3 h-3 align-middle bg-red-50 border border-red-100 mr-1" />ต่ำผิดปกติ ตรวจสโคปก่อนตกลง</span>}
-                    <span><span className="inline-block w-3 h-3 align-middle bg-amber-50 border border-amber-100 mr-1" />ต่างจากประเมินเกิน {pct(leveling.threshold)}</span>
-                    {anyFilled && <span><i>ตัวเอียง</i> = แถวที่ผู้รับไม่ได้ตีราคา เติมด้วยราคาประเมินเพื่อให้ยอดเทียบกันได้</span>}
-                    {anyLump && <span>ราคาเหมารวมกระจายลงแถวตามสัดส่วนประเมิน เพื่อดูเทียบเท่านั้น ยอดจริงคือราคาเหมา</span>}
+                    {hasVeryLow(leveling) && <span><span className="inline-block w-3 h-3 align-middle bg-red-50 border border-red-100 mr-1" />{t('buyer.leveling.unusuallyLowCheckTheScope')}</span>}
+                    <span><span className="inline-block w-3 h-3 align-middle bg-amber-50 border border-amber-100 mr-1" />{t('buyer.leveling.differsFromTheEstimateBy')} {pct(leveling.threshold)}</span>
+                    {anyFilled && <span><i>{t('buyer.leveling.italic')}</i> {t('buyer.leveling.rowsTheBidderDidNot')}</span>}
+                    {anyLump && <span>{t('buyer.leveling.aLumpSumPriceIs')}</span>}
                 </div>
             </Card>
 
@@ -204,20 +208,19 @@ function Comparison({ pkg, leveling, order, onOrder, awardAllowed, canNegotiate 
                 <Card>
                     <div className="flex flex-col md:flex-row md:items-center gap-3">
                         <Segmented<AwardMode> value={choice.mode} onChange={m => setChoice(c => setMode(leveling, c, m))}
-                            options={[{ value: 'whole', label: 'ทั้งแพ็กเกจ' }, { value: 'per_line', label: 'แยกรายแถว' }]} />
+                            options={[{ value: 'whole', label: t('buyer.leveling.wholePackage') }, { value: 'per_line', label: t('buyer.leveling.perRow') }]} />
                         <div className="flex-1 text-secondary text-gray-600">
                             {allocation.size === 0
-                                ? (choice.mode === 'whole' ? 'เลือกผู้ชนะที่หัวคอลัมน์' : 'เลือกผู้ชนะในแต่ละแถว')
+                                ? (choice.mode === 'whole' ? t('buyer.leveling.pickTheWinnerAtThe') : t('buyer.leveling.pickTheWinnerOnEach'))
                                 : (
                                     <>
-                                        {winners.map(w => w.bidder.displayName).join(', ')} · {allocation.size} จาก {leveling.lines.length} แถว
-                                        · <Num>{money(winners.reduce((s, w) => s + w.value, 0))}</Num> บาท
-                                        {leftOut > 0 && ` · ไม่จ้าง ${String(leftOut)} แถว`}
+                                        {winners.map(w => w.bidder.displayName).join(', ')} · {allocation.size} {t('buyer.leveling.of')} {leveling.lines.length} {t('buyer.leveling.rows')} <Num>{money(winners.reduce((s, w) => s + w.value, 0))}</Num> {t('buyer.leveling.thb')}
+                                        {leftOut > 0 && t('buyer.leveling.rowsNotAwarded', { leftOut })}
                                     </>
                                 )}
                         </div>
                         <Button type="primary" size="large" disabled={allocation.size === 0} onClick={() => setSummaryOpen(true)}>
-                            ตกลงจ้าง
+                            {t('buyer.leveling.award')}
                         </Button>
                     </div>
                 </Card>
@@ -237,29 +240,31 @@ function BidderHead({ bidder, wholeSelectable, selected, onSelect, onNegotiate }
     onSelect: () => void;
     onNegotiate: () => void;
 }) {
+    const t = useTranslations('subcontracting');
     const notes = [
-        bidder.mode === 'lump' ? 'เหมารวม' : null,
-        bidder.enteredByBuyer ? 'บันทึกโดยผู้ซื้อ' : null,
+        bidder.mode === 'lump' ? t('buyer.leveling.lumpSum') : null,
+        bidder.enteredByBuyer ? t('buyer.leveling.enteredByBuyer') : null,
     ].filter((n): n is string => n !== null);
     return (
         <div className="flex flex-col items-start gap-1 text-left min-w-[300px]">
             <div className="flex items-center gap-2 w-full">
-                {wholeSelectable && <Radio checked={selected} onClick={onSelect} aria-label={`เลือก ${bidder.displayName} ทั้งแพ็กเกจ`} />}
+                {wholeSelectable && <Radio checked={selected} onClick={onSelect} aria-label={t('buyer.leveling.selectForTheWholePackage', { displayName: bidder.displayName })} />}
                 <span className="text-body font-semibold text-gray-900 flex-1 min-w-0 truncate">{bidder.displayName}</span>
-                <Button size="small" type="link" className="!px-0" onClick={onNegotiate}>ต่อรอง</Button>
+                <Button size="small" type="link" className="!px-0" onClick={onNegotiate}>{t('buyer.leveling.negotiate')}</Button>
             </div>
             {notes.length > 0 && <span className="text-caption text-gray-500 font-normal">{notes.join(' · ')}</span>}
-            {bidder.outdated && <span className="text-caption text-gray-500 font-normal whitespace-normal">{OUTDATED_NOTE}</span>}
+            {bidder.outdated && <span className="text-caption text-gray-500 font-normal whitespace-normal">{outdatedNote(t)}</span>}
         </div>
     );
 }
 
 function SubHeads({ lump }: { lump: boolean }) {
+    const t = useTranslations('subcontracting');
     return (
         <>
-            <th className="font-normal px-3 py-1 border-b border-gray-200 text-right">{lump ? '' : 'ต่อหน่วย'}</th>
-            <th className="font-normal px-3 py-1 border-b border-gray-200 text-right">รวม</th>
-            <th className="font-normal px-3 py-1 border-b border-r border-gray-200 text-right">ต่าง</th>
+            <th className="font-normal px-3 py-1 border-b border-gray-200 text-right">{lump ? '' : t('buyer.leveling.perUnit')}</th>
+            <th className="font-normal px-3 py-1 border-b border-gray-200 text-right">{t('buyer.leveling.total')}</th>
+            <th className="font-normal px-3 py-1 border-b border-r border-gray-200 text-right">{t('buyer.leveling.diff')}</th>
         </>
     );
 }
@@ -272,6 +277,7 @@ function LineRow({ line, ks, leveling, pickable, allocation, onPick }: {
     allocation: ReadonlyMap<number, string>;
     onPick: (bidId: string) => void;
 }) {
+    const t = useTranslations('subcontracting');
     return (
         <tr className="border-b border-gray-100">
             <td className="sticky left-0 z-10 bg-white px-3 py-2 border-r border-gray-200 max-w-[320px]">
@@ -301,15 +307,15 @@ function LineRow({ line, ks, leveling, pickable, allocation, onPick }: {
                     <Fragment key={b.bidId}>
                         <td className={`px-3 py-2 text-right tabular-nums ${tone}`}>
                             {cell.excluded
-                                ? <span className="text-caption text-gray-500">ไม่รวม</span>
+                                ? <span className="text-caption text-gray-500">{t('buyer.leveling.excluded')}</span>
                                 : cell.unitPrice === null ? <span className="text-gray-300">–</span> : money(cell.unitPrice)}
                         </td>
                         <td className={`px-3 py-2 text-right tabular-nums ${tone}`}>
                             <div className="flex items-center justify-end gap-2">
-                                {canPick && <Radio checked={chosen} onClick={() => onPick(b.bidId)} aria-label={`ให้ ${b.displayName}`} />}
+                                {canPick && <Radio checked={chosen} onClick={() => onPick(b.bidId)} aria-label={t('buyer.leveling.giveTo', { displayName: b.displayName })} />}
                                 <span className={cell.filled ? 'italic text-gray-500' : ''}>{money(cell.total)}</span>
                             </div>
-                            {filledUnit && !cell.excluded && <div className="text-caption text-gray-400 not-italic">เติมด้วยประเมิน</div>}
+                            {filledUnit && !cell.excluded && <div className="text-caption text-gray-400 not-italic">{t('buyer.leveling.filledWithEstimate')}</div>}
                         </td>
                         <td className={`px-3 py-2 text-right tabular-nums border-r border-gray-200 ${tone} ${cell.flag === 'very_low' ? 'text-red-700' : 'text-gray-600'}`}>
                             {cell.filled || b.outdated ? '' : pct(cell.diffPct, true)}
@@ -322,6 +328,7 @@ function LineRow({ line, ks, leveling, pickable, allocation, onPick }: {
 }
 
 function Footer({ leveling, ks }: { leveling: LevelingDto; ks: readonly number[] }) {
+    const t = useTranslations('subcontracting');
     const row = (label: React.ReactNode, est: React.ReactNode, value: (b: Bidder) => React.ReactNode, opts: { strong?: boolean; tone?: (b: Bidder) => string; left?: boolean } = {}) => (
         <tr className="border-b border-gray-100">
             <td className={`sticky left-0 z-10 bg-white px-3 py-2 border-r border-gray-200 ${opts.strong === true ? 'font-semibold text-gray-900' : 'text-gray-600'}`}>{label}</td>
@@ -342,8 +349,8 @@ function Footer({ leveling, ks }: { leveling: LevelingDto; ks: readonly number[]
     const dash = <span className="text-gray-300">–</span>;
     return (
         <tfoot className="border-t-2 border-gray-200">
-            {row('รวม', money(leveling.estimateTotal), b => money(b.total), { strong: true })}
-            {row('รวมหลังปรับให้เทียบได้', money(leveling.estimateTotal), b => {
+            {row(t('buyer.leveling.total'), money(leveling.estimateTotal), b => money(b.total), { strong: true })}
+            {row(t('buyer.leveling.totalAfterAdjustmentToCompare'), money(leveling.estimateTotal), b => {
                 const diff = bidderDiffPct(b);
                 return (
                     <span>
@@ -352,18 +359,20 @@ function Footer({ leveling, ks }: { leveling: LevelingDto; ks: readonly number[]
                     </span>
                 );
             }, { strong: true, tone: b => (b.outdated ? '' : toneClass(b.flag)) })}
-            {row('จำนวนวัน', '', b => (b.days === null ? dash : `${String(b.days)} วัน`))}
-            {row('เริ่มได้', '', b => (b.earliestStart === null ? dash : fmtDay(b.earliestStart)))}
-            {row('ช่าง / คนงาน', '', b => (b.crewSkilled === null && b.crewLabourers === null
-                ? dash : `${String(b.crewSkilled ?? 0)} / ${String(b.crewLabourers ?? 0)} คน`))}
-            {row('ราคายืนถึง', '', b => (b.validUntil === null ? dash
-                : <span className={b.expired ? 'text-red-600' : ''}>{fmtDay(b.validUntil)}{b.expired ? ' (หมดอายุ)' : ''}</span>))}
-            {row('งวดจ่าย', '', b => (b.installmentsProposal === null ? 'ตามที่เรากำหนด' : `เสนอ ${installmentsText(b.installmentsProposal)}`))}
-            {row('ระดับยืนยัน', '', b => b.tier ?? <span className="text-gray-500">ยังไม่มีบัญชี</span>)}
-            {row('คะแนนจากเรา', '', b => (b.ratingFromUs === null ? dash
-                : `${b.ratingFromUs.toFixed(1)} / 5${b.completedWithUs > 0 ? ` (${String(b.completedWithUs)} งาน)` : ''}`))}
-            {row('ฉบับราคา', '', b => `ฉบับที่ ${String(b.version)}`)}
-            {leveling.bidders.some(b => b.note.trim() !== '') && row('หมายเหตุ', '', b => (b.note.trim() === '' ? dash : b.note), { left: true })}
+            {row(t('buyer.leveling.days'), '', b => (b.days === null ? dash : t('buyer.leveling.days2', { days: b.days })))}
+            {row(t('buyer.leveling.canStart'), '', b => (b.earliestStart === null ? dash : fmtDay(b.earliestStart)))}
+            {row(t('buyer.leveling.skilledLabourers'), '', b => (b.crewSkilled === null && b.crewLabourers === null
+                ? dash : t('buyer.leveling.people', { value: b.crewSkilled ?? 0, value2: b.crewLabourers ?? 0 })))}
+            {row(t('buyer.leveling.priceValidUntil'), '', b => (b.validUntil === null ? dash
+                : <span className={b.expired ? 'text-red-600' : ''}>{fmtDay(b.validUntil)}{b.expired ? t('buyer.leveling.expired') : ''}</span>))}
+            {row(t('buyer.leveling.paymentStages'), '', b => (b.installmentsProposal === null ? t('buyer.leveling.asWeSet') : t('buyer.leveling.proposed', { installmentsProposal: installmentsText(b.installmentsProposal) })))}
+            {row(t('buyer.leveling.verificationLevel'), '', b => b.tier ?? <span className="text-gray-500">{t('buyer.leveling.noAccountYet')}</span>)}
+            {row(t('buyer.leveling.ourRating'), '', b => (b.ratingFromUs === null ? dash
+                : (b.completedWithUs > 0
+                    ? t('buyer.leveling.ratingWithJobs', { rating: b.ratingFromUs.toFixed(1), count: b.completedWithUs })
+                    : t('buyer.leveling.ratingOutOf5', { rating: b.ratingFromUs.toFixed(1) }))))}
+            {row(t('buyer.leveling.priceVersion'), '', b => t('buyer.leveling.version2', { version: b.version }))}
+            {leveling.bidders.some(b => b.note.trim() !== '') && row(t('buyer.leveling.note'), '', b => (b.note.trim() === '' ? dash : b.note), { left: true })}
             {leveling.questions.map((q, qi) => (
                 <Fragment key={qi}>
                     {row(q, '', b => {

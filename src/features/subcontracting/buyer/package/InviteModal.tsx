@@ -1,12 +1,14 @@
 'use client';
 
 // ─── Pick invitees from the vendor list (filtered by the package trade), a channel each, then send ───
+import { useTranslations } from 'next-intl';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { useMemo, useState } from 'react';
 import { App, Alert, Checkbox, Input, Modal, Select, Table } from 'antd';
 import { type BuyerPackageDto, type InviteChannel, type ScInvitationDto, type VendorListEntryDto, formatThaiPhone } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+
 import { useInvite, useVendorList } from '../hooks';
-import { CHANNEL_LABEL } from '../format';
+import { channelLabel } from '../format';
 import type { LinkRow } from '../LinksModal';
 import { TradeChips } from '../ui';
 import { invitedEntryIds, inviteRoom } from './helpers';
@@ -19,6 +21,8 @@ export function InviteModal({ open, onClose, pkg, invitations, onSent }: {
     /** Links returned once by the server. */
     onSent: (rows: LinkRow[]) => void;
 }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message } = App.useApp();
     const [allTrades, setAllTrades] = useState(false);
     const [q, setQ] = useState('');
@@ -52,28 +56,28 @@ export function InviteModal({ open, onClose, pkg, invitations, onSent }: {
             setPicked({});
             onClose();
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         }
     };
 
     const overLimit = pickedIds.length > room;
 
     return (
-        <Modal open={open} onCancel={onClose} title={pkg.status === 'draft' ? 'ส่งคำเชิญ' : 'เชิญเพิ่ม'} width={760} destroyOnHidden
-            okText={`ส่งคำเชิญ ${String(pickedIds.length)} ราย`} cancelText="ยกเลิก"
+        <Modal open={open} onCancel={onClose} title={pkg.status === 'draft' ? t('buyer.invite.sendInvitations') : t('buyer.invite.inviteMore')} width={760} destroyOnHidden
+            okText={t('buyer.invite.send', { count: pickedIds.length })} cancelText={t('buyer.invite.cancel')}
             okButtonProps={{ disabled: pickedIds.length === 0 || overLimit, loading: invite.isPending }}
             onOk={() => { void send(); }}>
             <div className="flex flex-wrap items-center gap-3 mb-3">
-                <Input.Search placeholder="ค้นหาชื่อหรือเบอร์" allowClear value={q} onChange={e => setQ(e.target.value)} style={{ maxWidth: 260 }} />
-                <Checkbox checked={allTrades} onChange={e => setAllTrades(e.target.checked)}>แสดงทุกประเภทงาน</Checkbox>
+                <Input.Search placeholder={t('buyer.invite.searchByNameOrPhone')} allowClear value={q} onChange={e => setQ(e.target.value)} style={{ maxWidth: 260 }} />
+                <Checkbox checked={allTrades} onChange={e => setAllTrades(e.target.checked)}>{t('buyer.invite.showEveryTrade')}</Checkbox>
                 <span className="ml-auto text-secondary text-gray-500">
-                    {pkg.sourcingMode === 'direct' ? 'จ้างตรง เลือก 1 ราย' : `เลือกได้อีก ${String(room)} ราย`}
+                    {pkg.sourcingMode === 'direct' ? t('buyer.invite.directHireChoose1') : t('buyer.invite.youCanPickMore', { room })}
                 </span>
             </div>
-            {room === 0 && <Alert type="info" showIcon className="!mb-3" title="เชิญครบจำนวนแล้ว ถอนคำเชิญเดิมก่อนถ้าจะเชิญรายอื่น" />}
+            {room === 0 && <Alert type="info" showIcon className="!mb-3" title={t('buyer.invite.theInvitationLimitIsReached')} />}
             <Table<VendorListEntryDto>
                 rowKey="id" size="small" pagination={false} scroll={{ y: 360 }} loading={list.isLoading} dataSource={rows}
-                locale={{ emptyText: list.isError ? thaiErrorMessage(list.error) : 'ไม่มีทีมช่างที่ตรงเงื่อนไข เพิ่มได้ที่หน้าทะเบียนทีมช่าง' }}
+                locale={{ emptyText: list.isError ? toText(list.error) : t('buyer.invite.noMatchingCrewsAddThem') }}
                 columns={[
                     {
                         key: 'pick', width: 40,
@@ -83,22 +87,22 @@ export function InviteModal({ open, onClose, pkg, invitations, onSent }: {
                         ),
                     },
                     {
-                        title: 'ทีมช่าง', key: 'name',
+                        title: t('buyer.invite.crew'), key: 'name',
                         render: (_: unknown, v) => (
                             <div className="min-w-0">
-                                <div className="font-medium">{v.displayName}{v.hasAccount && <span className="text-green-600 text-caption ml-1">✓ มีบัญชี</span>}</div>
+                                <div className="font-medium">{v.displayName}{v.hasAccount && <span className="text-green-600 text-caption ml-1">{t('buyer.invite.hasAnAccount')}</span>}</div>
                                 <div className="text-caption text-gray-500">{formatThaiPhone(v.phone)}{v.province !== '' ? ` · ${v.province}` : ''}</div>
                             </div>
                         ),
                     },
-                    { title: 'ประเภทงาน', key: 'trades', responsive: ['md'], render: (_: unknown, v) => <TradeChips trades={v.trades} /> },
+                    { title: t('buyer.invite.trade'), key: 'trades', responsive: ['md'], render: (_: unknown, v) => <TradeChips trades={v.trades} /> },
                     {
-                        title: 'ช่องทาง', key: 'channel', width: 170,
+                        title: t('buyer.invite.channel'), key: 'channel', width: 170,
                         render: (_: unknown, v) => (v.id in picked ? (
                             <Select<InviteChannel> size="small" style={{ width: 160 }} value={picked[v.id]}
                                 onChange={c => setPicked(prev => ({ ...prev, [v.id]: c }))}
                                 options={(['link', 'sms', ...(v.lineId !== '' ? ['line' as const] : [])] as InviteChannel[])
-                                    .map(c => ({ value: c, label: CHANNEL_LABEL[c] }))} />
+                                    .map(c => ({ value: c, label: channelLabel(c) }))} />
                         ) : null),
                     },
                 ]}

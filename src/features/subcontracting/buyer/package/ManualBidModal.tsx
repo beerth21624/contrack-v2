@@ -2,12 +2,14 @@
 
 // ─── "บันทึกราคาแทน": the buyer types a price received by phone / on paper, with the same fields as the bid form ───
 // The bid is marked "บันทึกโดยผู้ซื้อ" (enteredByBuyer) by the server.
+import { useTranslations } from 'next-intl';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { useState } from 'react';
 import dayjs from 'dayjs';
 import { App, Alert, Button, Checkbox, DatePicker, Input, InputNumber, Modal, Segmented } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { type BidMode, type BuyerPackageDto, type ScInvitationDto, manualBidRequestSchema } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+
 import { useManualBid } from '../hooks';
 import { installmentsTotal, installmentsValid, money, money0, pct, qty, renumber, toDay } from '../format';
 import {
@@ -22,15 +24,18 @@ export function ManualBidModal({ pkg, invitation, onClose }: {
     invitation: ScInvitationDto | null;
     onClose: () => void;
 }) {
+    const t = useTranslations('subcontracting');
     return (
         <Modal open={invitation !== null} onCancel={onClose} footer={null} width={960} destroyOnHidden
-            title={invitation === null ? 'บันทึกราคาแทน' : `บันทึกราคาแทน ${invitation.displayName}`}>
+            title={invitation === null ? t('buyer.manualBid.enterAPriceForThem') : t('buyer.manualBid.enterAPriceFor', { displayName: invitation.displayName })}>
             {invitation !== null && <ManualBidBody pkg={pkg} invitation={invitation} onClose={onClose} />}
         </Modal>
     );
 }
 
 function ManualBidBody({ pkg, invitation, onClose }: { pkg: BuyerPackageDto; invitation: ScInvitationDto; onClose: () => void }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message } = App.useApp();
     const save = useManualBid(pkg.id);
     const [form, setForm] = useState<ManualBidForm>(() => initialManualBid(pkg));
@@ -48,20 +53,20 @@ function ManualBidBody({ pkg, invitation, onClose }: { pkg: BuyerPackageDto; inv
     const submit = async () => {
         setTried(true);
         if (missing.size > 0 || lumpMissing || installmentsBad) {
-            void message.error(missing.size > 0 ? `ยังไม่ได้ใส่ราคา ${String(missing.size)} แถว (หรือติ๊ก "ไม่รวม")` : 'กรอกข้อมูลให้ครบก่อนบันทึก');
+            void message.error(missing.size > 0 ? t('buyer.manualBid.noPriceYetOrTick', { size: missing.size }) : t('buyer.manualBid.fillInEverythingBeforeSaving'));
             return;
         }
         const parsed = manualBidRequestSchema.safeParse(manualBidRequest(form));
         if (!parsed.success) {
-            void message.error(parsed.error.issues[0]?.message ?? 'ข้อมูลไม่ถูกต้อง');
+            void message.error(parsed.error.issues[0]?.message ?? t('buyer.manualBid.invalidData'));
             return;
         }
         try {
             await save.mutateAsync({ invitationId: invitation.id, body: parsed.data });
-            void message.success('บันทึกราคาแล้ว');
+            void message.success(t('buyer.manualBid.priceSaved'));
             onClose();
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         }
     };
 
@@ -70,11 +75,11 @@ function ManualBidBody({ pkg, invitation, onClose }: { pkg: BuyerPackageDto; inv
 
     return (
         <div className="flex flex-col gap-4">
-            <p className="text-secondary text-gray-600 m-0">ราคานี้จะติดป้าย &quot;บันทึกโดยผู้ซื้อ&quot; ในตารางเทียบ</p>
+            <p className="text-secondary text-gray-600 m-0">{t('buyer.manualBid.thisPriceIsLabelledEntered')}</p>
 
             {modes.length > 1 && (
                 <Segmented<BidMode> value={form.mode} onChange={m => set({ mode: m })}
-                    options={[{ value: 'unit', label: 'ต่อหน่วยรายแถว' }, { value: 'lump', label: 'เหมารวม' }]} />
+                    options={[{ value: 'unit', label: t('buyer.manualBid.unitPricePerRow') }, { value: 'lump', label: t('buyer.manualBid.lumpSum') }]} />
             )}
 
             {form.mode === 'unit' ? (
@@ -82,12 +87,12 @@ function ManualBidBody({ pkg, invitation, onClose }: { pkg: BuyerPackageDto; inv
                     <table className="w-full text-body">
                         <thead className="bg-gray-50 text-secondary text-gray-600">
                             <tr>
-                                <th className="text-left font-medium px-3 py-2">รายการ</th>
-                                <th className="text-right font-medium px-3 py-2 w-28">ปริมาณ</th>
-                                <th className="text-right font-medium px-3 py-2 w-36">ค่าแรง/หน่วย</th>
-                                {hasVendorMaterial && <th className="text-right font-medium px-3 py-2 w-36">วัสดุ/หน่วย</th>}
-                                <th className="text-center font-medium px-3 py-2 w-20">ไม่รวม</th>
-                                <th className="text-right font-medium px-3 py-2 w-32">รวม</th>
+                                <th className="text-left font-medium px-3 py-2">{t('buyer.manualBid.item')}</th>
+                                <th className="text-right font-medium px-3 py-2 w-28">{t('buyer.manualBid.quantity')}</th>
+                                <th className="text-right font-medium px-3 py-2 w-36">{t('buyer.manualBid.labourUnit')}</th>
+                                {hasVendorMaterial && <th className="text-right font-medium px-3 py-2 w-36">{t('buyer.manualBid.materialUnit')}</th>}
+                                <th className="text-center font-medium px-3 py-2 w-20">{t('buyer.manualBid.excluded')}</th>
+                                <th className="text-right font-medium px-3 py-2 w-32">{t('buyer.manualBid.included')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -100,7 +105,7 @@ function ManualBidBody({ pkg, invitation, onClose }: { pkg: BuyerPackageDto; inv
                                         <td className="px-3 py-2">
                                             <div>{line.desc}</div>
                                             {f.excluded && (
-                                                <Input size="small" className="!mt-1" placeholder="เหตุผลที่ไม่รวม" maxLength={300}
+                                                <Input size="small" className="!mt-1" placeholder={t('buyer.manualBid.reasonForExclusion')} maxLength={300}
                                                     value={f.reason} onChange={e => setLine(line.idx, { reason: e.target.value })} />
                                             )}
                                         </td>
@@ -123,7 +128,7 @@ function ManualBidBody({ pkg, invitation, onClose }: { pkg: BuyerPackageDto; inv
                                             <Checkbox checked={f.excluded} onChange={e => setLine(line.idx, { excluded: e.target.checked })} />
                                         </td>
                                         <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap">
-                                            {f.excluded ? <span className="text-gray-400">ไม่รวม</span>
+                                            {f.excluded ? <span className="text-gray-400">{t('buyer.manualBid.excluded')}</span>
                                                 : money(manualBidTotal({ lines: [line] }, { mode: 'unit', lines: [f], lumpTotal: null, adjustment: 0 }))}
                                         </td>
                                     </tr>
@@ -134,40 +139,40 @@ function ManualBidBody({ pkg, invitation, onClose }: { pkg: BuyerPackageDto; inv
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-3">
-                    <Field label="ราคาเหมารวม (บาท)">
+                    <Field label={t('buyer.manualBid.lumpSumPriceThb')}>
                         <InputNumber min={0} className="!w-full" status={tried && lumpMissing ? 'error' : undefined}
                             value={form.lumpTotal} onChange={v => set({ lumpTotal: num(v) })} />
                     </Field>
-                    <Field label="รวม / ไม่รวมอะไรบ้าง">
+                    <Field label={t('buyer.manualBid.whatIsIncludedExcluded')}>
                         <Input.TextArea rows={2} maxLength={2000} value={form.inclusions} onChange={e => set({ inclusions: e.target.value })} />
                     </Field>
                 </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-3">
-                <Field label="ส่วนลด (−) / บวกเพิ่ม (+)">
+                <Field label={t('buyer.manualBid.discountSurcharge')}>
                     <InputNumber className="!w-full" value={form.adjustment} onChange={v => set({ adjustment: num(v) ?? 0 })} />
                 </Field>
-                <Field label="หมายเหตุส่วนลด">
+                <Field label={t('buyer.manualBid.discountNote')}>
                     <Input maxLength={300} value={form.adjustmentNote} onChange={e => set({ adjustmentNote: e.target.value })} />
                 </Field>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <Field label="จำนวนวัน">
+                <Field label={t('buyer.manualBid.days')}>
                     <InputNumber min={1} precision={0} className="!w-full" value={form.days} onChange={v => set({ days: num(v) })} />
                 </Field>
-                <Field label="เริ่มได้วันที่">
+                <Field label={t('buyer.manualBid.canStartOn')}>
                     <DatePicker format="D MMM YY" className="w-full" value={form.earliestStart === null ? null : dayjs(form.earliestStart)}
                         onChange={d => set({ earliestStart: d === null ? null : toDay(d.toDate()) })} />
                 </Field>
-                <Field label="ช่างฝีมือ (คน)">
+                <Field label={t('buyer.manualBid.skilledWorkersPeople')}>
                     <InputNumber min={0} precision={0} className="!w-full" value={form.crewSkilled} onChange={v => set({ crewSkilled: num(v) })} />
                 </Field>
-                <Field label="คนงาน (คน)">
+                <Field label={t('buyer.manualBid.labourersPeople')}>
                     <InputNumber min={0} precision={0} className="!w-full" value={form.crewLabourers} onChange={v => set({ crewLabourers: num(v) })} />
                 </Field>
-                <Field label="ราคายืนถึง">
+                <Field label={t('buyer.manualBid.priceValidUntil')}>
                     <DatePicker format="D MMM YY" className="w-full" value={form.validUntil === null ? null : dayjs(form.validUntil)}
                         onChange={d => set({ validUntil: d === null ? null : toDay(d.toDate()) })} />
                 </Field>
@@ -175,7 +180,7 @@ function ManualBidBody({ pkg, invitation, onClose }: { pkg: BuyerPackageDto; inv
 
             <div>
                 <Checkbox checked={form.acceptInstallments} onChange={e => set({ acceptInstallments: e.target.checked })}>
-                    ใช้งวดจ่ายตามแพ็กเกจ ({pkg.installments.map(i => pct(i.pct)).join(' / ')})
+                    {t('buyer.manualBid.useThePackagePaymentStages')}{pkg.installments.map(i => pct(i.pct)).join(' / ')})
                 </Checkbox>
                 {!form.acceptInstallments && (
                     <InstallmentsEditor value={form.installments} onChange={installments => set({ installments })} showError={tried} />
@@ -184,7 +189,7 @@ function ManualBidBody({ pkg, invitation, onClose }: { pkg: BuyerPackageDto; inv
 
             {pkg.terms.questions.length > 0 && (
                 <div className="flex flex-col gap-2">
-                    <div className="font-medium">คำตอบคำถามของงาน</div>
+                    <div className="font-medium">{t('buyer.manualBid.answersToTheJobQuestions')}</div>
                     {pkg.terms.questions.map((question, k) => (
                         <Field key={question} label={question}>
                             <Input maxLength={1000} value={form.answers[k] ?? ''}
@@ -194,18 +199,18 @@ function ManualBidBody({ pkg, invitation, onClose }: { pkg: BuyerPackageDto; inv
                 </div>
             )}
 
-            <Field label="หมายเหตุ">
+            <Field label={t('buyer.manualBid.note')}>
                 <Input.TextArea rows={2} maxLength={2000} value={form.note} onChange={e => set({ note: e.target.value })} />
             </Field>
 
             <div className="flex items-center gap-3 border-t border-gray-100 pt-3">
                 <div className="flex-1">
-                    <span className="text-gray-600">รวม </span>
+                    <span className="text-gray-600">{t('buyer.manualBid.total')} </span>
                     <span className="text-card-title font-semibold tabular-nums">{money0(total)}</span>
-                    <span className="text-gray-600"> บาท</span>
+                    <span className="text-gray-600"> {t('buyer.manualBid.thb')}</span>
                 </div>
-                <Button onClick={onClose}>ยกเลิก</Button>
-                <Button type="primary" loading={save.isPending} onClick={() => { void submit(); }}>บันทึกราคา</Button>
+                <Button onClick={onClose}>{t('buyer.manualBid.cancel')}</Button>
+                <Button type="primary" loading={save.isPending} onClick={() => { void submit(); }}>{t('buyer.manualBid.savePrice')}</Button>
             </div>
         </div>
     );
@@ -225,6 +230,7 @@ function InstallmentsEditor({ value, onChange, showError }: {
     onChange: (v: ManualBidForm['installments']) => void;
     showError: boolean;
 }) {
+    const t = useTranslations('subcontracting');
     const sum = installmentsTotal(value);
     const sumOk = Math.abs(sum - 1) <= 0.0001;
     const patch = (k: number, p: Partial<ManualBidForm['installments'][number]>) => onChange(value.map((i, j) => (j === k ? { ...i, ...p } : i)));
@@ -232,24 +238,24 @@ function InstallmentsEditor({ value, onChange, showError }: {
         <div className="flex flex-col gap-2 mt-2">
             {value.map((i, k) => (
                 <div key={i.no} className="flex items-center gap-2">
-                    <span className="w-14 text-gray-600">งวด {i.no}</span>
+                    <span className="w-14 text-gray-600">{t('buyer.manualBid.stage')} {i.no}</span>
                     <InputNumber size="small" min={0} max={100} className="!w-24" suffix="%"
                         value={Math.round(i.pct * 1000) / 10} onChange={v => patch(k, { pct: (num(v) ?? 0) / 100 })} />
-                    <Input size="small" maxLength={300} placeholder="เงื่อนไขส่งมอบ" value={i.condition}
+                    <Input size="small" maxLength={300} placeholder={t('buyer.manualBid.deliveryCondition')} value={i.condition}
                         status={showError && i.condition.trim() === '' ? 'error' : undefined}
                         onChange={e => patch(k, { condition: e.target.value })} />
-                    <Button size="small" type="text" icon={<DeleteOutlined />} disabled={value.length <= 1} aria-label="ลบงวด"
+                    <Button size="small" type="text" icon={<DeleteOutlined />} disabled={value.length <= 1} aria-label={t('buyer.manualBid.removeStage')}
                         onClick={() => onChange(renumber(value.filter((_, j) => j !== k)))} />
                 </div>
             ))}
             <div className="flex items-center gap-3">
                 <Button size="small" icon={<PlusOutlined />}
                     onClick={() => onChange(renumber([...value, { no: value.length + 1, pct: Math.max(0, 1 - sum), condition: '' }]))}>
-                    เพิ่มงวด
+                    {t('buyer.manualBid.addStage')}
                 </Button>
-                <span className={sumOk ? 'text-secondary text-gray-500' : 'text-secondary text-red-600'}>รวม {pct(sum)}{sumOk ? '' : ' (ต้องเท่ากับ 100%)'}</span>
+                <span className={sumOk ? 'text-secondary text-gray-500' : 'text-secondary text-red-600'}>{t('buyer.manualBid.total')} {pct(sum)}{sumOk ? '' : t('buyer.manualBid.mustEqual100')}</span>
             </div>
-            {showError && !sumOk && <Alert type="error" showIcon title="งวดต้องรวมได้ 100%" />}
+            {showError && !sumOk && <Alert type="error" showIcon title={t('buyer.manualBid.stagesMustTotal100')} />}
         </div>
     );
 }

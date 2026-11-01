@@ -1,12 +1,14 @@
 'use client';
 
 // ─── ผู้รับคำเชิญ: status per invitee, resend (new link), withdraw, type a price on their behalf ───
+import { useTranslations } from 'next-intl';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { App, Button, Dropdown, Table } from 'antd';
 import { MoreOutlined } from '@ant-design/icons';
 import { type BuyerPackageDto, type ScInvitationDto, formatThaiPhone } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+
 import { useResendInvitation, useWithdrawInvitation } from '../hooks';
-import { CHANNEL_LABEL, DECLINE_REASON_LABEL, fmtDateTime, money0 } from '../format';
+import { channelLabel, declineReasonLabel, fmtDateTime, money0 } from '../format';
 import type { LinkRow } from '../LinksModal';
 import { InvitationStatusTag } from '../ui';
 import { isSentUndecided } from './helpers';
@@ -25,6 +27,8 @@ export function InviteesTab({ pkg, invitations, loading, error, canManage, canSe
     /** null when no more invitees can be added. */
     onInviteMore: (() => void) | null;
 }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message, modal } = App.useApp();
     const resend = useResendInvitation(pkg.id);
     const withdraw = useWithdrawInvitation(pkg.id);
@@ -33,22 +37,22 @@ export function InviteesTab({ pkg, invitations, loading, error, canManage, canSe
     const doResend = async (i: ScInvitationDto) => {
         try {
             const res = await resend.mutateAsync(i.id);
-            onLinks([{ invitationId: i.id, displayName: i.displayName, phone: i.phone, url: res.link.url }], `ลิงก์ใหม่ของ ${i.displayName}`);
+            onLinks([{ invitationId: i.id, displayName: i.displayName, phone: i.phone, url: res.link.url }], t('buyer.inviteesTab.newLinkFor', { displayName: i.displayName }));
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         }
     };
     const doWithdraw = (i: ScInvitationDto) => {
         modal.confirm({
-            title: `ถอนคำเชิญ ${i.displayName}?`,
-            content: 'ลิงก์ของรายนี้จะใช้ไม่ได้ ราคาที่ส่งมาจะไม่อยู่ในตารางเทียบ',
-            okText: 'ถอนคำเชิญ', okButtonProps: { danger: true }, cancelText: 'ยกเลิก',
+            title: t('buyer.inviteesTab.withdrawTheInvitationTo', { displayName: i.displayName }),
+            content: t('buyer.inviteesTab.thisLinkWillStopWorking'),
+            okText: t('buyer.inviteesTab.withdrawInvitation'), okButtonProps: { danger: true }, cancelText: t('buyer.inviteesTab.cancel'),
             onOk: async () => {
                 try {
                     await withdraw.mutateAsync(i.id);
-                    void message.success('ถอนคำเชิญแล้ว');
+                    void message.success(t('buyer.inviteesTab.invitationWithdrawn'));
                 } catch (e) {
-                    void message.error(thaiErrorMessage(e));
+                    void message.error(toText(e));
                 }
             },
         });
@@ -57,14 +61,14 @@ export function InviteesTab({ pkg, invitations, loading, error, canManage, canSe
     return (
         <div className="flex flex-col gap-3">
             {onInviteMore !== null && canManage && live && (
-                <div className="flex justify-end"><Button onClick={onInviteMore}>เชิญเพิ่ม</Button></div>
+                <div className="flex justify-end"><Button onClick={onInviteMore}>{t('buyer.inviteesTab.inviteMore')}</Button></div>
             )}
             <Table<ScInvitationDto>
                 rowKey="id" size="middle" pagination={false} loading={loading} dataSource={[...invitations]} scroll={{ x: 760 }}
-                locale={{ emptyText: error ?? (pkg.status === 'draft' ? 'ยังไม่ได้ส่งคำเชิญ' : 'ยังไม่มีผู้รับคำเชิญ') }}
+                locale={{ emptyText: error ?? (pkg.status === 'draft' ? t('buyer.inviteesTab.noInvitationsHaveBeenSent') : t('buyer.inviteesTab.noInviteesYet')) }}
                 columns={[
                     {
-                        title: 'ผู้รับ', key: 'who',
+                        title: t('buyer.inviteesTab.recipient'), key: 'who',
                         render: (_: unknown, i) => (
                             <div className="min-w-0">
                                 <div className="font-medium">{i.displayName}</div>
@@ -72,22 +76,22 @@ export function InviteesTab({ pkg, invitations, loading, error, canManage, canSe
                             </div>
                         ),
                     },
-                    { title: 'ช่องทาง', key: 'channel', width: 130, responsive: ['md'], render: (_: unknown, i) => CHANNEL_LABEL[i.channel] },
+                    { title: t('buyer.inviteesTab.channel'), key: 'channel', width: 130, responsive: ['md'], render: (_: unknown, i) => channelLabel(i.channel) },
                     {
-                        title: 'ส่งเมื่อ', key: 'sent', width: 150, responsive: ['lg'],
+                        title: t('buyer.inviteesTab.sent'), key: 'sent', width: 150, responsive: ['lg'],
                         render: (_: unknown, i) => (
                             <span className="text-secondary">
                                 {fmtDateTime(i.sentAt)}
-                                {i.resentCount > 0 && <span className="text-gray-500"> · ส่งซ้ำ {i.resentCount}</span>}
+                                {i.resentCount > 0 && <span className="text-gray-500"> {t('buyer.inviteesTab.resent')} {i.resentCount}</span>}
                             </span>
                         ),
                     },
                     {
-                        title: 'เปิดดูเมื่อ', key: 'viewed', width: 140, responsive: ['lg'],
+                        title: t('buyer.inviteesTab.opened'), key: 'viewed', width: 140, responsive: ['lg'],
                         render: (_: unknown, i) => <span className="text-secondary">{i.viewedAt === null ? '–' : fmtDateTime(i.viewedAt)}</span>,
                     },
                     {
-                        title: 'สถานะ', key: 'status', width: 220,
+                        title: t('buyer.inviteesTab.status'), key: 'status', width: 220,
                         render: (_: unknown, i) => <StatusCell invitation={i} canSeePrices={canSeePrices} />,
                     },
                     {
@@ -96,18 +100,18 @@ export function InviteesTab({ pkg, invitations, loading, error, canManage, canSe
                             if (!canManage || !live || FINISHED.has(i.status)) return null;
                             return (
                                 <div className="flex justify-end gap-1">
-                                    <Button size="small" onClick={() => onManualBid(i)}>บันทึกราคาแทน</Button>
+                                    <Button size="small" onClick={() => onManualBid(i)}>{t('buyer.inviteesTab.enterAPriceForThem')}</Button>
                                     <Dropdown trigger={['click']} menu={{
                                         items: [
-                                            { key: 'resend', label: 'ส่งซ้ำ / ลิงก์ใหม่' },
-                                            { key: 'withdraw', label: 'ถอนคำเชิญ', danger: true },
+                                            { key: 'resend', label: t('buyer.inviteesTab.resendNewLink') },
+                                            { key: 'withdraw', label: t('buyer.inviteesTab.withdrawInvitation'), danger: true },
                                         ],
                                         onClick: ({ key }) => {
                                             if (key === 'resend') void doResend(i);
                                             else doWithdraw(i);
                                         },
                                     }}>
-                                        <Button size="small" type="text" icon={<MoreOutlined />} aria-label="ตัวเลือกเพิ่ม" />
+                                        <Button size="small" type="text" icon={<MoreOutlined />} aria-label={t('buyer.inviteesTab.moreOptions')} />
                                     </Dropdown>
                                 </div>
                             );
@@ -120,15 +124,16 @@ export function InviteesTab({ pkg, invitations, loading, error, canManage, canSe
 }
 
 function StatusCell({ invitation: i, canSeePrices }: { invitation: ScInvitationDto; canSeePrices: boolean }) {
+    const t = useTranslations('subcontracting');
     const bid = i.latestBid;
     const notes: React.ReactNode[] = [];
     if (i.status === 'declined' && i.declineReason !== null) {
-        notes.push(<span key="r">{DECLINE_REASON_LABEL[i.declineReason]}{i.declineNote !== null && i.declineNote !== '' ? `: ${i.declineNote}` : ''}</span>);
+        notes.push(<span key="r">{declineReasonLabel(i.declineReason)}{i.declineNote !== null && i.declineNote !== '' ? `: ${i.declineNote}` : ''}</span>);
     }
     if (bid !== null) {
-        if (canSeePrices) notes.push(<span key="t" className="tabular-nums">{money0(bid.total)} บาท</span>);
-        if (bid.enteredByBuyer) notes.push(<span key="b">บันทึกโดยผู้ซื้อ</span>);
-        if (bid.outdated) notes.push(<span key="o" className="text-amber-600">อิงฉบับเก่า</span>);
+        if (canSeePrices) notes.push(<span key="t" className="tabular-nums">{money0(bid.total)} {t('buyer.inviteesTab.thb')}</span>);
+        if (bid.enteredByBuyer) notes.push(<span key="b">{t('buyer.inviteesTab.enteredByBuyer')}</span>);
+        if (bid.outdated) notes.push(<span key="o" className="text-amber-600">{t('buyer.inviteesTab.basedOnAnOldVersion')}</span>);
     }
     return (
         <div className="flex flex-col items-start gap-0.5">

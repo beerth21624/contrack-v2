@@ -3,6 +3,8 @@
 // ─── /subcontracting/packages/new: create a work package in 3 steps (plan §4.3) ───
 // 1 เลือกงาน · 2 รูปแบบและเงื่อนไข · 3 เวลา งวด และผู้รับ. Submit = create (draft) → attach files → invitations →
 // the one-time links to pass on by hand.
+import { useTranslations } from 'next-intl';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
@@ -11,7 +13,6 @@ import {
     createPackageRequestSchema, tradeIdSchema, type CreatePackageRequest, type FileDto, type ProjectDto, type SubcontractingSettingsDto,
     type TradeId,
 } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
 import { useCurrentWorkspace } from '@/features/cloud/query/hooks';
 import { spinner } from '@/features/cloud/ui/common';
 import { useProjectStore } from '@/store/project-store';
@@ -44,6 +45,7 @@ export function PackageWizardPage() {
 }
 
 function WizardGate() {
+    const t = useTranslations('subcontracting');
     const { project } = useBuyerContext();
     // The package will belong to the project's workspace: role and settings come from it, not from the switcher.
     const workspaceId = project?.workspaceId;
@@ -53,7 +55,7 @@ function WizardGate() {
     if (project === null) {
         return (
             <>
-                <PageHead title="สร้างแพ็กเกจ" back={{ href: '/subcontracting', label: 'จ้างช่วง' }} />
+                <PageHead title={t('buyer.wizard.createPackage')} back={{ href: '/subcontracting', label: t('buyer.wizard.subcontracting') }} />
                 <NoProjectState />
             </>
         );
@@ -62,8 +64,8 @@ function WizardGate() {
     if (!rights.may('sc.packages.manage')) {
         return (
             <>
-                <PageHead title="สร้างแพ็กเกจ" back={{ href: '/subcontracting', label: 'จ้างช่วง' }} />
-                <Card><p className="text-gray-600 m-0">บทบาทของคุณดูแพ็กเกจได้อย่างเดียว ให้ผู้ดูแลหรือผู้ประมาณราคาเป็นผู้สร้าง</p></Card>
+                <PageHead title={t('buyer.wizard.createPackage')} back={{ href: '/subcontracting', label: t('buyer.wizard.subcontracting') }} />
+                <Card><p className="text-gray-600 m-0">{t('buyer.wizard.yourRoleCanOnlyView')}</p></Card>
             </>
         );
     }
@@ -86,6 +88,8 @@ function Wizard({ project, workspaceId, workspaceName, settings, initialTrade, i
     initialTrade: TradeId;
     initialSection: number | null;
 }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message } = App.useApp();
     const router = useRouter();
     const qc = useQueryClient();
@@ -146,7 +150,7 @@ function Wizard({ project, workspaceId, workspaceName, settings, initialTrade, i
             buyerName = workspaces.find(w => w.id === created.buyerWorkspaceId)?.name ?? workspaceName;
         } catch (e) {
             setBusy(false);
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
             return;
         }
         let filesFailed = 0;
@@ -158,9 +162,9 @@ function Wizard({ project, workspaceId, workspaceName, settings, initialTrade, i
                 filesFailed += 1;
             }
         }
-        if (filesFailed > 0) void message.warning(`แนบไฟล์ไม่สำเร็จ ${String(filesFailed)} ไฟล์ แนบใหม่ได้ที่หน้าแพ็กเกจ`);
+        if (filesFailed > 0) void message.warning(t('buyer.wizard.couldNotAttachAttachAgain', { filesFailed }));
         if (!send) {
-            void message.success('บันทึกร่างแล้ว');
+            void message.success(t('buyer.wizard.draftSaved'));
             goPackage(packageId);
             return;
         }
@@ -181,20 +185,20 @@ function Wizard({ project, workspaceId, workspaceName, settings, initialTrade, i
                 }),
             });
         } catch (e) {
-            void message.warning(`บันทึกเป็นร่างแล้ว แต่ส่งคำเชิญไม่สำเร็จ (${thaiErrorMessage(e)}) ส่งใหม่ได้ที่หน้าแพ็กเกจ`);
+            void message.warning(t('buyer.wizard.savedAsADraftBut', { e: toText(e) }));
             goPackage(packageId);
         } finally {
             setBusy(false);
         }
     };
 
-    const stepItems = [{ title: 'เลือกงาน' }, { title: 'รูปแบบและเงื่อนไข' }, { title: 'เวลา งวด และผู้รับ' }];
+    const stepItems = [{ title: t('buyer.wizard.chooseWork') }, { title: t('buyer.wizard.termsAndConditions') }, { title: t('buyer.wizard.timeStagesAndRecipients') }];
     const canOpen = (i: number) => i <= step || (i === 1 && step1Ok) || (i === 2 && step1Ok && step2Ok);
     const n = draft.invitees.length;
 
     return (
         <>
-            <PageHead title="สร้างแพ็กเกจ" sub={project.name} back={{ href: '/subcontracting', label: 'จ้างช่วง' }} />
+            <PageHead title={t('buyer.wizard.createPackage')} sub={project.name} back={{ href: '/subcontracting', label: t('buyer.wizard.subcontracting') }} />
             <Card>
                 <Steps current={step} size="small" items={stepItems.map((s, i) => ({ ...s, disabled: !canOpen(i) }))}
                     onChange={i => { if (canOpen(i)) setStep(i); }} />
@@ -208,22 +212,22 @@ function Wizard({ project, workspaceId, workspaceName, settings, initialTrade, i
             )}
 
             <div className="bg-white border border-gray-200 rounded-card px-5 py-3 shadow-card flex flex-wrap items-center gap-3 sticky bottom-3 z-10">
-                {step > 0 && <Button onClick={() => setStep(step - 1)} disabled={busy}>ย้อนกลับ</Button>}
+                {step > 0 && <Button onClick={() => setStep(step - 1)} disabled={busy}>{t('buyer.wizard.back')}</Button>}
                 <div className="flex-1 min-w-0 text-secondary text-gray-600">
                     {lineCount > 0
-                        ? <>เลือก {lineCount} รายการ · ประเมิน <span className="tabular-nums text-gray-900 font-medium">{money0(estimate)}</span> บาท</>
-                        : 'ยังไม่ได้เลือกงาน'}
+                        ? <>{t('buyer.wizard.selected')} {lineCount} {t('buyer.wizard.itemsEstimate')} <span className="tabular-nums text-gray-900 font-medium">{money0(estimate)}</span> {t('buyer.wizard.thb')}</>
+                        : t('buyer.wizard.noWorkSelectedYet')}
                 </div>
                 {step < 2 && (
                     <Button type="primary" size="large" disabled={step === 0 ? !step1Ok : !step2Ok} onClick={() => setStep(step + 1)}>
-                        ถัดไป
+                        {t('buyer.wizard.next')}
                     </Button>
                 )}
                 {step === 2 && (
                     <>
-                        <Button onClick={() => { void submit(false); }} disabled={busy}>บันทึกร่าง</Button>
+                        <Button onClick={() => { void submit(false); }} disabled={busy}>{t('buyer.wizard.saveDraft')}</Button>
                         <Button type="primary" size="large" loading={busy} disabled={n === 0} onClick={() => { void submit(true); }}>
-                            {n === 0 ? 'ส่งคำเชิญ' : `ส่งคำเชิญ ${String(n)} ราย`}
+                            {n === 0 ? t('buyer.wizard.sendInvitations') : t('buyer.wizard.send', { n })}
                         </Button>
                     </>
                 )}
@@ -232,7 +236,7 @@ function Wizard({ project, workspaceId, workspaceName, settings, initialTrade, i
             <PreviewModal open={preview} onClose={() => setPreview(false)} request={request} buyerName={workspaceName}
                 projectName={project.name} rows={rows} />
             {sent !== null && (
-                <InvitationLinksModal open onClose={() => goPackage(sent.packageId)} rows={sent.rows} title="ส่งคำเชิญแล้ว"
+                <InvitationLinksModal open onClose={() => goPackage(sent.packageId)} rows={sent.rows} title={t('buyer.wizard.invitationsSent')}
                     buyerName={sent.buyerName} packageTitle={sent.title} deadline={sent.deadline} />
             )}
         </>

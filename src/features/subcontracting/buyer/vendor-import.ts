@@ -4,6 +4,7 @@
 import type { ImportVendorListRequest, TradeId } from '@/shared/contract';
 import { phoneSchema } from '@/shared/contract';
 import { TRADES } from '@/domain/subcontracting/trades';
+import { IMPORT_HEADERS as HEADERS, IMPORT_TRADE_WORDS as TRADE_WORDS, type ImportField as Field } from '@/domain/subcontracting/vendor-import-words';
 import { normalizeProvince } from './provinces';
 
 export type ImportRow = ImportVendorListRequest['rows'][number];
@@ -20,15 +21,6 @@ export interface ParsedImport {
 
 export const IMPORT_MAX_ROWS = 1000;
 
-type Field = 'displayName' | 'phone' | 'trades' | 'province' | 'lineId';
-
-const HEADERS: Record<Field, readonly string[]> = {
-    displayName: ['ชื่อ', 'ชื่อทีม', 'ชื่อทีมช่าง', 'ชื่อผู้รับเหมา', 'name'],
-    phone: ['เบอร์', 'เบอร์โทร', 'เบอร์โทรศัพท์', 'โทร', 'โทรศัพท์', 'phone', 'tel', 'mobile'],
-    trades: ['ประเภทงาน', 'ประเภท', 'งาน', 'trade', 'trades'],
-    province: ['จังหวัด', 'province'],
-    lineId: ['line', 'lineid', 'line id', 'ไลน์', 'ไอดีไลน์'],
-};
 
 const DEFAULT_ORDER: readonly Field[] = ['displayName', 'phone', 'trades', 'province', 'lineId'];
 
@@ -50,23 +42,6 @@ function headerMap(row: readonly string[]): Map<Field, number> | null {
     return map.has('displayName') || map.has('phone') ? map : null;
 }
 
-/** Keywords that name a trade in a free-text cell (Thai labels split into their parts, plus common words). */
-const TRADE_WORDS: Record<TradeId, readonly string[]> = {
-    'site-prep': ['เตรียมพื้นที่', 'รื้อถอน', 'ถมดิน', 'วางผัง'],
-    'temp-utilities': ['น้ำไฟชั่วคราว', 'น้ำ-ไฟชั่วคราว', 'ไฟชั่วคราว'],
-    piling: ['เสาเข็ม', 'เข็ม'],
-    structure: ['โครงสร้าง', 'ค.ส.ล.', 'คสล', 'ฐานราก'],
-    'roof-structure': ['โครงหลังคา'],
-    roofing: ['มุงหลังคา', 'หลังคา'],
-    masonry: ['ก่ออิฐ', 'ฉาบปูน', 'ก่อฉาบ', 'ปูน'],
-    electrical: ['ไฟฟ้า', 'ช่างไฟ', 'ไฟ'],
-    plumbing: ['ประปา', 'สุขาภิบาล', 'สุขภัณฑ์'],
-    ceiling: ['ฝ้า', 'ฝ้าเพดาน'],
-    tiling: ['กระเบื้อง', 'ปูกระเบื้อง'],
-    painting: ['ทาสี', 'สี'],
-    'doors-windows': ['ประตู', 'หน้าต่าง', 'อลูมิเนียม'],
-    misc: ['เบ็ดเตล็ด'],
-};
 
 /** "ไฟฟ้า, ประปา" / "electrical;plumbing" / "ก่ออิฐ-ฉาบปูน" → trade ids (in TRADES order, no duplicates). */
 export function parseTrades(text: string): TradeId[] {

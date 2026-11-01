@@ -1,6 +1,8 @@
 'use client';
 
 // ─── Wizard step 3: schedule (from the S-Curve), proposed installments, bid deadline, who receives the invitation ───
+import { useTranslations } from 'next-intl';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { useState } from 'react';
 import dayjs, { type Dayjs } from 'dayjs';
 import { App, Button, DatePicker, Input, InputNumber, Segmented, Select, Switch, Table } from 'antd';
@@ -9,8 +11,8 @@ import {
     formatThaiPhone, phoneSchema, type InstallmentDto, type InviteChannel, type ScheduleDto, type VendorListEntryDto,
 } from '@/shared/contract';
 import type { ScheduleTaskResult } from '@/domain/planning/schedule';
-import { isApiError, thaiErrorMessage } from '@/features/cloud/api/errors';
-import { CHANNEL_LABEL, daysBetween, fmtDay, installmentsTotal, installmentsValid, pct, renumber, toDay } from '../format';
+import { isApiError } from '@/features/cloud/api/errors';
+import { channelLabel, daysBetween, fmtDay, installmentsTotal, installmentsValid, pct, renumber, toDay } from '../format';
 import { useCreateVendor, useVendorList } from '../hooks';
 import { Card } from '../ui';
 import { Field } from './StepTerms';
@@ -29,6 +31,7 @@ export function StepSend({ draft, update, tasks, workspaceId, province, onPrevie
     province: string;
     onPreview: () => void;
 }) {
+    const t = useTranslations('subcontracting');
     const schedule = scheduleOf(draft, tasks);
     const planned = scheduleFromPlan(tasks, draft.trade);
     const installments = installmentsOf(draft, schedule);
@@ -41,20 +44,20 @@ export function StepSend({ draft, update, tasks, workspaceId, province, onPrevie
 
     return (
         <>
-            <Card title="กำหนดเวลา" extra={draft.schedule !== null ? (
-                <Button size="small" type="link" onClick={() => update({ schedule: null })}>ใช้ตามแผนงาน</Button>
+            <Card title={t('buyer.wizardSend.schedule')} extra={draft.schedule !== null ? (
+                <Button size="small" type="link" onClick={() => update({ schedule: null })}>{t('buyer.wizardSend.useThePlan')}</Button>
             ) : undefined}>
                 {draft.schedule === null && planned.start === null && (
-                    <p className="text-secondary text-gray-500 mt-0 mb-2">ยังไม่กำหนดในแผนงาน (S-Curve) กรอกวันเองได้</p>
+                    <p className="text-secondary text-gray-500 mt-0 mb-2">{t('buyer.wizardSend.notSetInThePlan')}</p>
                 )}
                 <div className="flex flex-wrap items-center gap-2">
-                    <DatePicker format="DD/MM/YYYY" placeholder="วันเริ่ม" aria-label="วันเริ่ม" value={day(schedule.start)}
+                    <DatePicker format="DD/MM/YYYY" placeholder={t('buyer.wizardSend.startDate')} aria-label={t('buyer.wizardSend.startDate')} value={day(schedule.start)}
                         onChange={(d: Dayjs | null) => setSchedule({ start: d === null ? null : d.format('YYYY-MM-DD') })} />
-                    <span className="text-gray-400">ถึง</span>
-                    <DatePicker format="DD/MM/YYYY" placeholder="วันจบ" aria-label="วันจบ" value={day(schedule.finish)}
+                    <span className="text-gray-400">{t('buyer.wizardSend.to')}</span>
+                    <DatePicker format="DD/MM/YYYY" placeholder={t('buyer.wizardSend.finishDate')} aria-label={t('buyer.wizardSend.finishDate')} value={day(schedule.finish)}
                         status={schedule.start !== null && schedule.finish !== null && schedule.finish < schedule.start ? 'error' : undefined}
                         onChange={(d: Dayjs | null) => setSchedule({ finish: d === null ? null : d.format('YYYY-MM-DD') })} />
-                    <InputNumber<number> className="!w-32" min={0} max={3650} precision={0} suffix="วัน" aria-label="จำนวนวัน"
+                    <InputNumber<number> className="!w-32" min={0} max={3650} precision={0} suffix={t('buyer.wizardSend.days')} aria-label={t('buyer.wizardSend.numberOfDays')}
                         value={schedule.days} onChange={v => setSchedule({ days: v })} />
                 </div>
             </Card>
@@ -62,14 +65,14 @@ export function StepSend({ draft, update, tasks, workspaceId, province, onPrevie
             <InstallmentsCard list={installments} overridden={draft.installments !== null}
                 onChange={list => update({ installments: list })} onReset={() => update({ installments: null })} />
 
-            <Card title="การรับราคา">
-                <Field label="ปิดรับราคา">
-                    <DatePicker showTime={{ format: 'HH:mm' }} format="DD/MM/YYYY HH:mm" allowClear={false} aria-label="ปิดรับราคา"
+            <Card title={t('buyer.wizardSend.receivingBids')}>
+                <Field label={t('buyer.wizardSend.bidsClose')}>
+                    <DatePicker showTime={{ format: 'HH:mm' }} format="DD/MM/YYYY HH:mm" allowClear={false} aria-label={t('buyer.wizardSend.bidsClose')}
                         value={dayjs(draft.bidDeadline)} disabledDate={d => d.isBefore(dayjs(), 'day')}
                         onChange={(d: Dayjs | null) => { if (d !== null) update({ bidDeadline: d.second(0).millisecond(0).toISOString() }); }} />
                 </Field>
-                <Field label="ราคายืนถึง">
-                    <DatePicker format="DD/MM/YYYY" allowClear={false} aria-label="ราคายืนถึง" value={dayjs(draft.priceValidUntil)}
+                <Field label={t('buyer.wizardSend.priceValidUntil')}>
+                    <DatePicker format="DD/MM/YYYY" allowClear={false} aria-label={t('buyer.wizardSend.priceValidUntil')} value={dayjs(draft.priceValidUntil)}
                         disabledDate={d => d.isBefore(dayjs(), 'day')}
                         onChange={(d: Dayjs | null) => { if (d !== null) update({ priceValidUntil: toDay(d.toDate()) }); }} />
                 </Field>
@@ -86,31 +89,32 @@ function InstallmentsCard({ list, overridden, onChange, onReset }: {
     onChange: (list: InstallmentDto[]) => void;
     onReset: () => void;
 }) {
+    const t = useTranslations('subcontracting');
     const total = installmentsTotal(list);
     const ok = installmentsValid(list);
     const set = (i: number, patch: Partial<InstallmentDto>) => onChange(list.map((x, k) => (k === i ? { ...x, ...patch } : x)));
     return (
-        <Card title="งวดจ่ายที่เสนอ" extra={overridden ? <Button size="small" type="link" onClick={onReset}>ใช้ค่าเริ่มต้น</Button> : undefined}>
+        <Card title={t('buyer.wizardSend.proposedPaymentStages')} extra={overridden ? <Button size="small" type="link" onClick={onReset}>{t('buyer.wizardSend.useDefaults')}</Button> : undefined}>
             <div className="flex flex-col gap-2">
                 {list.map((it, i) => (
                     <div key={it.no} className="flex flex-wrap md:flex-nowrap items-center gap-2">
-                        <span className="w-14 text-gray-600">งวด {it.no}</span>
-                        <InputNumber<number> className="!w-28" min={0} max={100} step={5} suffix="%" aria-label={`งวด ${String(it.no)} ร้อยละ`}
+                        <span className="w-14 text-gray-600">{t('buyer.wizardSend.stage')} {it.no}</span>
+                        <InputNumber<number> className="!w-28" min={0} max={100} step={5} suffix="%" aria-label={t('buyer.wizardSend.stagePercent', { no: it.no })}
                             value={Math.round(it.pct * 10000) / 100} onChange={v => set(i, { pct: (v ?? 0) / 100 })} />
-                        <Input className="md:flex-1 min-w-[200px]" maxLength={300} placeholder="เงื่อนไขส่งมอบ เช่น เทฐานรากครบ"
+                        <Input className="md:flex-1 min-w-[200px]" maxLength={300} placeholder={t('buyer.wizardSend.deliveryConditionEGAll')}
                             status={it.condition.trim() === '' ? 'error' : undefined} value={it.condition}
                             onChange={e => set(i, { condition: e.target.value })} />
-                        <Button type="text" aria-label="ลบงวด" icon={<DeleteOutlined />} disabled={list.length <= 1}
+                        <Button type="text" aria-label={t('buyer.wizardSend.removeStage')} icon={<DeleteOutlined />} disabled={list.length <= 1}
                             onClick={() => onChange(renumber(list.filter((_x, k) => k !== i)))} />
                     </div>
                 ))}
                 <div className="flex items-center gap-3">
                     <Button size="small" icon={<PlusOutlined />} disabled={list.length >= 60}
                         onClick={() => onChange(renumber([...list, { no: list.length + 1, pct: Math.max(0, 1 - total), condition: '' }]))}>
-                        เพิ่มงวด
+                        {t('buyer.wizardSend.addStage')}
                     </Button>
                     <span className={`text-secondary tabular-nums ${ok ? 'text-gray-500' : 'text-red-600'}`}>
-                        รวม {pct(total)}{Math.abs(total - 1) > 0.0001 ? ' ต้องรวมได้ 100%' : ''}
+                        {t('buyer.wizardSend.total')} {pct(total)}{Math.abs(total - 1) > 0.0001 ? t('buyer.wizardSend.mustTotal100') : ''}
                     </span>
                 </div>
             </div>
@@ -125,6 +129,8 @@ function InviteesCard({ draft, update, workspaceId, province, onPreview }: {
     province: string;
     onPreview: () => void;
 }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message } = App.useApp();
     const [allTrades, setAllTrades] = useState(false);
     const vendors = useVendorList(workspaceId, allTrades ? { hidden: false } : { trade: draft.trade, hidden: false });
@@ -139,52 +145,52 @@ function InviteesCard({ draft, update, workspaceId, province, onPreview }: {
 
     const columns = [
         {
-            title: 'ทีมช่าง', key: 'name',
+            title: t('buyer.wizardSend.crews'), key: 'name',
             render: (_: unknown, v: VendorListEntryDto) => (
                 <div className="min-w-0">
                     <div className="font-medium text-gray-900">
                         {v.displayName}
-                        {v.hasAccount && <CheckOutlined className="!ml-1.5 text-green-600" aria-label="มีบัญชีแล้ว" />}
+                        {v.hasAccount && <CheckOutlined className="!ml-1.5 text-green-600" aria-label={t('buyer.wizardSend.hasAnAccount')} />}
                     </div>
                     <div className="text-caption text-gray-500">{formatThaiPhone(v.phone)}{v.province !== '' ? ` · ${v.province}` : ''}</div>
                 </div>
             ),
         },
         {
-            title: 'งานกับเราล่าสุด', key: 'last', width: 140, responsive: ['md' as const],
+            title: t('buyer.wizardSend.latestWorkWithUs'), key: 'last', width: 140, responsive: ['md' as const],
             render: (_: unknown, v: VendorListEntryDto) => (v.lastEngagedAt === null
                 ? <span className="text-gray-400">–</span>
                 : <span className="tabular-nums">{fmtDay(toDay(new Date(v.lastEngagedAt)))}</span>),
         },
         {
-            title: 'คะแนนจากเรา', key: 'rating', width: 110, align: 'right' as const, responsive: ['md' as const],
+            title: t('buyer.wizardSend.ourRating'), key: 'rating', width: 110, align: 'right' as const, responsive: ['md' as const],
             render: (_: unknown, v: VendorListEntryDto) => (v.ratingFromUs === null
                 ? <span className="text-gray-400">–</span>
                 : <span className="tabular-nums">{v.ratingFromUs.toFixed(1)}</span>),
         },
         {
-            title: 'ช่องทางส่ง', key: 'channel', width: 190,
+            title: t('buyer.wizardSend.sendChannel'), key: 'channel', width: 190,
             render: (_: unknown, v: VendorListEntryDto) => {
                 const inv = chosen.get(v.id);
                 if (inv === undefined) return null;
                 const options = (['link', 'sms', 'line'] as const)
                     .filter(c => c !== 'line' || v.lineId !== '')
-                    .map(c => ({ value: c, label: CHANNEL_LABEL[c] }));
+                    .map(c => ({ value: c, label: channelLabel(c) }));
                 return <Select<InviteChannel> size="small" className="w-full" value={inv.channel} options={options}
-                    aria-label={`ช่องทางส่งถึง ${v.displayName}`} onChange={c => setChannel(v.id, c)} />;
+                    aria-label={t('buyer.wizardSend.sendChannelFor', { displayName: v.displayName })} onChange={c => setChannel(v.id, c)} />;
             },
         },
     ];
 
     return (
-        <Card title="ผู้รับคำเชิญ" extra={<Button size="small" icon={<EyeOutlined />} onClick={onPreview}>ดูหน้าที่ผู้รับเห็น</Button>}>
+        <Card title={t('buyer.wizardSend.invitees')} extra={<Button size="small" icon={<EyeOutlined />} onClick={onPreview}>{t('buyer.wizardSend.previewWhatRecipientsSee')}</Button>}>
             <div className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-center gap-3">
                     <Segmented<DirectOrRfq> value={draft.sourcingMode} onChange={setMode}
-                        options={[{ value: 'rfq', label: `ขอราคาเทียบ (2–${String(MAX_RFQ)} ราย)` }, { value: 'direct', label: 'จ้างตรง (1 ราย)' }]} />
+                        options={[{ value: 'rfq', label: t('buyer.wizardSend.requestComparisonQuotes2Crews', { MAX_RFQ }) }, { value: 'direct', label: t('buyer.wizardSend.directHire1Crew') }]} />
                     <label className="flex items-center gap-2 text-secondary text-gray-600 cursor-pointer md:ml-auto">
                         <Switch size="small" checked={allTrades} onChange={setAllTrades} />
-                        แสดงทีมช่างทุกประเภทงาน
+                        {t('buyer.wizardSend.showCrewsOfEveryTrade')}
                     </label>
                 </div>
                 <Table<VendorListEntryDto> rowKey="id" size="small" pagination={false} columns={columns} dataSource={list}
@@ -198,13 +204,13 @@ function InviteesCard({ draft, update, workspaceId, province, onPreview }: {
                     }}
                     locale={{
                         emptyText: vendors.isError
-                            ? thaiErrorMessage(vendors.error)
-                            : allTrades ? 'ทะเบียนทีมช่างยังว่าง เพิ่มรายใหม่ด้านล่าง' : 'ยังไม่มีทีมช่างประเภทงานนี้ในทะเบียน เพิ่มรายใหม่ด้านล่าง',
+                            ? toText(vendors.error)
+                            : allTrades ? t('buyer.wizardSend.theCrewRegisterIsEmpty') : t('buyer.wizardSend.noCrewsOfThisTrade'),
                     }} />
                 <QuickAddVendor workspaceId={workspaceId} draft={draft} province={province}
                     onAdded={entry => {
                         update({ invitees: toggleInvitee(draft.invitees, entry.id, true, draft.sourcingMode) });
-                        void message.success(`เพิ่ม ${entry.displayName} แล้ว`);
+                        void message.success(t('buyer.wizardSend.added', { displayName: entry.displayName }));
                     }} />
                 {draft.invitees.length > 0 && problem !== null && <div className="text-secondary text-amber-600">{problem}</div>}
             </div>
@@ -219,6 +225,8 @@ function QuickAddVendor({ workspaceId, draft, province, onAdded }: {
     province: string;
     onAdded: (entry: VendorListEntryDto) => void;
 }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message } = App.useApp();
     const create = useCreateVendor(workspaceId);
     const [name, setName] = useState('');
@@ -238,21 +246,21 @@ function QuickAddVendor({ workspaceId, draft, province, onAdded }: {
                 onAdded(entry);
             },
             onError: (e) => {
-                void message.error(isApiError(e) && e.status === 409 ? 'เบอร์นี้อยู่ในทะเบียนแล้ว เลือกจากรายการด้านบน' : thaiErrorMessage(e));
+                void message.error(isApiError(e) && e.status === 409 ? t('buyer.wizardSend.thisPhoneNumberIsAlready') : toText(e));
             },
         });
     };
 
     return (
         <div className="flex flex-wrap items-start gap-2">
-            <Input className="!w-56" placeholder="ชื่อทีมช่าง" maxLength={120} value={name} aria-label="ชื่อทีมช่างใหม่"
+            <Input className="!w-56" placeholder={t('buyer.wizardSend.crewName')} maxLength={120} value={name} aria-label={t('buyer.wizardSend.newCrewName')}
                 status={tried && !nameOk ? 'error' : undefined} onChange={e => setName(e.target.value)} />
             <div className="flex flex-col">
-                <Input className="!w-44" placeholder="เบอร์โทร" inputMode="tel" maxLength={20} value={phone} aria-label="เบอร์โทรทีมช่างใหม่"
+                <Input className="!w-44" placeholder={t('buyer.wizardSend.phone')} inputMode="tel" maxLength={20} value={phone} aria-label={t('buyer.wizardSend.newCrewPhoneNumber')}
                     status={tried && !phoneOk ? 'error' : undefined} onChange={e => setPhone(e.target.value)} onPressEnter={add} />
-                {tried && !phoneOk && <span className="text-caption text-red-600 mt-0.5">เบอร์โทรไม่ถูกต้อง</span>}
+                {tried && !phoneOk && <span className="text-caption text-red-600 mt-0.5">{t('buyer.wizardSend.invalidPhoneNumber')}</span>}
             </div>
-            <Button icon={<PlusOutlined />} loading={create.isPending} onClick={add}>เพิ่มรายใหม่</Button>
+            <Button icon={<PlusOutlined />} loading={create.isPending} onClick={add}>{t('buyer.wizardSend.addNew')}</Button>
         </div>
     );
 }

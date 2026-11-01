@@ -1,16 +1,48 @@
-// ─── Pure helpers of the buyer screens: Thai number/date formatting, labels, defaults of a new package ───
+// ─── Pure helpers of the buyer screens: number/date formatting, labels, defaults of a new package ───
+// Texts come from the `subcontracting` messages in the UI locale (the cookie unless a translator is passed in).
 import type {
     DeclineReason, InstallmentDto, InvitationStatus, InviteChannel, PackageStatus, PricingMode, Provider, SourcingMode,
-    SupplyMode,
+    SupplyMode, TradeId,
 } from '@/shared/contract';
+import type { Locale } from '@/i18n/config';
+import { scLocale, scText, type ScT } from './text';
 
 // ── numbers ──
 
-const MONEY = new Intl.NumberFormat('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const MONEY0 = new Intl.NumberFormat('th-TH', { maximumFractionDigits: 0 });
-const QTY = new Intl.NumberFormat('th-TH', { maximumFractionDigits: 2 });
+const NUMBER_LOCALE: Record<Locale, string> = { th: 'th-TH', en: 'en-US' };
+const DATE_LOCALE: Record<Locale, string> = { th: 'th-TH-u-ca-gregory', en: 'en-GB' };
+
+const formatters = new Map<string, Intl.NumberFormat | Intl.DateTimeFormat>();
+function numberFormat(key: string, options: Intl.NumberFormatOptions): Intl.NumberFormat {
+    const locale = scLocale();
+    const id = `${key}:${locale}`;
+    let f = formatters.get(id) as Intl.NumberFormat | undefined;
+    if (f === undefined) {
+        f = new Intl.NumberFormat(NUMBER_LOCALE[locale], options);
+        formatters.set(id, f);
+    }
+    return f;
+}
+function dateFormat(key: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+    const locale = scLocale();
+    const id = `${key}:${locale}`;
+    let f = formatters.get(id) as Intl.DateTimeFormat | undefined;
+    if (f === undefined) {
+        f = new Intl.DateTimeFormat(DATE_LOCALE[locale], options);
+        formatters.set(id, f);
+    }
+    return f;
+}
+const MONEY = { format: (n: number) => numberFormat('money', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) };
+const MONEY0 = { format: (n: number) => numberFormat('money0', { maximumFractionDigits: 0 }).format(n) };
+const QTY = { format: (n: number) => numberFormat('qty', { maximumFractionDigits: 2 }).format(n) };
 
 const finite = (n: number) => (Number.isFinite(n) ? n : 0);
+
+/** A count or amount with digit grouping in the UI locale (import limits, ratings). */
+export function num(n: number, maxFractionDigits = 0): string {
+    return numberFormat(`num${String(maxFractionDigits)}`, { maximumFractionDigits: maxFractionDigits }).format(finite(n));
+}
 
 /** 125000 → "125,000.00" (unit prices, line totals). */
 export function money(n: number): string {
@@ -36,10 +68,12 @@ export function pct(fraction: number | null, signed = false): string {
     return v > 0 ? `+${s}` : `-${s}`;
 }
 
-// ── dates ── (Thai months with the Christian-era year, like the rest of the app)
+// ── dates ── (month names in the UI language, Christian-era year, like the rest of the app)
 
-const DATE = new Intl.DateTimeFormat('th-TH-u-ca-gregory', { day: 'numeric', month: 'short', year: '2-digit' });
-const DATE_TIME = new Intl.DateTimeFormat('th-TH-u-ca-gregory', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+const DATE = { format: (d: Date) => dateFormat('date', { day: 'numeric', month: 'short', year: '2-digit' }).format(d) };
+const DATE_TIME = {
+    format: (d: Date) => dateFormat('dateTime', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' }).format(d),
+};
 
 /** 'YYYY-MM-DD' (local calendar day) → Date at local midnight, or null. */
 export function parseDay(day: string | null | undefined): Date | null {
@@ -100,34 +134,34 @@ export function defaultPriceValidUntil(now: Date): string {
     return toDay(d);
 }
 
-/** "เหลือ 2 วัน 3 ชม." / "เหลือ 45 นาที" / "ปิดรับแล้ว". */
-export function countdown(deadlineIso: string, now: Date): { text: string; passed: boolean; soon: boolean } {
+/** "2 days 3 h left" / "45 min left" / "Closed" (Thai: "เหลือ 2 วัน 3 ชม." / "เหลือ 45 นาที" / "ปิดรับแล้ว"). */
+export function countdown(deadlineIso: string, now: Date, t: ScT = scText()): { text: string; passed: boolean; soon: boolean } {
     const ms = new Date(deadlineIso).getTime() - now.getTime();
     if (!Number.isFinite(ms)) return { text: '', passed: false, soon: false };
-    if (ms <= 0) return { text: 'ปิดรับแล้ว', passed: true, soon: false };
+    if (ms <= 0) return { text: t('buyer.format.closed'), passed: true, soon: false };
     const mins = Math.floor(ms / 60_000);
     const days = Math.floor(mins / 1440);
     const hours = Math.floor((mins % 1440) / 60);
     const soon = ms < 86_400_000;
-    if (days > 0) return { text: hours > 0 ? `เหลือ ${String(days)} วัน ${String(hours)} ชม.` : `เหลือ ${String(days)} วัน`, passed: false, soon };
-    if (hours > 0) return { text: `เหลือ ${String(hours)} ชม. ${String(mins % 60)} นาที`, passed: false, soon };
-    return { text: `เหลือ ${String(Math.max(1, mins))} นาที`, passed: false, soon };
+    if (days > 0) return { text: hours > 0 ? t('buyer.format.daysHoursLeft', { days, hours }) : t('buyer.format.daysLeft', { days }), passed: false, soon };
+    if (hours > 0) return { text: t('buyer.format.hoursMinutesLeft', { hours, minutes: mins % 60 }), passed: false, soon };
+    return { text: t('buyer.format.minutesLeft', { minutes: Math.max(1, mins) }), passed: false, soon };
 }
 
 // ── installments (งวดจ่าย) ──
 
 /** Plan §4.3: 2 × 50 % for short jobs (≤ 14 days, or unknown length treated as short), else 30/40/30. */
-export function defaultInstallments(days: number | null): InstallmentDto[] {
+export function defaultInstallments(days: number | null, t: ScT = scText()): InstallmentDto[] {
     if (days !== null && days > 14) {
         return [
-            { no: 1, pct: 0.3, condition: 'ทำงานได้ประมาณ 1 ใน 3' },
-            { no: 2, pct: 0.4, condition: 'ทำงานได้ประมาณ 2 ใน 3' },
-            { no: 3, pct: 0.3, condition: 'งานเสร็จ ตรวจรับครบ' },
+            { no: 1, pct: 0.3, condition: t('buyer.format.stageOneThird') },
+            { no: 2, pct: 0.4, condition: t('buyer.format.stageTwoThirds') },
+            { no: 3, pct: 0.3, condition: t('buyer.format.stageDone') },
         ];
     }
     return [
-        { no: 1, pct: 0.5, condition: 'ทำงานได้ครึ่งหนึ่ง' },
-        { no: 2, pct: 0.5, condition: 'งานเสร็จ ตรวจรับครบ' },
+        { no: 1, pct: 0.5, condition: t('buyer.format.stageHalf') },
+        { no: 2, pct: 0.5, condition: t('buyer.format.stageDone') },
     ];
 }
 
@@ -151,9 +185,9 @@ export function renumber(list: readonly InstallmentDto[]): InstallmentDto[] {
 // ── invitations sent by hand ──
 
 /** Text sent with an invitation link (LINE / SMS / chat). */
-export function invitationMessage(p: { buyerName: string; title: string; deadline: string; url: string }): string {
+export function invitationMessage(p: { buyerName: string; title: string; deadline: string; url: string }, t: ScT = scText()): string {
     const from = p.buyerName.trim() === '' ? '' : `${p.buyerName.trim()} `;
-    return `${from}ขอเชิญเสนอราคางาน "${p.title}" ปิดรับ ${fmtDateTime(p.deadline)}\nดูรายละเอียดและเสนอราคา: ${p.url}`;
+    return t('buyer.format.invitationMessage', { from, title: p.title, deadline: fmtDateTime(p.deadline), url: p.url });
 }
 
 /** LINE share link: opens LINE with the text ready to send to a chat the user picks. */
@@ -161,17 +195,9 @@ export function lineShareUrl(text: string): string {
     return `https://line.me/R/msg/text/?${encodeURIComponent(text)}`;
 }
 
-// ── labels ──
+// ── labels ── (functions, because the text follows the UI language at the moment of the call)
 
-export const PACKAGE_STATUS_LABEL: Record<PackageStatus, string> = {
-    draft: 'ร่าง',
-    open: 'รอราคา',
-    reviewing: 'กำลังเทียบราคา',
-    awarded: 'ตกลงจ้างแล้ว',
-    closed: 'ปิดแล้ว',
-    cancelled: 'ยกเลิก',
-    expired: 'เลยกำหนดรับราคา',
-};
+export const packageStatusLabel = (status: PackageStatus, t: ScT = scText()): string => t(`buyer.labels.packageStatus.${status}`);
 
 /** Tag colour by state (colour means state: grey not yet, amber waiting, green done, red problem). */
 export const PACKAGE_STATUS_COLOR: Record<PackageStatus, string> = {
@@ -187,16 +213,7 @@ export const PACKAGE_STATUS_COLOR: Record<PackageStatus, string> = {
 /** Packages that still hold their BOQ rows (a row can be in one live package only). */
 export const LIVE_PACKAGE_STATUSES: readonly PackageStatus[] = ['draft', 'open', 'reviewing', 'awarded', 'expired'];
 
-export const INVITATION_STATUS_LABEL: Record<InvitationStatus, string> = {
-    sent: 'ยังไม่เปิด',
-    viewed: 'เปิดดูแล้ว',
-    declined: 'ปฏิเสธ',
-    submitted: 'ส่งราคาแล้ว',
-    withdrawn: 'ถอนคำเชิญแล้ว',
-    won: 'ได้งาน',
-    lost: 'ไม่ได้งาน',
-    closed: 'ปิดแล้ว',
-};
+export const invitationStatusLabel = (status: InvitationStatus, t: ScT = scText()): string => t(`buyer.labels.invitationStatus.${status}`);
 
 export const INVITATION_STATUS_COLOR: Record<InvitationStatus, string> = {
     sent: 'default',
@@ -209,47 +226,21 @@ export const INVITATION_STATUS_COLOR: Record<InvitationStatus, string> = {
     closed: 'default',
 };
 
-export const DECLINE_REASON_LABEL: Record<DeclineReason, string> = {
-    busy: 'คิวงานเต็ม',
-    too_far: 'ไกลเกินไป',
-    not_my_trade: 'ไม่ใช่งานที่รับ',
-    price_too_low: 'ราคาประเมินต่ำไป',
-    other: 'อื่น ๆ',
-};
+export const declineReasonLabel = (reason: DeclineReason, t: ScT = scText()): string => t(`buyer.labels.declineReason.${reason}`);
 
-export const CHANNEL_LABEL: Record<InviteChannel, string> = {
-    link: 'คัดลอกลิงก์ส่งเอง',
-    sms: 'SMS',
-    line: 'LINE',
-};
+export const channelLabel = (channel: InviteChannel, t: ScT = scText()): string => t(`buyer.labels.channel.${channel}`);
 
-export const SUPPLY_MODE_LABEL: Record<SupplyMode, string> = {
-    labour_only: 'ค่าแรงอย่างเดียว',
-    with_materials: 'รวมวัสดุทั้งหมด',
-    per_line: 'กำหนดต่อแถว',
-};
+export const supplyModeLabel = (mode: SupplyMode, t: ScT = scText()): string => t(`buyer.labels.supplyMode.${mode}`);
 
-export const PRICING_MODE_LABEL: Record<PricingMode, string> = {
-    unit: 'ต่อหน่วยรายแถว',
-    lump: 'เหมารวมทั้งแพ็กเกจ',
-    vendor_choice: 'ให้ผู้รับเลือกเอง',
-};
+export const pricingModeLabel = (mode: PricingMode, t: ScT = scText()): string => t(`buyer.labels.pricingMode.${mode}`);
 
-export const SOURCING_MODE_LABEL: Record<SourcingMode, string> = {
-    direct: 'จ้างตรง',
-    rfq: 'ขอราคาเทียบ',
-    open: 'ประกาศเปิดรับ',
-};
+export const sourcingModeLabel = (mode: SourcingMode, t: ScT = scText()): string => t(`buyer.labels.sourcingMode.${mode}`);
 
-export const PROVIDER_LABEL: Record<Provider, string> = {
-    buyer: 'เราจัดหา',
-    vendor: 'ผู้รับจัดหา',
-    none: 'ไม่มี',
-};
+export const providerLabel = (provider: Provider, t: ScT = scText()): string => t(`buyer.labels.provider.${provider}`);
 
-export const PROVISION_LABEL = {
-    water: 'น้ำใช้',
-    power: 'ไฟฟ้า',
-    lodging: 'ที่พักคนงาน',
-    scaffolding: 'นั่งร้าน',
-} as const;
+export const PROVISIONS = ['water', 'power', 'lodging', 'scaffolding'] as const;
+
+export const provisionLabel = (provision: (typeof PROVISIONS)[number], t: ScT = scText()): string => t(`buyer.labels.provision.${provision}`);
+
+/** The name of a trade in the UI language (the domain keeps the Thai name). */
+export const tradeName = (trade: string, t: ScT = scText()): string => t(`buyer.labels.trade.${trade as TradeId}`);

@@ -4,6 +4,7 @@
 import type { AwardRequest, LevelingDto } from '@/shared/contract';
 import { round2 } from '@/domain/subcontracting/snapshot';
 import { isApiError } from '@/features/cloud/api/errors';
+import { scText, type ScT } from '../text';
 
 export type Bidder = LevelingDto['bidders'][number];
 export type LevelingLine = LevelingDto['lines'][number];
@@ -29,7 +30,7 @@ export function bidderOrder(bidders: readonly Bidder[], order: BidderOrder): num
 }
 
 /** Shown on a bid made before the latest addendum: the server refuses to award it (422 bid_outdated). */
-export const OUTDATED_NOTE = 'ราคานี้ทำก่อนแก้ไขแพ็กเกจ รอทีมช่างส่งราคาใหม่';
+export const outdatedNote = (t: ScT = scText()): string => t('buyer.model.outdatedNote');
 
 /** The bid can be awarded (not made before the latest addendum). */
 export function isAwardable(bidder: Pick<Bidder, 'outdated'>): boolean {
@@ -50,16 +51,16 @@ export function bidderDiffPct(bidder: Pick<Bidder, 'outdated' | 'diffPct'>): num
 }
 
 /** What to tell the buyer when POST /award fails, and whether the table must be fetched again. */
-export function awardErrorInfo(e: unknown): { text: string; refetch: boolean } | null {
+export function awardErrorInfo(e: unknown, t: ScT = scText()): { text: string; refetch: boolean } | null {
     if (!isApiError(e)) return null;
     const details = e.details as { reason?: unknown } | undefined;
     const reason = typeof details?.reason === 'string' ? details.reason : null;
     if (e.status === 409 && (reason === 'package_not_open' || reason === 'bid_changed')) {
-        return { text: 'ข้อมูลเปลี่ยนแล้ว ลองอีกครั้ง', refetch: true };
+        return { text: t('buyer.model.dataChanged'), refetch: true };
     }
-    if (e.status === 422 && reason === 'bid_outdated') return { text: OUTDATED_NOTE, refetch: true };
+    if (e.status === 422 && reason === 'bid_outdated') return { text: outdatedNote(t), refetch: true };
     if (e.status === 422 && reason === 'negative_total') {
-        return { text: 'ยอดที่จะจ้างติดลบ (ส่วนลดมากกว่าราคาแถวที่เลือก) เลือกแถวเพิ่มหรือเลือกรายอื่น', refetch: false };
+        return { text: t('buyer.model.negativeTotal'), refetch: false };
     }
     return null;
 }
@@ -214,8 +215,8 @@ export function installmentsText(list: readonly { pct: number }[]): string {
     return `${list.map(i => String(Math.round(i.pct * 1000) / 10)).join('/')}%`;
 }
 
-/** Safe file name: `เทียบราคา_<title>.xlsx`. */
-export function levelingFileName(title: string): string {
+/** Safe file name: `เทียบราคา_<title>.xlsx` (Thai) / `Price-comparison_<title>.xlsx`. */
+export function levelingFileName(title: string, t: ScT = scText()): string {
     const clean = title.replace(/[\\/:*?"<>|\r\n\t]+/g, '_').trim().slice(0, 80);
-    return `เทียบราคา_${clean === '' ? 'แพ็กเกจ' : clean}.xlsx`;
+    return t('buyer.model.fileName', { name: clean === '' ? t('buyer.model.defaultPackageName') : clean });
 }

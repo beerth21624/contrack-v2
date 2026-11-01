@@ -1,10 +1,12 @@
 'use client';
 
 // ─── คำถาม-คำตอบ: vendors ask, the buyer answers once for everyone (the asker is not named to the others) ───
+import { useTranslations } from 'next-intl';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { useState } from 'react';
 import { App, Button, Empty, Input } from 'antd';
 import type { QuestionDto } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+
 import { useAnswerQuestion } from '../hooks';
 import { fmtDateTime } from '../format';
 import { sortQuestions } from './helpers';
@@ -16,12 +18,14 @@ export function QaTab({ packageId, questions, loading, error, canAnswer }: {
     error: string | null;
     canAnswer: boolean;
 }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message } = App.useApp();
     const answer = useAnswerQuestion(packageId);
     const [drafts, setDrafts] = useState<Record<string, string>>({});
 
     if (!loading && questions.length === 0) {
-        return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={error ?? 'ยังไม่มีคำถามจากผู้รับคำเชิญ'} />;
+        return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={error ?? t('buyer.qaTab.noQuestionsFromInviteesYet')} />;
     }
 
     const submit = async (q: QuestionDto) => {
@@ -30,9 +34,9 @@ export function QaTab({ packageId, questions, loading, error, canAnswer }: {
         try {
             await answer.mutateAsync({ questionId: q.id, body: { answer: text } });
             setDrafts(d => Object.fromEntries(Object.entries(d).filter(([id]) => id !== q.id)));
-            void message.success('ตอบแล้ว ทุกรายเห็นคำตอบนี้');
+            void message.success(t('buyer.qaTab.answeredEveryInviteeSeesThis'));
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         }
     };
 
@@ -49,22 +53,22 @@ export function QaTab({ packageId, questions, loading, error, canAnswer }: {
                     {q.answer !== null ? (
                         <div className="mt-2 pl-3 border-l-2 border-gray-200 text-gray-700 whitespace-pre-line">
                             {q.answer}
-                            {q.answeredAt !== null && <div className="text-caption text-gray-500">ตอบเมื่อ {fmtDateTime(q.answeredAt)}</div>}
+                            {q.answeredAt !== null && <div className="text-caption text-gray-500">{t('buyer.qaTab.answered')} {fmtDateTime(q.answeredAt)}</div>}
                         </div>
                     ) : canAnswer ? (
                         <div className="mt-2 flex flex-col gap-2">
-                            <Input.TextArea rows={2} maxLength={2000} placeholder="คำตอบ (ทุกรายเห็น ไม่ระบุชื่อผู้ถาม)"
+                            <Input.TextArea rows={2} maxLength={2000} placeholder={t('buyer.qaTab.answerEveryoneSeesItThe')}
                                 value={drafts[q.id] ?? ''} onChange={e => setDrafts(d => ({ ...d, [q.id]: e.target.value }))} />
                             <div className="flex justify-end">
                                 <Button size="small" type="primary" disabled={(drafts[q.id] ?? '').trim() === ''}
                                     loading={answer.isPending && answer.variables.questionId === q.id}
                                     onClick={() => { void submit(q); }}>
-                                    ตอบ
+                                    {t('buyer.qaTab.answer')}
                                 </Button>
                             </div>
                         </div>
                     ) : (
-                        <div className="mt-2 text-secondary text-gray-500">ยังไม่ได้ตอบ</div>
+                        <div className="mt-2 text-secondary text-gray-500">{t('buyer.qaTab.notAnsweredYet')}</div>
                     )}
                 </div>
             ))}

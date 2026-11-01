@@ -1,15 +1,16 @@
 'use client';
 
 // ─── Shared pieces of the buyer screens: page frame, header card, empty states, status tags, copy button ───
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
 import { App, Button, Empty, Tag, Tooltip } from 'antd';
 import { CheckOutlined, CopyOutlined } from '@ant-design/icons';
 import type { InvitationStatus, PackageStatus, TradeId } from '@/shared/contract';
-import { TRADES, tradeLabel } from '@/domain/subcontracting/trades';
+import { TRADES } from '@/domain/subcontracting/trades';
 import { ModuleGate } from '@/features/modules/ModuleGate';
 import {
-    INVITATION_STATUS_COLOR, INVITATION_STATUS_LABEL, PACKAGE_STATUS_COLOR, PACKAGE_STATUS_LABEL,
+    INVITATION_STATUS_COLOR, invitationStatusLabel, PACKAGE_STATUS_COLOR, packageStatusLabel, tradeName,
 } from './format';
 
 /** Every buyer page: signed in + module on, inside the 1200 px frame. */
@@ -64,31 +65,32 @@ export function Card({ title, extra, children, className }: {
 
 /** No cloud project open: the module works on a project of a workspace. */
 export function NoProjectState() {
+    const tx = useTranslations('subcontracting');
     return (
         <Card>
             <Empty
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
                 description={(
                     <div className="flex flex-col gap-1">
-                        <span className="text-gray-900">ยังไม่ได้เปิดโครงการ</span>
-                        <span className="text-secondary text-gray-500">จ้างช่วงทำงานจาก BOQ ของโครงการบนคลาวด์ เปิดโครงการก่อน</span>
+                        <span className="text-gray-900">{tx('buyer.common.noProjectIsOpen')}</span>
+                        <span className="text-secondary text-gray-500">{tx('buyer.common.subcontractingWorksFromTheBoq')}</span>
                     </div>
                 )}
             >
-                <Link href="/projects"><Button type="primary">ไปที่โครงการทั้งหมด</Button></Link>
+                <Link href="/projects"><Button type="primary">{tx('buyer.common.goToAllProjects')}</Button></Link>
             </Empty>
         </Card>
     );
 }
 
 export function PackageStatusTag({ status }: { status: PackageStatus }) {
-    return <Tag color={PACKAGE_STATUS_COLOR[status]} className="!m-0">{PACKAGE_STATUS_LABEL[status]}</Tag>;
+    return <Tag color={PACKAGE_STATUS_COLOR[status]} className="!m-0">{packageStatusLabel(status)}</Tag>;
 }
 
 export function InvitationStatusTag({ status, extra }: { status: InvitationStatus; extra?: string }) {
     return (
         <Tag color={INVITATION_STATUS_COLOR[status]} className="!m-0">
-            {INVITATION_STATUS_LABEL[status]}{extra !== undefined && extra !== '' ? ` ${extra}` : ''}
+            {invitationStatusLabel(status)}{extra !== undefined && extra !== '' ? ` ${extra}` : ''}
         </Tag>
     );
 }
@@ -97,20 +99,22 @@ export function TradeChips({ trades }: { trades: readonly TradeId[] }) {
     if (trades.length === 0) return <span className="text-gray-400">–</span>;
     return (
         <span className="flex flex-wrap gap-1">
-            {trades.map(t => <Tag key={t} className="!m-0" variant="filled">{tradeLabel(t)}</Tag>)}
+            {trades.map(t => <Tag key={t} className="!m-0" variant="filled">{tradeName(t)}</Tag>)}
         </span>
     );
 }
 
-export const TRADE_OPTIONS = TRADES.map(t => ({ value: t.id, label: t.label }));
+/** Select options for the trades, named in the UI language. */
+export const tradeOptions = () => TRADES.map(trade => ({ value: trade.id, label: tradeName(trade.id) }));
 
 /** Copy a text to the clipboard; shows ✓ for a moment after a successful copy. */
-export function CopyButton({ text, label = 'คัดลอกลิงก์', size = 'small', type }: {
+export function CopyButton({ text, label, size = 'small', type }: {
     text: string;
     label?: string;
     size?: 'small' | 'middle';
     type?: 'default' | 'link' | 'text';
 }) {
+    const tx = useTranslations('subcontracting');
     const { message } = App.useApp();
     const [copied, setCopied] = useState(false);
     const copy = async () => {
@@ -119,13 +123,13 @@ export function CopyButton({ text, label = 'คัดลอกลิงก์', 
             setCopied(true);
             window.setTimeout(() => setCopied(false), 1500);
         } catch {
-            void message.error('คัดลอกไม่สำเร็จ เลือกข้อความแล้วคัดลอกเอง');
+            void message.error(tx('buyer.common.couldNotCopySelectThe'));
         }
     };
     return (
-        <Tooltip title={copied ? 'คัดลอกแล้ว' : undefined} open={copied ? true : undefined}>
+        <Tooltip title={copied ? tx('buyer.common.copied') : undefined} open={copied ? true : undefined}>
             <Button size={size} type={type} icon={copied ? <CheckOutlined /> : <CopyOutlined />} onClick={() => { void copy(); }}>
-                {label}
+                {label ?? tx('buyer.common.copyLink')}
             </Button>
         </Tooltip>
     );

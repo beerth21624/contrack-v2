@@ -1,5 +1,6 @@
 // ─── Pure view model of the overview page: trade rows in a useful order, status meta ───
 import type { ProcurementOverviewDto } from '@/shared/contract';
+import { scText, type ScT } from './text';
 
 export type TradeRowStatus = ProcurementOverviewDto['trades'][number]['status'];
 /**
@@ -10,13 +11,18 @@ export type TradeRowStatus = ProcurementOverviewDto['trades'][number]['status'];
 export type TradeRowView = ProcurementOverviewDto['trades'][number] & { diffPct: number | null; scopeEstimate: boolean };
 
 /** Colour means state: grey not sourced, amber waiting, green contracted, red problem. */
-export const TRADE_STATUS_META: Record<TradeRowStatus, { label: string; color: string }> = {
-    not_sourced: { label: 'ยังไม่จัดหา', color: 'default' },
-    waiting_bids: { label: 'รอราคา', color: 'warning' },
-    has_bids: { label: 'ได้ราคาแล้ว', color: 'warning' },
-    contracted: { label: 'ตกลงจ้างแล้ว', color: 'success' },
-    problem: { label: 'มีปัญหา', color: 'error' },
+const TRADE_STATUS_COLOR: Record<TradeRowStatus, string> = {
+    not_sourced: 'default',
+    waiting_bids: 'warning',
+    has_bids: 'warning',
+    contracted: 'success',
+    problem: 'error',
 };
+
+/** Label (in the UI language) and tag colour of a trade row status. */
+export function tradeStatusMeta(status: TradeRowStatus, t: ScT = scText()): { label: string; color: string } {
+    return { label: t(`buyer.labels.tradeStatus.${status}`), color: TRADE_STATUS_COLOR[status] };
+}
 
 /** Problems first, then work in progress, then contracted, then not sourced; rows without BOQ value and no activity are dropped. */
 const ORDER: Record<TradeRowStatus, number> = { problem: 0, has_bids: 1, waiting_bids: 2, contracted: 3, not_sourced: 4 };
