@@ -13,6 +13,7 @@ import { ChecklistItem, ChecklistProgress } from '@/components/sheet/journey/Che
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
+import { useTranslations } from 'next-intl';
 
 /** Rows 8–11 of the Excel sheet keep their fixed label; rows added after them are free text. */
 const FIXED_ROWS = 4;
@@ -22,6 +23,7 @@ const newCostLine = (): CostLine => ({ label: '', qty: 1, unit: '', unitPrice: 0
 type Calc = UseCalculator<LandInspectionInput>;
 
 export default function LandInspectionPage() {
+    const t = useTranslations('calculators');
     const calc = useCalculator(landInspection);
     const inJourney = useJourneyMode();
     const { input, update, reset, outputs, result, isDefault } = calc;
@@ -30,28 +32,27 @@ export default function LandInspectionPage() {
         <CalculatorShell def={landInspection} result={result} isDefault={isDefault} onReset={reset}>
             {inJourney ? <JourneyView calc={calc} /> : (
                 <>
-                    <SheetCard title="ข้อมูลโครงการ">
+                    <SheetCard title={t('landInspection.projectInformation')}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                            <InputTextField label="ชื่อโครงการ" value={input.projectName} onChange={v => update({ projectName: v })} />
-                            <InputTextField label="จังหวัด" value={input.province} onChange={v => update({ province: v })} />
-                            <InputTextField label="วันที่เข้าสำรวจ" value={input.surveyDate} placeholder="วว/ดด/ปปปป"
+                            <InputTextField label={t('landInspection.projectName')} value={input.projectName} onChange={v => update({ projectName: v })} />
+                            <InputTextField label={t('landInspection.province')} value={input.province} onChange={v => update({ province: v })} />
+                            <InputTextField label={t('landInspection.surveyDate')} value={input.surveyDate} placeholder={t('landInspection.ddMmYyyy')}
                                 onChange={v => update({ surveyDate: v })} />
-                            <InputTextField label="ผู้ตรวจสอบ" value={input.inspector} onChange={v => update({ inspector: v })} />
+                            <InputTextField label={t('landInspection.inspector')} value={input.inspector} onChange={v => update({ inspector: v })} />
                         </div>
                     </SheetCard>
 
-                    <SheetCard title="รายการค่าใช้จ่าย">
+                    <SheetCard title={t('landInspection.expenseItems')}>
                         <CostTable calc={calc} />
                         <div className="mt-3 max-w-md ml-auto">
-                            <CalcField label="ต้นทุนรวม" value={outputs.total} unit="บาท" strong />
+                            <CalcField label={t('landInspection.totalCost')} value={outputs.total} unit={t('common.baht')} strong />
                         </div>
                         <p className="mt-2 text-[12px] text-gray-500">
-                            หมายเหตุ: ราคานี้เป็นตัวอย่างเบื้องต้น สามารถปรับจำนวน / หน่วย / ราคาต่อหน่วย ตามพื้นที่จริงได้ —
-                            ยอด {formatNumber(outputs.total)} บาท ส่งเข้า BOQ แถว &quot;ค่าตรวจสอบที่ดิน&quot; (ช่องค่าแรง, 1 เหมา)
+                            {t('landInspection.noteThisPriceIsA')}{formatNumber(outputs.total)} {t('landInspection.bahtSentToTheBoq')}
                         </p>
                     </SheetCard>
 
-                    <SheetCard title="เอกสารสำรวจหน้างาน (รายการตรวจ)">
+                    <SheetCard title={t('landInspection.siteSurveyDocumentChecklist')}>
                         <Checklist calc={calc} />
                     </SheetCard>
                 </>
@@ -62,44 +63,45 @@ export default function LandInspectionPage() {
 
 /** Guided journey: what to check on site first, then the cost (quantities up front, prices folded). */
 function JourneyView({ calc }: { calc: Calc }) {
+    const t = useTranslations('calculators');
     const { input, update } = calc;
     return (
         <>
-            <SheetCard title="ตรวจที่ดินก่อนเริ่มงาน">
+            <SheetCard title={t('landInspection.inspectTheLandBeforeStarting')}>
                 <Checklist calc={calc} />
                 <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <InputTextField label="วันที่เข้าสำรวจ" value={input.surveyDate} placeholder="วว/ดด/ปปปป"
+                    <InputTextField label={t('landInspection.surveyDate')} value={input.surveyDate} placeholder={t('landInspection.ddMmYyyy')}
                         onChange={v => update({ surveyDate: v })} />
-                    <InputTextField label="ผู้ตรวจสอบ" value={input.inspector} onChange={v => update({ inspector: v })} />
+                    <InputTextField label={t('landInspection.inspector')} value={input.inspector} onChange={v => update({ inspector: v })} />
                 </div>
             </SheetCard>
 
-            <SheetCard title="ค่าใช้จ่ายตรวจสอบที่ดิน">
+            <SheetCard title={t('landInspection.landInspectionExpenses')}>
                 {input.items.length === 0
                     ? (
-                        <EmptyState text="ยังไม่มีรายการค่าใช้จ่าย เช่น ค่าแรงตรวจ ค่าเดินทาง ค่าที่พัก"
-                            addLabel="เพิ่มรายการค่าใช้จ่าย"
+                        <EmptyState text={t('landInspection.noExpenseItemsYetE')}
+                            addLabel={t('landInspection.addExpenseItem')}
                             onAdd={() => update(p => ({ ...p, items: [...p.items, newCostLine()] }))} />
                     )
                     : (
                         <>
-                            <p className="mb-2 text-[12px] text-gray-500">ใส่จำนวนวัน / เที่ยว / คืน ที่ใช้จริง ราคาต่อหน่วยตั้งไว้ให้แล้ว</p>
+                            <p className="mb-2 text-[12px] text-gray-500">{t('landInspection.enterTheActualNumberOf')}</p>
                             <EditableTable<CostLine>
                                 rows={input.items}
                                 onChange={items => update({ items })}
                                 canDelete={false}
                                 columns={[
-                                    { kind: 'label', key: 'label', title: 'รายการ', get: r => r.label || 'รายการใหม่' },
-                                    { kind: 'number', key: 'qty', title: 'จำนวน', width: 90, get: r => r.qty, set: (r, v) => ({ ...r, qty: v }) },
-                                    { kind: 'label', key: 'unit', title: 'หน่วย', width: 70, get: r => r.unit },
-                                    { kind: 'calc', key: 'total', title: 'รวม (บาท)', width: 120, get: r => lineTotal(r) },
+                                    { kind: 'label', key: 'label', title: t('common.item'), get: r => r.label || t('landInspection.newItem') },
+                                    { kind: 'number', key: 'qty', title: t('common.number'), width: 90, get: r => r.qty, set: (r, v) => ({ ...r, qty: v }) },
+                                    { kind: 'label', key: 'unit', title: t('common.unit'), width: 70, get: r => r.unit },
+                                    { kind: 'calc', key: 'total', title: t('landInspection.totalBaht'), width: 120, get: r => lineTotal(r) },
                                 ]}
                             />
                         </>
                     )}
             </SheetCard>
 
-            <AdvancedSection title="ราคาต่อหน่วยและรายการเพิ่มเติม">
+            <AdvancedSection title={t('landInspection.pricePerUnitAndAdditional')}>
                 <CostTable calc={calc} />
             </AdvancedSection>
             {/* No result box: the only result is the cost, already shown as มูลค่าขั้นตอนนี้ in the bottom bar. */}
@@ -109,6 +111,7 @@ function JourneyView({ calc }: { calc: Calc }) {
 
 /** The full cost table of the sheet (rows 8–11 plus added rows). */
 function CostTable({ calc }: { calc: Calc }) {
+    const t = useTranslations('calculators');
     const { input, update } = calc;
     return (
         <EditableTable<CostLine>
@@ -116,20 +119,20 @@ function CostTable({ calc }: { calc: Calc }) {
             onChange={items => update({ items })}
             lockedRows={FIXED_ROWS}
             newRow={newCostLine}
-            addLabel="+ เพิ่มรายการ"
+            addLabel={t('common.addItem')}
             columns={[
                 {
-                    kind: 'label', key: 'label', title: 'รายการค่าใช้จ่าย',
+                    kind: 'label', key: 'label', title: t('landInspection.expenseItems'),
                     get: (r, i) => i < FIXED_ROWS
                         ? r.label
-                        : <TextCell value={r.label} placeholder="ชื่อรายการ"
+                        : <TextCell value={r.label} placeholder={t('common.itemName')}
                             onCommit={v => update(p => ({ ...p, items: p.items.map((x, j) => j === i ? { ...x, label: v ?? '' } : x) }))} />,
                 },
-                { kind: 'number', key: 'qty', title: 'จำนวน', width: 90, get: r => r.qty, set: (r, v) => ({ ...r, qty: v }) },
-                { kind: 'text', key: 'unit', title: 'หน่วย', width: 80, get: r => r.unit, set: (r, v) => ({ ...r, unit: v }) },
-                { kind: 'number', key: 'unitPrice', title: 'ราคาต่อหน่วย', width: 120, get: r => r.unitPrice, set: (r, v) => ({ ...r, unitPrice: v }) },
-                { kind: 'calc', key: 'total', title: 'รวม', width: 120, get: r => lineTotal(r) },
-                { kind: 'text', key: 'note', title: 'หมายเหตุ', width: 160, get: r => r.note ?? '', set: (r, v) => ({ ...r, note: v || undefined }) },
+                { kind: 'number', key: 'qty', title: t('common.number'), width: 90, get: r => r.qty, set: (r, v) => ({ ...r, qty: v }) },
+                { kind: 'text', key: 'unit', title: t('common.unit'), width: 80, get: r => r.unit, set: (r, v) => ({ ...r, unit: v }) },
+                { kind: 'number', key: 'unitPrice', title: t('common.pricePerUnit'), width: 120, get: r => r.unitPrice, set: (r, v) => ({ ...r, unitPrice: v }) },
+                { kind: 'calc', key: 'total', title: t('common.total'), width: 120, get: r => lineTotal(r) },
+                { kind: 'text', key: 'note', title: t('common.remark'), width: 160, get: r => r.note ?? '', set: (r, v) => ({ ...r, note: v || undefined }) },
             ]}
         />
     );

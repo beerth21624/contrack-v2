@@ -12,16 +12,19 @@ import {
     ChoiceButtons, FieldNote, FromLevel, Hint, ResultSummary, SumInput, outOfRange,
 } from '@/components/sheet/journey';
 import { isStructural, PlasterTable } from './PlasterTable';
+import { useTranslations } from 'next-intl';
+import type { CalcT } from '../text';
 
-const SIDE_CHOICES = [
-    { value: 0, label: 'ไม่ฉาบ' },
-    { value: 1, label: '1 ด้าน' },
-    { value: 2, label: '2 ด้าน' },
+const sideChoices = (t: CalcT) => [
+    { value: 0, label: t('plaster.noPlaster') },
+    { value: 1, label: t('plaster.n1Side') },
+    { value: 2, label: t('plaster.n2Sides') },
 ];
 
-const kindLabel = (kind: string) => {
+const kindLabel = (t: CalcT, kind: string) => {
     const k = kind.trim();
-    return k === 'ฉาบภายนอก' ? 'ฉาบด้านนอก' : k === 'ฉาบภายใน' ? 'ฉาบด้านใน' : 'ฉาบ (ยังไม่เลือกด้าน)';
+    // eslint-disable-next-line no-restricted-syntax -- stored kind values, not UI text
+    return k === 'ฉาบภายนอก' ? t('plaster.plasterOutside') : k === 'ฉาบภายใน' ? t('plaster.plasterInside') : t('plaster.plasterSideNotSelected');
 };
 
 interface Group { part: string; rows: { row: PlasterRow; index: number }[] }
@@ -39,6 +42,7 @@ function groupRows(rows: PlasterRow[]): Group[] {
 }
 
 export default function PlasterJourney() {
+    const t = useTranslations('calculators');
     const { input, update, reset, outputs, result, isDefault } = useCalculator(plaster);
     const ctx: CalcContext = { outputs: id => result.calcOutputs[id] };
     const brickNet = (part: string) => result.calcOutputs.brick?.[netByPartKey(part)] ?? 0;
@@ -57,41 +61,41 @@ export default function PlasterJourney() {
                 <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
                     <div className="min-w-0 flex-1">
                         <div className="text-[14px] font-semibold text-gray-800">
-                            {structural ? 'ผนังโครงสร้าง (ผิวเสา-คาน)' : g.part === '' ? '(ยังไม่เลือกส่วนผนัง)' : g.part}
+                            {structural ? t('plaster.structuralWallsColumnBeamSurfaces') : g.part === '' ? t('plaster.wallPartNotSelected') : g.part}
                         </div>
-                        {structural && <Hint>ผิวเสา-คานคอนกรีตที่ต้องฉาบนอกเหนือจากผนังอิฐ (ไม่มีให้เว้นว่าง)</Hint>}
+                        {structural && <Hint>{t('plaster.concreteColumnAndBeamSurfaces')}</Hint>}
                     </div>
                     {!structural && g.part !== '' && (area !== 0
-                        ? <span className="text-[12px] text-gray-600 tabular-nums">ผนัง {formatNumber(area)} ตร.ม. ต่อด้าน</span>
-                        : !noWalls && <span className="text-[12px] text-gray-400">ไม่มีผนังนี้ในขั้นตอนก่ออิฐ</span>)}
+                        ? <span className="text-[12px] text-gray-600 tabular-nums">{t('plaster.wall')}{formatNumber(area)} {t('plaster.sqMPerSide')}</span>
+                        : !noWalls && <span className="text-[12px] text-gray-400">{t('plaster.thisWallIsNotIn')}</span>)}
                 </div>
                 <div className="mt-2 flex flex-col gap-2">
                     {g.rows.map(({ row, index }) => {
                         const rowArea = plasterRowArea(row, ctx);
                         return (
                             <div key={index} className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                                <span className="w-[96px] shrink-0 text-[13px] text-gray-700">{kindLabel(row.kind)}</span>
+                                <span className="w-[96px] shrink-0 text-[13px] text-gray-700">{kindLabel(t, row.kind)}</span>
                                 {isStructural(row) && (
                                     <span className="flex items-center gap-1.5">
                                         <span className="w-[150px]">
-                                            <SumInput value={row.manualArea ?? 0} placeholder="เช่น 25+6.24"
-                                                ariaLabel="พื้นที่ผิวเสา-คาน ต่อด้าน (ตร.ม.)"
+                                            <SumInput value={row.manualArea ?? 0} placeholder={t('plaster.eG25624')}
+                                                ariaLabel={t('plaster.columnBeamSurfaceAreaPer')}
                                                 onChange={manualArea => setRow(index, { manualArea })} />
                                         </span>
-                                        <span className="text-[12px] text-gray-500">ตร.ม. ต่อด้าน</span>
+                                        <span className="text-[12px] text-gray-500">{t('plaster.sqMPerSide')}</span>
                                     </span>
                                 )}
-                                <ChoiceButtons ariaLabel={`${g.part} ${kindLabel(row.kind)} กี่ด้าน`} size="small"
-                                    options={SIDE_CHOICES} value={row.sides} onChange={sides => setRow(index, { sides })} />
+                                <ChoiceButtons ariaLabel={t('plaster.partVHowManySides', { part: g.part, v: kindLabel(t, row.kind) })} size="small"
+                                    options={sideChoices(t)} value={row.sides} onChange={sides => setRow(index, { sides })} />
                                 <span className="ml-auto text-[13px] tabular-nums px-2 py-0.5 rounded"
                                     style={{ background: rowArea > 0 ? SHEET_COLORS.calc : undefined }}>
-                                    {rowArea > 0 ? `= ${formatNumber(rowArea)} ตร.ม.` : <span className="text-gray-400">—</span>}
+                                    {rowArea > 0 ? t('plaster.vSqM', { v: formatNumber(rowArea) }) : <span className="text-gray-400">—</span>}
                                 </span>
                             </div>
                         );
                     })}
                     {structural && g.rows.map(({ row, index }) => {
-                        const note = outOfRange(row.manualArea ?? 0, 1, 500, 'ตร.ม.');
+                        const note = outOfRange(row.manualArea ?? 0, 1, 500, t('common.sqM'));
                         return note === undefined ? null : <FieldNote key={`n${String(index)}`}>{note}</FieldNote>;
                     })}
                 </div>
@@ -105,31 +109,30 @@ export default function PlasterJourney() {
                 {noWalls
                     ? (
                         <>
-                            ยังไม่มีผนังก่ออิฐ — พื้นที่ฉาบมาจากผนังในขั้นตอนก่ออิฐ (หักประตู-หน้าต่างแล้ว)
-                            กรอกผนังในขั้นตอนก่ออิฐก่อน แล้วระบบจะคิดพื้นที่ฉาบให้อัตโนมัติ
+                            {t('plaster.noBrickWallsYetThe')}
                         </>
                     )
                     // Each wall card below shows its own area: here only where the areas come from.
-                    : <>ใช้พื้นที่ผนังที่ก่อไว้ {formatNumber(walls.length, 0)} ส่วน (หักประตู-หน้าต่างแล้ว) — ไม่ต้องกรอกซ้ำ</>}
+                    : <>{t('plaster.usesTheMasonryWallArea')}{formatNumber(walls.length, 0)} {t('plaster.wallPartsAfterDeductingDoors')}</>}
             </FromLevel>
 
-            <SheetCard title="ผนังที่ต้องฉาบ">
-                <p className="mb-3 text-[12px] text-gray-500">ตั้งด้านที่ฉาบตามงานทั่วไปไว้แล้ว</p>
+            <SheetCard title={t('plaster.wallsToPlaster')}>
+                <p className="mb-3 text-[12px] text-gray-500">{t('plaster.thePlasteredSidesArePreset')}</p>
                 <div className="flex flex-col gap-2">{groups.map(group)}</div>
             </SheetCard>
 
-            <AdvancedSection title="ตั้งค่ารายการฉาบ">
+            <AdvancedSection title={t('plaster.plasterItemSettings')}>
                 <PlasterTable rows={input.rows} onChange={rows => update({ rows })} setRow={setRow} ctx={ctx}
                     brickNet={brickNet} structuralDefault={0} />
             </AdvancedSection>
 
             <ResultSummary
                 items={[
-                    { label: 'ฉาบผนังด้านนอก', value: outputs.exterior, unit: 'ตร.ม.' },
-                    { label: 'ฉาบผนังด้านใน', value: outputs.interior, unit: 'ตร.ม.' },
-                    { label: 'พื้นที่ฉาบรวม', value: outputs.total, unit: 'ตร.ม.' },
+                    { label: t('plaster.exteriorWallPlaster'), value: outputs.exterior, unit: t('common.sqM') },
+                    { label: t('plaster.interiorWallPlaster'), value: outputs.interior, unit: t('common.sqM') },
+                    { label: t('plaster.totalPlasterArea'), value: outputs.total, unit: t('common.sqM') },
                 ]}
-                note="พื้นที่ฉาบด้านนอก/ด้านในใช้ต่อในขั้นตอนทาสีให้อัตโนมัติ" />
+                note={t('plaster.theExteriorInteriorPlasterAreas')} />
         </CalculatorShell>
     );
 }

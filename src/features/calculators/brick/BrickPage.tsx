@@ -13,6 +13,7 @@ import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import BrickJourney from './BrickJourney';
+import { useTranslations } from 'next-intl';
 
 const opts = (list: readonly string[]) => list.map(v => ({ value: v }));
 
@@ -22,6 +23,7 @@ export default function BrickPage() {
 
 /** The Excel-mirror sheet (/calc/brick). */
 function BrickSheet() {
+    const t = useTranslations('calculators');
     const { input, update, reset, outputs, result, isDefault } = useCalculator(brick);
     const ctx: CalcContext = { outputs: id => result.calcOutputs[id] };
     const openings = brickOpenings(ctx);
@@ -39,59 +41,58 @@ function BrickSheet() {
 
     return (
         <CalculatorShell def={brick} result={result} isDefault={isDefault} onReset={reset}>
-            <SheetCard title=": ตารางคำนวณปริมาณอิฐก่อ">
+            <SheetCard title={t('brick.brickMasonryQuantityTable')}>
                 <EditableTable<BrickWall>
                     rows={input.walls}
                     onChange={walls => update({ walls })}
                     newRow={newRow}
-                    addLabel="+ เพิ่มผนัง"
+                    addLabel={t('brick.addWall2')}
                     columns={[
-                        { kind: 'select', key: 'wallPart', title: 'ส่วนผนัง', width: 150, options: opts(BRICK_WALL_PARTS),
+                        { kind: 'select', key: 'wallPart', title: t('common.wallPart'), width: 150, options: opts(BRICK_WALL_PARTS),
                             get: r => r.wallPart, set: (r, v) => ({ ...r, wallPart: v }) },
-                        { kind: 'select', key: 'brickType', title: 'รายการ', width: 110, options: opts(BRICK_TYPES),
+                        { kind: 'select', key: 'brickType', title: t('common.item'), width: 110, options: opts(BRICK_TYPES),
                             get: r => r.brickType, set: (r, v) => ({ ...r, brickType: v }) },
-                        { kind: 'select', key: 'thickness', title: 'ความหนา', width: 100, options: opts(BRICK_THICKNESSES),
+                        { kind: 'select', key: 'thickness', title: t('common.thickness'), width: 100, options: opts(BRICK_THICKNESSES),
                             get: r => r.thickness, set: (r, v) => ({ ...r, thickness: v }) },
-                        { kind: 'select', key: 'shape', title: 'รูปผนัง', width: 105,
+                        { kind: 'select', key: 'shape', title: t('brick.wallShape'), width: 105,
                             options: WALL_SHAPES.map(s => ({ value: s.value, label: s.label })),
                             get: r => r.shape ?? 'rect', set: (r, v) => ({ ...r, shape: v === 'triangle' ? 'triangle' : 'rect' }) },
-                        { kind: 'number', key: 'length', title: 'ความยาว (ม.)', width: 85,
+                        { kind: 'number', key: 'length', title: t('common.lengthM'), width: 85,
                             get: r => r.length, set: (r, v) => ({ ...r, length: v }) },
-                        { kind: 'number', key: 'height', title: 'ความสูง (ม.)', width: 85,
+                        { kind: 'number', key: 'height', title: t('brick.heightM'), width: 85,
                             get: r => r.height, set: (r, v) => ({ ...r, height: v }) },
-                        { kind: 'calc', key: 'area', title: 'พื้นที่ผนัง (ตร.ม.)', width: 90, get: (_, i) => rows[i]?.area ?? null },
-                        { kind: 'calc', key: 'openings', title: 'พื้นที่ช่องเปิด (ตร.ม.)', width: 90, get: (_, i) => rows[i]?.openings ?? null },
-                        { kind: 'calc', key: 'net', title: 'รวม (ตร.ม.)', width: 90, get: (_, i) => rows[i]?.net ?? null },
+                        { kind: 'calc', key: 'area', title: t('brick.wallAreaSqM'), width: 90, get: (_, i) => rows[i]?.area ?? null },
+                        { kind: 'calc', key: 'openings', title: t('brick.openingAreaSqM'), width: 90, get: (_, i) => rows[i]?.openings ?? null },
+                        { kind: 'calc', key: 'net', title: t('common.totalSqM'), width: 90, get: (_, i) => rows[i]?.net ?? null },
                     ]}
                 />
                 {unmatched.length > 0 && (
                     <Alert className="mt-3" type="warning" showIcon
-                        title="ช่องเปิดที่ไม่มีผนังตรงกัน (ไม่ถูกหักออก)"
+                        title={t('brick.openingsWithoutAMatchingWall')}
                         description={(
                             <ul className="list-disc pl-5 text-[12px]">
                                 {unmatched.map(([k, v]) => (
-                                    <li key={k}>{k.split('|').slice(1).filter(Boolean).join(' / ')}: {formatNumber(v)} ตร.ม.</li>
+                                    <li key={k}>{k.split('|').slice(1).filter(Boolean).join(' / ')}: {formatNumber(v)} {t('common.sqM')}</li>
                                 ))}
                             </ul>
                         )} />
                 )}
                 <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
-                    <li>พื้นที่ผนัง = ความยาว × ความสูง (สี่เหลี่ยม) หรือ ½ × ความยาว × ความสูง (สามเหลี่ยม เช่น ผนังจั่ว)</li>
+                    <li>{t('brick.wallAreaLengthHeightRectangle')}</li>
                     <li>
-                        พื้นที่ช่องเปิด = พื้นที่ประตู-หน้าต่างที่มี ส่วนผนัง + อิฐ + ความหนา ตรงกับแถวนี้ (จากตารางประตู-หน้าต่าง)
-                        — ถ้ามีหลายแถวตรงกัน หักช่องเปิดครั้งเดียว แบ่งตามสัดส่วนพื้นที่ผนัง
+                        {t('brick.openingAreaTheDoorAnd')}
                     </li>
-                    {noDoorWindow && <li>ยังไม่มีตารางประตู-หน้าต่างในระบบ — ยังไม่หักพื้นที่ช่องเปิด</li>}
-                    <li>รวม = พื้นที่ผนัง − พื้นที่ช่องเปิด → ส่งเข้า BOQ หมวด 17 แยกตามชนิดอิฐ × ความหนา และส่งให้งานฉาบปูนตามส่วนผนัง</li>
+                    {noDoorWindow && <li>{t('brick.thereIsNoDoorAnd')}</li>}
+                    <li>{t('brick.totalWallAreaOpeningArea')}</li>
                 </ul>
             </SheetCard>
 
-            <SheetCard title="สรุปพื้นที่ก่ออิฐ (ส่งเข้า BOQ หมวด 17)">
+            <SheetCard title={t('brick.brickMasonryAreaSummarySent')}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                     {BRICK_BOQ_ROWS.map(b => (
-                        <CalcField key={b.line} label={`ก่อ${b.brickType} (${b.thickness})`} value={outputs[b.line]} unit="ตร.ม." />
+                        <CalcField key={b.line} label={t('brick.masonryBricktypeThickness', { brickType: b.brickType, thickness: b.thickness })} value={outputs[b.line]} unit={t('common.sqM')} />
                     ))}
-                    <CalcField label="เสาเอ็นและคานทับหลัง (รวมพื้นที่ผนัง)" unit="ตร.ม." strong
+                    <CalcField label={t('brick.tieColumnsAndLintelsIncluded')} unit={t('common.sqM')} strong
                         value={BRICK_BOQ_ROWS.reduce((s, b) => s + (outputs[b.line] ?? 0), 0)} />
                 </div>
             </SheetCard>

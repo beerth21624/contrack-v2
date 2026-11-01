@@ -11,15 +11,18 @@ import {
     AddButton, BarField, ChoiceButtons, EmptyState, PlanCard, PlanField, PlanGroup, PlanNumber, ResultSummary, insertAfter,
     isPositive, planChecks, rebarSummaryItem, removeAt, resultText,
 } from '@/components/sheet/journey';
+import { useTranslations } from 'next-intl';
+import type { CalcT } from '../text';
 
 const nameOptions = ROOF_BEAM_NAMES.map(v => ({ value: v as string, label: v }));
-const label = (r: RoofBeamRow, i: number) => (r.name === '' ? `คานที่ ${i + 1}` : `คาน ${r.name}`);
+const label = (t: CalcT, r: RoofBeamRow, i: number) => (r.name === '' ? t('roofBeam.beamV', { v: i + 1 }) : t('roofBeam.beamName', { name: r.name }));
 
-const L = {
-    width: 'ความกว้าง', depth: 'ความลึก', length: 'ความยาวรวม', main: 'เหล็กแกน (บน + ล่าง)', stirrup: 'เหล็กปลอก',
-} as const;
+const labelsOf = (t: CalcT) => ({
+    width: t('common.width2'), depth: t('common.depth'), length: t('roofBeam.totalLength'), main: t('roofBeam.coreBarsTopBottom'), stirrup: t('common.stirrups'),
+}) as const;
+type Labels = ReturnType<typeof labelsOf>;
 
-const checksOf = (r: RoofBeamRow) => planChecks([
+const checksOf = (L: Labels, r: RoofBeamRow) => planChecks([
     { label: L.length, ok: isPositive(r.length) },
     { label: L.width, ok: isPositive(r.width) },
     { label: L.depth, ok: isPositive(r.depth) },
@@ -31,6 +34,8 @@ const checksOf = (r: RoofBeamRow) => planChecks([
 export function RoofBeamJourney({ input, outputs, onChange }: {
     input: RoofBeamInput; outputs: Record<string, number>; onChange: (rows: RoofBeamRow[]) => void;
 }) {
+    const t = useTranslations('calculators');
+    const L = labelsOf(t);
     const rows = input.rows;
     const set = (i: number, patch: Partial<RoofBeamRow>) => onChange(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
     const add = () => onChange([...rows, newRoofBeamRow(rows[rows.length - 1])]);
@@ -39,8 +44,8 @@ export function RoofBeamJourney({ input, outputs, onChange }: {
 
     if (rows.length === 0) {
         return (
-            <EmptyState text="ยังไม่มีคาน — ดูแปลนคานชั้นหลังคา (RB) แล้วเพิ่มทีละแนวคาน (ขนาด ความยาว และเหล็กเสริม)"
-                addLabel="เพิ่มคานเส้นแรก" onAdd={add} />
+            <EmptyState text={t('roofBeam.noBeamsYetCheckThe')}
+                addLabel={t('roofBeam.addTheFirstBeam')} onAdd={add} />
         );
     }
 
@@ -48,54 +53,54 @@ export function RoofBeamJourney({ input, outputs, onChange }: {
         <div className="flex flex-col gap-4">
             {rows.map((r, i) => {
                 const c = roofBeamRow(r);
-                const k = checksOf(r);
+                const k = checksOf(L, r);
                 return (
                     <PlanCard key={i} index={i + 1} scope={{ listKey: 'rows', itemIndex: i }} state={k.state} hasData={k.hasData} missingText={k.missingText}
-                        title={label(r, i)}
+                        title={label(t, r, i)}
                         result={k.state === 'empty' ? undefined : resultText([
-                            { label: 'คอนกรีต', value: c.concrete, unit: 'ลบ.ม.' },
-                            { label: 'เหล็ก', value: c.mainKg + c.stirrupKg, unit: 'กก.', digits: 1 },
+                            { label: t('common.concrete'), value: c.concrete, unit: t('common.cuM') },
+                            { label: t('common.steel'), value: c.mainKg + c.stirrupKg, unit: t('common.kg'), digits: 1 },
                         ])}
                         onDuplicate={() => duplicate(r, i)}
-                        onDelete={() => onChange(removeAt(rows, i))} deleteTitle={`ลบ${label(r, i)}?`}>
-                        <PlanGroup title="จากแปลนคานหลังคา">
-                            <PlanField label="ชื่อคาน" className="col-span-2">
-                                <ChoiceButtons<string> size="small" ariaLabel="ชื่อคาน" value={r.name === '' ? undefined : r.name}
+                        onDelete={() => onChange(removeAt(rows, i))} deleteTitle={t('roofBeam.deleteV', { v: label(t, r, i) })}>
+                        <PlanGroup title={t('roofBeam.fromTheRoofBeamPlan')}>
+                            <PlanField label={t('common.beamName')} className="col-span-2">
+                                <ChoiceButtons<string> size="small" ariaLabel={t('common.beamName')} value={r.name === '' ? undefined : r.name}
                                     options={nameOptions} onChange={v => set(i, { name: v })} />
                             </PlanField>
-                            <PlanNumber label={L.length} fieldKey="length" value={r.length} unit="ม." placeholder="เช่น 4+4.5+3"
-                                hint="รวมทุกช่วงของคานขนาดนี้" onChange={v => set(i, { length: v })} />
+                            <PlanNumber label={L.length} fieldKey="length" value={r.length} unit={t('common.m')} placeholder={t('roofBeam.eG445')}
+                                hint={t('roofBeam.addAllSpansOfBeams')} onChange={v => set(i, { length: v })} />
                         </PlanGroup>
-                        <PlanGroup title="ขนาดคาน (จากรูปตัดคาน)">
-                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit="ม." range={[0.1, 1]} onChange={v => set(i, { width: v })} />
-                            <PlanNumber label={L.depth} fieldKey="depth" value={r.depth} unit="ม." range={[0.15, 1.5]} onChange={v => set(i, { depth: v })} />
+                        <PlanGroup title={t('common.beamSizeFromTheBeam')}>
+                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit={t('common.m')} range={[0.1, 1]} onChange={v => set(i, { width: v })} />
+                            <PlanNumber label={L.depth} fieldKey="depth" value={r.depth} unit={t('common.m')} range={[0.15, 1.5]} onChange={v => set(i, { depth: v })} />
                         </PlanGroup>
-                        <PlanGroup title="เหล็กเสริม" hint="บน 3-DB12 ล่าง 3-DB12 → DB12, 6 เส้น" layout="wide">
+                        <PlanGroup title={t('common.reinforcement')} hint={t('roofBeam.eGTop3Db12')} layout="wide">
                             <BarField label={L.main} sizes={ROOF_BEAM_BAR_SIZES} size={r.mainSize} onSize={v => set(i, { mainSize: v })}
                                 amount={r.mainCount} onAmount={v => set(i, { mainCount: v })} />
                             <BarField label={L.stirrup} sizes={ROOF_BEAM_BAR_SIZES} size={r.stirrupSize} onSize={v => set(i, { stirrupSize: v })}
-                                amount={r.stirrupSpacing} onAmount={v => set(i, { stirrupSpacing: v })} amountLabel="ระยะห่าง @"
-                                amountUnit="ม." amountDigits={2} presets={[0.15, 0.2]} range={[0.05, 0.5]} />
+                                amount={r.stirrupSpacing} onAmount={v => set(i, { stirrupSpacing: v })} amountLabel={t('common.spacing')}
+                                amountUnit={t('common.m')} amountDigits={2} presets={[0.15, 0.2]} range={[0.05, 0.5]} />
                         </PlanGroup>
                     </PlanCard>
                 );
             })}
 
-            <AddButton label="เพิ่มคานอีกขนาด" onClick={add} />
+            <AddButton label={t('roofBeam.addAnotherBeamSize')} onClick={add} />
 
-            <AdvancedSection title="วิธีคิด" hint="ระบบคิดให้อัตโนมัติ">
+            <AdvancedSection title={t('common.howItIsCalculated')} hint={t('common.calculatedAutomatically')}>
                 <ul className="list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
-                    <li>คอนกรีต = กว้าง × ลึก × ยาว · ไม้แบบ = ข้าง 2 ด้าน (2 × ลึก × ยาว) + ท้องคาน (กว้าง × ยาว)</li>
-                    <li>ไม้ค้ำยัน = ปัดขึ้น (ยาว ÷ 0.6) ต้น</li>
-                    <li>เหล็กแกน = จำนวนเส้น × ยาว · เหล็กปลอก = ปัดขึ้น (ยาว ÷ ระยะห่าง) ปลอก × 2 × (กว้าง + ลึก)</li>
-                    <li>เหล็กเสริมแยกตามขนาด พร้อมเผื่อและลวดผูกเหล็ก</li>
+                    <li>{t('roofBeam.concreteWidthDepthLengthFormwork')}</li>
+                    <li>{t('roofBeam.propsRoundUpLength0')}</li>
+                    <li>{t('roofBeam.coreBarsNumberOfBars')}</li>
+                    <li>{t('roofBeam.reinforcementIsCountedBySize')}</li>
                 </ul>
             </AdvancedSection>
 
             <ResultSummary items={[
-                { label: 'คอนกรีต', value: outputs.concrete ?? 0, unit: 'ลบ.ม.' },
-                { label: 'ไม้แบบ', value: outputs.formwork ?? 0, unit: 'ตร.ม.' },
-                { label: 'ไม้ค้ำยัน', value: outputs.props ?? 0, unit: 'ต้น', digits: 0 },
+                { label: t('common.concrete'), value: outputs.concrete ?? 0, unit: t('common.cuM') },
+                { label: t('common.formwork'), value: outputs.formwork ?? 0, unit: t('common.sqM') },
+                { label: t('roofBeam.props'), value: outputs.props ?? 0, unit: t('common.pcs'), digits: 0 },
                 rebarSummaryItem(outputs),
             ]} />
         </div>

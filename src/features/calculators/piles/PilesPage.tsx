@@ -11,6 +11,7 @@ import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { PilesJourney } from './PilesJourney';
 import { useCalculator } from '../useCalculator';
+import { useTranslations } from 'next-intl';
 
 /** Labelled yellow dropdown, same layout as InputTextField. */
 function InputSelectField({ label, value, onChange, options, placeholder }: {
@@ -30,6 +31,7 @@ function InputSelectField({ label, value, onChange, options, placeholder }: {
 }
 
 export default function PilesPage() {
+    const t = useTranslations('calculators');
     const { input, update, reset, outputs, result, isDefault } = useCalculator(piles);
     const inJourney = useJourneyMode();
     const spec = composePileSpec(input);
@@ -48,44 +50,42 @@ export default function PilesPage() {
     return (
         <CalculatorShell def={piles} result={result} isDefault={isDefault} onReset={reset}
             aside={cutHeads && (
-                <SheetCard title="ลิงก์ไปหมวดอื่น">
-                    <CalcField label="ตัดหัวเสาเข็ม (6. งานฐานราก) — ใช้จำนวนเสาเข็ม" value={cutHeads.qty} unit="ต้น" digits={0} />
-                    <CalcField label="ค่าตัดหัวเสาเข็ม" value={cutHeads.total} unit="บาท" />
+                <SheetCard title={t('piles.linkToOtherSections')}>
+                    <CalcField label={t('piles.pileHeadCutting6Footing')} value={cutHeads.qty} unit={t('common.pcs')} digits={0} />
+                    <CalcField label={t('piles.pileHeadCuttingCost2')} value={cutHeads.total} unit={t('common.baht')} />
                 </SheetCard>
             )}>
-            <SheetCard title="รายละเอียดเสาเข็ม">
-                <InputSelectField label="ชนิดเสาเข็ม" value={input.pileType} placeholder="เลือกชนิดเสาเข็ม"
-                    options={PILE_TYPES.map(t => ({ value: t }))} onChange={v => update({ pileType: v })} />
-                <InputSelectField label="หน้าตัด/รูปทรง" value={input.section} placeholder="เลือกหน้าตัด"
+            <SheetCard title={t('piles.pileDetails')}>
+                <InputSelectField label={t('piles.pileType')} value={input.pileType} placeholder={t('piles.selectPileType')}
+                    options={PILE_TYPES.map(tot => ({ value: tot }))} onChange={v => update({ pileType: v })} />
+                <InputSelectField label={t('piles.sectionShape2')} value={input.section} placeholder={t('piles.selectSection')}
                     options={PILE_SECTION_GROUPS.map(g => ({ label: g.label, options: g.options.map(o => ({ value: o })) }))}
                     onChange={v => update({ section: v })} />
-                <InputNumberField label="ความยาว" value={input.length} unit="ม." onChange={v => update({ length: v })} />
-                <InputTextField label="รายละเอียดเพิ่มเติม (ถ้ามี)" value={input.extraSpec}
-                    placeholder="เช่น รับน้ำหนัก 15 ตัน/ต้น, ยี่ห้อ" onChange={v => update({ extraSpec: v })} />
+                <InputNumberField label={t('common.length')} value={input.length} unit={t('common.m')} onChange={v => update({ length: v })} />
+                <InputTextField label={t('piles.additionalDetailsIfAny')} value={input.extraSpec}
+                    placeholder={t('piles.eGCapacity15Tons')} onChange={v => update({ extraSpec: v })} />
 
                 <div className="mt-3 grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-center gap-2">
-                    <span className="text-[13px] font-semibold text-gray-900">หมายเหตุใน BOQ</span>
+                    <span className="text-[13px] font-semibold text-gray-900">{t('piles.remarkInBoq')}</span>
                     <span className="px-2 py-1 rounded-sm text-[13px]" style={{ background: SHEET_COLORS.calc }}>
                         {spec || '—'}
                     </span>
                 </div>
                 {missing.length > 0 && (
-                    <Alert className="mt-3" type="warning" showIcon title="ต้องใส่รายละเอียดเสาเข็มให้ครบ"
-                        description={`ยังไม่ระบุ: ${missing.join(', ')}`} />
+                    <Alert className="mt-3" type="warning" showIcon title={t('piles.thePileDetailsMustBe')}
+                        description={t('piles.notSpecifiedV', { v: missing.join(', ') })} />
                 )}
             </SheetCard>
 
-            <SheetCard title="ราคาเหมา">
-                <InputNumberField label="จำนวน" value={input.count} unit="ต้น" digits={0} onChange={v => update({ count: v })} />
-                <InputNumberField label="ราคาเหมาต่อต้น" value={input.pricePerPile} unit="บาท"
+            <SheetCard title={t('piles.lumpSumPrice')}>
+                <InputNumberField label={t('common.number')} value={input.count} unit={t('common.pcs')} digits={0} onChange={v => update({ count: v })} />
+                <InputNumberField label={t('piles.lumpSumPricePerPile2')} value={input.pricePerPile} unit={t('common.baht')}
                     onChange={v => update({ pricePerPile: v })} />
                 <div className="mt-1">
-                    <CalcField label="รวมค่าเสาเข็ม" value={(outputs.count ?? 0) * (outputs.pricePerPile ?? 0)} unit="บาท" strong />
+                    <CalcField label={t('piles.totalPileCost')} value={(outputs.count ?? 0) * (outputs.pricePerPile ?? 0)} unit={t('common.baht')} strong />
                 </div>
                 <p className="mt-2 text-[12px] text-gray-500">
-                    หมายเหตุ: ประเมินราคาแบบเหมา (ค่าเสาเข็ม + ค่าตอก รวมในช่องค่าแรง, ค่าวัสดุ 0) แต่ต้องใส่ spec ให้ครบ —
-                    จำนวน {formatNumber(outputs.count, 0)} ต้น × {formatNumber(outputs.pricePerPile)} บาท ส่งเข้า BOQ แถว
-                    &quot;เสาเข็ม&quot; และจำนวนต้นใช้กับแถว &quot;ตัดหัวเสาเข็ม&quot; ในหมวด 6
+                    {t('piles.noteLumpSumEstimatePile')}{formatNumber(outputs.count, 0)} {t('piles.piles2')}{formatNumber(outputs.pricePerPile)} {t('piles.bahtSentToTheBoq')}
                 </p>
             </SheetCard>
         </CalculatorShell>

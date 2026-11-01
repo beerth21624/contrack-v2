@@ -9,6 +9,7 @@ import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
 import { PlasterTable } from './PlasterTable';
 import PlasterJourney from './PlasterJourney';
+import { useTranslations } from 'next-intl';
 
 export default function PlasterPage() {
     return useJourneyMode() ? <PlasterJourney /> : <PlasterSheet />;
@@ -16,6 +17,7 @@ export default function PlasterPage() {
 
 /** The Excel-mirror sheet (/calc/plaster). */
 function PlasterSheet() {
+    const t = useTranslations('calculators');
     const { input, update, reset, outputs, result, isDefault } = useCalculator(plaster);
     const ctx: CalcContext = { outputs: id => result.calcOutputs[id] };
     const brickNet = (part: string) => result.calcOutputs.brick?.[netByPartKey(part)] ?? 0;
@@ -25,22 +27,21 @@ function PlasterSheet() {
 
     return (
         <CalculatorShell def={plaster} result={result} isDefault={isDefault} onReset={reset}>
-            <SheetCard title=": ตารางคำนวณปริมาณปูนฉาบ">
+            <SheetCard title={t('plaster.plasterQuantityTable')}>
                 <PlasterTable rows={input.rows} onChange={rows => update({ rows })} setRow={setRow} ctx={ctx} brickNet={brickNet} />
                 <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
-                    <li>รวม = พื้นที่ก่ออิฐสุทธิของส่วนผนังนี้ (ทุกชนิดอิฐ/ความหนา จากโปรแกรมก่ออิฐ) × จำนวนด้านที่ฉาบ</li>
+                    <li>{t('plaster.totalNetMasonryAreaOf')}</li>
                     <li>
-                        ผนังโครงสร้าง (เสา/คาน) ไม่มีในงานก่ออิฐ — กรอกพื้นที่ต่อด้านเอง
-                        (ค่าตัวอย่างในเทมเพลต = 1×25 + 0.8×2.6×3 = 31.24 ตร.ม.)
+                        {t('plaster.structuralWallsColumnsBeamsAre')}
                     </li>
-                    <li>ผนังรอบบ้าน: ฉาบภายใน 1 ด้าน + ภายนอก 1 ด้าน · ผนังภายในบ้าน: ฉาบภายใน 2 ด้าน · ผนังภายนอกบ้าน: ฉาบภายนอก 2 ด้าน</li>
+                    <li>{t('plaster.exteriorWall1SideInside')}</li>
                 </ul>
             </SheetCard>
 
-            <SheetCard title="สรุปพื้นที่ฉาบปูน (ส่งเข้า BOQ หมวด 18 และงานสี)">
+            <SheetCard title={t('plaster.plasterAreaSummarySentTo')}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <CalcField label="งานฉาบปูนผนัง (ภายนอก)" value={outputs.exterior} unit="ตร.ม." strong />
-                    <CalcField label="งานฉาบปูนผนัง (ภายใน)" value={outputs.interior} unit="ตร.ม." strong />
+                    <CalcField label={t('plaster.wallPlasterWorkExterior')} value={outputs.exterior} unit={t('common.sqM')} strong />
+                    <CalcField label={t('plaster.wallPlasterWorkInterior')} value={outputs.interior} unit={t('common.sqM')} strong />
                 </div>
             </SheetCard>
         </CalculatorShell>

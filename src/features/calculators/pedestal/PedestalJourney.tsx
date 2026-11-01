@@ -12,16 +12,19 @@ import {
     AddButton, BarField, ChoiceButtons, EmptyState, JSelect, JText, PlanCard, PlanField, PlanGroup, PlanNumber, ResultSummary,
     isPositive, planChecks, removeAt, resultText,
 } from '@/components/sheet/journey';
+import { useTranslations } from 'next-intl';
+import type { CalcT } from '../text';
 
-const label = (r: PedestalRow, i: number) => (r.name.trim() === '' ? `แบบที่ ${i + 1}` : r.name.trim());
-const footingLabel = (f: FootingRow, i: number) => (f.name.trim() === '' ? `ฐานแบบที่ ${i + 1}` : f.name.trim());
+const label = (t: CalcT, r: PedestalRow, i: number) => (r.name.trim() === '' ? t('common.typeV', { v: i + 1 }) : r.name.trim());
+const footingLabel = (t: CalcT, f: FootingRow, i: number) => (f.name.trim() === '' ? t('pedestal.footingTypeV', { v: i + 1 }) : f.name.trim());
 
-const L = {
-    footing: 'ตั้งอยู่บนฐานราก', count: 'จำนวนต้น', width: 'ความกว้าง', length: 'ความยาว', height: 'ความสูง',
-    main: 'เหล็กยืน', stirrup: 'เหล็กปลอก',
-} as const;
+const labelsOf = (t: CalcT) => ({
+    footing: t('pedestal.standingOnFooting'), count: t('common.numberOfColumns'), width: t('common.width2'), length: t('common.length'), height: t('common.height'),
+    main: t('common.verticalBars'), stirrup: t('common.stirrups'),
+}) as const;
+type Labels = ReturnType<typeof labelsOf>;
 
-const checksOf = (r: PedestalRow, onFooting: boolean) => planChecks([
+const checksOf = (L: Labels, r: PedestalRow, onFooting: boolean) => planChecks([
     { label: L.footing, ok: onFooting },
     { label: L.count, ok: isPositive(r.count) },
     { label: L.width, ok: isPositive(r.width) },
@@ -42,21 +45,22 @@ export function PedestalJourney({ rows, onChange, footings, footingSkipped, foot
     footingOutputs: Record<string, number> | undefined;
     backfill: number | undefined;
 }) {
-    const t = pedestalTotals(rows, footingOutputs);
+    const t = useTranslations('calculators');
+    const L = labelsOf(t);
+    const tot = pedestalTotals(rows, footingOutputs);
     const set = (i: number, patch: Partial<PedestalRow>) => onChange(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
     const add = () => onChange([...rows, newPedestalRow(rows, footings)]);
 
     if (footings.length === 0 || footingSkipped) {
         return (
             <EmptyState text={<>
-                {footingSkipped ? 'ขั้นตอนฐานรากระบุว่า "ไม่มีในโครงการนี้"' : 'ยังไม่มีฐานราก'} — เสาตอม่อตั้งอยู่บนฐานราก
-                กรอกฐานรากแต่ละแบบในขั้นตอนฐานรากก่อน แล้วกลับมาที่ขั้นตอนนี้
+                {footingSkipped ? t('pedestal.theFootingStepIsMarked') : t('pedestal.noFootingsYet')} {t('pedestal.pedestalsStandOnFootingsFill')}
             </>} goToLevel="footing">
                 {rows.length > 0 && (
                     <div className="mt-1 text-[12px] text-orange-600">
-                        ยังมีเสาตอม่อค้างอยู่ {rows.length} แบบ (คอนกรีต {formatNumber(t.concrete)} ลบ.ม.) ซึ่งไม่ได้ตั้งบนฐานรากใด
-                        <Popconfirm title="ลบเสาตอม่อทั้งหมด?" okText="ลบ" cancelText="ยกเลิก" onConfirm={() => onChange([])}>
-                            <Button className="ml-2" size="small" danger>ลบเสาตอม่อทั้งหมด</Button>
+                        {t('pedestal.thereAreStill')}{rows.length} {t('pedestal.pedestalTypesLeftConcrete')}{formatNumber(tot.concrete)} {t('pedestal.cuMThatDoNot')}
+                        <Popconfirm title={t('pedestal.deleteAllPedestals')} okText={t('pedestal.delete')} cancelText={t('common.cancel')} onConfirm={() => onChange([])}>
+                            <Button className="ml-2" size="small" danger>{t('pedestal.deleteAllPedestals2')}</Button>
                         </Popconfirm>
                     </div>
                 )}
@@ -65,32 +69,32 @@ export function PedestalJourney({ rows, onChange, footings, footingSkipped, foot
     }
 
     if (rows.length === 0) {
-        const names = footings.map(footingLabel).join(', ');
+        const names = footings.map((f, i) => footingLabel(t, f, i)).join(', ');
         return (
             <EmptyState
-                text={<>ยังไม่มีเสาตอม่อ — ปกติฐานรากแต่ละแบบมีเสาตอม่อ 1 แบบ ({names}) ดูขนาดจากรูปขยายตอม่อ</>}
-                addLabel={footings.length > 1 ? `เพิ่มเสาตอม่อให้ฐานราก ${names}` : `เพิ่มเสาตอม่อบนฐาน ${names}`}
+                text={<>{t('pedestal.noPedestalsYetNormallyEach')}{names}{t('pedestal.checkTheSizesInThe')}</>}
+                addLabel={footings.length > 1 ? t('pedestal.addPedestalsForFootingNames', { names }) : t('pedestal.addPedestalsOnFootingNames', { names })}
                 onAdd={() => onChange(pedestalsForFootings(footings))} />
         );
     }
 
-    const footingOptions = footings.map((f, i) => ({ value: i, label: footingLabel(f, i) }));
+    const footingOptions = footings.map((f, i) => ({ value: i, label: footingLabel(t, f, i) }));
 
     return (
         <div className="flex flex-col gap-4">
             {rows.map((r, i) => {
                 const c = pedestalRow(r, footingRefFor(footingOutputs, r.footing));
                 const onFooting = r.footing >= 0 && r.footing < footings.length;
-                const k = checksOf(r, onFooting);
+                const k = checksOf(L, r, onFooting);
                 return (
                     <PlanCard key={i} index={i + 1} scope={{ listKey: 'rows', itemIndex: i }} state={k.state} hasData={k.hasData} missingText={k.missingText}
-                        title={`เสาตอม่อ ${label(r, i)}`}
+                        title={t('pedestal.pedestalV', { v: label(t, r, i) })}
                         result={k.state === 'empty' ? undefined : resultText([
-                            { label: 'คอนกรีต', value: c.concrete, unit: 'ลบ.ม.' },
-                            { label: 'เหล็ก', value: c.mainKg + c.stirrupKg, unit: 'กก.', digits: 1 },
+                            { label: t('common.concrete'), value: c.concrete, unit: t('common.cuM') },
+                            { label: t('common.steel'), value: c.mainKg + c.stirrupKg, unit: t('common.kg'), digits: 1 },
                         ])}
-                        onDelete={() => onChange(removeAt(rows, i))} deleteTitle={`ลบเสาตอม่อ ${label(r, i)}?`}>
-                        <PlanGroup title="ตำแหน่งและจำนวน">
+                        onDelete={() => onChange(removeAt(rows, i))} deleteTitle={t('pedestal.deletePedestalV', { v: label(t, r, i) })}>
+                        <PlanGroup title={t('pedestal.locationAndNumber')}>
                             <PlanField label={L.footing} fieldKey="footing" className="col-span-2">
                                 {footingOptions.length <= 5
                                     ? (
@@ -98,39 +102,39 @@ export function PedestalJourney({ rows, onChange, footings, footingSkipped, foot
                                             options={footingOptions} onChange={v => set(i, { footing: v })} />
                                     )
                                     : (
-                                        <JSelect<number> label="" value={onFooting ? r.footing : undefined} placeholder="เลือกฐาน"
+                                        <JSelect<number> label="" value={onFooting ? r.footing : undefined} placeholder={t('pedestal.selectFooting')}
                                             options={footingOptions} width={140} onChange={v => set(i, { footing: v ?? -1 })} />
                                     )}
                             </PlanField>
-                            <JText label="ชื่อเสาตอม่อ" value={r.name} placeholder="เช่น C1" onChange={v => set(i, { name: v })} />
-                            <PlanNumber label={L.count} fieldKey="count" value={r.count} unit="ต้น" digits={0} hint="ปกติเท่ากับจำนวนฐาน"
+                            <JText label={t('pedestal.pedestalName')} value={r.name} placeholder={t('pedestal.eGC1')} onChange={v => set(i, { name: v })} />
+                            <PlanNumber label={L.count} fieldKey="count" value={r.count} unit={t('common.pcs')} digits={0} hint={t('pedestal.normallyEqualToTheNumber')}
                                 onChange={v => set(i, { count: v })} />
                         </PlanGroup>
-                        <PlanGroup title="ขนาดเสา (จากรูปขยายตอม่อ)">
-                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit="ม." range={[0.1, 1.5]} onChange={v => set(i, { width: v })} />
-                            <PlanNumber label={L.length} fieldKey="length" value={r.length} unit="ม." range={[0.1, 1.5]} onChange={v => set(i, { length: v })} />
-                            <PlanNumber label={L.height} fieldKey="height" value={r.height} unit="ม." range={[0.1, 4]} hint="จากหลังฐานรากถึงคานคอดิน"
+                        <PlanGroup title={t('pedestal.pedestalSizeFromThePedestal')}>
+                            <PlanNumber label={L.width} fieldKey="width" value={r.width} unit={t('common.m')} range={[0.1, 1.5]} onChange={v => set(i, { width: v })} />
+                            <PlanNumber label={L.length} fieldKey="length" value={r.length} unit={t('common.m')} range={[0.1, 1.5]} onChange={v => set(i, { length: v })} />
+                            <PlanNumber label={L.height} fieldKey="height" value={r.height} unit={t('common.m')} range={[0.1, 4]} hint={t('pedestal.fromTheTopOfThe')}
                                 onChange={v => set(i, { height: v })} />
                         </PlanGroup>
-                        <PlanGroup title="เหล็กเสริม ต่อ 1 ต้น" hint="เช่น 4-DB12 ปลอก RB6 @0.15" layout="wide">
+                        <PlanGroup title={t('common.reinforcementPerColumn')} hint={t('pedestal.eG4Db12Stirrups')} layout="wide">
                             <BarField label={L.main} sizes={PEDESTAL_BAR_SIZES} size={r.mainBarSize} onSize={v => set(i, { mainBarSize: v })}
                                 amount={r.mainBarCount} onAmount={v => set(i, { mainBarCount: v })} />
                             <BarField label={L.stirrup} sizes={PEDESTAL_BAR_SIZES} size={r.stirrupSize} onSize={v => set(i, { stirrupSize: v })}
-                                amount={r.stirrupSpacing} onAmount={v => set(i, { stirrupSpacing: v })} amountLabel="ระยะห่าง @"
-                                amountUnit="ม." amountDigits={2} presets={[0.15, 0.2]} range={[0.05, 0.5]} />
+                                amount={r.stirrupSpacing} onAmount={v => set(i, { stirrupSpacing: v })} amountLabel={t('common.spacing')}
+                                amountUnit={t('common.m')} amountDigits={2} presets={[0.15, 0.2]} range={[0.05, 0.5]} />
                         </PlanGroup>
                     </PlanCard>
                 );
             })}
 
-            <AddButton label="เพิ่มเสาตอม่อแบบถัดไป" onClick={add} />
+            <AddButton label={t('pedestal.addTheNextPedestalType')} onClick={add} />
 
             <ResultSummary items={[
-                { label: 'คอนกรีตเสาตอม่อ', value: t.concrete, unit: 'ลบ.ม.' },
-                { label: 'เหล็กเสริม', value: totalKg(t.rebar), unit: 'กก.' },
-                { label: 'ไม้แบบ', value: t.formwork, unit: 'ตร.ม.' },
+                { label: t('pedestal.pedestalConcrete'), value: tot.concrete, unit: t('common.cuM') },
+                { label: t('common.reinforcement'), value: totalKg(tot.rebar), unit: t('common.kg') },
+                { label: t('common.formwork'), value: tot.formwork, unit: t('common.sqM') },
             ]} note={backfill === undefined || backfill === 0 ? undefined
-                : `ดินถมกลับรอบฐานราก ${formatNumber(backfill)} ลบ.ม. (หักคอนกรีตฐานรากและเสาตอม่อแล้ว)`} />
+                : t('pedestal.backfillAroundTheFootingsV', { v: formatNumber(backfill) })} />
         </div>
     );
 }

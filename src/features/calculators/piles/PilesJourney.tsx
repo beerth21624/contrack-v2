@@ -10,10 +10,12 @@ import { formatNumber } from '@/components/sheet/NumberCell';
 import {
     ChoiceButtons, JGroup, JNumber, JSelect, JText, PlanField, PlanNumber, ResultSummary,
 } from '@/components/sheet/journey';
+import { useTranslations } from 'next-intl';
 
-const typeOptions = PILE_TYPES.map(t => ({ value: t as string, label: t }));
+const typeOptions = PILE_TYPES.map(tot => ({ value: tot as string, label: tot }));
 
 export function PilesJourney({ input, update }: { input: PilesInput; update: (patch: Partial<PilesInput>) => void }) {
+    const t = useTranslations('calculators');
     const spec = composePileSpec(input);
     const missing = missingPileSpec(input);
     const count = Number.isFinite(input.count) ? input.count : 0;
@@ -22,42 +24,42 @@ export function PilesJourney({ input, update }: { input: PilesInput; update: (pa
     return (
         <div className="flex flex-col gap-4">
             <div className="bg-white border border-gray-200 rounded-card shadow-card p-4">
-                <JGroup title="เสาเข็ม (จากแปลนฐานราก / รายการประกอบแบบ)">
-                    <PlanField label="ชนิดเสาเข็ม" fieldKey="pileType" className="col-span-2">
-                        <ChoiceButtons<string> size="small" ariaLabel="ชนิดเสาเข็ม" value={input.pileType === '' ? undefined : input.pileType}
+                <JGroup title={t('piles.pilesFromTheFootingPlan')}>
+                    <PlanField label={t('piles.pileType')} fieldKey="pileType" className="col-span-2">
+                        <ChoiceButtons<string> size="small" ariaLabel={t('piles.pileType')} value={input.pileType === '' ? undefined : input.pileType}
                             options={typeOptions} onChange={v => update({ pileType: v })} />
                     </PlanField>
-                    <JSelect<string> label="หน้าตัด / รูปทรง" fieldKey="section" value={input.section || undefined} placeholder="เลือกหน้าตัด"
+                    <JSelect<string> label={t('piles.sectionShape')} fieldKey="section" value={input.section || undefined} placeholder={t('piles.selectSection')}
                         options={PILE_SECTION_GROUPS.map(g => ({ label: g.label, options: g.options.map(o => ({ value: o })) }))}
                         onChange={v => update({ section: v ?? '' })} />
-                    <PlanNumber label="ความยาวต่อต้น" fieldKey="length" value={input.length} unit="ม." range={[1, 40]} onChange={v => update({ length: v })} />
-                    <JNumber label="จำนวนเสาเข็มทั้งหมด" fieldKey="count" value={input.count} unit="ต้น" digits={0} onChange={v => update({ count: v })}
-                        hint="นับจากแปลนฐานราก (ทุกฐานรวมกัน)" />
+                    <PlanNumber label={t('piles.lengthPerPile')} fieldKey="length" value={input.length} unit={t('common.m')} range={[1, 40]} onChange={v => update({ length: v })} />
+                    <JNumber label={t('piles.totalNumberOfPiles')} fieldKey="count" value={input.count} unit={t('common.pcs')} digits={0} onChange={v => update({ count: v })}
+                        hint={t('piles.countFromTheFootingPlan')} />
                 </JGroup>
                 <JGroup title="">
-                    <JText wide label="รายละเอียดเพิ่มเติม (ถ้ามี)" value={input.extraSpec} placeholder="เช่น รับน้ำหนัก 15 ตัน/ต้น, ยี่ห้อ"
+                    <JText wide label={t('piles.additionalDetailsIfAny')} value={input.extraSpec} placeholder={t('piles.eGCapacity15Tons')}
                         onChange={v => update({ extraSpec: v })} />
                 </JGroup>
                 {count > 0 && missing.length > 0 && (
-                    <div className="mt-3 text-[12px] text-red-600">ยังขาด: {missing.join(', ')} — ราคาเหมาต้องระบุรายละเอียดเข็มให้ครบ</div>
+                    <div className="mt-3 text-[12px] text-red-600">{t('piles.missing')}{missing.join(', ')} {t('piles.aLumpSumPriceNeeds')}</div>
                 )}
             </div>
 
             <AdvancedSection>
-                <JGroup title="ราคาเหมา">
-                    <JNumber label="ราคาเหมาต่อต้น (ค่าเสาเข็ม + ค่าตอก)" value={input.pricePerPile} unit="บาท"
+                <JGroup title={t('piles.lumpSumPrice')}>
+                    <JNumber label={t('piles.lumpSumPricePerPile')} value={input.pricePerPile} unit={t('common.baht')}
                         onChange={v => update({ pricePerPile: v })} />
                 </JGroup>
             </AdvancedSection>
 
             {/* The money is มูลค่าขั้นตอนนี้ in the bottom bar. */}
             <ResultSummary items={[
-                { label: 'เสาเข็ม', value: count, unit: 'ต้น', digits: 0, detail: `ราคาเหมาต้นละ ${formatNumber(price, 0)} บาท` },
+                { label: t('piles.piles'), value: count, unit: t('common.pcs'), digits: 0, detail: t('piles.lumpSumPriceVBaht', { v: formatNumber(price, 0) }) },
             ]} note={count > 0 ? <>
-                {spec ? <>รายการใน BOQ: {spec}</> : 'ยังไม่ได้เลือกชนิดและหน้าตัดเสาเข็ม'}
-                {' · '}ค่าตัดหัวเสาเข็ม {formatNumber(count, 0)} ต้น คิดให้อัตโนมัติและรวมอยู่ในมูลค่าขั้นตอนนี้
+                {spec ? <>{t('piles.itemsInTheBoq')}{spec}</> : t('piles.pileTypeAndSectionNot')}
+                {' · '}{t('piles.pileHeadCuttingCost')}{formatNumber(count, 0)} {t('piles.pilesIsCalculatedAutomaticallyAnd')}
             </> : undefined}
-            empty={<>เลือกชนิดเสาเข็ม หน้าตัด ความยาว และใส่จำนวนต้นจากแปลนฐานราก — หากไม่ใช้เสาเข็ม กด &quot;ไม่มีในโครงการนี้&quot; ด้านล่าง</>} />
+            empty={<>{t('piles.selectThePileTypeSection')}</>} />
         </div>
     );
 }

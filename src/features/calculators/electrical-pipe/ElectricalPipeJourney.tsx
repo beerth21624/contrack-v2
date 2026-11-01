@@ -19,6 +19,8 @@ import {
     ResultSummary, countFill, fillState, insertAfter, nextCopyName, type FillState,
 } from '@/components/sheet/journey';
 import type { UseCalculator } from '../useCalculator';
+import { useTranslations } from 'next-intl';
+import type { CalcT } from '../text';
 
 type Calc = UseCalculator<ElectricalPipeInput>;
 
@@ -32,20 +34,24 @@ const points = (c: Circuit) => c.points ?? 0;
 const showsDeviceRun = (c: Circuit) => hasPoints(c) || c.deviceH !== 0;
 
 /** Plan values a circuit card still needs. */
-function missingOf(c: Circuit): string[] {
+function missingOf(t: CalcT, c: Circuit): string[] {
     const out: string[] = [];
-    if (!(c.mainH > 0)) out.push('ท่อสายเมน');
-    if (hasPoints(c) && !(points(c) > 0)) out.push(`จำนวน${kindInfo(circuitKind(c))?.pointLabel ?? 'จุด'}`);
+    if (!(c.mainH > 0)) out.push(t('electricalPipe.mainRunConduit'));
+    if (hasPoints(c) && !(points(c) > 0)) {
+        const pl = kindInfo(circuitKind(c))?.pointLabel ?? t('common.point');
+        out.push(t('electricalPipe.numberOfPl', { pl }));
+    }
     return out;
 }
 const startedOf = (c: Circuit) => c.mainH > 0 || c.deviceH > 0 || points(c) > 0;
-const stateOf = (c: Circuit): FillState => fillState([missingOf(c).length === 0], startedOf(c));
+const stateOf = (t: CalcT, c: Circuit): FillState => fillState([missingOf(t, c).length === 0], startedOf(c));
 
 /**
  * Guided journey: one card per circuit with what the plan shows (horizontal runs, number of wall points) and its
  * conduit total; the vertical rules of thumb come from the circuit kind and sit folded in the advanced block.
  */
 export function ElectricalPipeJourney({ calc }: { calc: Calc }) {
+    const t = useTranslations('calculators');
     const { input, update, outputs } = calc;
     const setCalculatorInput = useProjectStore(s => s.setCalculatorInput);
     const circuits = input.circuits;
@@ -81,40 +87,40 @@ export function ElectricalPipeJourney({ calc }: { calc: Calc }) {
     };
     const remove = (i: number) => update(p => ({ ...p, circuits: p.circuits.filter((_, j) => j !== i) }));
 
-    const states = circuits.map(stateOf);
+    const states = circuits.map(c => stateOf(t, c));
 
     const card = (r: Circuit, i: number) => {
         const state = states[i] ?? 'empty';
-        const missing = state === 'missing' ? new Set(missingOf(r)) : new Set<string>();
-        const pointLabel = kindInfo(circuitKind(r))?.pointLabel ?? 'จุด';
+        const missing = state === 'missing' ? new Set(missingOf(t, r)) : new Set<string>();
+        const pointLabel = kindInfo(circuitKind(r))?.pointLabel ?? t('common.point');
         const total = circuitTotal(r);
         return (
             <PlanCard key={r.id} index={i + 1} state={state} compact scope={{ listKey: 'circuits', itemIndex: i }}
-                title={r.name.trim() === '' ? `วงจรที่ ${String(i + 1)}` : r.name}
-                result={total > 0 ? <>ท่อ {formatNumber(total)} ม.</> : undefined}
+                title={r.name.trim() === '' ? t('common.circuitV', { v: String(i + 1) }) : r.name}
+                result={total > 0 ? <>{t('electricalPipe.conduit')}{formatNumber(total)} {t('common.m')}</> : undefined}
                 onDuplicate={() => duplicate(i)} onDelete={() => remove(i)} hasData={startedOf(r)}
-                deleteTitle="ลบวงจรนี้?" missingText={`ยังขาด: ${missingOf(r).join(', ')}`}>
+                deleteTitle={t('electricalPipe.deleteThisCircuit')} missingText={t('common.missingV', { v: missingOf(t, r).join(', ') })}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-3 items-start">
                     <div className="sm:col-span-2">
-                        <JText wide label="ชื่อวงจร (ตามตารางโหลด)" value={r.name} placeholder="เช่น แสงสว่าง : ห้องนอน 1, 2"
+                        <JText wide label={t('electricalPipe.circuitNameAsInThe')} value={r.name} placeholder={t('electricalPipe.eGLightingBedroom1')}
                             onChange={name => patchRow(i, { name })} />
                     </div>
-                    <JSelect<CircuitKind> label="ชนิดวงจร" value={circuitKind(r)} options={kindOptions} placeholder="เลือกชนิด"
+                    <JSelect<CircuitKind> label={t('electricalPipe.circuitType')} value={circuitKind(r)} options={kindOptions} placeholder={t('electricalPipe.selectType')}
                         onChange={k => { if (k !== undefined) changeKind(i, r, k); }} />
-                    <PlanField label="เบรกเกอร์">
-                        <ChoiceButtons ariaLabel="ขนาดเบรกเกอร์" size="small" options={BREAKER_CHOICES}
+                    <PlanField label={t('electricalPipe.breaker')}>
+                        <ChoiceButtons ariaLabel={t('electricalPipe.breakerSize')} size="small" options={BREAKER_CHOICES}
                             value={r.breaker.trim() === '' ? undefined : r.breaker.trim()}
                             onChange={breaker => patchRow(i, { breaker })} />
                     </PlanField>
-                    <PlanNumber label="ท่อสายเมน" fieldKey="mainH" unit="ม." value={r.mainH} range={[0.5, 200]} missing={missing.has('ท่อสายเมน')}
+                    <PlanNumber label={t('electricalPipe.mainRunConduit')} fieldKey="mainH" unit={t('common.m')} value={r.mainH} range={[0.5, 200]} missing={missing.has(t('electricalPipe.mainRunConduit'))}
                         onChange={mainH => patchRow(i, { mainH })} />
                     {showsDeviceRun(r) && (
-                        <PlanNumber label={circuitKind(r) === 'light' ? 'ท่อแยกเข้าโคม' : 'ท่อแยกเข้าจุด'} unit="ม." value={r.deviceH}
+                        <PlanNumber label={circuitKind(r) === 'light' ? t('electricalPipe.branchConduitToLuminaires') : t('electricalPipe.branchConduitToPoints')} unit={t('common.m')} value={r.deviceH}
                             range={[0.3, 300]} onChange={deviceH => patchRow(i, { deviceH })} />
                     )}
                     {hasPoints(r) && (
-                        <PlanNumber label={`จำนวน${pointLabel}`} unit="จุด" digits={0} value={points(r)}
-                            missing={missing.has(`จำนวน${pointLabel}`)} onChange={n => setRow(i, setPoints(r, n))} />
+                        <PlanNumber label={t('electricalPipe.numberOfPointlabel', { pointLabel })} unit={t('common.point')} digits={0} value={points(r)}
+                            missing={missing.has(t('electricalPipe.numberOfPointlabel', { pointLabel }))} onChange={n => setRow(i, setPoints(r, n))} />
                     )}
                 </div>
             </PlanCard>
@@ -123,34 +129,33 @@ export function ElectricalPipeJourney({ calc }: { calc: Calc }) {
 
     return (
         <>
-            <SheetCard title="วงจรไฟฟ้าและระยะเดินท่อ">
+            <SheetCard title={t('electricalPipe.electricalCircuitsAndConduitRuns')}>
                 {/* Folded once circuits exist: it helps the first time, then it is just in the way. */}
                 <details open={circuits.length === 0}
                     className="mb-3 rounded-lg bg-gray-50 border border-gray-200 px-4 py-2 text-[12px] text-gray-600">
-                    <summary className="cursor-pointer font-semibold text-gray-700">วิธีกรอก (1 การ์ด = 1 วงจร = 1 เบรกเกอร์ในตู้ไฟ)</summary>
+                    <summary className="cursor-pointer font-semibold text-gray-700">{t('electricalPipe.howToFillIn1')}</summary>
                     <ul className="list-disc pl-5 space-y-0.5 mt-1">
-                        <li><b>ท่อสายเมน</b>: วัดตามแนวท่อบนฝ้า จากตู้ไฟผ่านทุกจุดของวงจร (ดูแปลนไฟฟ้า)</li>
-                        <li><b>ท่อแยกเข้าโคม</b>: ท่อที่แยกจากสายเมนเข้าดวงโคมแต่ละดวง (วงจรไฟแสงสว่าง) ถ้าไม่มีเว้นว่าง</li>
-                        <li><b>จำนวนจุด</b>: นับสวิตช์ (วงจรไฟ) หรือเต้ารับ (วงจรเต้ารับ) — ระบบคิดท่อแนวดิ่งให้เอง</li>
+                        <li><b>{t('electricalPipe.mainRunConduit')}</b>{t('electricalPipe.measureAlongTheConduitAbove')}</li>
+                        <li><b>{t('electricalPipe.branchConduitToLuminaires')}</b>{t('electricalPipe.conduitBranchingFromTheMain')}</li>
+                        <li><b>{t('electricalPipe.numberOfPoints')}</b>{t('electricalPipe.countTheSwitchesLightingCircuit')}</li>
                     </ul>
                     <div className="mt-1 text-gray-500">
-                        ตัวอย่าง: ไฟแสงสว่างห้องนอน + ห้องน้ำ — ท่อสายเมน 22.4 ม., ท่อแยกเข้าโคม 25.6 ม., สวิตช์ 7 จุด
-                        → ท่อลงผนัง 7 × 2.3 = 16.1 ม. + ท่อที่ตู้ไฟ 1.5 ม. = รวม 65.6 ม.
+                        {t('electricalPipe.exampleLightingForBedroomBathroom')}
                     </div>
                 </details>
 
                 {circuits.length === 0
                     ? (
-                        <EmptyState text="ยังไม่มีวงจร"
-                            note="ดูตารางโหลดหรือแปลนไฟฟ้า แล้วเพิ่มทีละวงจรตามชนิด — ระบบตั้งเบรกเกอร์ ระยะแนวดิ่ง และขนาดสายให้"
-                            actions={CIRCUIT_KINDS.map(k => ({ label: `วงจร${k.label}`, onClick: () => addKind(k.kind) }))} />
+                        <EmptyState text={t('common.noCircuitsYet')}
+                            note={t('electricalPipe.checkTheLoadScheduleOr')}
+                            actions={CIRCUIT_KINDS.map(k => ({ label: t('electricalPipe.circuitLabel', { label: k.label }), onClick: () => addKind(k.kind) }))} />
                     )
                     : (
                         <div className="flex flex-col gap-2">
-                            {circuits.length >= 5 && <FillProgress {...countFill(states)} noun="วงจร" />}
+                            {circuits.length >= 5 && <FillProgress {...countFill(states)} noun={t('common.circuit')} />}
                             {circuits.map(card)}
                             <div className="mt-1 rounded-lg border border-dashed border-gray-300 px-3 py-2">
-                                <QuickAddChips label="เพิ่มวงจร" items={QUICK_KINDS}
+                                <QuickAddChips label={t('electricalPipe.addCircuit')} items={QUICK_KINDS}
                                     onAdd={k => {
                                         const kind = CIRCUIT_KINDS.find(x => x.kind === k)?.kind;
                                         if (kind !== undefined) addKind(kind);
@@ -161,41 +166,41 @@ export function ElectricalPipeJourney({ calc }: { calc: Calc }) {
             </SheetCard>
 
             {circuits.length > 0 && (
-                <AdvancedSection title="ระยะท่อแนวดิ่งและชนิดท่อ">
+                <AdvancedSection title={t('electricalPipe.verticalConduitRunAndConduit')}>
                     <EditableTable<Circuit>
                         rows={circuits}
                         onChange={next => update({ circuits: next })}
                         canDelete={false}
                         columns={[
-                            { kind: 'label', key: 'name', title: 'วงจร', width: 220, get: r => <span className="px-1">{r.name}</span> },
-                            { kind: 'select', key: 'pipeType', title: 'ชนิดท่อ', width: 100, options: opts(PIPE_TYPES),
+                            { kind: 'label', key: 'name', title: t('common.circuit'), width: 220, get: r => <span className="px-1">{r.name}</span> },
+                            { kind: 'select', key: 'pipeType', title: t('electricalPipe.conduitType'), width: 100, options: opts(PIPE_TYPES),
                                 get: r => r.pipeType, set: (r, v) => ({ ...r, pipeType: v }) },
-                            { kind: 'number', key: 'mainV', title: 'ท่อแนวดิ่งที่ตู้ไฟ / ถึงเครื่อง (ม.)', width: 120,
+                            { kind: 'number', key: 'mainV', title: t('electricalPipe.verticalConduitAtThePanel'), width: 120,
                                 get: r => r.mainV, set: (r, v) => ({ ...r, mainV: v }) },
                             {
-                                kind: 'label', key: 'dropEach', title: 'ท่อลงต่อจุด (ม.)', width: 100,
+                                kind: 'label', key: 'dropEach', title: t('electricalPipe.dropPerPointM'), width: 100,
                                 get: (r, i) => (hasPoints(r)
                                     ? (
-                                        <NumberCell value={r.dropEach ?? kindInfo(circuitKind(r))?.dropEach ?? 0} ariaLabel="ท่อลงต่อจุด"
+                                        <NumberCell value={r.dropEach ?? kindInfo(circuitKind(r))?.dropEach ?? 0} ariaLabel={t('electricalPipe.dropPerPoint')}
                                             onCommit={v => setRow(i, setDropEach(r, v ?? 0))} />
                                     )
                                     : <span className="block text-center text-gray-400">—</span>),
                             },
-                            { kind: 'number', key: 'deviceV', title: 'ท่อลงผนังรวม (ม.)', width: 110,
+                            { kind: 'number', key: 'deviceV', title: t('electricalPipe.totalWallDropsM'), width: 110,
                                 get: r => r.deviceV, set: (r, v) => setDeviceV(r, v) },
                         ]}
                     />
                     <ul className="mt-2 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
-                        <li>ท่อแนวดิ่งที่ตู้ไฟ 1.5 ม. ทุกวงจร + ท่อลงถึงเครื่อง: เครื่องทำน้ำอุ่น 1.5, แอร์ห้องนอน 0.9, แอร์ห้องรับแขก/ห้องทานอาหาร 0.3, ปั๊มน้ำ 2.9 ม.</li>
-                        <li>ท่อลงต่อจุด: สวิตช์และเต้ารับเหนือเคาน์เตอร์ 2.3 ม., เต้ารับ 3.2 ม. · ท่อลงผนังรวม = จำนวนจุด × ท่อลงต่อจุด (พิมพ์ทับได้)</li>
-                        <li>ทุกวงจรคิดราคาเป็นท่อ PVC 1/2&quot;</li>
+                        <li>{t('electricalPipe.verticalConduitAtThePanel2')}</li>
+                        <li>{t('electricalPipe.dropPerPointSwitchesAnd')}</li>
+                        <li>{t('electricalPipe.allCircuitsArePricedAs')}</li>
                     </ul>
                 </AdvancedSection>
             )}
 
             <ResultSummary items={[
-                { label: 'จำนวนวงจร', value: circuits.length, unit: 'วงจร', digits: 0 },
-                { label: 'ท่อร้อยสายไฟรวม', value: outputs.total, unit: 'ม.' },
+                { label: t('electricalPipe.numberOfCircuits'), value: circuits.length, unit: t('common.circuit'), digits: 0 },
+                { label: t('electricalPipe.totalElectricalConduit'), value: outputs.total, unit: t('common.m') },
             ]} />
         </>
     );

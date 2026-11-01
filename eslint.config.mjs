@@ -95,6 +95,9 @@ const eslintConfig = defineConfig([
       "src/features/journey/**/*.{ts,tsx}",
       // Track I-05: BOQ / schedule export (baht-text.ts is the Thai number-word algorithm, like amount-in-words.ts)
       "src/features/export/*.{ts,tsx}",
+      // Track I-06: calculators set 1 (CalculatorShell + brick … roof-beam; the rest of the folder is I-07/I-08)
+      "src/features/calculators/CalculatorShell.tsx",
+      "src/features/calculators/{brick,ceiling,column,demolition,door-window,electrical-cable,electrical-equipment,electrical-pipe,fill,floor-tile,footing,ground-beam,land-inspection,layout,load-center,misc,paint,pedestal,piles,plaster,precast-slab,roof-beam}/**/*.{ts,tsx}",
     ],
     ignores: ["**/__tests__/**", "src/features/export/baht-text.ts"],
     rules: {

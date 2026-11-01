@@ -10,6 +10,7 @@ import type { BoqItemRow } from '@/domain/boq/types';
 import { MissingPrices } from '@/components/sheet/journey/MissingPrices';
 import { formatNumber, SHEET_COLORS } from '@/components/sheet/NumberCell';
 import { useJourneyMode } from '@/features/journey/JourneyMode';
+import { useTranslations } from 'next-intl';
 
 const { Title, Text } = Typography;
 
@@ -17,26 +18,28 @@ const td = 'border border-gray-200 px-2 py-1 text-[13px]';
 const tdNum = `${td} text-right tabular-nums whitespace-nowrap`;
 
 /** The BOQ (Home) rows of the given sections, as they stand with the current input. */
-export function BoqPreview({ result, sections, highlight, highlightPrefix, title = 'ส่งเข้า BOQ' }: {
+export function BoqPreview({ result, sections, highlight, highlightPrefix, title }: {
     result: ProjectResult; sections: number[]; highlight?: Set<string>;
     /** Rows whose key starts with this (slot rows `${calcId}:…`) are highlighted too. */
     highlightPrefix?: string;
     title?: string;
 }) {
+    const t = useTranslations('calculators');
+    const heading = title ?? t('common.sentToBoq');
     const isHighlighted = (key: string) =>
         (highlight?.has(key) ?? false) || (highlightPrefix !== undefined && key.startsWith(highlightPrefix));
     const secs = result.boq.sections.filter(s => sections.includes(s.no));
     return (
         <div className="bg-white border border-gray-200 rounded-card shadow-card">
             <div className="px-4 py-2 border-b border-gray-100 font-semibold text-[14px] text-gray-800">
-                {title}
+                {heading}
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                     <thead>
                         <tr className="bg-gray-50 text-[12px] text-gray-700">
-                            <th className={td}>รายการ</th><th className={td}>ปริมาณ</th><th className={td}>หน่วย</th>
-                            <th className={td}>ค่าวัสดุ</th><th className={td}>ค่าแรง</th><th className={td}>รวม</th>
+                            <th className={td}>{t('common.item')}</th><th className={td}>{t('common.quantity')}</th><th className={td}>{t('common.unit')}</th>
+                            <th className={td}>{t('common.material')}</th><th className={td}>{t('common.labour')}</th><th className={td}>{t('common.total')}</th>
                         </tr>
                     </thead>
                     {secs.map(s => (
@@ -75,11 +78,12 @@ export function CalculatorShell({ def, result, isDefault, onReset, children, asi
     /** Extra blocks under the BOQ preview (e.g. a summary). */
     aside?: ReactNode;
 }) {
+    const t = useTranslations('calculators');
     const highlight = new Set(def.boqLinks.map(l => l.line));
     const inJourney = useJourneyMode();
     const preview = (
         <BoqPreview result={result} sections={def.sections} highlight={highlight} highlightPrefix={`${def.id}:`}
-            title={inJourney ? 'รายการใน BOQ ของหมวดนี้ (แถวสีเขียวมาจากขั้นตอนนี้)' : undefined} />
+            title={inJourney ? t('shell.boqItemsOfThisSection') : undefined} />
     );
     if (inJourney) {
         // The level page shows title, plan hint and navigation; here only the inputs, with the BOQ detail folded.
@@ -95,11 +99,11 @@ export function CalculatorShell({ def, result, isDefault, onReset, children, asi
                     size="small"
                     items={[{
                         key: 'boq',
-                        label: <span className="text-[13px] text-gray-600">ดูรายการที่ส่งเข้า BOQ (สำหรับตรวจสอบ)</span>,
+                        label: <span className="text-[13px] text-gray-600">{t('shell.showTheItemsSentTo')}</span>,
                         children: preview,
                         extra: isDefault ? undefined : (
-                            <Popconfirm title="ล้างข้อมูลขั้นตอนนี้กลับเป็นค่าเริ่มต้น?" okText="ล้าง" cancelText="ยกเลิก" onConfirm={onReset}>
-                                <Button size="small" type="text" icon={<UndoOutlined />} onClick={e => e.stopPropagation()}>ค่าเริ่มต้น</Button>
+                            <Popconfirm title={t('shell.resetThisStepToIts')} okText={t('shell.reset')} cancelText={t('common.cancel')} onConfirm={onReset}>
+                                <Button size="small" type="text" icon={<UndoOutlined />} onClick={e => e.stopPropagation()}>{t('shell.defaults')}</Button>
                             </Popconfirm>
                         ),
                     }]}
@@ -111,21 +115,21 @@ export function CalculatorShell({ def, result, isDefault, onReset, children, asi
         <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-center gap-3 bg-white border border-gray-200 rounded-card p-4 shadow-card">
                 <Link href={`/boq#boq-section-${def.sections[0] ?? 0}`}>
-                    <Button icon={<ArrowLeftOutlined />} aria-label="กลับไปหน้าสรุป BOQ" />
+                    <Button icon={<ArrowLeftOutlined />} aria-label={t('shell.backToTheBoqSummary')} />
                 </Link>
                 <div className="min-w-0">
                     <Text className="text-[12px] font-semibold tracking-wide text-orange-500 uppercase">
-                        หมวด BOQ {def.sections.join(', ')}
+                        {t('shell.boqSection')}{def.sections.join(', ')}
                     </Text>
                     <Title level={4} style={{ margin: 0 }}>{def.title}</Title>
-                    <Text type="secondary" className="text-[12px] [overflow-wrap:anywhere]">แบบฟอร์ม: {def.sheetName}</Text>
+                    <Text type="secondary" className="text-[12px] [overflow-wrap:anywhere]">{t('shell.form')}{def.sheetName}</Text>
                 </div>
                 <div className="ml-auto flex items-center gap-2">
                     {isDefault
-                        ? <Tag>ค่าตัวอย่างจากเทมเพลต</Tag>
+                        ? <Tag>{t('shell.sampleValuesFromTheTemplate')}</Tag>
                         : (
-                            <Popconfirm title="คืนค่าตัวอย่างจากเทมเพลต?" okText="คืนค่า" cancelText="ยกเลิก" onConfirm={onReset}>
-                                <Button icon={<UndoOutlined />}>คืนค่าตัวอย่าง</Button>
+                            <Popconfirm title={t('shell.restoreTheSampleValuesFrom')} okText={t('shell.restore')} cancelText={t('common.cancel')} onConfirm={onReset}>
+                                <Button icon={<UndoOutlined />}>{t('shell.restoreSampleValues')}</Button>
                             </Popconfirm>
                         )}
                 </div>

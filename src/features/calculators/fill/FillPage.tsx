@@ -8,8 +8,10 @@ import { JNumber, JText, PlanNumber, ResultSummary } from '@/components/sheet/jo
 import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator, type UseCalculator } from '../useCalculator';
+import { useTranslations } from 'next-intl';
 
 export default function FillPage() {
+    const t = useTranslations('calculators');
     const calc = useCalculator(fill);
     const inJourney = useJourneyMode();
     const { input, update, reset, outputs, result, isDefault } = calc;
@@ -18,28 +20,27 @@ export default function FillPage() {
         <CalculatorShell def={fill} result={result} isDefault={isDefault} onReset={reset}>
             {inJourney ? <JourneyView calc={calc} /> : (
                 <>
-                    <SheetCard title="โปรแกรมคำนวณปริมาณดินถม (คิว)">
+                    <SheetCard title={t('fill.fillSoilQuantityCalculatorCu')}>
                         <div className="max-w-xl">
-                            <div className="text-[13px] font-medium text-gray-800 pt-1">ขนาดที่ดิน</div>
+                            <div className="text-[13px] font-medium text-gray-800 pt-1">{t('fill.landSize')}</div>
                             <div className="pl-4">
-                                <InputNumberField label="กว้าง" value={input.width} unit="เมตร" onChange={v => update({ width: v })} />
-                                <InputNumberField label="ยาว" value={input.length} unit="เมตร" onChange={v => update({ length: v })} />
+                                <InputNumberField label={t('common.width')} value={input.width} unit={t('fill.metres')} onChange={v => update({ width: v })} />
+                                <InputNumberField label={t('common.length2')} value={input.length} unit={t('fill.metres')} onChange={v => update({ length: v })} />
                             </div>
-                            <InputNumberField label="ถมดินสูง" value={input.height} unit="เมตร" onChange={v => update({ height: v })} />
-                            <InputNumberField label="เผื่อดินยุบตัว" value={input.settlementPct} unit="%"
+                            <InputNumberField label={t('fill.fillHeight')} value={input.height} unit={t('fill.metres')} onChange={v => update({ height: v })} />
+                            <InputNumberField label={t('fill.settlementAllowance')} value={input.settlementPct} unit="%"
                                 onChange={v => update({ settlementPct: v })} />
                             <div className="mt-3 border-t border-gray-100 pt-2">
-                                <CalcField label="ปริมาณดินที่ต้องสั่ง" value={outputs.volume} unit="คิว (ลูกบาศก์เมตร)" strong />
+                                <CalcField label={t('fill.soilQuantityToOrder')} value={outputs.volume} unit={t('fill.cuMCubicMetres')} strong />
                             </div>
                         </div>
                     </SheetCard>
 
-                    <SheetCard title="วัสดุถม">
-                        <InputTextField label="วัสดุถม / หมายเหตุ" value={input.material} placeholder="เช่น ดินถม, ทรายถม, ลูกค้าจัดหาเอง"
+                    <SheetCard title={t('fill.fillMaterial')}>
+                        <InputTextField label={t('fill.fillMaterialRemark')} value={input.material} placeholder={t('fill.eGFillSoilFill')}
                             onChange={v => update({ material: v })} />
                         <p className="mt-2 text-[12px] text-gray-500">
-                            วัสดุถม (ถ้ามี) ระบุที่หมายเหตุ — ข้อความนี้แสดงในช่องหมายเหตุของ BOQ แถว &quot;ดินถม (ตามสเปค) + บดอัด&quot;.
-                            ปริมาณ {formatNumber(outputs.volume)} คิว ส่งเข้าช่องปริมาณของแถวเดียวกัน (BOQ บวก %เผื่อของแถวนั้นอีกชั้น ตั้งต้น 10%)
+                            {t('fill.fillMaterialIfAnyGoes')}{formatNumber(outputs.volume)} {t('fill.cuMGoesIntoThe')}
                         </p>
                     </SheetCard>
                 </>
@@ -50,35 +51,36 @@ export default function FillPage() {
 
 /** Guided journey: fill area and height off the site plan; the settlement allowance is folded. */
 function JourneyView({ calc }: { calc: UseCalculator<FillInput> }) {
+    const t = useTranslations('calculators');
     const { input, update, outputs } = calc;
     const volume = outputs.volume ?? 0;
     const area = (Number.isFinite(input.width) ? input.width : 0) * (Number.isFinite(input.length) ? input.length : 0);
     return (
         <>
-            <SheetCard title="พื้นที่ที่ต้องถม">
+            <SheetCard title={t('fill.areaToFill')}>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3">
-                    <JNumber label="ความกว้างพื้นที่ถม" fieldKey="width" value={input.width} unit="ม." onChange={v => update({ width: v })} />
-                    <JNumber label="ความยาวพื้นที่ถม" fieldKey="length" value={input.length} unit="ม." onChange={v => update({ length: v })} />
-                    <PlanNumber label="ความสูงถม" fieldKey="height" value={input.height} unit="ม." range={[0.05, 3]}
-                        hint="ระดับที่ต้องการ ลบ ระดับดินเดิม" onChange={v => update({ height: v })} />
-                    <JText wide label="วัสดุถม" value={input.material} placeholder="เช่น ดินถม, ทรายถม, ลูกค้าจัดหาเอง"
+                    <JNumber label={t('fill.fillAreaWidth')} fieldKey="width" value={input.width} unit={t('common.m')} onChange={v => update({ width: v })} />
+                    <JNumber label={t('fill.fillAreaLength')} fieldKey="length" value={input.length} unit={t('common.m')} onChange={v => update({ length: v })} />
+                    <PlanNumber label={t('fill.fillHeight2')} fieldKey="height" value={input.height} unit={t('common.m')} range={[0.05, 3]}
+                        hint={t('fill.requiredLevelMinusTheExisting')} onChange={v => update({ height: v })} />
+                    <JText wide label={t('fill.fillMaterial')} value={input.material} placeholder={t('fill.eGFillSoilFill')}
                         onChange={v => update({ material: v })} />
                 </div>
             </SheetCard>
 
             <AdvancedSection>
                 <div className="max-w-xl">
-                    <InputNumberField label="เผื่อดินยุบตัว" value={input.settlementPct} digits={0} unit="%"
-                        hint="ดินถมยุบตัวเมื่อบดอัด ปกติ 30%" onChange={v => update({ settlementPct: v })} />
+                    <InputNumberField label={t('fill.settlementAllowance')} value={input.settlementPct} digits={0} unit="%"
+                        hint={t('fill.fillSettlesWhenCompactedNormally')} onChange={v => update({ settlementPct: v })} />
                 </div>
             </AdvancedSection>
 
             <ResultSummary
                 items={volume > 0 ? [{
-                    label: 'ปริมาณดินถม', value: volume, unit: 'ลบ.ม.',
-                    detail: `พื้นที่ ${formatNumber(area)} ตร.ม. × สูง ${formatNumber(input.height)} ม. + เผื่อยุบตัว ${formatNumber(input.settlementPct, 0)}%`,
+                    label: t('fill.fillSoilQuantity'), value: volume, unit: t('common.cuM'),
+                    detail: t('fill.areaVSqMHeight', { v: formatNumber(area), v2: formatNumber(input.height), v3: formatNumber(input.settlementPct, 0) }),
                 }] : []}
-                empty={<>กรอกความกว้าง ความยาว และความสูงถม ระบบจะคิดปริมาณดินให้ — หากไม่ต้องถมดิน กด &quot;ไม่มีในโครงการนี้&quot; ด้านล่าง</>} />
+                empty={<>{t('fill.enterTheWidthLengthAnd')}</>} />
         </>
     );
 }

@@ -36,9 +36,11 @@ export const newOpeningRow = (rows: OpeningRow[], prefix: string): OpeningRow =>
     return {
         name: nextName(rows, prefix),
         type: prev?.type ?? ALUMINIUM,
+        /* eslint-disable no-restricted-syntax -- stored domain values, not UI text */
         wallPart: prev?.wallPart ?? 'ผนังรอบบ้าน',
         brick: prev?.brick ?? 'อิฐมอญ',
         thickness: prev?.thickness ?? 'ครึ่งแผ่น',
+        /* eslint-enable no-restricted-syntax */
         count: 1, width: 0, height: 0,
         rate: ALUMINIUM_RATES.sliding, matPrice: null, labPrice: null,
     };

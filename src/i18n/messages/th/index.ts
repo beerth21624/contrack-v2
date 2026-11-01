@@ -37,6 +37,7 @@ import handover from './handover.json';
 import sheet from './sheet.json';
 import journeyUi from './journeyUi.json';
 import exportMessages from './export.json';
+import calculators from './calculators.json';
 
 const messages = {
   common,
@@ -78,6 +79,7 @@ const messages = {
   sheet,
   journeyUi,
   export: exportMessages,
+  calculators,
 };
 
 export default messages;

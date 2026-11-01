@@ -7,6 +7,7 @@ import {
 import type { CalcContext } from '@/domain/calculators/types';
 import { EditableTable } from '@/components/sheet/EditableTable';
 import { NumberCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
+import { useTranslations } from 'next-intl';
 
 export const isStructural = (r: PlasterRow) => r.wallPart.trim() === STRUCTURAL_WALL;
 
@@ -20,29 +21,30 @@ export function PlasterTable({ rows, onChange, setRow, ctx, brickNet, structural
     /** Area per face a new / cleared structure-wall row gets (the Excel sample 31.24 by default). */
     structuralDefault?: number;
 }) {
+    const t = useTranslations('calculators');
     return (
         <EditableTable<PlasterRow>
             rows={rows}
             onChange={onChange}
             newRow={() => ({ wallPart: '', kind: '', sides: 1 })}
-            addLabel="+ เพิ่มรายการ"
+            addLabel={t('common.addItem')}
             columns={[
-                { kind: 'select', key: 'wallPart', title: 'แยกส่วนผนัง', width: 160,
+                { kind: 'select', key: 'wallPart', title: t('common.wallPart2'), width: 160,
                     options: PLASTER_WALL_PARTS.map(v => ({ value: v })),
                     get: r => r.wallPart,
                     set: (r, v) => ({
                         ...r, wallPart: v,
                         manualArea: v === STRUCTURAL_WALL ? (r.manualArea ?? structuralDefault) : r.manualArea,
                     }) },
-                { kind: 'select', key: 'kind', title: 'รายการ', width: 120, options: PLASTER_KINDS.map(v => ({ value: v })),
+                { kind: 'select', key: 'kind', title: t('common.item'), width: 120, options: PLASTER_KINDS.map(v => ({ value: v })),
                     get: r => r.kind.trim(), set: (r, v) => ({ ...r, kind: v }) },
-                { kind: 'select', key: 'sides', title: 'ฉาบกี่ด้าน', width: 80,
+                { kind: 'select', key: 'sides', title: t('plaster.numberOfPlasteredSides'), width: 80,
                     options: PLASTER_SIDES.map(v => ({ value: String(v) })),
                     get: r => (r.sides ? String(r.sides) : ''), set: (r, v) => ({ ...r, sides: Number(v) }) },
                 {
-                    kind: 'label', key: 'perSide', title: 'พื้นที่ผนัง ต่อด้าน (ตร.ม.)', width: 120,
+                    kind: 'label', key: 'perSide', title: t('plaster.wallAreaPerSideSq'), width: 120,
                     get: (r, i) => (isStructural(r)
-                        ? <NumberCell value={r.manualArea ?? 0} ariaLabel="พื้นที่ผนังโครงสร้าง ต่อด้าน"
+                        ? <NumberCell value={r.manualArea ?? 0} ariaLabel={t('plaster.structuralWallAreaPerSide')}
                             onCommit={v => setRow(i, { manualArea: v ?? structuralDefault })} />
                         : (
                             <div className="text-right tabular-nums px-1" style={{ background: SHEET_COLORS.calc }}>
@@ -50,7 +52,7 @@ export function PlasterTable({ rows, onChange, setRow, ctx, brickNet, structural
                             </div>
                         )),
                 },
-                { kind: 'calc', key: 'area', title: 'รวม (ตร.ม.)', width: 100, get: r => plasterRowArea(r, ctx) },
+                { kind: 'calc', key: 'area', title: t('common.totalSqM'), width: 100, get: r => plasterRowArea(r, ctx) },
             ]}
         />
     );

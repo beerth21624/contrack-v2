@@ -13,6 +13,7 @@ import { useJourneyMode } from '@/features/journey/JourneyMode';
 import { CalculatorShell } from '../CalculatorShell';
 import { useCalculator } from '../useCalculator';
 import { PrecastSlabJourney } from './PrecastSlabJourney';
+import { useTranslations } from 'next-intl';
 
 /** Column title with the Excel group header (row 3/4) above the column header (row 7). */
 const head = (group: string, title: string): ReactNode => (
@@ -26,6 +27,7 @@ const th = 'border border-gray-200 px-2 py-1 text-[12px] font-semibold text-gray
 const td = 'border border-gray-200 px-2 py-1 text-[13px] text-right tabular-nums';
 
 export default function PrecastSlabPage() {
+    const t = useTranslations('calculators');
     const { input, update, reset, outputs, result, isDefault } = useCalculator(precastSlab);
     const inJourney = useJourneyMode();
     if (inJourney) {
@@ -49,36 +51,36 @@ export default function PrecastSlabPage() {
     return (
         <CalculatorShell def={precastSlab} result={result} isDefault={isDefault} onReset={reset}
             aside={(
-                <SheetCard title="ส่งเข้า BOQ หมวด 8 — 4) เหล็กล๊อคหัวแผ่นพื้นสำเร็จรูป">
+                <SheetCard title={t('precastSlab.sentToBoqSection8')}>
                     {shearKeyRows.length === 0
-                        ? <p className="text-[12px] text-gray-500">ไม่มีเหล็กล็อคหัวแผ่น</p>
+                        ? <p className="text-[12px] text-gray-500">{t('precastSlab.noEndLockBars')}</p>
                         : shearKeyRows.map(r => (
                             <div key={r.key}>
-                                <CalcField label={`${r.desc} (สุทธิ)`} value={r.qty} unit="กก." />
-                                <CalcField label={`ค่าวัสดุ + ค่าแรง (เผื่อ ${formatNumber(r.waste * 100, 0)}%)`} value={r.total} unit="บาท" />
+                                <CalcField label={t('precastSlab.descNet', { desc: r.desc })} value={r.qty} unit={t('common.kg')} />
+                                <CalcField label={t('precastSlab.materialLabourAllowanceV', { v: formatNumber(r.waste * 100, 0) })} value={r.total} unit={t('common.baht')} />
                             </div>
                         ))}
-                    <p className="mt-1 text-[12px] text-gray-500">ไม่มีแถวลวดผูกเหล็ก</p>
+                    <p className="mt-1 text-[12px] text-gray-500">{t('precastSlab.noTieWireRow')}</p>
                 </SheetCard>
             )}>
-            <SheetCard title="สรุปปริมาณงานพื้นสำเร็จรูป">
+            <SheetCard title={t('precastSlab.precastSlabQuantitySummary')}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <CalcField label="แผ่นพื้น สำเร็จรูป" value={outputs.area} unit="ตร.ม." strong />
-                    <CalcField label="เหล็กไวร์เมช" value={outputs.wiremesh} unit="ตร.ม." strong />
-                    <CalcField label="ไม้แบบ" value={outputs.formwork} unit="ตร.ม." strong />
-                    <CalcField label="คอนกรีต ทับหน้า" value={outputs.concrete} unit="ลบ.ม." digits={4} strong />
+                    <CalcField label={t('precastSlab.precastSlab2')} value={outputs.area} unit={t('common.sqM')} strong />
+                    <CalcField label={t('precastSlab.wireMesh2')} value={outputs.wiremesh} unit={t('common.sqM')} strong />
+                    <CalcField label={t('common.formwork')} value={outputs.formwork} unit={t('common.sqM')} strong />
+                    <CalcField label={t('precastSlab.toppingConcrete2')} value={outputs.concrete} unit={t('common.cuM')} digits={4} strong />
                 </div>
                 <div className="mt-3 overflow-x-auto">
                     <table className="w-full border-collapse">
                         <thead>
                             <tr>
-                                <th className={th}>ปริมาณเหล็กล็อคหัวแผ่น (กก.)</th>
+                                <th className={th}>{t('precastSlab.endLockBarQuantityKg')}</th>
                                 {REBAR_SIZES.map(s => <th key={s} className={th}>{s}</th>)}
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td className="border border-gray-200 px-2 py-1 text-[13px]">รวม</td>
+                                <td className="border border-gray-200 px-2 py-1 text-[13px]">{t('common.total')}</td>
                                 {REBAR_SIZES.map(s => (
                                     <td key={s} className={`${td} font-semibold`} style={{ background: SHEET_COLORS.calc }}>
                                         {formatNumber(totals.shearKey[s])}
@@ -90,45 +92,43 @@ export default function PrecastSlabPage() {
                 </div>
             </SheetCard>
 
-            <SheetCard title="ข้อมูลพื้นสำเร็จรูป">
+            <SheetCard title={t('precastSlab.precastSlabData')}>
                 <EditableTable<PrecastPanelRow>
                     rows={input.panels}
                     onChange={panels => update({ panels })}
                     newRow={newRow}
-                    addLabel="+ เพิ่มแผ่นพื้น"
+                    addLabel={t('precastSlab.addSlab')}
                     columns={[
-                        { kind: 'number', key: 'width', title: 'กว้าง (ม.)', width: 70, get: r => r.width, set: (r, v) => ({ ...r, width: v }) },
-                        { kind: 'number', key: 'length', title: 'ยาว (ม.)', width: 70, get: r => r.length, set: (r, v) => ({ ...r, length: v }) },
-                        { kind: 'calc', key: 'area', title: head('แผ่นพื้น', 'แผ่นพื้น (ตร.ม)'), width: 80, get: r => precastPanel(r).area },
-                        { kind: 'calc', key: 'wiremesh', title: head('เหล็กไวร์เมช', 'ไวร์เมช (ตร.ม.)'), width: 80, get: r => precastPanel(r).wiremesh },
-                        { kind: 'select', key: 'keySize', title: head('เหล็กล็อคหัวแผ่น', 'ขนาด'), width: 90,
+                        { kind: 'number', key: 'width', title: t('common.widthM'), width: 70, get: r => r.width, set: (r, v) => ({ ...r, width: v }) },
+                        { kind: 'number', key: 'length', title: t('common.lengthM2'), width: 70, get: r => r.length, set: (r, v) => ({ ...r, length: v }) },
+                        { kind: 'calc', key: 'area', title: head(t('precastSlab.slab'), t('precastSlab.slabSqM')), width: 80, get: r => precastPanel(r).area },
+                        { kind: 'calc', key: 'wiremesh', title: head(t('precastSlab.wireMesh2'), t('precastSlab.wireMeshSqM')), width: 80, get: r => precastPanel(r).wiremesh },
+                        { kind: 'select', key: 'keySize', title: head(t('precastSlab.slabEndLockBars'), t('common.size')), width: 90,
                             options: PS_BAR_SIZES.map(s => ({ value: s })), get: r => r.keySize, set: (r, v) => ({ ...r, keySize: v }) },
-                        { kind: 'number', key: 'keySpacing', title: head('เหล็กล็อคหัวแผ่น', 'ระยะห่าง (ม.)'), width: 70,
+                        { kind: 'number', key: 'keySpacing', title: head(t('precastSlab.slabEndLockBars'), t('common.spacingM')), width: 70,
                             get: r => r.keySpacing, set: (r, v) => ({ ...r, keySpacing: v }) },
-                        { kind: 'number', key: 'keyBarLength', title: head('เหล็กล็อคหัวแผ่น', 'ความยาว /เส้น (ม.)'), width: 70,
+                        { kind: 'number', key: 'keyBarLength', title: head(t('precastSlab.slabEndLockBars'), t('common.lengthBarM')), width: 70,
                             get: r => r.keyBarLength, set: (r, v) => ({ ...r, keyBarLength: v }) },
-                        { kind: 'calc', key: 'keyCount', title: head('เหล็กล็อคหัวแผ่น', 'จำนวน (เส้น)'), width: 70, digits: 0,
+                        { kind: 'calc', key: 'keyCount', title: head(t('precastSlab.slabEndLockBars'), t('common.numberBars')), width: 70, digits: 0,
                             get: r => precastPanel(r).keyCount },
-                        { kind: 'calc', key: 'keyTotalLength', title: head('เหล็กล็อคหัวแผ่น', 'ความยาว รวม (ม.)'), width: 80,
+                        { kind: 'calc', key: 'keyTotalLength', title: head(t('precastSlab.slabEndLockBars'), t('common.totalLengthM')), width: 80,
                             get: r => precastPanel(r).keyTotalLength },
-                        { kind: 'calc', key: 'keyWeight', title: head('เหล็กล็อคหัวแผ่น', 'น้ำหนัก (กก.)'), width: 80,
+                        { kind: 'calc', key: 'keyWeight', title: head(t('precastSlab.slabEndLockBars'), t('common.weightKg')), width: 80,
                             get: r => precastPanel(r).keyWeight },
-                        { kind: 'calc', key: 'perimeter', title: head('ไม้แบบ', 'ยาว (ม.)'), width: 70, get: r => precastPanel(r).perimeter },
-                        { kind: 'calc', key: 'formwork', title: head('ไม้แบบ', 'ปริมาณ (ตร.ม.)'), width: 80, get: r => precastPanel(r).formwork },
-                        { kind: 'number', key: 'topping', title: head('คอนกรีตทับหน้า', 'หนา (ม.)'), width: 70,
+                        { kind: 'calc', key: 'perimeter', title: head(t('common.formwork'), t('common.lengthM2')), width: 70, get: r => precastPanel(r).perimeter },
+                        { kind: 'calc', key: 'formwork', title: head(t('common.formwork'), t('common.quantitySqM')), width: 80, get: r => precastPanel(r).formwork },
+                        { kind: 'number', key: 'topping', title: head(t('precastSlab.toppingConcrete'), t('common.thicknessM')), width: 70,
                             get: r => r.topping, set: (r, v) => ({ ...r, topping: v }) },
-                        { kind: 'calc', key: 'concrete', title: head('คอนกรีตทับหน้า', 'คอนกรีต (ลบ.ม.)'), width: 80, digits: 4,
+                        { kind: 'calc', key: 'concrete', title: head(t('precastSlab.toppingConcrete'), t('precastSlab.concreteCuM')), width: 80, digits: 4,
                             get: r => precastPanel(r).concrete },
                     ]}
                 />
                 <ul className="mt-3 list-disc pl-5 text-[12px] text-gray-500 space-y-0.5">
-                    <li>1 แถว = 1 แผง (กว้าง × ยาว) · ไวร์เมช = พื้นที่แผ่นพื้น</li>
-                    <li>เหล็กล็อคหัวแผ่น: จำนวน = ปัดขึ้น (2 × กว้าง ÷ ระยะห่าง), ยาวเส้นละ 0.80 ม.</li>
-                    <li>ไม้แบบ = เส้นรอบรูป 2 × (กว้าง + ยาว) × ความหนาคอนกรีตทับหน้า · คอนกรีตทับหน้า = พื้นที่ × หนา</li>
+                    <li>{t('precastSlab.n1Row1PanelWidth')}</li>
+                    <li>{t('precastSlab.endLockBarsNumberRound')}</li>
+                    <li>{t('precastSlab.formworkPerimeter2WidthLength')}</li>
                     <li>
-                        ส่งเข้า BOQ หมวด 10: พื้นสำเร็จรูป {formatNumber(outputs.area)} ตร.ม. (ไม้ค้ำยัน = 0.1 × พื้นที่ ลบ.ฟ. คิดใน BOQ),
-                        ไวร์เมช {formatNumber(outputs.wiremesh)} ตร.ม., ไม้แบบ {formatNumber(outputs.formwork)} ตร.ม.,
-                        คอนกรีต {formatNumber(outputs.concrete, 4)} ลบ.ม. · เหล็กล็อคหัวแผ่น ส่งเข้าหมวด 8 (งานคานคอดิน)
+                        {t('precastSlab.sentToBoqSection10')}{formatNumber(outputs.area)} {t('precastSlab.sqMProps01')}{formatNumber(outputs.wiremesh)} {t('precastSlab.sqMFormwork')}{formatNumber(outputs.formwork)} {t('precastSlab.sqMConcrete')}{formatNumber(outputs.concrete, 4)} {t('precastSlab.cuMEndLockBars')}
                     </li>
                 </ul>
             </SheetCard>
