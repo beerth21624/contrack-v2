@@ -81,7 +81,7 @@
 | I-06 | calculators กลุ่ม 1 | done | b524ea7 | ไม่มี migration; namespace `calculators` ใหม่ (th+en 861 ข้อความ); ESLint glob เพิ่ม; D-378…D-380 |
 | I-07 | calculators กลุ่ม 2 | done | 9a0b6d0 | ไม่มี migration; namespace `calculators` เพิ่มกลุ่ม `roofSlab…waterPipe` + `common.*` เพิ่ม; ESLint glob เพิ่ม; D-381, D-382 |
 | I-08 | calculators กลุ่ม 3 + overlay domain | done | 1673679 | ไม่มี migration; `shared/PickListPage` ย้ายข้อความ (`calculators.pickList.*`); overlay: `domain/journey/levels.en.ts`, `requirements.en.ts`, `domain/calculators/sections.en.ts`; BOQ page ใช้ `template.v5.en` ผ่าน `useBoqText`; ยกเลิกเงื่อนไขปุ่มภาษา (D-16); D-383…D-387 |
-| I-09 | planning | done | HASH | ไม่มี migration; namespace `planning` ใหม่ (th+en 349 ข้อความ); overlay `domain/planning/labels.en.ts`; ESLint glob `src/features/planning/**` เพิ่ม; D-388…D-391 |
+| I-09 | planning | done | 3e1eda0 | ไม่มี migration; namespace `planning` ใหม่ (th+en 349 ข้อความ); overlay `domain/planning/labels.en.ts`; ESLint glob `src/features/planning/**` เพิ่ม; D-388…D-391 |
 | I-10 | cloud ที่เหลือ | todo | | |
 | I-11 | workforce | todo | | |
 | I-12 | subcontracting buyer | todo | | |
@@ -1260,7 +1260,7 @@
 - WP ถัดไป (I-09…I-14) ต้องรู้: ใช้ `useBoqText()` / `useLevelText()` / `dt()`/`du()` ต่อได้; ช่องว่างที่รู้ใน D-386 (ตัวเลือก domain บางอย่างยังไทยตอนสลับ en); เทสต์ไม่เพิ่ม (ลบเทสต์ `suggestionText` เดิมเพราะฟังก์ชันถูกย้าย)
 - ตรวจแล้ว: tsc web, eslint ไฟล์ที่แก้, vitest `src/i18n src/domain/journey src/components/sheet src/features/journey src/features/calculators/shared` ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์
 
-### I-09 — planning (HASH)
+### I-09 — planning (3e1eda0)
 - ย้ายไทยตรงตัวของ `src/features/planning/**` (Man-Day, S-Curve, CashFlow, ปฏิทินงาน, ชุดค่าแรง, ชุดของบริษัท, กราฟ, มาตรวัดความเร็ว, ปุ่มพิมพ์) เข้า `planning.json` (th+en, parity ผ่าน, ท่อนไทยทุกท่อนตรวจกับต้นฉบับแล้ว); ESLint glob `src/features/planning/**/*.{ts,tsx}` เพิ่มแล้ว (ห้ามเติมไทยกลับ); ไฟล์ใหม่ `domain/planning/labels.en.ts`, `features/planning/text.ts`, `usePlanningText.ts`, `schedule/pace-text.ts`
 - WP ถัดไปต้องรู้: I-10 ต้องแปล `rateCardConflictMessage` (`cloud/api/rate-cards.ts`) และลบ `thaiErrorMessage` ที่เหลือ; I-11 (workforce) ใช้ `taskNameIn(id, name, locale)` / `usePlanningText().task` กับ `PLAN_TASKS[].name` และ `monthLabelIn` ได้; ข้อความ en ของวันที่ใน planning ยังเป็น dd/mm/yyyy; ไม่เขียนเทสต์ใหม่
 - ตรวจแล้ว: tsc web, eslint ไฟล์ที่แก้ + `src/features/planning`, check-parity, vitest `src/features/planning src/features/export src/i18n src/domain/planning/__tests__/wage-sets.test.ts` ผ่าน; smoke ICU (plural/rich) ผ่าน; ยังไม่ได้เปิดหน้าจริงในเบราว์เซอร์
