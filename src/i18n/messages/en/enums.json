@@ -13,15 +13,33 @@
     "no_approver": "Auto-approved: no approver"
   },
   "approvalSubject": {
-    "quotation.issue": "Issue quotation",
-    "claim.submit": "Submit progress claim",
-    "variation.submit": "Submit variation order",
-    "purchase_request.approve": "Purchase request",
-    "purchase_order.issue": "Issue purchase order",
-    "supplier_bill.approve": "Supplier bill",
-    "payment_run.approve": "Payment run",
-    "timesheet.approve": "Timesheet",
-    "pay_period.approve": "Pay period"
+    "quotation": {
+      "issue": "Issue quotation"
+    },
+    "claim": {
+      "submit": "Submit progress claim"
+    },
+    "variation": {
+      "submit": "Submit variation order"
+    },
+    "purchase_request": {
+      "approve": "Purchase request"
+    },
+    "purchase_order": {
+      "issue": "Issue purchase order"
+    },
+    "supplier_bill": {
+      "approve": "Supplier bill"
+    },
+    "payment_run": {
+      "approve": "Payment run"
+    },
+    "timesheet": {
+      "approve": "Timesheet"
+    },
+    "pay_period": {
+      "approve": "Pay period"
+    }
   },
   "docType": {
     "project": "Project code",
