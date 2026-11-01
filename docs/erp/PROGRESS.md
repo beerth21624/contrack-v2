@@ -60,7 +60,7 @@
 | WP-46 | Job cost backend: ต้นทุน กำไร แจ้งเตือน | opus | done | 0bbf7ec | migration `0030_wp46_job_cost`; โมดูล `backend/src/modules/job-cost/`, port `SubcontractCommitments` (subcontracting), `CostLedger.listByProject`/`totalsByProjectCostCode`; D-320…D-323 |
 | WP-47 | กระแสเงินสดจริงข้ามโครงการ (backend) | opus | done | d76a926 | D-324…D-328; ไม่มี migration; ไม่เขียนเทสต์ใหม่ |
 | WP-48 | Job cost + กระแสเงินสด web | sonnet | done | d1f7185 | `src/features/erp/job-cost/*`, routes `/p/<id>/cost` + `/finance/cashflow`, แท็บ `cost` + เมนู `finance-cashflow`; i18n `jobCost`; D-329…D-331 |
-| WP-49 | เจ้าหนี้: บิลผู้ขาย / งวดจ้างช่วง / ค่าแรง + 3-way match (backend) | opus | done | HASH | migration `0031_wp49_payables_bills`; ports `PayPeriodPayments`, `SubcontractPayables`, `PurchaseOrders.locate`, `SupplierLookup.findByScVendorEntry` (D-332…D-338) |
+| WP-49 | เจ้าหนี้: บิลผู้ขาย / งวดจ้างช่วง / ค่าแรง + 3-way match (backend) | opus | done | b5a5bd5 | migration `0031_wp49_payables_bills`; ports `PayPeriodPayments`, `SubcontractPayables`, `PurchaseOrders.locate`, `SupplierLookup.findByScVendorEntry` (D-332…D-338) |
 | WP-50 | รอบจ่าย ใบสำคัญจ่าย และ 50 ทวิ (backend) | opus | todo | | |
 | WP-51 | เจ้าหนี้ web + พิมพ์ 50 ทวิ / ใบสำคัญจ่าย | sonnet | todo | | |
 | WP-52 | รายงานภาษี + Excel ให้นักบัญชี | opus | todo | | |
@@ -1084,7 +1084,7 @@
 - WP ถัดไปต้องรู้: เปิดหน้า cost = เขียนฝั่ง server (sync + alerts) จึง `staleTime: 0`; WP-49/51 (payables) เมื่อลงทะเบียน `supplier_bill` ใน `CashPlanSources` ป้าย i18n `enums.cashPlanSource.supplier_bill` มีแล้ว; WP-52 ใช้ `ExportCostXlsx.ts` เป็นตัวอย่าง exceljs แบบ lazy
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/features/erp/job-cost`, `nav-registry.ts`, routes ใหม่ ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/features/erp/hub` ผ่าน
 
-### WP-49 — เจ้าหนี้: บิลผู้ขาย / งวดจ้างช่วง / ค่าแรง + 3-way match (backend) (HASH)
+### WP-49 — เจ้าหนี้: บิลผู้ขาย / งวดจ้างช่วง / ค่าแรง + 3-way match (backend) (b5a5bd5)
 - schema: ไฟล์ใหม่ `schema-payables.ts` (`ap_bills`, `ap_bill_lines`; `payablesTables`) + `database.ts` + `drizzle.config.ts`; migration `0031_wp49_payables_bills` (ไม่ถาม interactive) → WP ถัดไปที่แก้ schema ได้ `0032_*` — **ตาราง `ap_*` ของ WP-50 ใส่ไฟล์เดียวกันนี้และ `payablesTables`**; คอลัมน์เพิ่มดู D-332
 - contract `src/shared/contract/erp/payables.ts` (export ใน `erp/index.ts`): `SUPPLIER_BILL_KINDS|STATUSES|OPEN_STATUSES`, `BILL_MATCH_STATUSES`, `BILL_LINE_MATCHES`, `SUPPLIER_BILL_PORTAL_DAYS`/`_DUE_SOON_DAYS`, DTO `supplierBill(Summary|List)DtoSchema`/`supplierBillLineDtoSchema` (`orderUnitPrice`, `billableQty`, `canEdit/canApprove/canVoid`), requests `createSupplierBill|createBillFromOrder|createBillFromScClaim|createBillFromPayPeriod|patchSupplierBill|approveSupplierBill|voidSupplierBillRequestSchema`, `supplierBillListQuerySchema`, `payablesDue(Query|Dto)Schema` (+ `billableScClaimDtoSchema`, `billablePayPeriodDtoSchema`); FILE_PURPOSE `supplier_bill_scan` → `payables`; `PORTAL_TASK_KINDS` + `supplier_bill_due` (+ case ใน `TasksList.tsx`)
 - ports (`ports.ts`): `PayPeriodPayments` + `PayPeriodPaymentInfo` (labour `application/labour-payments.ts`, export จาก `LabourModule`), `SubcontractPayables` + `SubcontractPayableClaim` (subcontracting `subcontract-payables.adapter.ts`, `contracts.parts.ts`), `PurchaseOrders.locate`, `SupplierLookup.findByScVendorEntry` (+ `SupplierRepository.findByScEntry`)
