@@ -55,7 +55,7 @@
 | WP-41 | PO/รับของ web + พิมพ์ PO/RFQ | sonnet | done | 4b1b0be | ไม่มี migration; `PurchaseOrderPage`, `GoodsReceiptDialog`, `PurchasingPage`, พิมพ์ PO/RFQ, ประวัติราคาผู้ขาย; routes `…/procurement/orders/[orderId]`, `/purchasing`, `/print/purchase-order/[id]`, `/print/rfq/[id]`; D-296…D-299 |
 | WP-42 | รายงานประจำวัน backend | opus | done | edc7d7c | migration `0028_wp42_site_diary`; โมดูล `backend/src/modules/site-diary/`, port `CrewDailyCost` (workforce), `CostCodeLookup.listByProjects`; D-300…D-305 |
 | WP-43 | รายงานประจำวัน web | sonnet | done | 96534e5 | ไม่มี migration; `src/features/erp/site-diary/*`; routes `/p/<id>/site-diary` และ `/p/<id>/site-diary/<date>`; แท็บ `site-diary`; D-306…D-308 |
-| WP-44 | ใบลงเวลา งวดค่าแรง 15 วัน เบิกล่วงหน้า backend | opus | done | COMMIT_HASH | migration `0029_wp44_labour`; โมดูล `backend/src/modules/labour/`, ports `PeopleDirectory` (workforce), `SiteDiaryManpower` (site-diary), registry `PayPeriodBillChecks` (core); D-309…D-316 |
+| WP-44 | ใบลงเวลา งวดค่าแรง 15 วัน เบิกล่วงหน้า backend | opus | done | beadd7c | migration `0029_wp44_labour`; โมดูล `backend/src/modules/labour/`, ports `PeopleDirectory` (workforce), `SiteDiaryManpower` (site-diary), registry `PayPeriodBillChecks` (core); D-309…D-316 |
 | WP-45 | ค่าแรง web | sonnet | todo | | |
 | WP-46 | Job cost backend: ต้นทุน กำไร แจ้งเตือน | opus | todo | | |
 | WP-47 | กระแสเงินสดจริงข้ามโครงการ (backend) | opus | todo | | |
@@ -1007,7 +1007,7 @@
 - WP ถัดไปต้องรู้: `diaryHref(projectId, date?)` ใน `site-diary/form.ts` ใช้ลิงก์ไปรายงาน; `bangkokToday()` ใน `form.ts` ใช้เทียบวันที่ฝั่งเว็บ; WP-45 (ใบลงเวลา) prefill จาก manpower ที่มี `crewId` ต้องใช้ port ฝั่ง backend (WP-44) ไม่ใช่เว็บ
 - ตรวจแล้ว: `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint `src/features/erp/site-diary`, `nav-registry.ts`, routes ใหม่ ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx vitest run src/i18n src/features/erp/hub` ผ่าน
 
-### WP-44 — ใบลงเวลา งวดค่าแรง 15 วัน เบิกล่วงหน้า backend (COMMIT_HASH)
+### WP-44 — ใบลงเวลา งวดค่าแรง 15 วัน เบิกล่วงหน้า backend (beadd7c)
 - schema: `schema-site.ts` เพิ่ม `lb_pay_periods`, `lb_timesheet_entries` (unique `(person_id, work_date, project_id)`, FK people แบบ tenant ไม่มี on delete, `approval_batch_id`), `lb_pay_lines`, `lb_advances`, `lb_advance_recoveries` (PK `(advance_id, pay_line_id)`) ใน `siteTables`; migration `0029_wp44_labour` (ไม่ถาม interactive) → WP ถัดไปที่แก้ schema ได้ `0030_*`
 - contract `src/shared/contract/erp/labour.ts` (export ใน `erp/index.ts`): สถานะ/แหล่ง/วิธีจ่าย, `PAY_PERIOD_LOCKED_STATUSES`, `payPeriodKeySchema`, DTO `timesheetEntry|timesheetSuggestion|timesheetDay|approveTimesheetsResult|payPeriodSummary|payPeriodList|payLine|payPeriod|wageAdvance(List)DtoSchema`, requests `putTimesheetDayRequestSchema`, `approveTimesheetsRequestSchema`, `payPeriodListQuerySchema`, `payPayPeriodRequestSchema`, `wageAdvanceListQuerySchema`, `create|patchWageAdvanceRequestSchema`; `PORTAL_TASK_KINDS` + `pay_period_ready` (+ case ใน `TasksList.tsx`)
 - pure: `src/domain/labour/pay-period.ts` (`isPayPeriodKey`, `payPeriodRange`, `defaultOtRate`, `timesheetAmount`, `recoverAdvances`); ใช้ `payPeriodOf` เดิมใน `dates/business-date.ts`
