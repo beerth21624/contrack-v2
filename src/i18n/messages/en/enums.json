@@ -343,5 +343,51 @@
   "labourPaymentMethod": {
     "cash": "Cash",
     "transfer": "Bank transfer"
+  },
+  "costLevel": {
+    "ok": "OK",
+    "warning": "Warning",
+    "critical": "Over budget"
+  },
+  "alertLevel": {
+    "warning": "Warning",
+    "critical": "Critical"
+  },
+  "alertKind": {
+    "cost_overrun": "Cost over budget",
+    "commitment_over_budget": "Commitments over budget",
+    "negative_cash": "Negative cash",
+    "margin_drop": "Margin drop"
+  },
+  "cashPlanSource": {
+    "invoice": "Invoice",
+    "milestone": "Unbilled milestone",
+    "purchase_order": "Purchase order",
+    "labour": "Labour",
+    "subcontract": "Subcontract installment",
+    "supplier_bill": "Supplier bill"
+  },
+  "costEntryKind": {
+    "commit": "Commitment",
+    "commit_release": "Release",
+    "actual": "Actual"
+  },
+  "costCategory": {
+    "material": "Material",
+    "labour": "Labour",
+    "subcontract": "Subcontract",
+    "equipment": "Equipment",
+    "other": "Other"
+  },
+  "costSourceType": {
+    "purchase_order": "Purchase order",
+    "goods_receipt": "Goods receipt",
+    "supplier_bill": "Supplier bill",
+    "subcontract": "Subcontract",
+    "sc_claim": "Subcontract claim",
+    "timesheet": "Timesheet",
+    "site_diary": "Site diary",
+    "warranty_claim": "Warranty claim",
+    "manual": "Manual"
   }
 }

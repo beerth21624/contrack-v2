@@ -84,6 +84,7 @@ export const WORKSPACE_NAV: readonly ErpNavGroup[] = [
         groupKey: 'finance',
         items: [
             { key: 'pay-periods', labelKey: 'payPeriods', href: '/workspace/pay-periods', module: 'labour', permission: 'labour.read', match: p => p.startsWith('/workspace/pay-periods') },
+            { key: 'finance-cashflow', labelKey: 'companyCashFlow', href: '/finance/cashflow', module: 'job-cost', permission: 'cost.read', match: p => p.startsWith('/finance/cashflow') },
         ],
     },
     {
@@ -116,6 +117,7 @@ export const PROJECT_TABS: readonly ErpProjectTab[] = [
     { key: 'procurement', labelKey: 'tabs.procurement', href: id => `/p/${encodeURIComponent(id)}/procurement`, module: 'procurement', permission: 'procurement.read', match: p => /^\/p\/[^/]+\/procurement/.test(p) },
     { key: 'site-diary', labelKey: 'tabs.siteDiary', href: id => `/p/${encodeURIComponent(id)}/site-diary`, module: 'site-diary', permission: 'site.read', match: p => /^\/p\/[^/]+\/site-diary/.test(p) },
     { key: 'labour', labelKey: 'tabs.labour', href: id => `/p/${encodeURIComponent(id)}/labour`, module: 'labour', permission: 'labour.read', match: p => /^\/p\/[^/]+\/labour/.test(p) },
+    { key: 'cost', labelKey: 'tabs.cost', href: id => `/p/${encodeURIComponent(id)}/cost`, module: 'job-cost', permission: 'cost.read', match: p => /^\/p\/[^/]+\/cost/.test(p) },
 ];
 
 /** Header slot: small controls next to the notification bell (global search, …); each shows when its gate passes. */

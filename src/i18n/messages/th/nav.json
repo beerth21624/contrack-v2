@@ -31,10 +31,12 @@
     "variations": "งานเพิ่ม-ลด",
     "procurement": "จัดซื้อ",
     "siteDiary": "รายงานประจำวัน",
-    "labour": "ค่าแรง"
+    "labour": "ค่าแรง",
+    "cost": "ต้นทุน"
   },
   "receivables": "ลูกหนี้",
   "suppliers": "ผู้ขาย",
   "purchasing": "ใบสั่งซื้อ",
-  "payPeriods": "งวดค่าแรง"
+  "payPeriods": "งวดค่าแรง",
+  "companyCashFlow": "กระแสเงินสด"
 }

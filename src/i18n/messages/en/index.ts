@@ -29,6 +29,7 @@ import suppliers from './suppliers.json';
 import procurement from './procurement.json';
 import siteDiary from './siteDiary.json';
 import labour from './labour.json';
+import jobCost from './jobCost.json';
 
 const messages = {
   common,
@@ -62,6 +63,7 @@ const messages = {
   procurement,
   siteDiary,
   labour,
+  jobCost,
 };
 
 export default messages;

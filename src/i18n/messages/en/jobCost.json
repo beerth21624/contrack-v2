@@ -1,0 +1,161 @@
+{
+  "title": "Job cost",
+  "subtitle": "Budget, commitments, actual cost and forecast at completion by BOQ section and cost code",
+  "noAccess": "You do not have access to job cost",
+  "noBaseline": "The BOQ baseline is not locked yet, so there are no cost codes or budget (only unassigned cost is shown)",
+  "openCompanyCash": "Company cash flow",
+  "export": {
+    "button": "Export Excel",
+    "sheet": "Job cost",
+    "code": "Code"
+  },
+  "summary": {
+    "title": "Cost overview"
+  },
+  "progressSource": {
+    "reported": "Progress from site reports",
+    "certified": "Progress from certified claims"
+  },
+  "table": {
+    "title": "Cost by section / cost code",
+    "section": "Section {no}",
+    "unassigned": "Unassigned",
+    "total": "Total",
+    "columns": {
+      "name": "Item",
+      "unit": "Unit",
+      "budget": "Budget",
+      "committed": "Committed",
+      "actual": "Actual",
+      "eac": "Forecast (EAC)",
+      "variance": "Variance",
+      "progress": "Progress",
+      "level": "Status"
+    },
+    "omitted": "Omitted",
+    "manual": "Manual",
+    "ledger": "Ledger",
+    "forecast": "Forecast",
+    "filterSection": "Filter by section",
+    "filterLevel": "Filter by status",
+    "search": "Search code / name",
+    "empty": "No items found",
+    "noBaseline": "No cost codes yet (baseline not locked)"
+  },
+  "chart": {
+    "label": "Budget vs cost by section chart",
+    "budget": "Budget",
+    "committed": "Committed",
+    "actual": "Actual",
+    "eac": "Forecast (EAC)",
+    "section": "Section {no}",
+    "axisSection": "BOQ section"
+  },
+  "profit": {
+    "title": "Projected profit",
+    "noContract": "There is no signed contract yet, so profit cannot be calculated",
+    "revenue": "Contract value",
+    "cost": "Forecast cost",
+    "profit": "Profit",
+    "margin": "Margin",
+    "quotedMargin": "Quoted margin",
+    "billed": "Billed",
+    "received": "Received"
+  },
+  "alerts": {
+    "title": "Alerts",
+    "none": "No open alerts",
+    "marginDetail": "Projected margin {value} (below {threshold})",
+    "cashDetail": "Projected balance {value}",
+    "valueOf": "Amount",
+    "against": "vs budget",
+    "since": "since"
+  },
+  "forecast": {
+    "title": "Forecast for {code}",
+    "saved": "Forecast saved",
+    "budget": "Budget",
+    "actual": "Actual",
+    "committed": "Committed",
+    "currentEac": "Current forecast",
+    "method": "Method",
+    "auto": "Automatic",
+    "manual": "Manual",
+    "autoHint": "Calculated from progress and open commitments",
+    "manualHint": "Never lower than actual plus open commitments",
+    "eac": "Forecast at completion (THB)",
+    "note": "Note",
+    "save": "Save"
+  },
+  "ledger": {
+    "title": "Cost entries: {name}",
+    "committedOpen": "Open commitments",
+    "actual": "Actual",
+    "empty": "No entries",
+    "columns": {
+      "date": "Date",
+      "kind": "Kind",
+      "category": "Category",
+      "source": "Source",
+      "amount": "Amount",
+      "note": "Note"
+    }
+  },
+  "settings": {
+    "title": "Cash settings",
+    "intro": "Enter the cash balance on a date; weekly balances are projected from there",
+    "saved": "Settings saved",
+    "openingBalance": "Opening balance (THB)",
+    "openingHint": "Cash at the start of the date below",
+    "asOf": "As of",
+    "minBalance": "Minimum balance (THB)",
+    "minHint": "You are warned when the projected balance drops below this",
+    "save": "Save"
+  },
+  "cash": {
+    "title": "Cash flow",
+    "subtitle": "Plan vs actual per week across all live projects",
+    "noAccess": "You do not have access to cash flow",
+    "noSettings": "Opening balance is not set, so balances start from 0",
+    "belowMin": "Projected balance falls below the minimum ({min}) from the week starting {date}",
+    "settings": "Settings",
+    "stats": {
+      "opening": "Opening balance",
+      "min": "Minimum balance",
+      "lowest": "Lowest projected",
+      "firstBelow": "First week below minimum",
+      "none": "None"
+    },
+    "chartTitle": "Plan vs actual",
+    "chartLabel": "Weekly cash flow chart",
+    "legend": {
+      "plannedNet": "Planned net",
+      "actualNet": "Actual net",
+      "balance": "Balance",
+      "min": "Minimum",
+      "estimate": "Estimate plan (cumulative)"
+    },
+    "weeksN": "{n} weeks",
+    "pastN": "Past {n} weeks",
+    "past": "Past weeks",
+    "weeklyTitle": "By week",
+    "itemsTitle": "Planned items",
+    "allProjects": "All projects",
+    "noItems": "No planned items",
+    "projectTitle": "Project cash flow",
+    "columns": {
+      "week": "Week",
+      "plannedIn": "Planned in",
+      "plannedOut": "Planned out",
+      "actualIn": "Actual in",
+      "actualOut": "Actual out",
+      "balance": "Balance",
+      "date": "Date",
+      "project": "Project",
+      "source": "Source",
+      "ref": "Reference",
+      "in": "In",
+      "out": "Out"
+    }
+  }
+}

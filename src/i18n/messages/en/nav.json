@@ -31,10 +31,12 @@
     "variations": "Variations",
     "procurement": "Purchasing",
     "siteDiary": "Site diary",
-    "labour": "Labour"
+    "labour": "Labour",
+    "cost": "Cost"
   },
   "receivables": "Receivables",
   "suppliers": "Suppliers",
   "purchasing": "Purchase orders",
-  "payPeriods": "Pay periods"
+  "payPeriods": "Pay periods",
+  "companyCashFlow": "Cash flow"
 }

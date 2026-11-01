@@ -343,5 +343,51 @@
   "labourPaymentMethod": {
     "cash": "เงินสด",
     "transfer": "โอนเงิน"
+  },
+  "costLevel": {
+    "ok": "ปกติ",
+    "warning": "เฝ้าระวัง",
+    "critical": "เกินงบ"
+  },
+  "alertLevel": {
+    "warning": "เฝ้าระวัง",
+    "critical": "วิกฤต"
+  },
+  "alertKind": {
+    "cost_overrun": "ต้นทุนเกินงบ",
+    "commitment_over_budget": "ยอดผูกพันเกินงบ",
+    "negative_cash": "เงินสดติดลบ",
+    "margin_drop": "อัตรากำไรลดลง"
+  },
+  "cashPlanSource": {
+    "invoice": "ใบแจ้งหนี้",
+    "milestone": "งวดงานที่ยังไม่วางบิล",
+    "purchase_order": "ใบสั่งซื้อ",
+    "labour": "ค่าแรง",
+    "subcontract": "งวดจ้างช่วง",
+    "supplier_bill": "บิลผู้ขาย"
+  },
+  "costEntryKind": {
+    "commit": "ผูกพัน",
+    "commit_release": "ปลดผูกพัน",
+    "actual": "ต้นทุนจริง"
+  },
+  "costCategory": {
+    "material": "วัสดุ",
+    "labour": "ค่าแรง",
+    "subcontract": "จ้างช่วง",
+    "equipment": "เครื่องจักร",
+    "other": "อื่น ๆ"
+  },
+  "costSourceType": {
+    "purchase_order": "ใบสั่งซื้อ",
+    "goods_receipt": "ใบรับของ",
+    "supplier_bill": "บิลผู้ขาย",
+    "subcontract": "สัญญาจ้างช่วง",
+    "sc_claim": "งวดจ้างช่วง",
+    "timesheet": "ใบลงเวลา",
+    "site_diary": "รายงานประจำวัน",
+    "warranty_claim": "เคลมประกัน",
+    "manual": "บันทึกเอง"
   }
 }
