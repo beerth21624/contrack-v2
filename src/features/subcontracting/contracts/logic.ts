@@ -9,6 +9,8 @@ import { contractClaimAmounts } from '@/domain/subcontracting/claims';
 import { round2 as domainRound2 } from '@/domain/subcontracting/snapshot';
 import { isApiError } from '@/features/cloud/api/errors';
 import { can, type Permission } from '@/features/cloud/permissions';
+import type { Locale } from '@/i18n/config';
+import { scLocale, scText, type ScT } from '../buyer/text';
 
 // ── Errors ──
 
@@ -24,8 +26,36 @@ export function round2(n: number): number {
     return Number.isFinite(n) ? domainRound2(n) : 0;
 }
 
-const MONEY = new Intl.NumberFormat('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const QTY = new Intl.NumberFormat('th-TH', { maximumFractionDigits: 2 });
+/** Locale tags of numbers and dates in each UI language (Thai keeps the Thai calendar year, as before). */
+const NUMBER_LOCALE: Record<Locale, string> = { th: 'th-TH', en: 'en-US' };
+const DATE_LOCALE: Record<Locale, string> = { th: 'th-TH', en: 'en-GB' };
+
+/** The locale tag for numbers typed into inputs (follows the UI language cookie). */
+export const numberLocale = (): string => NUMBER_LOCALE[scLocale()];
+
+const formatters = new Map<string, Intl.NumberFormat | Intl.DateTimeFormat>();
+function numberFormat(key: string, options: Intl.NumberFormatOptions): Intl.NumberFormat {
+    const locale = scLocale();
+    const id = `${key}:${locale}`;
+    let f = formatters.get(id) as Intl.NumberFormat | undefined;
+    if (f === undefined) {
+        f = new Intl.NumberFormat(NUMBER_LOCALE[locale], options);
+        formatters.set(id, f);
+    }
+    return f;
+}
+function dateFormat(key: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+    const locale = scLocale();
+    const id = `${key}:${locale}`;
+    let f = formatters.get(id) as Intl.DateTimeFormat | undefined;
+    if (f === undefined) {
+        f = new Intl.DateTimeFormat(DATE_LOCALE[locale], options);
+        formatters.set(id, f);
+    }
+    return f;
+}
+const MONEY = { format: (n: number) => numberFormat('money', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) };
+const QTY = { format: (n: number) => numberFormat('qty', { maximumFractionDigits: 2 }).format(n) };
 
 /** 125000 → "125,000.00" (tabular numerals come from the CSS). */
 export function fmtMoney(n: number): string {
@@ -41,10 +71,10 @@ export function fmtPct(fraction: number): string {
     return `${QTY.format(round2(fraction * 100))}%`;
 }
 
-const DATE = new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short', year: '2-digit', timeZone: 'UTC' });
-const DATE_LONG = new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const DATE = { format: (d: Date) => dateFormat('date', { day: 'numeric', month: 'short', year: '2-digit', timeZone: 'UTC' }).format(d) };
+const DATE_LONG = { format: (d: Date) => dateFormat('dateLong', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(d) };
 
-/** "2026-10-30" → "30 ต.ค. 69"; '' for null or a bad date. */
+/** "2026-10-30" → "30 ต.ค. 69" (Thai) / "30 Oct 26" (English); '' for null or a bad date. */
 export function fmtDate(date: string | null | undefined, long = false): string {
     if (date === null || date === undefined || date === '') return '';
     const d = new Date(date.length === 10 ? `${date}T00:00:00Z` : date);
@@ -60,14 +90,7 @@ export function todayIso(now: Date = new Date()): string {
 
 // ── Labels ──
 
-export const SUBCONTRACT_STATUS_LABEL: Record<SubcontractStatus, string> = {
-    pending_acceptance: 'รอผู้รับจ้างยอมรับ',
-    active: 'กำลังดำเนินงาน',
-    completed: 'ส่งมอบแล้ว',
-    closed: 'ปิดสัญญาแล้ว',
-    cancelled: 'ยกเลิก',
-    terminated: 'บอกเลิกสัญญา',
-};
+export const subcontractStatusLabel = (status: SubcontractStatus, t: ScT = scText()): string => t(`contracts.labels.subcontractStatus.${status}`);
 
 /** Colour means state (design system): green done, red problem, grey not yet; the brand colour for "your move". */
 export const SUBCONTRACT_STATUS_COLOR: Record<SubcontractStatus, string> = {
@@ -81,13 +104,7 @@ export const SUBCONTRACT_STATUS_COLOR: Record<SubcontractStatus, string> = {
 
 export type InstallmentState = SubcontractDto['installments'][number]['state'];
 
-export const INSTALLMENT_STATE_LABEL: Record<InstallmentState, string> = {
-    not_started: 'ยังไม่ถึง',
-    requested: 'ขอเบิกแล้ว',
-    inspected: 'ตรวจรับแล้ว',
-    approved: 'อนุมัติแล้ว',
-    paid: 'จ่ายแล้ว',
-};
+export const installmentStateLabel = (state: InstallmentState, t: ScT = scText()): string => t(`contracts.labels.installmentState.${state}`);
 
 export const INSTALLMENT_STATE_COLOR: Record<InstallmentState, string> = {
     not_started: 'default',
@@ -97,38 +114,22 @@ export const INSTALLMENT_STATE_COLOR: Record<InstallmentState, string> = {
     paid: 'success',
 };
 
-export const CLAIM_STATUS_LABEL: Record<ClaimStatus, string> = {
-    requested: 'รอตรวจรับ',
-    inspected: 'ตรวจรับแล้ว',
-    approved: 'อนุมัติแล้ว',
-    paid: 'จ่ายแล้ว',
-    rejected: 'ไม่อนุมัติ',
-};
+export const claimStatusLabel = (status: ClaimStatus, t: ScT = scText()): string => t(`contracts.labels.claimStatus.${status}`);
 
-export const INSPECTION_RESULT_LABEL: Record<InspectionResult, string> = {
-    pass: 'ผ่าน',
-    pass_with_fixes: 'ผ่าน มีรายการแก้',
-    fail: 'ไม่ผ่าน',
-};
+export const inspectionResultLabel = (result: InspectionResult, t: ScT = scText()): string => t(`contracts.labels.inspectionResult.${result}`);
 
 export type PendingAction = SubcontractSummaryDto['pendingAction'];
 
 /** The one call to action of a contract row (null = nothing waits on the buyer). */
-export const PENDING_ACTION_LABEL: Record<PendingAction, string | null> = {
-    none: null,
-    vendor_accept: 'รอผู้รับจ้างยอมรับ',
-    buyer_inspect: 'ตรวจรับงวด',
-    buyer_approve: 'อนุมัติงวด',
-    buyer_pay: 'บันทึกจ่าย',
-    variation_response: 'ตอบงานเพิ่ม-ลด',
-};
+export const pendingActionLabel = (action: PendingAction, t: ScT = scText()): string | null =>
+    (action === 'none' ? null : t(`contracts.labels.pendingAction.${action}`));
 
 /** Pending actions that are the buyer's move (shown as a button, the others as quiet text). */
 export function isBuyerMove(action: PendingAction): boolean {
     return action === 'buyer_inspect' || action === 'buyer_approve' || action === 'buyer_pay' || action === 'variation_response';
 }
 
-export const RETENTION_KIND_LABEL = { withheld: 'หักไว้', released: 'คืนแล้ว', forfeited: 'ริบ' } as const;
+export const retentionKindLabel = (kind: 'withheld' | 'released' | 'forfeited', t: ScT = scText()): string => t(`contracts.labels.retentionKind.${kind}`);
 
 // ── Permissions (client mirror of ScAccess.allowed: settings widen three rights) ──
 
@@ -296,23 +297,11 @@ export function settingsFromForm(f: SettingsForm): SubcontractingSettingsDto {
 
 // ── Contract template placeholders (settings editor help) ──
 // TODO(C3): keep in step with src/domain/subcontracting/contract-template.ts once the contracts stream writes it.
-export const TEMPLATE_PLACEHOLDERS: readonly { key: string; label: string }[] = [
-    { key: 'contractNo', label: 'เลขที่สัญญา' },
-    { key: 'date', label: 'วันที่ทำสัญญา' },
-    { key: 'buyerName', label: 'ผู้ว่าจ้าง' },
-    { key: 'vendorName', label: 'ผู้รับจ้าง' },
-    { key: 'projectName', label: 'ชื่อโครงการ' },
-    { key: 'location', label: 'สถานที่ก่อสร้าง' },
-    { key: 'title', label: 'ชื่องาน' },
-    { key: 'lines', label: 'ตารางรายการงาน-ปริมาณ-ราคา' },
-    { key: 'total', label: 'มูลค่าสัญญา (ตัวเลข)' },
-    { key: 'totalText', label: 'มูลค่าสัญญา (ตัวอักษร)' },
-    { key: 'installments', label: 'ตารางงวดงาน-งวดเงิน' },
-    { key: 'start', label: 'วันเริ่มงาน' },
-    { key: 'finish', label: 'วันแล้วเสร็จ' },
-    { key: 'retentionPct', label: 'เงินประกันผลงาน %' },
-    { key: 'warrantyMonths', label: 'ระยะประกันผลงาน (เดือน)' },
-    { key: 'penalty', label: 'ค่าปรับ' },
-    { key: 'provisions', label: 'น้ำ ไฟ ที่พัก นั่งร้าน' },
-    { key: 'safetyNote', label: 'ความปลอดภัย' },
-];
+const PLACEHOLDER_KEYS = [
+    'contractNo', 'date', 'buyerName', 'vendorName', 'projectName', 'location', 'title', 'lines', 'total', 'totalText',
+    'installments', 'start', 'finish', 'retentionPct', 'warrantyMonths', 'penalty', 'provisions', 'safetyNote',
+] as const;
+
+export function templatePlaceholders(t: ScT = scText()): readonly { key: string; label: string }[] {
+    return PLACEHOLDER_KEYS.map(key => ({ key, label: t(`contracts.labels.placeholder.${key}`) }));
+}

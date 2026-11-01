@@ -28,8 +28,11 @@ describe('notification templates', () => {
 
     it.each(SC_NOTIFICATION_TEMPLATES)('%s renders Thai title, body and a short text within 2 SMS segments ending with the link', template => {
         const out = renderNotification(template, FULL_PAYLOAD, URL);
-        // English readers get the same Thai text in this phase.
-        expect(renderNotification(template, FULL_PAYLOAD, URL, 'en')).toEqual(out);
+        // English readers get English wording (the names in the payload stay as typed).
+        const en = renderNotification(template, FULL_PAYLOAD, URL, 'en');
+        expect(en.body).not.toBe(out.body);
+        expect(en.body).not.toMatch(/บาท|ต\.ค\./);
+        expect(en.short.length).toBeLessThanOrEqual(SMS_MAX_CHARS);
         expect(out.title).not.toBe('');
         expect(out.body).not.toBe('');
         for (const text of [out.title, out.body, out.short]) {

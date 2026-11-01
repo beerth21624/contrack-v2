@@ -114,6 +114,9 @@ const eslintConfig = defineConfig([
       // Track I-12: subcontracting buyer screens (overview, crew register, package wizard and page, price comparison); trade
       // checklists / suggested questions and the import vocabulary stay in src/domain/subcontracting
       "src/features/subcontracting/buyer/**/*.{ts,tsx}",
+      // Track I-13: subcontracting contracts (list, contract page, claims, retention, settings, report, print) and shared pieces
+      "src/features/subcontracting/contracts/**/*.{ts,tsx}",
+      "src/features/subcontracting/shared/**/*.{ts,tsx}",
     ],
     ignores: ["**/__tests__/**", "src/features/export/baht-text.ts"],
     rules: {

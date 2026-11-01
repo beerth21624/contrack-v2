@@ -3,22 +3,24 @@
 // ─── /subcontracting/settings: module settings of the workspace (defaults, rights, contract template) ───
 // Percentages are typed as % (5) and stored as fractions (0.05). Only `sc.settings` saves; others see the values.
 import { useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { Alert, App, Button, Form, Input, InputNumber, Switch, Tag, Tooltip } from 'antd';
 import type { SubcontractingSettingsDto } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { can } from '@/features/cloud/permissions';
 import { useCurrentWorkspace } from '@/features/cloud/query/hooks';
 import { spinner } from '@/features/cloud/ui/common';
 import { usePutScSettings, useScSettings } from './api';
-import { TEMPLATE_PLACEHOLDERS, settingsFromForm as fromForm, settingsToForm as toForm, type SettingsForm } from './logic';
+import { templatePlaceholders, settingsFromForm as fromForm, settingsToForm as toForm, type SettingsForm } from './logic';
 import { CARD, LoadError, PageFrame } from './ui';
 
 export function SettingsPage() {
+    const t = useTranslations('subcontracting');
     const { workspace, isLoading } = useCurrentWorkspace();
     const q = useScSettings(workspace?.id);
     if (isLoading || q.isLoading) return spinner;
     if (workspace === undefined) return null;
-    if (q.isError) return <PageFrame title="ตั้งค่าจ้างช่วง"><LoadError error={q.error} /></PageFrame>;
+    if (q.isError) return <PageFrame title={t('contracts.settings.title')}><LoadError error={q.error} /></PageFrame>;
     if (q.data === undefined) return spinner;
     return <SettingsFormView key={workspace.id} workspaceId={workspace.id} workspaceName={workspace.name} settings={q.data} editable={can(workspace.role, 'sc.settings')} />;
 }
@@ -26,6 +28,8 @@ export function SettingsPage() {
 function SettingsFormView({ workspaceId, workspaceName, settings, editable }: {
     workspaceId: string; workspaceName: string; settings: SubcontractingSettingsDto; editable: boolean;
 }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message } = App.useApp();
     const [form] = Form.useForm<SettingsForm>();
     const put = usePutScSettings(workspaceId);
@@ -37,9 +41,9 @@ function SettingsFormView({ workspaceId, workspaceName, settings, editable }: {
         try {
             const saved = await put.mutateAsync(fromForm(v));
             form.setFieldsValue(toForm(saved));
-            void message.success('บันทึกการตั้งค่าแล้ว');
+            void message.success(t('contracts.settings.saved'));
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         }
     };
 
@@ -56,64 +60,64 @@ function SettingsFormView({ workspaceId, workspaceName, settings, editable }: {
 
     return (
         <PageFrame
-            title="ตั้งค่าจ้างช่วง"
+            title={t('contracts.settings.title')}
             subtitle={workspaceName}
-            extra={editable ? <Button type="primary" loading={put.isPending} onClick={() => { void save(); }}>บันทึก</Button> : undefined}
+            extra={editable ? <Button type="primary" loading={put.isPending} onClick={() => { void save(); }}>{t('contracts.settings.save')}</Button> : undefined}
         >
-            {!editable && <Alert type="info" showIcon title="เฉพาะเจ้าของและผู้ดูแลแก้การตั้งค่าได้" />}
+            {!editable && <Alert type="info" showIcon title={t('contracts.settings.ownersOnly')} />}
             <Form form={form} layout="vertical" requiredMark={false} disabled={!editable} initialValues={toForm(settings)}>
                 <div className="flex flex-col gap-4">
                     <section className={`${CARD} p-5`}>
-                        <h2 className="text-section font-semibold mt-0 mb-3">ค่าเริ่มต้นของสัญญาใหม่</h2>
+                        <h2 className="text-section font-semibold mt-0 mb-3">{t('contracts.settings.defaultsTitle')}</h2>
                         <div className="grid sm:grid-cols-3 gap-x-6">
-                            <Form.Item name="retentionPct" label="เงินประกันผลงาน" rules={[{ required: true, type: 'number', min: 0, max: 30, message: '0–30%' }]}>
+                            <Form.Item name="retentionPct" label={t('contracts.settings.retention')} rules={[{ required: true, type: 'number', min: 0, max: 30, message: t('contracts.settings.range0to30pct') }]}>
                                 {pctInput(30)}
                             </Form.Item>
-                            <Form.Item name="warrantyMonths" label="ระยะประกันผลงาน" rules={[{ required: true, type: 'number', min: 0, max: 120, message: '0–120 เดือน' }]}>
-                                <InputNumber min={0} max={120} precision={0} suffix="เดือน" className="!w-[160px]" />
+                            <Form.Item name="warrantyMonths" label={t('contracts.settings.warrantyPeriod')} rules={[{ required: true, type: 'number', min: 0, max: 120, message: t('contracts.settings.range0to120months') }]}>
+                                <InputNumber min={0} max={120} precision={0} suffix={t('contracts.settings.months')} className="!w-[160px]" />
                             </Form.Item>
-                            <Form.Item name="whtPct" label="หักภาษี ณ ที่จ่าย" extra="ค่าจ้างทำของ ปกติ 3%" rules={[{ required: true, type: 'number', min: 0, max: 15, message: '0–15%' }]}>
+                            <Form.Item name="whtPct" label={t('contracts.settings.wht')} extra={t('contracts.settings.whtHint')} rules={[{ required: true, type: 'number', min: 0, max: 15, message: t('contracts.settings.range0to15pct') }]}>
                                 {pctInput(15)}
                             </Form.Item>
                         </div>
                     </section>
 
                     <section className={`${CARD} p-5`}>
-                        <h2 className="text-section font-semibold mt-0 mb-3">สิทธิ์และการตรวจ</h2>
+                        <h2 className="text-section font-semibold mt-0 mb-3">{t('contracts.settings.rightsTitle')}</h2>
                         <div className="flex flex-col">
-                            <SwitchRow name="estimatorCanAward" label="ผู้ประมาณราคาตกลงจ้างได้" hint="ปิดไว้: ต้องให้เจ้าของหรือผู้ดูแลยืนยัน" />
-                            <SwitchRow name="estimatorCanApproveClaims" label="ผู้ประมาณราคาอนุมัติงวดได้" />
-                            <SwitchRow name="viewerSeesPrices" label="ผู้ดูอย่างเดียวเห็นราคาของผู้รับจ้าง" />
-                            <SwitchRow name="fixesBlockNextClaim" label="ต้องปิดรายการแก้ก่อนอนุมัติงวดถัดไป" />
+                            <SwitchRow name="estimatorCanAward" label={t('contracts.settings.estimatorAwards')} hint={t('contracts.settings.estimatorAwardsHint')} />
+                            <SwitchRow name="estimatorCanApproveClaims" label={t('contracts.settings.estimatorApproves')} />
+                            <SwitchRow name="viewerSeesPrices" label={t('contracts.settings.viewerSeesPrices')} />
+                            <SwitchRow name="fixesBlockNextClaim" label={t('contracts.settings.fixesBlock')} />
                         </div>
-                        <Form.Item name="levelingPct" label="เตือนเมื่อราคาต่างจากประมาณการเกิน" className="!mt-4 !mb-0"
-                            rules={[{ required: true, type: 'number', min: 1, max: 200, message: '1–200%' }]}>
+                        <Form.Item name="levelingPct" label={t('contracts.settings.levelingWarn')} className="!mt-4 !mb-0"
+                            rules={[{ required: true, type: 'number', min: 1, max: 200, message: t('contracts.settings.range1to200pct') }]}>
                             <InputNumber min={1} max={200} step={5} suffix="%" className="!w-[160px]" />
                         </Form.Item>
                     </section>
 
                     <section className={`${CARD} p-5`}>
                         <div className="flex items-center gap-2 mb-1">
-                            <h2 className="text-section font-semibold m-0 flex-1">แม่แบบสัญญา</h2>
+                            <h2 className="text-section font-semibold m-0 flex-1">{t('contracts.settings.templateTitle')}</h2>
                             {editable && (
-                                <Button size="small" disabled={template === ''} onClick={() => form.setFieldValue('contractTemplateHtml', '')}>ใช้แม่แบบมาตรฐาน</Button>
+                                <Button size="small" disabled={template === ''} onClick={() => form.setFieldValue('contractTemplateHtml', '')}>{t('contracts.settings.useStandardTemplate')}</Button>
                             )}
                         </div>
                         <div className="text-secondary text-gray-600 mb-3">
-                            {template === '' ? 'ใช้แม่แบบมาตรฐานภาษาไทยของระบบอยู่ — วาง HTML ของบริษัทเพื่อใช้แทน' : 'HTML ของบริษัท ใช้กับสัญญาที่ออกหลังบันทึก'}
+                            {template === '' ? t('contracts.settings.usingStandard') : t('contracts.settings.usingCustom')}
                         </div>
                         <div className="flex flex-wrap gap-1.5 mb-3">
-                            {TEMPLATE_PLACEHOLDERS.map(p => (
-                                <Tooltip key={p.key} title={editable ? 'คลิกเพื่อแทรก' : undefined}>
+                            {templatePlaceholders(t).map(p => (
+                                <Tooltip key={p.key} title={editable ? t('contracts.settings.clickToInsert') : undefined}>
                                     <Tag className={`!m-0 font-mono text-[12px] ${editable ? 'cursor-pointer' : ''}`} onClick={editable ? () => insert(p.key) : undefined}>
                                         {`{{${p.key}}}`} <span className="font-sans text-gray-500">{p.label}</span>
                                     </Tag>
                                 </Tooltip>
                             ))}
                         </div>
-                        <Form.Item name="contractTemplateHtml" className="!mb-0" rules={[{ max: 200_000, message: 'ยาวเกิน 200,000 ตัวอักษร' }]}>
+                        <Form.Item name="contractTemplateHtml" className="!mb-0" rules={[{ max: 200_000, message: t('contracts.settings.tooLong') }]}>
                             <Input.TextArea ref={areaRef} rows={14} className="font-mono text-[12px]" spellCheck={false}
-                                placeholder="<h1>สัญญาจ้างเหมาช่วง</h1>&#10;<p>สัญญาเลขที่ {{contractNo}} ทำขึ้นระหว่าง {{buyerName}} ...</p>" />
+                                placeholder={t('contracts.settings.templateExample', { contractNo: '{{contractNo}}', buyerName: '{{buyerName}}' })} />
                         </Form.Item>
                     </section>
                 </div>

@@ -2,9 +2,10 @@
 
 // ─── /subcontracting/report: labour estimate (BOQ) vs contracted vs paid, per trade, for the open project (plan §4.8) ───
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { App, Button, Result, Table } from 'antd';
 import { FileExcelOutlined } from '@ant-design/icons';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import { spinner } from '@/features/cloud/ui/common';
 import { useProcurementReport } from './api';
 import { fmtPct } from './logic';
@@ -12,12 +13,15 @@ import { downloadReportXlsx, reportRows, type ReportRow } from './report-sheet';
 import { CARD, LoadError, Money, NeedProject, PageFrame, useBuyerRights, useOpenProject } from './ui';
 
 export function ReportPage() {
+    const t = useTranslations('subcontracting');
     const project = useOpenProject();
-    if (project === null) return <PageFrame title="ประมาณการเทียบจริง"><NeedProject what="รายงานประมาณการเทียบจริง" /></PageFrame>;
+    if (project === null) return <PageFrame title={t('contracts.report.title')}><NeedProject what={t('contracts.ui.whatReport')} /></PageFrame>;
     return <Report projectId={project.projectId} workspaceId={project.workspaceId} projectName={project.name} />;
 }
 
 function Report({ projectId, workspaceId, projectName }: { projectId: string; workspaceId: string; projectName: string }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message } = App.useApp();
     const rights = useBuyerRights(workspaceId);
     const allowed = rights.may('sc.readPrices');
@@ -26,11 +30,11 @@ function Report({ projectId, workspaceId, projectName }: { projectId: string; wo
 
     if (rights.loading) return spinner;
     if (!allowed) {
-        return <PageFrame title="ประมาณการเทียบจริง"><Result status="403" title="ไม่มีสิทธิ์ดูราคา" subTitle="ขอให้เจ้าของหรือผู้ดูแลเปิดสิทธิ์ในตั้งค่าจ้างช่วง" /></PageFrame>;
+        return <PageFrame title={t('contracts.report.title')}><Result status="403" title={t('contracts.report.noPriceRights')} subTitle={t('contracts.report.noPriceRightsHint')} /></PageFrame>;
     }
 
     const report = q.data;
-    const rows = report === undefined ? [] : reportRows(report);
+    const rows = report === undefined ? [] : reportRows(report, t);
     const body = rows.slice(0, -1);
     const total = rows[rows.length - 1];
 
@@ -40,7 +44,7 @@ function Report({ projectId, workspaceId, projectName }: { projectId: string; wo
         try {
             await downloadReportXlsx(report, projectName);
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         } finally {
             setExporting(false);
         }
@@ -48,9 +52,9 @@ function Report({ projectId, workspaceId, projectName }: { projectId: string; wo
 
     return (
         <PageFrame
-            title="ประมาณการเทียบจริง"
-            subtitle={`${projectName} · ค่าแรงประเมินจาก BOQ เทียบราคาสัญญาและยอดจ่ายจริง`}
-            extra={<Button icon={<FileExcelOutlined />} disabled={report === undefined} loading={exporting} onClick={() => { void onExport(); }}>ส่งออก Excel</Button>}
+            title={t('contracts.report.title')}
+            subtitle={t('contracts.report.subtitle', { project: projectName })}
+            extra={<Button icon={<FileExcelOutlined />} disabled={report === undefined} loading={exporting} onClick={() => { void onExport(); }}>{t('contracts.report.exportExcel')}</Button>}
         >
             {q.isLoading ? spinner : q.isError ? <LoadError error={q.error} /> : (
                 <div className={`${CARD} overflow-hidden`}>
@@ -60,11 +64,11 @@ function Report({ projectId, workspaceId, projectName }: { projectId: string; wo
                         pagination={false}
                         scroll={{ x: 820 }}
                         columns={[
-                            { title: 'ประเภทงาน', dataIndex: 'label' },
-                            { title: 'ประมาณการ (BOQ)', dataIndex: 'estimate', width: 150, align: 'right', render: (v: number) => <Money value={v} /> },
-                            { title: 'ราคาสัญญา', dataIndex: 'contracted', width: 150, align: 'right', render: (v: number) => (v === 0 ? <span className="text-gray-400">—</span> : <Money value={v} />) },
-                            { title: 'จ่ายแล้ว', dataIndex: 'paid', width: 150, align: 'right', render: (v: number) => <Money value={v} /> },
-                            { title: 'ต่าง', dataIndex: 'diff', width: 170, align: 'right', render: (_v, r) => <Diff row={r} /> },
+                            { title: t('contracts.report.colTrade'), dataIndex: 'label' },
+                            { title: t('contracts.report.colEstimate'), dataIndex: 'estimate', width: 150, align: 'right', render: (v: number) => <Money value={v} /> },
+                            { title: t('contracts.report.colContract'), dataIndex: 'contracted', width: 150, align: 'right', render: (v: number) => (v === 0 ? <span className="text-gray-400">—</span> : <Money value={v} />) },
+                            { title: t('contracts.report.colPaid'), dataIndex: 'paid', width: 150, align: 'right', render: (v: number) => <Money value={v} /> },
+                            { title: t('contracts.report.colDifference'), dataIndex: 'diff', width: 170, align: 'right', render: (_v, r) => <Diff row={r} /> },
                         ]}
                         summary={() => total === undefined ? null : (
                             <Table.Summary.Row className="font-semibold">

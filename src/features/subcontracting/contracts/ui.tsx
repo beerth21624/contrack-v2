@@ -3,15 +3,16 @@
 // ─── Small shared pieces of the buyer contract screens: page frame, money, open project, rights ───
 import Link from 'next/link';
 import { createContext, useContext } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button, InputNumber, Result, Tag, type InputNumberProps } from 'antd';
 import type { Role, SubcontractStatus } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import type { Permission } from '@/features/cloud/permissions';
 import { useCurrentWorkspace } from '@/features/cloud/query/hooks';
 import { useCloud } from '@/features/cloud/state';
 import { useProjectStore } from '@/store/project-store';
 import { useScSettings } from './api';
-import { SUBCONTRACT_STATUS_COLOR, SUBCONTRACT_STATUS_LABEL, fmtMoney, isModuleDisabled, scCan } from './logic';
+import { SUBCONTRACT_STATUS_COLOR, fmtMoney, isModuleDisabled, numberLocale, scCan, subcontractStatusLabel } from './logic';
 
 export const CARD = 'bg-white border border-gray-200 rounded-card shadow-card';
 
@@ -67,31 +68,36 @@ export function Money({ value, strong = false, className = '' }: { value: number
 }
 
 export function StatusTag({ status }: { status: SubcontractStatus }) {
-    return <Tag color={SUBCONTRACT_STATUS_COLOR[status]} className="!m-0">{SUBCONTRACT_STATUS_LABEL[status]}</Tag>;
+    const t = useTranslations('subcontracting');
+    return <Tag color={SUBCONTRACT_STATUS_COLOR[status]} className="!m-0">{subcontractStatusLabel(status, t)}</Tag>;
 }
 
 /** Calm state when the server answers 404 module_disabled (the workspace switched subcontracting off). */
 export function ModuleOffState() {
+    const t = useTranslations('subcontracting');
     return (
-        <Result status="info" title="จ้างช่วงปิดใช้งานในพื้นที่ทำงานนี้"
-            subTitle="ข้อมูลเดิมยังอยู่ครบ เปิดใช้งานอีกครั้งได้ที่ตั้งค่าพื้นที่ทำงาน"
-            extra={<Link href="/journey"><Button>กลับไปที่ BOQ</Button></Link>} />
+        <Result status="info" title={t('contracts.ui.moduleOffTitle')}
+            subTitle={t('contracts.ui.moduleOffSubtitle')}
+            extra={<Link href="/journey"><Button>{t('contracts.ui.backToBoq')}</Button></Link>} />
     );
 }
 
 export function LoadError({ error }: { error: unknown }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     if (isModuleDisabled(error)) return <ModuleOffState />;
-    return <Result status="warning" title="โหลดข้อมูลไม่ได้" subTitle={thaiErrorMessage(error)} />;
+    return <Result status="warning" title={t('contracts.ui.loadFailed')} subTitle={toText(error)} />;
 }
 
 /** Shown on project-level pages when no cloud project is open. */
 export function NeedProject({ what }: { what: string }) {
+    const t = useTranslations('subcontracting');
     return (
         <Result
             status="info"
-            title="ยังไม่ได้เปิดโครงการ"
-            subTitle={`เปิดโครงการบนคลาวด์ก่อน เพื่อดู${what}`}
-            extra={<Link href="/projects"><Button type="primary">ไปที่โครงการทั้งหมด</Button></Link>}
+            title={t('contracts.ui.noProject')}
+            subTitle={t('contracts.ui.openCloudProjectFirst', { what })}
+            extra={<Link href="/projects"><Button type="primary">{t('contracts.ui.goToAllProjects')}</Button></Link>}
         />
     );
 }
@@ -132,7 +138,7 @@ export function useBuyerRights(workspaceId: string | undefined): BuyerRights {
 
 /** Thousands separators once typed; the raw text while typing (so "1000." keeps its point). */
 const moneyFormatter = (v: number | undefined, info: { userTyping: boolean; input: string }) =>
-    (info.userTyping ? info.input : v === undefined ? '' : v.toLocaleString('th-TH', { maximumFractionDigits: 2 }));
+    (info.userTyping ? info.input : v === undefined ? '' : v.toLocaleString(numberLocale(), { maximumFractionDigits: 2 }));
 const moneyParser = (v: string | undefined) => {
     const n = Number((v ?? '').replace(/,/g, ''));
     return Number.isFinite(n) ? n : 0;

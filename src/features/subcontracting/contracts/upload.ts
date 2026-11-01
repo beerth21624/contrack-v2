@@ -5,11 +5,12 @@
 import { ALLOWED_CONTENT_TYPES, MAX_FILE_BYTES, fileDtoSchema, type FileDto, type FilePurpose } from '@/shared/contract';
 import { apiClient } from '@/features/cloud/api/client';
 import { ApiError, errorFromBody } from '@/features/cloud/api/errors';
+import { scText, type ScT } from '../buyer/text';
 
-/** Thai reason a file cannot be uploaded, or null when it can. */
-export function uploadProblem(file: { size: number; type: string }): string | null {
-    if (file.size > MAX_FILE_BYTES) return `ไฟล์ใหญ่เกิน ${String(MAX_FILE_BYTES / 1024 / 1024)} MB`;
-    if (!(ALLOWED_CONTENT_TYPES as readonly string[]).includes(file.type)) return 'รองรับเฉพาะรูปภาพ (JPG, PNG, WEBP, HEIC) และ PDF';
+/** The reason (in the UI language) a file cannot be uploaded, or null when it can. */
+export function uploadProblem(file: { size: number; type: string }, t: ScT = scText()): string | null {
+    if (file.size > MAX_FILE_BYTES) return t('contracts.upload.tooLarge', { mb: String(MAX_FILE_BYTES / 1024 / 1024) });
+    if (!(ALLOWED_CONTENT_TYPES as readonly string[]).includes(file.type)) return t('contracts.upload.unsupportedType');
     return null;
 }
 

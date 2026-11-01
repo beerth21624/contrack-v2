@@ -5,10 +5,11 @@
 // Every action is hidden when the role cannot do it (the server still decides; settings may widen estimator rights).
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Alert, Button, Progress, Result, Tabs } from 'antd';
 import { PrinterOutlined } from '@ant-design/icons';
 import type { SubcontractDto } from '@/shared/contract';
-import { tradeLabel } from '@/domain/subcontracting/trades';
+import { tradeName } from '../buyer/format';
 import { spinner } from '@/features/cloud/ui/common';
 import { useSubcontract } from './api';
 import { DocumentPanel } from './DocumentPanel';
@@ -20,6 +21,7 @@ import { contractActions, contractMay, fmtDate, installmentProgress } from './lo
 import { CARD, LoadError, Money, PageFrame, PricesHiddenProvider, StatusTag, useBuyerRights } from './ui';
 
 export function ContractPage({ id }: { id: string }) {
+    const t = useTranslations('subcontracting');
     const q = useSubcontract(id);
     if (q.isLoading) return spinner;
     if (q.isError) return <LoadError error={q.error} />;
@@ -27,14 +29,15 @@ export function ContractPage({ id }: { id: string }) {
     if (sc === undefined) return spinner;
     if (sc.viewerSide === 'vendor') {
         return (
-            <Result status="info" title="สัญญานี้คุณเป็นผู้รับจ้าง"
-                extra={<Link href={`/vendor/contracts/${sc.id}`}><Button type="primary">เปิดหน้าผู้รับจ้าง</Button></Link>} />
+            <Result status="info" title={t('contracts.page.youAreContractor')}
+                extra={<Link href={`/vendor/contracts/${sc.id}`}><Button type="primary">{t('contracts.page.openContractorPage')}</Button></Link>} />
         );
     }
     return <ContractView sc={sc} />;
 }
 
 function ContractView({ sc }: { sc: SubcontractDto }) {
+    const t = useTranslations('subcontracting');
     const rights = useBuyerRights(sc.buyerWorkspaceId);
     // Buyer switched the module off: the contract stays readable, every action is hidden.
     const readOnly = !sc.buyerModuleOn;
@@ -49,37 +52,37 @@ function ContractView({ sc }: { sc: SubcontractDto }) {
     return (
         <PricesHiddenProvider hidden={!rights.loading && !rights.may('sc.readPrices')}>
         <PageFrame
-            back={{ href: '/subcontracting/contracts', label: 'สัญญาทั้งหมด' }}
+            back={{ href: '/subcontracting/contracts', label: t('contracts.page.allContracts') }}
             title={<span className="flex flex-wrap items-center gap-2">{sc.contractNo} <StatusTag status={sc.status} /></span>}
-            subtitle={<>{sc.vendorName} · {tradeLabel(sc.trade)} · {sc.title}</>}
+            subtitle={<>{sc.vendorName} · {tradeName(sc.trade, t)} · {sc.title}</>}
             extra={<>
-                <Link href={`/subcontracting/contracts/${sc.id}/print`}><Button icon={<PrinterOutlined />}>พิมพ์สัญญา</Button></Link>
+                <Link href={`/subcontracting/contracts/${sc.id}/print`}><Button icon={<PrinterOutlined />}>{t('contracts.page.printContract')}</Button></Link>
                 <EndActions sc={sc} may={may} onCompleted={() => setRatingOpen(true)} />
             </>}
         >
             <div className={`${CARD} p-5 grid grid-cols-2 md:grid-cols-4 gap-4`}>
-                <Figure label="มูลค่าสัญญา" value={<Money value={sc.total} />}
-                    note={sc.variationsTotal !== 0 ? <>รวมงานเพิ่ม-ลด <Money value={sc.variationsTotal} /></> : undefined} />
-                <Figure label="จ่ายแล้ว" value={<Money value={sc.paidTotal} />} />
-                <Figure label="ประกันผลงานคงค้าง" value={<Money value={sc.retention.balance} />} />
+                <Figure label={t('contracts.page.contractValue')} value={<Money value={sc.total} />}
+                    note={sc.variationsTotal !== 0 ? <>{t('contracts.page.includingVariations')} <Money value={sc.variationsTotal} /></> : undefined} />
+                <Figure label={t('contracts.page.paid')} value={<Money value={sc.paidTotal} />} />
+                <Figure label={t('contracts.page.retentionHeld')} value={<Money value={sc.retention.balance} />} />
                 <div className="min-w-0">
-                    <div className="text-secondary text-gray-600">งวดที่จ่ายแล้ว</div>
+                    <div className="text-secondary text-gray-600">{t('contracts.page.installmentsPaid')}</div>
                     <div className="text-card-title font-semibold tabular-nums">{progress.paid}/{progress.total}</div>
                     <Progress percent={progress.pct} showInfo={false} size="small" strokeColor="#16a34a" />
                 </div>
                 <div className="col-span-2 md:col-span-4 text-[12px] text-gray-500 flex flex-wrap gap-x-4 gap-y-1">
-                    {sc.schedule.start !== null && <span>เริ่ม {fmtDate(sc.schedule.start)}</span>}
-                    {sc.schedule.finish !== null && <span>แล้วเสร็จ {fmtDate(sc.schedule.finish)}</span>}
+                    {sc.schedule.start !== null && <span>{t('contracts.page.start', { date: fmtDate(sc.schedule.start) })}</span>}
+                    {sc.schedule.finish !== null && <span>{t('contracts.page.finish', { date: fmtDate(sc.schedule.finish) })}</span>}
                     {sc.location.province !== '' && <span>{[sc.location.district, sc.location.province].filter(s => s !== '').join(' ')}</span>}
-                    {sc.endReason !== null && <span className="text-red-600">เหตุผล: {sc.endReason}</span>}
+                    {sc.endReason !== null && <span className="text-red-600">{t('contracts.page.reason', { reason: sc.endReason })}</span>}
                 </div>
             </div>
 
-            {readOnly && <div className="text-secondary text-gray-500 px-1">ผู้ว่าจ้างปิดระบบจ้างช่วงชั่วคราว ดูได้อย่างเดียว</div>}
+            {readOnly && <div className="text-secondary text-gray-500 px-1">{t('contracts.page.readOnly')}</div>}
 
             {actions.rate && !readOnly && (
-                <Alert type="info" showIcon title="ส่งมอบงานแล้ว ให้คะแนนผู้รับจ้างเพื่อใช้เลือกทีมครั้งต่อไป"
-                    action={<Button size="small" type="primary" onClick={() => setRatingOpen(true)}>ให้คะแนน</Button>} />
+                <Alert type="info" showIcon title={t('contracts.page.rateAlert')}
+                    action={<Button size="small" type="primary" onClick={() => setRatingOpen(true)}>{t('contracts.page.rate')}</Button>} />
             )}
 
             <div className={`${CARD} px-5 pb-5`}>
@@ -87,10 +90,10 @@ function ContractView({ sc }: { sc: SubcontractDto }) {
                     activeKey={activeTab}
                     onChange={setTab}
                     items={[
-                        { key: 'installments', label: 'งวดงาน', children: <InstallmentsPanel sc={sc} may={may} /> },
-                        { key: 'document', label: pending ? 'สัญญา (รอยอมรับ)' : 'สัญญา', children: <DocumentPanel sc={sc} may={may} /> },
-                        { key: 'variations', label: 'งานเพิ่ม-ลด', children: <VariationsPanel sc={sc} may={may} /> },
-                        { key: 'retention', label: 'เงินประกันผลงาน', children: <RetentionPanel sc={sc} may={may} /> },
+                        { key: 'installments', label: t('contracts.page.tabInstallments'), children: <InstallmentsPanel sc={sc} may={may} /> },
+                        { key: 'document', label: pending ? t('contracts.page.tabContractPending') : t('contracts.page.tabContract'), children: <DocumentPanel sc={sc} may={may} /> },
+                        { key: 'variations', label: t('contracts.page.tabVariations'), children: <VariationsPanel sc={sc} may={may} /> },
+                        { key: 'retention', label: t('contracts.page.tabRetention'), children: <RetentionPanel sc={sc} may={may} /> },
                     ]}
                 />
             </div>

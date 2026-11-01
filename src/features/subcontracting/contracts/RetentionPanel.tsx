@@ -2,18 +2,21 @@
 
 // ─── Retention tab (สมุดเงินประกันผลงาน, plan §6 rule 10): balance, planned releases, ledger, release / forfeit ───
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { App, Button, Empty, Form, Input, Modal, Table } from 'antd';
 import type { RetentionEntryDto, SubcontractDto } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import type { Permission } from '@/features/cloud/permissions';
-import { formatDateTime } from '@/features/cloud/ui/common';
+import { useDateTime } from '@/features/cloud/ui/common';
 import { contractsApi, useContractMutation, useRetentionEntries } from './api';
-import { RETENTION_KIND_LABEL, fmtDate, fmtMoney, fmtPct, isOverdue, round2, todayIso } from './logic';
+import { fmtDate, fmtMoney, fmtPct, isOverdue, retentionKindLabel, round2, todayIso } from './logic';
 import { LoadError, Money, MoneyInput } from './ui';
 
 type Move = 'release' | 'forfeit';
 
 export function RetentionPanel({ sc, may }: { sc: SubcontractDto; may: (p: Permission) => boolean }) {
+    const t = useTranslations('subcontracting');
+    const formatDateTime = useDateTime();
     const q = useRetentionEntries(sc.id);
     const [move, setMove] = useState<Move | null>(null);
     const r = sc.retention;
@@ -24,26 +27,26 @@ export function RetentionPanel({ sc, may }: { sc: SubcontractDto; may: (p: Permi
     return (
         <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
-                <Stat label={`หักไว้ (${fmtPct(sc.terms.retentionPct)})`} value={r.withheld} />
-                <Stat label="คืนแล้ว" value={r.released} />
-                {r.forfeited !== 0 && <Stat label="ริบ" value={r.forfeited} />}
-                <Stat label="คงค้าง" value={r.balance} strong />
+                <Stat label={t('contracts.retention.withheld', { pct: fmtPct(sc.terms.retentionPct) })} value={r.withheld} />
+                <Stat label={t('contracts.retention.released')} value={r.released} />
+                {r.forfeited !== 0 && <Stat label={t('contracts.retention.forfeited')} value={r.forfeited} />}
+                <Stat label={t('contracts.retention.balance')} value={r.balance} strong />
                 {canMove && (
                     <div className="flex gap-2 ml-auto">
-                        <Button onClick={() => setMove('forfeit')}>หักจากเงินประกัน</Button>
-                        <Button type="primary" onClick={() => setMove('release')}>บันทึกคืน</Button>
+                        <Button onClick={() => setMove('forfeit')}>{t('contracts.retention.deduct')}</Button>
+                        <Button type="primary" onClick={() => setMove('release')}>{t('contracts.retention.recordRelease')}</Button>
                     </div>
                 )}
             </div>
 
             {r.schedule.length > 0 && (
                 <section>
-                    <h3 className="text-section font-semibold mb-2">กำหนดคืน</h3>
+                    <h3 className="text-section font-semibold mb-2">{t('contracts.retention.scheduleHeading')}</h3>
                     <ul className="m-0 p-0 list-none flex flex-col gap-1">
                         {r.schedule.map((s, i) => (
                             <li key={`${s.label}-${String(i)}`} className="flex gap-3">
                                 <span className={`w-28 ${isOverdue(s.dueAt, today) ? 'text-red-600' : 'text-gray-600'}`}>
-                                    {s.dueAt === null ? 'ยังไม่กำหนด' : fmtDate(s.dueAt)}
+                                    {s.dueAt === null ? t('contracts.retention.notScheduled') : fmtDate(s.dueAt)}
                                 </span>
                                 <span className="flex-1">{s.label}</span>
                                 <Money value={s.amount} />
@@ -59,13 +62,13 @@ export function RetentionPanel({ sc, may }: { sc: SubcontractDto; may: (p: Permi
                 loading={q.isLoading}
                 dataSource={q.data ?? []}
                 pagination={false}
-                locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="ยังไม่มีรายการ — หักอัตโนมัติเมื่ออนุมัติงวด" /> }}
+                locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('contracts.retention.empty')} /> }}
                 columns={[
-                    { title: 'วันที่', dataIndex: 'at', width: 150, render: (v: string) => formatDateTime(v) },
-                    { title: 'รายการ', dataIndex: 'kind', width: 90, render: (v: RetentionEntryDto['kind']) => RETENTION_KIND_LABEL[v] },
-                    { title: 'หมายเหตุ', dataIndex: 'note' },
+                    { title: t('contracts.retention.colDate'), dataIndex: 'at', width: 150, render: (v: string) => formatDateTime(v) },
+                    { title: t('contracts.retention.colKind'), dataIndex: 'kind', width: 90, render: (v: RetentionEntryDto['kind']) => retentionKindLabel(v, t) },
+                    { title: t('contracts.common.note'), dataIndex: 'note' },
                     {
-                        title: 'จำนวน', dataIndex: 'amount', width: 130, align: 'right',
+                        title: t('contracts.retention.colAmount'), dataIndex: 'amount', width: 130, align: 'right',
                         render: (v: number, e) => <Money value={e.kind === 'withheld' ? v : -v} />,
                     },
                 ]}
@@ -85,6 +88,8 @@ function Stat({ label, value, strong = false }: { label: string; value: number; 
 }
 
 function MoveModal({ sc, move, onClose }: { sc: SubcontractDto; move: Move; onClose: () => void }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message } = App.useApp();
     const [form] = Form.useForm<{ amount: number; note?: string }>();
     const m = useContractMutation(sc.id, (body: { amount: number; note: string }) =>
@@ -96,27 +101,27 @@ function MoveModal({ sc, move, onClose }: { sc: SubcontractDto; move: Move; onCl
         const v = await form.validateFields();
         try {
             await m.mutateAsync({ amount: v.amount, note: (v.note ?? '').trim() });
-            void message.success(release ? 'บันทึกคืนเงินประกันแล้ว' : 'บันทึกหักเงินประกันแล้ว');
+            void message.success(release ? t('contracts.retention.releasedToast') : t('contracts.retention.forfeitedToast'));
             onClose();
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         }
     };
 
     return (
-        <Modal open title={release ? 'บันทึกคืนเงินประกันผลงาน' : 'หักจากเงินประกันผลงาน'} okText={release ? 'บันทึกคืน' : 'บันทึกหัก'}
-            cancelText="ยกเลิก" okButtonProps={{ loading: m.isPending, danger: !release }} onOk={() => { void submit(); }} onCancel={onClose} destroyOnHidden>
+        <Modal open title={release ? t('contracts.retention.releaseTitle') : t('contracts.retention.forfeitTitle')} okText={release ? t('contracts.retention.recordRelease') : t('contracts.retention.recordDeduction')}
+            cancelText={t('contracts.common.cancel')} okButtonProps={{ loading: m.isPending, danger: !release }} onOk={() => { void submit(); }} onCancel={onClose} destroyOnHidden>
             <Form form={form} layout="vertical" requiredMark={false} initialValues={{ amount: release ? balance : undefined, note: '' }}>
-                <Form.Item name="amount" label="จำนวนเงิน (บาท)" extra={`คงค้าง ${fmtMoney(balance)}`}
+                <Form.Item name="amount" label={t('contracts.common.amountBaht')} extra={t('contracts.retention.balanceExtra', { amount: fmtMoney(balance) })}
                     rules={[
-                        { required: true, message: 'ใส่จำนวนเงิน' },
-                        { type: 'number', min: 0.01, max: balance, message: `ได้ไม่เกิน ${fmtMoney(balance)}` },
+                        { required: true, message: t('contracts.common.enterAmountBaht') },
+                        { type: 'number', min: 0.01, max: balance, message: t('contracts.retention.maxAmount', { amount: fmtMoney(balance) }) },
                     ]}>
                     <MoneyInput className="!w-full" min={0} max={balance} />
                 </Form.Item>
-                <Form.Item name="note" label={release ? 'หมายเหตุ' : 'เหตุผล (เช่น ค่าปรับ ค่าแก้งาน)'}
-                    rules={[{ max: 500 }, ...(release ? [] : [{ required: true, whitespace: true, message: 'ใส่เหตุผล' }])]}>
-                    <Input.TextArea rows={2} placeholder={release ? 'ไม่บังคับ' : undefined} />
+                <Form.Item name="note" label={release ? t('contracts.common.note') : t('contracts.retention.forfeitReasonLabel')}
+                    rules={[{ max: 500 }, ...(release ? [] : [{ required: true, whitespace: true, message: t('contracts.common.enterReason') }])]}>
+                    <Input.TextArea rows={2} placeholder={release ? t('contracts.common.optional') : undefined} />
                 </Form.Item>
             </Form>
         </Modal>

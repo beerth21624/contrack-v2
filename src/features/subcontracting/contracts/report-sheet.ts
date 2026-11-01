@@ -1,6 +1,7 @@
-// ─── "ประมาณการเทียบจริง" report: table rows (pure) and the .xlsx download (ExcelJS on demand) ───
+// ─── The "estimate vs actual" report (Thai title: ประมาณการเทียบจริง): table rows (pure) and the .xlsx download (ExcelJS on demand) ───
 import type { ProcurementReportDto } from '@/shared/contract';
-import { tradeLabel } from '@/domain/subcontracting/trades';
+import { tradeName } from '../buyer/format';
+import { scText, type ScT } from '../buyer/text';
 
 export interface ReportRow {
     key: string;
@@ -19,10 +20,10 @@ export interface ReportRow {
 const ratio = (a: number, b: number): number | null => (b === 0 ? null : a / b);
 
 /** One row per trade in the server's order, then the total row (key 'total'). */
-export function reportRows(report: ProcurementReportDto): ReportRow[] {
+export function reportRows(report: ProcurementReportDto, t: ScT = scText()): ReportRow[] {
     const rows: ReportRow[] = report.rows.map(r => ({
         key: r.trade,
-        label: tradeLabel(r.trade),
+        label: tradeName(r.trade, t),
         estimate: r.estimate,
         contracted: r.contracted,
         paid: r.paid,
@@ -30,44 +31,48 @@ export function reportRows(report: ProcurementReportDto): ReportRow[] {
         diffPct: ratio(r.diff, r.estimate),
         paidPct: ratio(r.paid, r.contracted),
     }));
-    const t = report.totals;
+    const totals = report.totals;
     rows.push({
-        key: 'total', label: 'รวมทั้งโครงการ', estimate: t.estimate, contracted: t.contracted, paid: t.paid, diff: t.diff,
-        diffPct: ratio(t.diff, t.estimate), paidPct: ratio(t.paid, t.contracted),
+        key: 'total', label: t('contracts.report.wholeProject'), estimate: totals.estimate, contracted: totals.contracted, paid: totals.paid, diff: totals.diff,
+        diffPct: ratio(totals.diff, totals.estimate), paidPct: ratio(totals.paid, totals.contracted),
     });
     return rows;
 }
 
-export const REPORT_HEADERS = ['ประเภทงาน', 'ประมาณการ (BOQ)', 'ราคาสัญญา', 'จ่ายแล้ว', 'ต่าง (สัญญา − ประมาณการ)', 'ต่าง %', 'จ่ายแล้ว %'] as const;
+export const reportHeaders = (t: ScT = scText()): string[] => [
+    t('contracts.report.colTrade'), t('contracts.report.colEstimate'), t('contracts.report.colContract'), t('contracts.report.colPaid'),
+    t('contracts.report.colDifferenceLong'), t('contracts.report.colDifferencePct'), t('contracts.report.colPaidPct'),
+];
 
 /** Cell values of the sheet body (numbers stay numbers; % as fractions with a % number format). */
 export function reportSheetValues(rows: readonly ReportRow[]): (string | number | null)[][] {
     return rows.map(r => [r.label, r.estimate, r.contracted, r.paid, r.diff, r.diffPct, r.paidPct]);
 }
 
-/** Safe file name: "รายงานจ้างช่วง_<project>.xlsx". */
-export function reportFileName(projectName: string): string {
+/** Safe file name: "รายงานจ้างช่วง_<project>.xlsx" (Thai) / "Subcontract report_<project>.xlsx". */
+export function reportFileName(projectName: string, t: ScT = scText()): string {
     const clean = projectName.replace(/[\\/:*?"<>|]+/g, ' ').trim();
-    return `รายงานจ้างช่วง_${clean === '' ? 'โครงการ' : clean}.xlsx`;
+    return t('contracts.report.fileName', { name: clean === '' ? t('contracts.report.projectFallback') : clean });
 }
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const FONT = 'TH Sarabun New';
 
 export async function downloadReportXlsx(report: ProcurementReportDto, projectName: string): Promise<void> {
+    const t = scText();
     const { default: lib } = await import('exceljs');
     const wb = new lib.Workbook();
     wb.creator = 'ConTrack';
     wb.created = new Date();
-    const ws = wb.addWorksheet('ประมาณการเทียบจริง', {
+    const ws = wb.addWorksheet(t('contracts.report.sheetName'), {
         views: [{ state: 'frozen', ySplit: 3, showGridLines: false }],
         pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
     });
     ws.columns = [{ width: 34 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 22 }, { width: 10 }, { width: 12 }];
     const title = ws.getCell('A1');
-    title.value = `ประมาณการเทียบจริง (จ้างช่วง) — ${projectName}`;
+    title.value = t('contracts.report.sheetTitle', { project: projectName });
     title.font = { name: FONT, size: 18, bold: true };
-    ws.getRow(3).values = [...REPORT_HEADERS];
+    ws.getRow(3).values = reportHeaders(t);
     const thin = { style: 'thin' as const, color: { argb: 'FF000000' } };
     const border = { top: thin, left: thin, bottom: thin, right: thin };
     ws.getRow(3).eachCell(c => {
@@ -76,7 +81,7 @@ export async function downloadReportXlsx(report: ProcurementReportDto, projectNa
         c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6E6' } };
         c.border = border;
     });
-    const rows = reportRows(report);
+    const rows = reportRows(report, t);
     reportSheetValues(rows).forEach((values, i) => {
         const row = ws.getRow(4 + i);
         row.values = values;
@@ -91,5 +96,5 @@ export async function downloadReportXlsx(report: ProcurementReportDto, projectNa
     });
     const buffer = await wb.xlsx.writeBuffer();
     const { saveAs } = await import('file-saver');
-    saveAs(new Blob([buffer], { type: XLSX_MIME }), reportFileName(projectName));
+    saveAs(new Blob([buffer], { type: XLSX_MIME }), reportFileName(projectName, t));
 }

@@ -5,14 +5,16 @@
 // document portalled into <body>, print CSS hiding everything else. On screen it covers the app as a full-screen sheet
 // preview with a small toolbar, so the page has no app chrome.
 // Layout: header (no., version) → contract text (server-sanitised HTML) → annex: lines with the total in Thai words,
-// installments → signature blocks (ผู้ว่าจ้าง, ผู้รับจ้าง, two witnesses).
+// installments → signature blocks (employer, contractor, two witnesses). The annex follows the UI language at print time;
+// the contract text itself is the server's (Thai standard template or the company's own).
 import { useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
 import { Button } from 'antd';
 import { PrinterOutlined } from '@ant-design/icons';
 import type { ContractDocumentDto, SubcontractDto } from '@/shared/contract';
-import { bahtText } from '@/features/export/baht-text';
+import { amountInWords } from '@/i18n/format';
 import { spinner } from '@/features/cloud/ui/common';
 import { useContractDocument, useSubcontract } from './api';
 import { fmtDate, fmtMoney, fmtPct, fmtQty } from './logic';
@@ -69,6 +71,7 @@ const subscribe = () => () => undefined;
 const useMounted = () => useSyncExternalStore(subscribe, () => true, () => false);
 
 export function ContractPrintPage({ id }: { id: string }) {
+    const t = useTranslations('subcontracting');
     const sc = useSubcontract(id);
     const doc = useContractDocument(id);
     const mounted = useMounted();
@@ -82,8 +85,8 @@ export function ContractPrintPage({ id }: { id: string }) {
         <div className={R}>
             <style>{CSS}</style>
             <div className="scp-toolbar">
-                <Link href={back}><Button>กลับ</Button></Link>
-                <Button type="primary" icon={<PrinterOutlined />} onClick={() => window.print()}>พิมพ์ / PDF</Button>
+                <Link href={back}><Button>{t('contracts.print.back')}</Button></Link>
+                <Button type="primary" icon={<PrinterOutlined />} onClick={() => window.print()}>{t('contracts.print.printPdf')}</Button>
             </div>
             <div className="scp-sheet">
                 <ContractDocument sc={sc.data} doc={doc.data} />
@@ -94,20 +97,22 @@ export function ContractPrintPage({ id }: { id: string }) {
 }
 
 export function ContractDocument({ sc, doc }: { sc: SubcontractDto; doc: ContractDocumentDto }) {
+    const t = useTranslations('subcontracting');
+    const locale = useLocale();
     const hasMat = sc.lines.some(l => l.matUnitPrice !== null);
     const cols = hasMat ? 7 : 6;
     return (
         <article className="scp-doc">
             <div className="scp-meta">
-                <span>สัญญาเลขที่ {sc.contractNo}</span>
-                <span>ฉบับที่ {doc.version}</span>
+                <span>{t('contracts.print.contractNo', { no: sc.contractNo })}</span>
+                <span>{t('contracts.print.version', { version: String(doc.version) })}</span>
             </div>
             {/* The server sanitises the contract HTML (GET …/document). */}
             <div className="scp-body" dangerouslySetInnerHTML={{ __html: doc.html }} />
 
             <section className="scp-annex">
-                <h2>เอกสารแนบท้ายสัญญาเลขที่ {sc.contractNo}</h2>
-                <h3>1. รายการงาน ปริมาณ และราคา</h3>
+                <h2>{t('contracts.print.annexTitle', { no: sc.contractNo })}</h2>
+                <h3>{t('contracts.print.linesHeading')}</h3>
                 <table className="scp-table">
                     <colgroup>
                         <col style={{ width: '7%' }} />
@@ -120,14 +125,14 @@ export function ContractDocument({ sc, doc }: { sc: SubcontractDto; doc: Contrac
                     </colgroup>
                     <thead>
                         <tr>
-                            <th>ที่</th><th>รายการ</th><th>ปริมาณ</th><th>หน่วย</th>
-                            {hasMat && <th>ค่าวัสดุ/หน่วย</th>}
-                            <th>ค่าแรง/หน่วย</th><th>จำนวนเงิน (บาท)</th>
+                            <th>{t('contracts.print.colNo')}</th><th>{t('contracts.print.colItem')}</th><th>{t('contracts.print.colQty')}</th><th>{t('contracts.print.colUnit')}</th>
+                            {hasMat && <th>{t('contracts.print.colMaterialPerUnit')}</th>}
+                            <th>{t('contracts.print.colLabourPerUnit')}</th><th>{t('contracts.print.colAmountBaht')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         {sc.lines.length === 0 && (
-                            <tr><td colSpan={cols} className="scp-c">เหมารวมตามขอบเขตงาน “{sc.title}”</td></tr>
+                            <tr><td colSpan={cols} className="scp-c">{t('contracts.print.lumpSum', { title: sc.title })}</td></tr>
                         )}
                         {sc.lines.map(l => (
                             <tr key={l.idx}>
@@ -142,19 +147,19 @@ export function ContractDocument({ sc, doc }: { sc: SubcontractDto; doc: Contrac
                         ))}
                         {sc.variationsTotal !== 0 && (
                             <tr>
-                                <td colSpan={cols - 1} className="scp-num">งานเพิ่ม-ลดที่ตกลงแล้ว</td>
+                                <td colSpan={cols - 1} className="scp-num">{t('contracts.print.agreedVariations')}</td>
                                 <td className="scp-num">{fmtMoney(sc.variationsTotal)}</td>
                             </tr>
                         )}
                         <tr className="scp-total">
-                            <td colSpan={cols - 1} className="scp-c">รวมมูลค่าสัญญา</td>
+                            <td colSpan={cols - 1} className="scp-c">{t('contracts.print.contractTotal')}</td>
                             <td className="scp-num">{fmtMoney(sc.total)}</td>
                         </tr>
-                        <tr className="scp-words"><td colSpan={cols}>({bahtText(sc.total)})</td></tr>
+                        <tr className="scp-words"><td colSpan={cols}>({amountInWords(sc.total, locale)})</td></tr>
                     </tbody>
                 </table>
 
-                <h3>2. งวดงานและงวดเงิน</h3>
+                <h3>{t('contracts.print.installmentsHeading')}</h3>
                 <table className="scp-table">
                     <colgroup>
                         <col style={{ width: '9%' }} />
@@ -162,7 +167,7 @@ export function ContractDocument({ sc, doc }: { sc: SubcontractDto; doc: Contrac
                         <col style={{ width: '11%' }} />
                         <col style={{ width: '18%' }} />
                     </colgroup>
-                    <thead><tr><th>งวดที่</th><th>เงื่อนไขการส่งมอบ</th><th>ร้อยละ</th><th>จำนวนเงิน (บาท)</th></tr></thead>
+                    <thead><tr><th>{t('contracts.print.colInstallmentNo')}</th><th>{t('contracts.print.colCondition')}</th><th>{t('contracts.print.colPercent')}</th><th>{t('contracts.print.colAmountBaht')}</th></tr></thead>
                     <tbody>
                         {sc.installments.map(i => (
                             <tr key={i.no}>
@@ -175,17 +180,16 @@ export function ContractDocument({ sc, doc }: { sc: SubcontractDto; doc: Contrac
                     </tbody>
                 </table>
                 <p style={{ marginTop: '3mm', fontSize: '11pt' }}>
-                    หักเงินประกันผลงานร้อยละ {fmtPct(sc.terms.retentionPct).replace('%', '')} ของแต่ละงวด
-                    ระยะประกันผลงาน {sc.terms.warrantyMonths} เดือน
-                    {sc.schedule.start !== null ? ` · เริ่มงาน ${fmtDate(sc.schedule.start, true)}` : ''}
-                    {sc.schedule.finish !== null ? ` · แล้วเสร็จ ${fmtDate(sc.schedule.finish, true)}` : ''}
+                    {t('contracts.print.retentionLine', { pct: fmtPct(sc.terms.retentionPct).replace('%', ''), months: String(sc.terms.warrantyMonths) })}
+                    {sc.schedule.start !== null ? t('contracts.print.startedOn', { date: fmtDate(sc.schedule.start, true) }) : ''}
+                    {sc.schedule.finish !== null ? t('contracts.print.finishedOn', { date: fmtDate(sc.schedule.finish, true) }) : ''}
                 </p>
 
                 <div className="scp-signs">
-                    <Signature role="ผู้ว่าจ้าง" name={sc.buyerName} />
-                    <Signature role="ผู้รับจ้าง" name={sc.vendorName} />
-                    <Signature role="พยาน" name="" />
-                    <Signature role="พยาน" name="" />
+                    <Signature role={t('contracts.print.employer')} name={sc.buyerName} />
+                    <Signature role={t('contracts.print.contractor')} name={sc.vendorName} />
+                    <Signature role={t('contracts.print.witness')} name="" />
+                    <Signature role={t('contracts.print.witness')} name="" />
                 </div>
             </section>
         </article>
@@ -193,11 +197,12 @@ export function ContractDocument({ sc, doc }: { sc: SubcontractDto; doc: Contrac
 }
 
 function Signature({ role, name }: { role: string; name: string }) {
+    const t = useTranslations('subcontracting');
     return (
         <div>
-            <div className="scp-sign-line"><span>ลงชื่อ</span><span className="scp-fill" /><span>{role}</span></div>
+            <div className="scp-sign-line"><span>{t('contracts.print.signed')}</span><span className="scp-fill" /><span>{role}</span></div>
             <div className="scp-sign-line"><span>(</span><span className="scp-fill">{name}</span><span>)</span></div>
-            <div className="scp-sign-line"><span>วันที่</span><span className="scp-fill" /></div>
+            <div className="scp-sign-line"><span>{t('contracts.print.dated')}</span><span className="scp-fill" /></div>
         </div>
     );
 }

@@ -1,7 +1,7 @@
 // ─── Text of every notification template: in-app title/body and a short SMS / LINE text, in the recipient's language ───
-// sc.*: Thai only (English readers get the Thai text in this phase). Payload keys per template:
-// docs/marketplace/API-module1.md "Notifications". Values arrive already formatted for Thai readers (money `125,000 บาท`,
-// dates `30 ต.ค. 69 17:00`); a missing key renders as an empty string.
+// sc.*: Thai and English (TEMPLATES / TEMPLATES_EN). Payload keys per template: docs/marketplace/API-module1.md
+// "Notifications". Values arrive already formatted for Thai readers (money `125,000 บาท`, dates `30 ต.ค. 69 17:00`);
+// English readers get them converted (`THB 125,000`, `30 Oct 2026 17:00`); a missing key renders as an empty string.
 // ERP templates (Thai + English, raw payload values): ./notification-templates.erp.ts.
 import type { UserLocale } from '@contrack/contract';
 import type { NotificationTemplate, ScNotificationTemplate } from '../../../../shared/application/ports';
@@ -37,22 +37,41 @@ interface TemplateText {
 
 /** Payload reader: every value as a single-line string ('' when missing). */
 class Values {
-    constructor(private readonly payload: NotificationPayload) {}
+    constructor(private readonly payload: NotificationPayload, private readonly locale: UserLocale = 'th') {}
 
     get(key: string): string {
         const raw = this.payload[key];
         if (raw === undefined) return '';
-        return String(raw).replace(/\s+/g, ' ').trim();
+        const text = String(raw).replace(/\s+/g, ' ').trim();
+        return this.locale === 'en' ? englishValue(text) : text;
     }
 
-    /** ` (เหตุผล: …)` when a reason was given. */
+    /** ` เหตุผล: …` (English ` Reason: …`) when a reason was given. */
     reason(): string {
         const reason = this.get('reason');
-        return reason === '' ? '' : ` เหตุผล: ${reason}`;
+        if (reason === '') return '';
+        return this.locale === 'en' ? ` Reason: ${reason}` : ` เหตุผล: ${reason}`;
     }
 }
 
+const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const ENGLISH_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** A payload value formatted for Thai readers, for English readers: `125,000 บาท` → `THB 125,000`, `30 ต.ค. 69` → `30 Oct 2026`. */
+function englishValue(text: string): string {
+    const money = /^(-?[\d,]+(?:\.\d+)?) บาท$/.exec(text);
+    if (money !== null) return `THB ${money[1] ?? ''}`;
+    return text.replace(/^(\d{1,2}) (\S+?) (\d{2})(?= |$)/, (whole: string, day: string, month: string, year: string) => {
+        const at = THAI_MONTHS.indexOf(month);
+        // Two-digit Buddhist year: 69 is 2569 BE, 2026 CE.
+        return at < 0 ? whole : `${day} ${ENGLISH_MONTHS[at] ?? month} ${String(1957 + Number(year))}`;
+    });
+}
+
 const flex = (text: string): SmsPart => ({ flex: text });
+
+const ANSWER_YES = ['true', '1', 'yes'];
+const ANSWER_NO = ['false', '0', 'no'];
 
 const INSPECTION_RESULT: Record<string, string> = {
     pass: 'ผ่าน',
@@ -177,6 +196,128 @@ const TEMPLATES: Record<ScNotificationTemplate, TemplateText> = {
     },
 };
 
+const INSPECTION_RESULT_EN: Record<string, string> = {
+    pass: 'Passed',
+    pass_with_fixes: 'Passed with items to fix',
+    fail: 'Failed',
+};
+
+const TEMPLATES_EN: Record<ScNotificationTemplate, TemplateText> = {
+    'sc.invitation': {
+        title: v => `Invitation to bid: ${v.get('title')}`,
+        body: v => `${v.get('buyerName')} invites your team to bid on "${v.get('title')}". Bids close ${v.get('deadline')}`,
+        sms: v => [flex(v.get('buyerName')), ' invites you to bid on ', flex(v.get('title')), `. Closes ${v.get('deadline')}`],
+    },
+    'sc.addendum': {
+        title: v => `Job details changed: ${v.get('title')}`,
+        body: v => `${v.get('buyerName')} changed the details of "${v.get('title')}". Please review before bidding`,
+        sms: v => [flex(v.get('buyerName')), ' changed the details of ', flex(v.get('title')), '. Please review'],
+    },
+    'sc.question_asked': {
+        title: v => `New question: ${v.get('title')}`,
+        body: v => `A bidder asked a question about "${v.get('title')}". It is waiting for your answer`,
+        sms: v => ['New question on ', flex(v.get('title'))],
+    },
+    'sc.question_answered': {
+        title: v => `Question answered: ${v.get('title')}`,
+        body: v => `The buyer answered a question about "${v.get('title')}"`,
+        sms: v => ['Buyer answered a question on ', flex(v.get('title'))],
+    },
+    'sc.deadline_soon': {
+        title: v => `Bids closing soon: ${v.get('title')}`,
+        body: v => `Bids for "${v.get('title')}" close ${v.get('deadline')}. You have not sent a price yet`,
+        sms: v => ['Bids for ', flex(v.get('title')), ` close ${v.get('deadline')}. No price sent yet`],
+    },
+    'sc.outcome_won': {
+        title: v => `You won the job: ${v.get('title')}`,
+        body: v => `Congratulations, ${v.get('buyerName')} chose your bid for "${v.get('title')}"`,
+        sms: v => ['Congratulations, ', flex(v.get('buyerName')), ' chose you for ', flex(v.get('title'))],
+    },
+    'sc.outcome_lost': {
+        title: v => `Bid result: ${v.get('title')}`,
+        body: v => `${v.get('buyerName')} chose another bidder for "${v.get('title')}". Thank you for bidding`,
+        sms: v => [flex(v.get('buyerName')), ' chose another bidder for ', flex(v.get('title')), '. Thank you for bidding'],
+    },
+    'sc.package_cancelled': {
+        title: v => `Job cancelled: ${v.get('title')}`,
+        body: v => `${v.get('buyerName')} cancelled the search for a subcontractor for "${v.get('title')}".${v.reason()}`,
+        sms: v => [flex(v.get('buyerName')), ' cancelled ', flex(v.get('title'))],
+    },
+    'sc.contract_to_accept': {
+        title: v => `Contract waiting for you: ${v.get('title')}`,
+        body: v => `${v.get('buyerName')} sent the contract for "${v.get('title')}" worth ${v.get('total')}. Please review and accept`,
+        sms: v => [flex(v.get('buyerName')), ' sent the contract for ', flex(v.get('title')), ` ${v.get('total')}. Please accept`],
+    },
+    'sc.inspection_result': {
+        title: v => `Inspection result, installment ${v.get('installmentNo')}: ${v.get('title')}`,
+        body: v => `Inspection result of installment ${v.get('installmentNo')} for "${v.get('title')}": ${inspectionResultEn(v)}`,
+        sms: v => [`Installment ${v.get('installmentNo')} inspection, `, flex(v.get('title')), `: ${inspectionResultEn(v)}`],
+    },
+    'sc.claim_paid': {
+        title: v => `Installment ${v.get('installmentNo')} paid: ${v.get('title')}`,
+        body: v => `The buyer paid installment ${v.get('installmentNo')} of "${v.get('title')}", ${v.get('amount')}`,
+        sms: v => [`Installment ${v.get('installmentNo')} paid, `, flex(v.get('title')), ` ${v.get('amount')}`],
+    },
+    'sc.retention_due': {
+        title: v => `Retention due for release: ${v.get('title')}`,
+        body: v => `Retention of ${v.get('amount')} on "${v.get('title')}" is due for release on ${v.get('dueAt')}`,
+        sms: v => ['Retention on ', flex(v.get('title')), ` ${v.get('amount')} due ${v.get('dueAt')}`],
+    },
+    'sc.variation_proposed': {
+        title: v => `Variation proposed: ${v.get('title')}`,
+        body: v => `A variation of ${v.get('amount')} was proposed on "${v.get('title')}" and is waiting for your decision`,
+        sms: v => ['Variation on ', flex(v.get('title')), ` ${v.get('amount')} awaits your decision`],
+    },
+    'sc.variation_answered': {
+        title: v => `Variation result: ${v.get('title')}`,
+        body: v => `The variation of ${v.get('amount')} on "${v.get('title')}" was ${answeredEn(v)}`,
+        sms: v => ['Variation on ', flex(v.get('title')), ` ${v.get('amount')} ${answeredEn(v)}`],
+    },
+    'sc.message': {
+        title: v => `New message from ${v.get('fromName')}`,
+        body: v => `${v.get('fromName')} sent you a message about "${v.get('title')}"`,
+        sms: v => ['New message from ', flex(v.get('fromName')), ' about ', flex(v.get('title'))],
+    },
+    'sc.bid_received': {
+        title: v => `Bid received: ${v.get('title')}`,
+        // No amount (see the Thai text above).
+        body: v => `${v.get('vendorName')} sent a price for "${v.get('title')}"`,
+        sms: v => [flex(v.get('vendorName')), ' sent a price for ', flex(v.get('title'))],
+    },
+    'sc.declined': {
+        title: v => `Declined to bid: ${v.get('title')}`,
+        body: v => `${v.get('vendorName')} will not bid on "${v.get('title')}".${v.reason()}`,
+        sms: v => [flex(v.get('vendorName')), ' will not bid on ', flex(v.get('title'))],
+    },
+    'sc.contract_accepted': {
+        title: v => `Contract accepted: ${v.get('title')}`,
+        body: v => `${v.get('vendorName')} accepted the contract for "${v.get('title')}". Work can start as agreed`,
+        sms: v => [flex(v.get('vendorName')), ' accepted the contract for ', flex(v.get('title'))],
+    },
+    'sc.change_requested': {
+        title: v => `Contract change requested: ${v.get('title')}`,
+        body: v => `${v.get('vendorName')} asked for changes to the contract for "${v.get('title')}". Please review`,
+        sms: v => [flex(v.get('vendorName')), ' asked to change the contract for ', flex(v.get('title'))],
+    },
+    'sc.claim_requested': {
+        title: v => `Claim for installment ${v.get('installmentNo')}: ${v.get('title')}`,
+        body: v => `${v.get('vendorName')} claimed installment ${v.get('installmentNo')} of "${v.get('title')}". Please arrange an inspection`,
+        sms: v => [flex(v.get('vendorName')), ` claimed installment ${v.get('installmentNo')} of `, flex(v.get('title'))],
+    },
+};
+
+function inspectionResultEn(v: Values): string {
+    const raw = v.get('result');
+    return INSPECTION_RESULT_EN[raw] ?? raw;
+}
+
+function answeredEn(v: Values): string {
+    const raw = v.get('accepted').toLowerCase();
+    if (ANSWER_YES.includes(raw)) return 'approved';
+    if (ANSWER_NO.includes(raw)) return 'not approved';
+    return v.get('accepted');
+}
+
 function shorten(text: string, length: number): string {
     return text.length <= length ? text : `${text.slice(0, Math.max(0, length - 1))}…`;
 }
@@ -206,7 +347,7 @@ export function fitSms(parts: readonly SmsPart[], url: string | undefined, max =
 }
 
 /**
- * Title, body and short text of a template in `locale` (sc.* is Thai in both languages for now). `url` (absolute) ends
+ * Title, body and short text of a template in `locale` (sc.* in Thai or English). `url` (absolute) ends
  * the short text when given.
  */
 export function renderNotification(
@@ -216,8 +357,8 @@ export function renderNotification(
         const { title, body } = renderErpText(template, payload, locale);
         return { title, body, short: fitSms([flex(title)], url) };
     }
-    const values = new Values(payload);
-    const text = TEMPLATES[template];
+    const values = new Values(payload, locale);
+    const text = (locale === 'en' ? TEMPLATES_EN : TEMPLATES)[template];
     return {
         title: text.title(values).trim(),
         body: text.body(values).trim(),

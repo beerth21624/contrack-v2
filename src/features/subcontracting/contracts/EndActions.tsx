@@ -2,10 +2,11 @@
 
 // ─── End of a contract: cancel (before acceptance), terminate (active), complete (all paid), close (retention 0), rate ───
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { App, Button, Dropdown, Form, Input, Modal, Rate } from 'antd';
 import { MoreOutlined } from '@ant-design/icons';
 import type { SubcontractDto } from '@/shared/contract';
-import { thaiErrorMessage } from '@/features/cloud/api/errors';
+import { useErrorMessage } from '@/features/cloud/api/error-message';
 import type { Permission } from '@/features/cloud/permissions';
 import { contractsApi, useContractMutation } from './api';
 import { contractActions } from './logic';
@@ -13,6 +14,8 @@ import { contractActions } from './logic';
 type Ending = 'cancel' | 'terminate';
 
 export function EndActions({ sc, may, onCompleted }: { sc: SubcontractDto; may: (p: Permission) => boolean; onCompleted: () => void }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message, modal } = App.useApp();
     const [ending, setEnding] = useState<Ending | null>(null);
     const a = contractActions(sc);
@@ -22,22 +25,22 @@ export function EndActions({ sc, may, onCompleted }: { sc: SubcontractDto; may: 
     const canComplete = a.complete && may('sc.claims.approve');
     const canClose = a.close && may('sc.payments.record');
     const menu = [
-        ...(a.cancel && may('sc.award') ? [{ key: 'cancel', label: 'ยกเลิกสัญญา', danger: true }] : []),
-        ...(a.terminate && may('sc.award') ? [{ key: 'terminate', label: 'บอกเลิกสัญญา', danger: true }] : []),
+        ...(a.cancel && may('sc.award') ? [{ key: 'cancel', label: t('contracts.end.cancelContract'), danger: true }] : []),
+        ...(a.terminate && may('sc.award') ? [{ key: 'terminate', label: t('contracts.end.terminate'), danger: true }] : []),
     ];
 
     const onComplete = () => {
         modal.confirm({
-            title: 'ยืนยันส่งมอบงาน',
-            content: 'ทุกงวดจ่ายแล้ว สัญญาจะเป็น "ส่งมอบแล้ว" เงินประกันผลงานยังค้างคืนได้ตามกำหนด',
-            okText: 'ส่งมอบแล้ว',
-            cancelText: 'ยกเลิก',
+            title: t('contracts.end.confirmDeliver'),
+            content: t('contracts.end.confirmDeliverBody'),
+            okText: t('contracts.end.delivered'),
+            cancelText: t('contracts.common.cancel'),
             onOk: async () => {
                 try {
                     await complete.mutateAsync(undefined);
                     onCompleted();
                 } catch (e) {
-                    void message.error(thaiErrorMessage(e));
+                    void message.error(toText(e));
                 }
             },
         });
@@ -45,15 +48,15 @@ export function EndActions({ sc, may, onCompleted }: { sc: SubcontractDto; may: 
 
     const onClose = () => {
         modal.confirm({
-            title: 'ปิดสัญญา',
-            content: 'คืนเงินประกันผลงานครบแล้ว ปิดสัญญานี้ได้ หลังปิดแก้ไขไม่ได้',
-            okText: 'ปิดสัญญา',
-            cancelText: 'ยกเลิก',
+            title: t('contracts.end.closeContract'),
+            content: t('contracts.end.closeBody'),
+            okText: t('contracts.end.closeContract'),
+            cancelText: t('contracts.common.cancel'),
             onOk: async () => {
                 try {
                     await close.mutateAsync(undefined);
                 } catch (e) {
-                    void message.error(thaiErrorMessage(e));
+                    void message.error(toText(e));
                 }
             },
         });
@@ -61,11 +64,11 @@ export function EndActions({ sc, may, onCompleted }: { sc: SubcontractDto; may: 
 
     return (
         <>
-            {canComplete && <Button type="primary" onClick={onComplete}>ส่งมอบงาน</Button>}
-            {canClose && <Button type="primary" onClick={onClose}>ปิดสัญญา</Button>}
+            {canComplete && <Button type="primary" onClick={onComplete}>{t('contracts.end.deliverWork')}</Button>}
+            {canClose && <Button type="primary" onClick={onClose}>{t('contracts.end.closeContract')}</Button>}
             {menu.length > 0 && (
                 <Dropdown trigger={['click']} menu={{ items: menu, onClick: ({ key }) => { setEnding(key === 'cancel' ? 'cancel' : 'terminate'); } }}>
-                    <Button icon={<MoreOutlined />} aria-label="เพิ่มเติม" />
+                    <Button icon={<MoreOutlined />} aria-label={t('contracts.end.more')} />
                 </Dropdown>
             )}
             <EndModal sc={sc} ending={ending} onClose={() => setEnding(null)} />
@@ -74,6 +77,8 @@ export function EndActions({ sc, may, onCompleted }: { sc: SubcontractDto; may: 
 }
 
 function EndModal({ sc, ending, onClose }: { sc: SubcontractDto; ending: Ending | null; onClose: () => void }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message } = App.useApp();
     const [form] = Form.useForm<{ reason: string }>();
     const m = useContractMutation(sc.id, ({ kind, reason }: { kind: Ending; reason: string }) =>
@@ -85,32 +90,32 @@ function EndModal({ sc, ending, onClose }: { sc: SubcontractDto; ending: Ending 
         const { reason } = await form.validateFields();
         try {
             await m.mutateAsync({ kind: ending, reason: reason.trim() });
-            void message.success(cancel ? 'ยกเลิกสัญญาแล้ว' : 'บอกเลิกสัญญาแล้ว');
+            void message.success(cancel ? t('contracts.end.cancelledToast') : t('contracts.end.terminatedToast'));
             form.resetFields();
             onClose();
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         }
     };
 
     return (
         <Modal
             open={ending !== null}
-            title={cancel ? 'ยกเลิกสัญญา' : 'บอกเลิกสัญญา'}
-            okText={cancel ? 'ยกเลิกสัญญา' : 'บอกเลิกสัญญา'}
+            title={cancel ? t('contracts.end.cancelContract') : t('contracts.end.terminate')}
+            okText={cancel ? t('contracts.end.cancelContract') : t('contracts.end.terminate')}
             okButtonProps={{ danger: true, loading: m.isPending }}
-            cancelText="ไม่ทำ"
+            cancelText={t('contracts.end.dontDo')}
             onOk={() => { void submit(); }}
             onCancel={onClose}
             destroyOnHidden
         >
             <p className="text-secondary text-gray-600 mt-0">
                 {cancel
-                    ? 'แพ็กเกจจะกลับไปรับราคา เลือกผู้รับจ้างรายอื่นได้ ผู้รับจ้างได้รับแจ้งพร้อมเหตุผล'
-                    : 'งวดที่อนุมัติแล้วยังคงอยู่ ผู้รับจ้างได้รับแจ้งพร้อมเหตุผล'}
+                    ? t('contracts.end.cancelNote')
+                    : t('contracts.end.terminateNote')}
             </p>
             <Form form={form} layout="vertical" requiredMark={false}>
-                <Form.Item name="reason" label="เหตุผล" rules={[{ required: true, whitespace: true, message: 'ใส่เหตุผล' }, { max: 1000 }]}>
+                <Form.Item name="reason" label={t('contracts.common.reason')} rules={[{ required: true, whitespace: true, message: t('contracts.common.enterReason') }, { max: 1000 }]}>
                     <Input.TextArea rows={3} />
                 </Form.Item>
             </Form>
@@ -118,15 +123,13 @@ function EndModal({ sc, ending, onClose }: { sc: SubcontractDto; ending: Ending 
     );
 }
 
-const RATING_ITEMS = [
-    { key: 'quality', label: 'คุณภาพงาน' },
-    { key: 'time', label: 'ตรงเวลา' },
-    { key: 'communication', label: 'การติดต่อสื่อสาร' },
-] as const;
+const RATING_KEYS = ['quality', 'time', 'communication'] as const;
 
 interface RatingForm { quality: number; time: number; communication: number; comment?: string }
 
 export function RatingModal({ subcontractId, vendorName, open, onClose }: { subcontractId: string; vendorName: string; open: boolean; onClose: () => void }) {
+    const t = useTranslations('subcontracting');
+    const toText = useErrorMessage();
     const { message } = App.useApp();
     const [form] = Form.useForm<RatingForm>();
     const m = useContractMutation(subcontractId, (v: RatingForm) =>
@@ -139,24 +142,24 @@ export function RatingModal({ subcontractId, vendorName, open, onClose }: { subc
         const v = await form.validateFields();
         try {
             await m.mutateAsync(v);
-            void message.success('บันทึกคะแนนแล้ว ขอบคุณ');
+            void message.success(t('contracts.end.ratedToast'));
             onClose();
         } catch (e) {
-            void message.error(thaiErrorMessage(e));
+            void message.error(toText(e));
         }
     };
 
     return (
-        <Modal open={open} title={`ให้คะแนน ${vendorName}`} okText="ส่งคะแนน" cancelText="ไว้ทีหลัง"
+        <Modal open={open} title={t('contracts.end.rateTitle', { name: vendorName })} okText={t('contracts.end.sendRating')} cancelText={t('contracts.end.later')}
             okButtonProps={{ loading: m.isPending }} onOk={() => { void submit(); }} onCancel={onClose} destroyOnHidden>
             <Form form={form} layout="horizontal" requiredMark={false} labelCol={{ span: 9 }} wrapperCol={{ span: 15 }}>
-                {RATING_ITEMS.map(i => (
-                    <Form.Item key={i.key} name={i.key} label={i.label} rules={[{ required: true, message: 'ให้คะแนน 1–5' }]}>
+                {RATING_KEYS.map(key => (
+                    <Form.Item key={key} name={key} label={t(`contracts.end.rating.${key}`)} rules={[{ required: true, message: t('contracts.end.rateRequired') }]}>
                         <Rate />
                     </Form.Item>
                 ))}
-                <Form.Item name="comment" label="ความเห็น" rules={[{ max: 1000 }]}>
-                    <Input.TextArea rows={3} placeholder="ไม่บังคับ" />
+                <Form.Item name="comment" label={t('contracts.end.comment')} rules={[{ max: 1000 }]}>
+                    <Input.TextArea rows={3} placeholder={t('contracts.common.optional')} />
                 </Form.Item>
             </Form>
         </Modal>

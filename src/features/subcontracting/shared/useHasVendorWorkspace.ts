@@ -1,6 +1,6 @@
 'use client';
 
-// ─── Whether the signed-in user runs a subcontractor crew (has a vendor profile): shows "งานรับเหมาช่วง" in the menu ───
+// ─── Whether the signed-in user runs a subcontractor crew (has a vendor profile): shows the subcontract work entry in the menu ───
 import { useQuery } from '@tanstack/react-query';
 import { myVendorsDtoSchema } from '@/shared/contract';
 import { apiClient } from '@/features/cloud/api/client';
