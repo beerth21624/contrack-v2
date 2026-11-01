@@ -4,10 +4,10 @@
 // quotes typed by the team, comparison, award → PO draft), purchase orders (budget check, approval
 // `purchase_order.issue`, numbering `purchase_order`, cost commitments) and goods receipts (numbering `goods_receipt`,
 // actual cost). Registers ApprovalHandlers, HubRollups (open POs), PortalSources (approved PRs waiting for a PO, POs
-// waiting for goods) and ProjectDependents; provides the PurchaseOrders port. Deleting a project with a numbered
-// document is refused by numbering's guard.
+// waiting for goods), CashPlanSources (issued POs not billed, WP-47) and ProjectDependents; provides the PurchaseOrders
+// port. Deleting a project with a numbered document is refused by numbering's guard.
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
-import { ApprovalHandlers, HubRollups, PortalSources, ProjectDependents, PurchaseOrders } from '../../shared/application/ports';
+import { ApprovalHandlers, CashPlanSources, HubRollups, PortalSources, ProjectDependents, PurchaseOrders } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
 import {
     GoodsReceiptRepository, PurchaseOrderRepository, PurchaseRequestRepository, RfqRepository,
@@ -22,6 +22,7 @@ import {
     CancelPurchaseOrderUseCase, ClosePurchaseOrderUseCase, CreatePurchaseOrderUseCase, GetPurchaseOrderUseCase, IssuePurchaseOrderUseCase,
     ListProjectPurchaseOrdersUseCase, ListWorkspacePurchaseOrdersUseCase, PatchPurchaseOrderUseCase, SupplierPriceHistoryUseCase,
 } from './application/use-cases/purchase-orders.use-cases';
+import { ProcurementCashPlan } from './application/procurement-cash-plan';
 import { ProcurementHandlers } from './application/procurement-handlers';
 import { ProcurementViews } from './application/procurement-views';
 import { MODULE, ProcurementAccess, PurchaseRequestLines } from './application/procurement.service';
@@ -79,6 +80,7 @@ import { ProcurementController } from './presentation/procurement.controller';
         PurchaseOrderWorkflow,
         PurchasingViews,
         PurchasingHandlers,
+        ProcurementCashPlan,
         { provide: PurchaseOrders, useClass: ProcurementPurchaseOrders },
         ListProjectPurchaseOrdersUseCase,
         ListWorkspacePurchaseOrdersUseCase,
@@ -108,6 +110,8 @@ export class ProcurementModule implements OnModuleInit {
         private readonly receipts: GoodsReceiptRepository,
         private readonly handlers: ProcurementHandlers,
         private readonly purchasing: PurchasingHandlers,
+        private readonly cashPlans: CashPlanSources,
+        private readonly cashPlan: ProcurementCashPlan,
     ) {}
 
     onModuleInit(): void {
@@ -116,6 +120,7 @@ export class ProcurementModule implements OnModuleInit {
         this.portal.register(MODULE, 'procurement.manage', ctx => this.handlers.portalToOrder(ctx));
         this.portal.register(MODULE, 'procurement.receive', ctx => this.purchasing.portalToReceive(ctx));
         this.rollups.register(MODULE, (ws, projectIds) => this.purchasing.rollup(ws, projectIds));
+        this.cashPlans.register(MODULE, (ws, projectIds, from, to) => this.cashPlan.plan(ws, projectIds, from, to));
         // Memory adapters: forget a deleted project's documents (PostgreSQL drops them with the project).
         this.dependents.register(async (workspaceId, projectId) => {
             await this.receipts.deleteByProject(workspaceId, projectId);

@@ -4,14 +4,22 @@
 // posted to the ledger through SubcontractCommitments (subcontracting) when the report opens and in the daily sweep
 // `job-cost.alerts` (cost_overrun / commitment_over_budget / margin_drop → jc_alerts + `cost.overrun`). Registers
 // HubRollups (committedOpen, actualCost, forecastAtCompletion, projectedProfit, alerts → portal risky projects),
-// DailySweeps and ProjectDependents.
+// DailySweeps and ProjectDependents. WP-47: cash flow per project / company (CashPlanSources of the modules +
+// FinancialEvents cash; registers the `subcontracting` source through SubcontractCashPlan), cash settings, the daily
+// sweep `job-cost.cash` (negative_cash alerts, `cash.negative_forecast`) and the portal's cash outlook (PortalCashOutlook).
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
-import { DailySweeps, HubRollups, ProjectDependents } from '../../shared/application/ports';
+import {
+    CashPlanSources, DailySweeps, HubRollups, PortalCashOutlook, ProjectDependents, SubcontractCashPlan,
+} from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
+import { CASH_SWEEP, CashFlowEngine } from './application/cash-flow.service';
 import { ALERTS_SWEEP, JobCostHandlers } from './application/job-cost-handlers';
 import { JobCostEngine, MODULE } from './application/job-cost.service';
 import { JobCostRepository } from './application/ports/job-cost.repository';
 import { SubcontractCostSync } from './application/subcontract-cost-sync';
+import {
+    GetCashSettingsUseCase, GetCompanyCashFlowUseCase, GetProjectCashFlowUseCase, PutCashSettingsUseCase,
+} from './application/use-cases/cash-flow.use-cases';
 import {
     GetJobCostLedgerUseCase, GetJobCostReportUseCase, ListJobCostAlertsUseCase, PutJobCostForecastUseCase,
 } from './application/use-cases/job-cost.use-cases';
@@ -31,6 +39,11 @@ import { JobCostController } from './presentation/job-cost.controller';
         GetJobCostLedgerUseCase,
         PutJobCostForecastUseCase,
         ListJobCostAlertsUseCase,
+        CashFlowEngine,
+        GetProjectCashFlowUseCase,
+        GetCompanyCashFlowUseCase,
+        GetCashSettingsUseCase,
+        PutCashSettingsUseCase,
     ],
 })
 export class JobCostModule implements OnModuleInit {
@@ -41,11 +54,18 @@ export class JobCostModule implements OnModuleInit {
         private readonly repo: JobCostRepository,
         private readonly engine: JobCostEngine,
         private readonly handlers: JobCostHandlers,
+        private readonly cashPlans: CashPlanSources,
+        private readonly subcontractCash: SubcontractCashPlan,
+        private readonly cash: CashFlowEngine,
+        private readonly outlook: PortalCashOutlook,
     ) {}
 
     onModuleInit(): void {
         this.rollups.register(MODULE, (ws, projectIds) => this.engine.rollup(ws, projectIds));
         this.sweeps.register(ALERTS_SWEEP, () => this.handlers.alertsSweep());
+        this.sweeps.register(CASH_SWEEP, ctx => this.cash.sweep(ctx));
+        this.cashPlans.register('subcontracting', (ws, projectIds, from, to) => this.subcontractCash.plan(ws, projectIds, from, to));
+        this.outlook.register(MODULE, 'cost.read', (ws, now) => this.cash.outlook(ws, now));
         // Memory adapter: forget a deleted project's forecasts and alerts (PostgreSQL drops them with the project).
         this.dependents.register((workspaceId, projectId) => this.repo.deleteByProject(workspaceId, projectId));
     }

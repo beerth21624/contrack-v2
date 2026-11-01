@@ -1,5 +1,7 @@
 import type { ProjectId, WorkspaceId } from '../../../../shared/domain/ids';
-import { type AlertRecord, type ForecastRecord, JobCostRepository } from '../../application/ports/job-cost.repository';
+import {
+    type AlertRecord, type CashSettingsRecord, type ForecastRecord, JobCostRepository,
+} from '../../application/ports/job-cost.repository';
 
 const copyForecast = (r: ForecastRecord): ForecastRecord => ({ ...r, updatedAt: new Date(r.updatedAt.getTime()) });
 const copyAlert = (r: AlertRecord): AlertRecord => structuredClone(r);
@@ -13,6 +15,7 @@ export const alertOrder = (a: AlertRecord, b: AlertRecord): number =>
 export class InMemoryJobCostRepository extends JobCostRepository {
     private readonly forecastRows = new Map<string, ForecastRecord>();
     private readonly alertRows = new Map<string, AlertRecord>();
+    private readonly cashRows = new Map<string, CashSettingsRecord>();
 
     lockProject(): Promise<void> {
         return Promise.resolve();
@@ -62,6 +65,16 @@ export class InMemoryJobCostRepository extends JobCostRepository {
 
     updateAlerts(rows: readonly AlertRecord[]): Promise<void> {
         for (const r of rows) if (this.alertRows.get(r.id)?.workspaceId === r.workspaceId) this.alertRows.set(r.id, copyAlert(r));
+        return Promise.resolve();
+    }
+
+    cashSettings(workspaceId: WorkspaceId): Promise<CashSettingsRecord | undefined> {
+        const row = this.cashRows.get(workspaceId);
+        return Promise.resolve(row === undefined ? undefined : { ...row, updatedAt: new Date(row.updatedAt.getTime()) });
+    }
+
+    saveCashSettings(record: CashSettingsRecord): Promise<void> {
+        this.cashRows.set(record.workspaceId, { ...record, updatedAt: new Date(record.updatedAt.getTime()) });
         return Promise.resolve();
     }
 

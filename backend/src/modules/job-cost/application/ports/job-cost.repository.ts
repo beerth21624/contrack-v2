@@ -28,7 +28,17 @@ export interface AlertRecord {
     notifiedAt: Date | null;
 }
 
-/** `jc_forecasts`, `jc_alerts`. Every query filters by workspace. */
+/** `jc_cash_settings` (WP-47). */
+export interface CashSettingsRecord {
+    workspaceId: WorkspaceId;
+    openingBalance: number;
+    asOf: string;
+    minBalance: number;
+    updatedBy: UserId;
+    updatedAt: Date;
+}
+
+/** `jc_forecasts`, `jc_alerts`, `jc_cash_settings`. Every query filters by workspace. */
 export abstract class JobCostRepository {
     /** Serializes the job-cost writers of a project (subcontract sync, alerts) until the transaction ends (memory: no-op). */
     abstract lockProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void>;
@@ -44,6 +54,9 @@ export abstract class JobCostRepository {
     ): Promise<AlertRecord[]>;
     abstract insertAlerts(rows: readonly AlertRecord[]): Promise<void>;
     abstract updateAlerts(rows: readonly AlertRecord[]): Promise<void>;
+    abstract cashSettings(workspaceId: WorkspaceId): Promise<CashSettingsRecord | undefined>;
+    /** Insert or replace by workspace. */
+    abstract saveCashSettings(record: CashSettingsRecord): Promise<void>;
     /** Memory adapter only (PostgreSQL cascades from projects). */
     abstract deleteByProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<void>;
 }

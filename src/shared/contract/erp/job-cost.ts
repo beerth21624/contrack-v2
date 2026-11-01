@@ -5,7 +5,7 @@
 // Every figure is baht without VAT. Reading needs `cost.read`, forecasts `cost.manage`.
 import { z } from 'zod';
 import { isoDateTimeSchema, uuidSchema } from '../common';
-import { amountSchema } from './common';
+import { amountSchema, businessDateSchema, signedAmountSchema } from './common';
 import { costCodeSourceSchema, costCodeStatusSchema } from './boq-control';
 import { mainContractStatusSchema } from './main-contracts';
 
@@ -163,3 +163,100 @@ export const jobCostAlertListQuerySchema = z.object({
     includeResolved: z.enum(['true', 'false']).optional().transform(v => v === 'true'),
 });
 export type JobCostAlertListQuery = z.infer<typeof jobCostAlertListQuerySchema>;
+
+// ── Cash flow (WP-47) ──
+// Planned money = what the modules still expect to move (open invoices, unbilled milestones with a due date, issued POs
+// not billed, labour to pay, unpaid subcontract installments; supplier bills from payables later). Actual money =
+// Σ `fin_events.cash` per week (+ in, − out). Weeks start on Monday (Bangkok). Outstanding items dated before the current
+// week count in the current week.
+
+/** Where a planned item comes from. */
+export const CASH_PLAN_SOURCES = ['invoice', 'milestone', 'purchase_order', 'labour', 'subcontract', 'supplier_bill'] as const;
+export const cashPlanSourceSchema = z.enum(CASH_PLAN_SOURCES);
+export type CashPlanSourceKind = z.infer<typeof cashPlanSourceSchema>;
+
+export const CASH_FLOW_DEFAULT_WEEKS = 13;
+export const CASH_FLOW_MAX_WEEKS = 52;
+export const CASH_FLOW_MAX_PAST_WEEKS = 26;
+
+export const cashPlanItemDtoSchema = z.object({
+    projectId: uuidSchema,
+    projectName: z.string(),
+    date: businessDateSchema,
+    direction: z.enum(['in', 'out']),
+    amount: z.number(),
+    source: cashPlanSourceSchema,
+    /** Document number or label (e.g. `INV-2026-0001`, `2026-11-A`, `งวด 2`). */
+    ref: z.string(),
+});
+export type CashPlanItemDto = z.infer<typeof cashPlanItemDtoSchema>;
+
+export const cashWeekDtoSchema = z.object({
+    weekStart: businessDateSchema,
+    weekEnd: businessDateSchema,
+    /** Before the current week: actual figures only. */
+    past: z.boolean(),
+    plannedIn: z.number(),
+    plannedOut: z.number(),
+    actualIn: z.number(),
+    actualOut: z.number(),
+    /** Balance at the end of the week. */
+    balance: z.number(),
+});
+export type CashWeekDto = z.infer<typeof cashWeekDtoSchema>;
+
+/** The estimate's CashFlow sheet (planning) per week: the "plan at estimating" line of a project. */
+export const cashEstimateWeekDtoSchema = z.object({
+    weekStart: businessDateSchema,
+    inflow: z.number(),
+    outflow: z.number(),
+    cumulative: z.number(),
+});
+export type CashEstimateWeekDto = z.infer<typeof cashEstimateWeekDtoSchema>;
+
+export const cashSettingsDtoSchema = z.object({
+    openingBalance: z.number(),
+    /** The day `openingBalance` is the balance at (start of day); null = not set (opening 0 before every event). */
+    asOf: businessDateSchema.nullable(),
+    minBalance: z.number(),
+    updatedAt: isoDateTimeSchema.nullable(),
+});
+export type CashSettingsDto = z.infer<typeof cashSettingsDtoSchema>;
+
+/**
+ * GET /projects/:projectId/cash-flow and GET /workspaces/:workspaceId/cash-flow. Project: opening = Σ cash of the
+ * project before the window, minimum 0, with `estimate`. Company: every live project plus money without a project,
+ * opening from `settings`, minimum `settings.minBalance`, `estimate` null.
+ */
+export const cashFlowDtoSchema = z.object({
+    scope: z.enum(['project', 'company']),
+    projectId: uuidSchema.nullable(),
+    today: businessDateSchema,
+    opening: z.number(),
+    minBalance: z.number(),
+    weeks: z.array(cashWeekDtoSchema),
+    /** weekStart of the first current-or-later week whose balance < minBalance. */
+    firstBelowMin: businessDateSchema.nullable(),
+    lowestBalance: z.number().nullable(),
+    /** Planned items inside the window (date order). */
+    items: z.array(cashPlanItemDtoSchema),
+    estimate: z.array(cashEstimateWeekDtoSchema).nullable(),
+    settings: cashSettingsDtoSchema.nullable(),
+    generatedAt: isoDateTimeSchema,
+});
+export type CashFlowDto = z.infer<typeof cashFlowDtoSchema>;
+
+/** ?weeks=13&pastWeeks=0 */
+export const cashFlowQuerySchema = z.object({
+    weeks: z.coerce.number().int().min(1).max(CASH_FLOW_MAX_WEEKS).default(CASH_FLOW_DEFAULT_WEEKS),
+    pastWeeks: z.coerce.number().int().min(0).max(CASH_FLOW_MAX_PAST_WEEKS).default(0),
+});
+export type CashFlowQuery = z.infer<typeof cashFlowQuerySchema>;
+
+/** PUT /workspaces/:workspaceId/cash-settings — `cost.manage`. */
+export const putCashSettingsRequestSchema = z.object({
+    openingBalance: signedAmountSchema,
+    asOf: businessDateSchema,
+    minBalance: signedAmountSchema,
+});
+export type PutCashSettingsRequest = z.infer<typeof putCashSettingsRequestSchema>;

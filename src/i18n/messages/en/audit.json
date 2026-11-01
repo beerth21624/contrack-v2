@@ -87,6 +87,7 @@
     "timesheet": "Timesheet",
     "pay_period": "Pay period",
     "wage_advance": "Wage advance",
-    "cost_forecast": "Cost forecast"
+    "cost_forecast": "Cost forecast",
+    "cash_settings": "Cash settings"
   }
 }

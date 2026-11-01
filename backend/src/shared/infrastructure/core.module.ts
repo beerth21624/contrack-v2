@@ -1,8 +1,8 @@
 // ─── Global infrastructure: config, clock, ids, database, unit of work ───
 import { Global, Module, type DynamicModule, type OnApplicationShutdown, type OnModuleInit, type Provider, Inject, Optional } from '@nestjs/common';
 import {
-    ApprovalHandlers, BaselineUnlockGuards, BoqEditLocks, Clock, CustomerLinkHandlers, DailySweeps, HubRollups, IdGenerator, ModuleWorkRegistry,
-    PayPeriodBillChecks, PortalSources, ProjectDeletionGuards, ProjectDependents, RevisionHooks, SearchSources, UnitOfWork, WorkspaceDeletionGuards,
+    ApprovalHandlers, BaselineUnlockGuards, BoqEditLocks, CashPlanSources, Clock, CustomerLinkHandlers, DailySweeps, HubRollups, IdGenerator, ModuleWorkRegistry,
+    PayPeriodBillChecks, PortalCashOutlook, PortalSources, ProjectDeletionGuards, ProjectDependents, RevisionHooks, SearchSources, UnitOfWork, WorkspaceDeletionGuards,
 } from '../application/ports';
 import { AppConfig, type Env } from './config/env';
 import { DatabaseContext, DrizzleUnitOfWork, InMemoryUnitOfWork, createDatabase, createPool } from './database/database';
@@ -62,6 +62,8 @@ export class CoreModule {
             { provide: BoqEditLocks, useValue: new BoqEditLocks() },
             { provide: BaselineUnlockGuards, useValue: new BaselineUnlockGuards() },
             { provide: PayPeriodBillChecks, useValue: new PayPeriodBillChecks() },
+            { provide: CashPlanSources, useValue: new CashPlanSources() },
+            { provide: PortalCashOutlook, useValue: new PortalCashOutlook() },
         ];
         if (config.persistence === 'postgres') {
             const url = options.env.DATABASE_URL;
@@ -83,7 +85,7 @@ export class CoreModule {
             exports: [
                 AppConfig, Clock, IdGenerator, UnitOfWork, ProjectDependents, ModuleWorkRegistry, ApprovalHandlers, DailySweeps,
                 ProjectDeletionGuards, WorkspaceDeletionGuards, CustomerLinkHandlers, HubRollups, PortalSources, SearchSources, RevisionHooks,
-                BoqEditLocks, BaselineUnlockGuards, PayPeriodBillChecks,
+                BoqEditLocks, BaselineUnlockGuards, PayPeriodBillChecks, CashPlanSources, PortalCashOutlook,
                 ...(config.persistence === 'postgres' ? [DatabaseContext] : []),
             ],
         };

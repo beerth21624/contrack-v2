@@ -9,7 +9,7 @@ import type {
     CostCategory, CostCodeSource, CostCodeStatus, CostEntryKind, CustomerLinkAction, CustomerLinkSubject, DocLanguage, DocType, FileDto,
     FilePurpose, FinCounterpartyType, FinDirection, FinEventType, HubProjectFields, HubProjectStatus, ModuleId, Permission, ProjectRollup, ProjectType,
 } from '@contrack/contract';
-import type { EntitlementStatus, PortalTaskKind, SearchHit } from '@contrack/contract';
+import type { CashPlanSourceKind, EntitlementStatus, PortalTaskKind, SearchHit } from '@contrack/contract';
 import type { PurchaseOrderStatus, SupplierKind, SupplierSnapshot, SupplierWhtPreset, TradeId } from '@contrack/contract';
 import type { SubcontractStatus } from '@contrack/contract';
 import type {
@@ -1639,4 +1639,73 @@ export interface SubcontractCommitment {
  */
 export abstract class SubcontractCommitments {
     abstract forProject(workspaceId: WorkspaceId, projectId: ProjectId): Promise<SubcontractCommitment[]>;
+}
+
+// ── Cash plan (WP-47, docs/erp/02-domain-model.md §9): money the modules still expect to move, read by job-cost ──
+
+/** One expected cash movement (same shape as CashPlanItem of src/domain/job-cost/cash-projection.ts). */
+export interface CashPlanItem {
+    projectId: ProjectId;
+    /** Expected date; an outstanding item may be dated in the past (job-cost counts it in the current week). */
+    date: string;
+    direction: 'in' | 'out';
+    /** Baht, > 0. */
+    amount: number;
+    /** `CashPlanSourceKind` of the contract (invoice, milestone, purchase_order, labour, subcontract, supplier_bill). */
+    source: CashPlanSourceKind;
+    ref: string;
+}
+
+/**
+ * Items of the given projects (`'all'` = every project of the workspace) that have not moved yet and are expected on or
+ * before `to`; `from` = today (Bangkok business date), forecasts start there. Returns [] when the module is not active.
+ */
+export type CashPlanSource = (
+    workspaceId: WorkspaceId, projectIds: readonly ProjectId[] | 'all', from: string, to: string,
+) => Promise<CashPlanItem[]>;
+
+/** Provided by core: one cash plan source per module, registered in `onModuleInit` (job-cost calls the active ones). */
+export class CashPlanSources {
+    private readonly entries: { module: ModuleId; source: CashPlanSource }[] = [];
+
+    register(module: ModuleId, source: CashPlanSource): void {
+        this.entries.push({ module, source });
+    }
+
+    sources(): readonly { module: ModuleId; source: CashPlanSource }[] {
+        return this.entries;
+    }
+}
+
+/**
+ * Provided by subcontracting (WP-47): unpaid installments of the buyer's live subcontracts as cash out (approved /
+ * requested claims at their net, unclaimed installments spread over the contract schedule). [] when `subcontracting`
+ * is not active. job-cost registers it as the `subcontracting` cash plan source.
+ */
+export abstract class SubcontractCashPlan {
+    abstract plan(workspaceId: WorkspaceId, projectIds: readonly ProjectId[] | 'all', today: string, to: string): Promise<CashPlanItem[]>;
+}
+
+/** One week of the portal's cash outlook. */
+export interface CashOutlookWeekInfo {
+    weekStart: string;
+    inflow: number;
+    outflow: number;
+    balance: number;
+}
+
+export type CashOutlookSource = (workspaceId: WorkspaceId, now: Date) => Promise<CashOutlookWeekInfo[]>;
+
+/** Provided by core: the portal's cash outlook (job-cost registers it; the portal calls it when active and permitted). */
+export class PortalCashOutlook {
+    private entry: { module: ModuleId; permission: Permission; source: CashOutlookSource } | null = null;
+
+    register(module: ModuleId, permission: Permission, source: CashOutlookSource): void {
+        if (this.entry !== null) throw new Error('A portal cash outlook is already registered');
+        this.entry = { module, permission, source };
+    }
+
+    get(): { module: ModuleId; permission: Permission; source: CashOutlookSource } | null {
+        return this.entry;
+    }
 }

@@ -4,10 +4,12 @@
 // (CostLedger, source `timesheet`); half-month pay periods (build with wage advances recovered oldest first → approval
 // `pay_period.approve` → pay: FinancialEvents `lb.wages_paid` / `lb.advance_recovered`, refused while payables holds a
 // bill of the period through PayPeriodBillChecks); wage advances (`lb.advance_paid`). Registers ApprovalHandlers,
-// PortalSources (approved periods to pay), DailySweeps (`labour.pay-period-ready`) and ProjectDependents.
+// PortalSources (approved periods to pay), DailySweeps (`labour.pay-period-ready`), CashPlanSources (wages to pay, WP-47)
+// and ProjectDependents.
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
-import { ApprovalHandlers, DailySweeps, PortalSources, ProjectDependents } from '../../shared/application/ports';
+import { ApprovalHandlers, CashPlanSources, DailySweeps, PortalSources, ProjectDependents } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
+import { LabourCashPlan } from './application/labour-cash-plan';
 import { LabourHandlers, PAY_PERIOD_READY_SWEEP } from './application/labour-handlers';
 import { LabourEffects, LabourViews, MODULE } from './application/labour.service';
 import { LabourRepository } from './application/ports/labour.repository';
@@ -30,6 +32,7 @@ import { LabourController } from './presentation/labour.controller';
         LabourViews,
         LabourEffects,
         LabourHandlers,
+        LabourCashPlan,
         TimesheetDayView,
         GetTimesheetDayUseCase,
         PutTimesheetDayUseCase,
@@ -52,6 +55,8 @@ export class LabourModule implements OnModuleInit {
         private readonly dependents: ProjectDependents,
         private readonly repo: LabourRepository,
         private readonly handlers: LabourHandlers,
+        private readonly cashPlans: CashPlanSources,
+        private readonly cashPlan: LabourCashPlan,
     ) {}
 
     onModuleInit(): void {
@@ -59,6 +64,7 @@ export class LabourModule implements OnModuleInit {
         this.approvals.register('pay_period.approve', { onDecided: e => this.handlers.onPayPeriodDecided(e) });
         this.portal.register(MODULE, 'labour.pay', ctx => this.handlers.portalReadyToPay(ctx));
         this.sweeps.register(PAY_PERIOD_READY_SWEEP, ctx => this.handlers.payPeriodReady(ctx));
+        this.cashPlans.register(MODULE, (ws, projectIds, from, to) => this.cashPlan.plan(ws, projectIds, from, to));
         // Memory adapter: forget a deleted project's timesheets (PostgreSQL drops them with the project).
         this.dependents.register((workspaceId, projectId) => this.repo.deleteByProject(workspaceId, projectId));
     }

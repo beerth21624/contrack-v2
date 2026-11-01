@@ -87,6 +87,7 @@
     "timesheet": "ใบลงเวลา",
     "pay_period": "งวดค่าแรง",
     "wage_advance": "เบิกล่วงหน้า",
-    "cost_forecast": "ประมาณการต้นทุน"
+    "cost_forecast": "ประมาณการต้นทุน",
+    "cash_settings": "ตั้งค่ากระแสเงินสด"
   }
 }

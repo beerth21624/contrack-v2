@@ -1,8 +1,10 @@
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { type ProjectId, type WorkspaceId, asProjectId, asUserId, asWorkspaceId } from '../../../../shared/domain/ids';
 import type { DatabaseContext } from '../../../../shared/infrastructure/database/database';
-import { jcAlerts, jcForecasts } from '../../../../shared/infrastructure/database/schema-job-cost';
-import { type AlertRecord, type ForecastRecord, JobCostRepository } from '../../application/ports/job-cost.repository';
+import { jcAlerts, jcCashSettings, jcForecasts } from '../../../../shared/infrastructure/database/schema-job-cost';
+import {
+    type AlertRecord, type CashSettingsRecord, type ForecastRecord, JobCostRepository,
+} from '../../application/ports/job-cost.repository';
 
 const toForecast = (r: typeof jcForecasts.$inferSelect): ForecastRecord => ({
     ...r, workspaceId: asWorkspaceId(r.workspaceId), projectId: asProjectId(r.projectId), updatedBy: asUserId(r.updatedBy),
@@ -75,6 +77,22 @@ export class DrizzleJobCostRepository extends JobCostRepository {
                 .set({ level: r.level, value: r.value, threshold: r.threshold, lastSeenAt: r.lastSeenAt, resolvedAt: r.resolvedAt, notifiedAt: r.notifiedAt })
                 .where(and(eq(jcAlerts.workspaceId, r.workspaceId), eq(jcAlerts.id, r.id)));
         }
+    }
+
+    async cashSettings(workspaceId: WorkspaceId): Promise<CashSettingsRecord | undefined> {
+        const [row] = await this.ctx.executor.select().from(jcCashSettings).where(eq(jcCashSettings.workspaceId, workspaceId)).limit(1);
+        return row === undefined ? undefined : { ...row, workspaceId: asWorkspaceId(row.workspaceId), updatedBy: asUserId(row.updatedBy) };
+    }
+
+    async saveCashSettings(record: CashSettingsRecord): Promise<void> {
+        await this.ctx.executor.insert(jcCashSettings).values({ ...record })
+            .onConflictDoUpdate({
+                target: jcCashSettings.workspaceId,
+                set: {
+                    openingBalance: record.openingBalance, asOf: record.asOf, minBalance: record.minBalance,
+                    updatedBy: record.updatedBy, updatedAt: record.updatedAt,
+                },
+            });
     }
 
     async deleteByProject(): Promise<void> {

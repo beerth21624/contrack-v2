@@ -8,7 +8,7 @@ import { bangkokToday } from '@contrack/domain/dates/business-date';
 import { sumMoney } from '@contrack/domain/money';
 import { ModuleAccess } from '../../../shared/application/module-access';
 import {
-    Clock, HubRollups, ModuleFlags, ModuleStatesLookup, type PortalContext, PortalSources, ProjectCatalog, SearchSources,
+    Clock, HubRollups, ModuleFlags, ModuleStatesLookup, PortalCashOutlook, type PortalContext, PortalSources, ProjectCatalog, SearchSources,
 } from '../../../shared/application/ports';
 import type { DomainError } from '../../../shared/domain/domain-error';
 import { type ProjectId, type UserId, type WorkspaceId, asProjectId } from '../../../shared/domain/ids';
@@ -66,6 +66,7 @@ export class GetPortalUseCase {
         private readonly catalog: ProjectCatalog,
         private readonly portalSources: PortalSources,
         private readonly rollups: HubRollups,
+        private readonly outlook: PortalCashOutlook,
         private readonly clock: Clock,
     ) {}
 
@@ -112,11 +113,20 @@ export class GetPortalUseCase {
         return ok({
             tasks: tasks.slice(0, PORTAL_TASK_LIMIT),
             riskyProjects: await this.riskyProjects(workspaceId, role, names, isActive),
-            cashOutlook: null,
+            cashOutlook: await this.cashOutlook(workspaceId, role, now, isActive),
             tiles,
             quickActions,
             generatedAt: now.toISOString(),
         });
+    }
+
+    /** The registered outlook (job-cost) when its module is active and the role holds its permission, else null. */
+    private async cashOutlook(
+        workspaceId: WorkspaceId, role: Role, now: Date, isActive: (m: ModuleId) => Promise<boolean>,
+    ): Promise<PortalDto['cashOutlook']> {
+        const entry = this.outlook.get();
+        if (entry === null || !can(role, entry.permission) || !(await isActive(entry.module))) return null;
+        return entry.source(workspaceId, now);
     }
 
     /**

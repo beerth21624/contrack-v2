@@ -6,14 +6,16 @@
 // receipt or ahead, credit notes (`CN`), AR aging, customer statement, PromptPay payload.
 // Registers ApprovalHandlers('claim.submit'), HubRollups (billedToDate, receivedToDate, overdueReceivable),
 // BaselineUnlockGuards, ProjectDeletionGuards, ProjectDependents, CustomerLinkHandlers('invoice') and the daily sweeps
-// `billing.invoice-due` / `billing.retention-release-due`, PortalSources (overdue invoices, claimable milestones; WP-35);
+// `billing.invoice-due` / `billing.retention-release-due`, PortalSources (overdue invoices, claimable milestones; WP-35),
+// CashPlanSources (open invoices, unbilled milestones with a due date; WP-47);
 // provides the BillingTotals port (global).
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
 import {
-    ApprovalHandlers, BaselineUnlockGuards, BillingTotals, CustomerLinkHandlers, DailySweeps, HubRollups, PortalSources, ProjectDeletionGuards,
+    ApprovalHandlers, BaselineUnlockGuards, BillingTotals, CashPlanSources, CustomerLinkHandlers, DailySweeps, HubRollups, PortalSources, ProjectDeletionGuards,
     ProjectDependents,
 } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
+import { BillingCashPlan } from './application/billing-cash-plan';
 import { BillingPortal } from './application/billing-portal';
 import { BillingViews } from './application/billing-views';
 import { BillingAccess, BillingHandlers, ClaimCalculator, InvoiceIssuer, MODULE } from './application/billing.service';
@@ -48,6 +50,7 @@ import { BillingController } from './presentation/billing.controller';
         BillingViews,
         BillingHandlers,
         BillingPortal,
+        BillingCashPlan,
         ListClaimsUseCase,
         GetClaimUseCase,
         CreateClaimUseCase,
@@ -93,6 +96,8 @@ export class BillingModule implements OnModuleInit {
         private readonly receivables: ReceivablesHandlers,
         private readonly portal: PortalSources,
         private readonly portalTasks: BillingPortal,
+        private readonly cashPlans: CashPlanSources,
+        private readonly cashPlan: BillingCashPlan,
     ) {}
 
     onModuleInit(): void {
@@ -105,6 +110,7 @@ export class BillingModule implements OnModuleInit {
         this.sweeps.register(RETENTION_DUE_SWEEP, ctx => this.receivables.retentionDue(ctx));
         this.portal.register(MODULE, 'billing.receive', ctx => this.portalTasks.overdueInvoices(ctx));
         this.portal.register(MODULE, 'billing.manage', ctx => this.portalTasks.claimableMilestones(ctx));
+        this.cashPlans.register(MODULE, (ws, projectIds, from, to) => this.cashPlan.plan(ws, projectIds, from, to));
         // Memory adapter: forget a deleted project's billing rows (PostgreSQL drops them with the project).
         this.dependents.register((workspaceId, projectId) => this.repo.deleteByProject(workspaceId, projectId));
     }
