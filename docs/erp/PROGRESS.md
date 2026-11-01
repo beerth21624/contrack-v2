@@ -59,7 +59,7 @@
 | WP-45 | ค่าแรง web | sonnet | done | 3c96534 | route `/p/<id>/labour`, `/workspace/pay-periods[/<key>]`, `/print/pay-period/<id>`; D-317 … D-319 |
 | WP-46 | Job cost backend: ต้นทุน กำไร แจ้งเตือน | opus | done | 0bbf7ec | migration `0030_wp46_job_cost`; โมดูล `backend/src/modules/job-cost/`, port `SubcontractCommitments` (subcontracting), `CostLedger.listByProject`/`totalsByProjectCostCode`; D-320…D-323 |
 | WP-47 | กระแสเงินสดจริงข้ามโครงการ (backend) | opus | done | d76a926 | D-324…D-328; ไม่มี migration; ไม่เขียนเทสต์ใหม่ |
-| WP-48 | Job cost + กระแสเงินสด web | sonnet | done | <hash> | `src/features/erp/job-cost/*`, routes `/p/<id>/cost` + `/finance/cashflow`, แท็บ `cost` + เมนู `finance-cashflow`; i18n `jobCost`; D-329…D-331 |
+| WP-48 | Job cost + กระแสเงินสด web | sonnet | done | d1f7185 | `src/features/erp/job-cost/*`, routes `/p/<id>/cost` + `/finance/cashflow`, แท็บ `cost` + เมนู `finance-cashflow`; i18n `jobCost`; D-329…D-331 |
 | WP-49 | เจ้าหนี้: บิลผู้ขาย / งวดจ้างช่วง / ค่าแรง + 3-way match (backend) | opus | todo | | |
 | WP-50 | รอบจ่าย ใบสำคัญจ่าย และ 50 ทวิ (backend) | opus | todo | | |
 | WP-51 | เจ้าหนี้ web + พิมพ์ 50 ทวิ / ใบสำคัญจ่าย | sonnet | todo | | |
@@ -1071,7 +1071,7 @@
 - ตรวจแล้ว: `npx tsc --noEmit -p backend/tsconfig.json` ผ่าน; `npx tsc --noEmit -p tsconfig.json` ผ่าน; eslint ไฟล์ที่แก้/สร้าง (backend + root) ผ่าน; `node scripts/i18n/check-parity.mjs` ผ่าน; `npx jest src/modules/portal src/modules/subcontracting/contracts` 106 ผ่าน; e2e `approvals` + `projects` 26 ผ่าน; `npx vitest run src/shared/contract src/i18n src/domain/job-cost` 623 ผ่าน; smoke ชั่วคราว (ลบแล้ว): pure — actual ต่อสัปดาห์ = Σ cash ของสัปดาห์ (500 เข้า/300 ออก), รายการค้างย้อนหลังลงสัปดาห์ปัจจุบัน, `firstBelowMin` ถูก; e2e memory — settings 10,000 (as_of −30 วัน) min 1,000 + cash −400/+1,000 → opening/balance ถูก (pastWeeks=2), source ของ billing ขณะ billing ปิดไม่ถูกนับ (ไม่ error) → เปิด billing แล้วนับ (`firstBelowMin` สัปดาห์ถัดไป, −39,400), sweep 2 ครั้งวันเดียวกันแจ้ง `cash.negative_forecast` ครั้งเดียว, alert `negative_cash` critical ของโครงการ → portal riskyProjects `negative_cash`, `cashOutlook` 13 สัปดาห์ (viewer = null), viewer GET cash-flow 403; ยังไม่ได้ทดสอบ source จริงของ billing/procurement/labour/subcontracting ด้วยข้อมูลจริง และยังไม่ได้รันบน PostgreSQL จริง (upsert `jc_cash_settings`)
 
 
-### WP-48 — Job cost + กระแสเงินสด web (<hash>)
+### WP-48 — Job cost + กระแสเงินสด web (d1f7185)
 - สร้าง `src/features/erp/job-cost/{api,hooks,chart-utils,JobCostPage,CostTable,CostChart,ForecastEditor,LedgerDrawer,ProfitCard,AlertsList,CashFlowChart,CompanyCashFlowPage,CashSettingsDialog,ExportCostXlsx}`; routes `p/[projectId]/cost`, `finance/cashflow`; แท็บ `cost` (module `job-cost`, `cost.read`) และเมนู `finance-cashflow` ใน `nav-registry.ts`; i18n `jobCost` (th+en), `enums.costLevel|alertLevel|alertKind|cashPlanSource|costEntryKind|costCategory|costSourceType`, `nav.tabs.cost`, `nav.companyCashFlow`
 - เบี่ยงจากแผน: D-329 … D-331; ไม่เขียนเทสต์ใหม่; ยังไม่ได้ลองกดใน browser
 - WP ถัดไปต้องรู้: เปิดหน้า cost = เขียนฝั่ง server (sync + alerts) จึง `staleTime: 0`; WP-49/51 (payables) เมื่อลงทะเบียน `supplier_bill` ใน `CashPlanSources` ป้าย i18n `enums.cashPlanSource.supplier_bill` มีแล้ว; WP-52 ใช้ `ExportCostXlsx.ts` เป็นตัวอย่าง exceljs แบบ lazy
