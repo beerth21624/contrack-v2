@@ -2,33 +2,28 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Button, Modal } from 'antd';
 import { FileAddOutlined, HomeOutlined, PlusOutlined } from '@ant-design/icons';
 import { useProjectStore } from '@/store/project-store';
 import type { ProjectStart } from '@/domain/project';
 import { JOURNEY_LEVELS } from '@/domain/journey';
 
-const CHOICES: { start: ProjectStart; icon: React.ReactNode; title: string; text: string }[] = [
-    {
-        start: 'blank', icon: <FileAddOutlined />, title: 'เริ่มจากแบบแปลนของฉัน',
-        text: 'ทุกขั้นตอนเริ่มจากค่าว่าง กรอกขนาดและจำนวนตามแบบ ราคาวัสดุ/ค่าแรงตั้งต้นของระบบ (แก้ไขได้)',
-    },
-    {
-        start: 'sample', icon: <HomeOutlined />, title: 'ทดลองกับบ้านตัวอย่าง',
-        text: 'เทมเพลตบ้านเดี่ยว 1 ชั้น กรอกข้อมูลไว้ครบ เหมาะสำหรับทดลองใช้งาน',
-    },
-];
-
 /** Start a new project (replaces the current one after confirmation). */
 export function NewProjectButton({ size }: { size?: 'large' | 'middle' }) {
+    const t = useTranslations('journeyUi.newProject');
     const router = useRouter();
     const newProject = useProjectStore(s => s.newProject);
     const isCloud = useProjectStore(s => s.binding.kind === 'cloud');
     const [open, setOpen] = useState(false);
+    const choices: { start: ProjectStart; icon: React.ReactNode; title: string; text: string }[] = [
+        { start: 'blank', icon: <FileAddOutlined />, title: t('blankTitle'), text: t('blankText') },
+        { start: 'sample', icon: <HomeOutlined />, title: t('sampleTitle'), text: t('sampleText') },
+    ];
 
     // A cloud project is never replaced: new cloud projects are made on the projects page.
     if (isCloud) {
-        return <Button size={size} icon={<PlusOutlined />} onClick={() => router.push('/projects')}>โครงการใหม่</Button>;
+        return <Button size={size} icon={<PlusOutlined />} onClick={() => router.push('/projects')}>{t('button')}</Button>;
     }
 
     const choose = (start: ProjectStart) => {
@@ -40,11 +35,11 @@ export function NewProjectButton({ size }: { size?: 'large' | 'middle' }) {
 
     return (
         <>
-            <Button size={size} icon={<PlusOutlined />} onClick={() => setOpen(true)}>โครงการใหม่</Button>
-            <Modal open={open} onCancel={() => setOpen(false)} footer={null} title="เริ่มโครงการใหม่" width={560}>
-                <p className="text-[13px] text-gray-500 mb-3">ข้อมูลโครงการปัจจุบันจะถูกแทนที่</p>
+            <Button size={size} icon={<PlusOutlined />} onClick={() => setOpen(true)}>{t('button')}</Button>
+            <Modal open={open} onCancel={() => setOpen(false)} footer={null} title={t('modalTitle')} width={560}>
+                <p className="text-[13px] text-gray-500 mb-3">{t('replaceNote')}</p>
                 <div className="flex flex-col gap-3">
-                    {CHOICES.map(c => (
+                    {choices.map(c => (
                         <button key={c.start} type="button" onClick={() => choose(c.start)}
                             className="text-left flex gap-3 rounded-lg border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 p-4 transition cursor-pointer bg-white">
                             <span className="text-[24px] text-orange-500">{c.icon}</span>

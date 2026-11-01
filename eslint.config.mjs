@@ -90,7 +90,11 @@ const eslintConfig = defineConfig([
       "src/components/sheet/*.{ts,tsx}",
       // Track I-03: journey components
       "src/components/sheet/journey/*.{ts,tsx}",
+      // Track I-04: BOQ home + journey pages (tests keep Thai sample data)
+      "src/features/boq-home/**/*.{ts,tsx}",
+      "src/features/journey/**/*.{ts,tsx}",
     ],
+    ignores: ["**/__tests__/**"],
     rules: {
       "no-restricted-syntax": [
         "error",

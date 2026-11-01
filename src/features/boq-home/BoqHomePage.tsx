@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Input, Select, Spin, Tooltip, Typography } from 'antd';
 import { AuditOutlined, CaretDownOutlined, CaretRightOutlined, UndoOutlined, LinkOutlined, SearchOutlined } from '@ant-design/icons';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { isReadOnly, useProjectStore } from '@/store/project-store';
 import { useModuleEnabled } from '@/features/modules/modules';
 import { CreateQuotationButton } from '@/features/erp/quotations/CreateFromBoqDialog';
@@ -24,7 +24,7 @@ import { BoqExportButtons } from '@/features/export/BoqExportButtons';
 import { RevisionButtons } from '@/features/cloud/revisions/RevisionButtons';
 import { SubcontractSectionLink } from '@/features/subcontracting/shared/SubcontractSectionLink';
 import { useBoqReview } from './review/useBoqReview';
-import { REVIEW_TEXT, ReviewPanel } from './review/ReviewPanel';
+import { ReviewPanel } from './review/ReviewPanel';
 import { AiConsentModal } from './review/AiConsentModal';
 
 const { Title, Text } = Typography;
@@ -44,24 +44,6 @@ function CalcValue({ value, digits = 2, tip }: { value: number | null; digits?: 
     const content = <span>{formatNumber(value, digits)}</span>;
     return tip ? <Tooltip title={tip}>{content}</Tooltip> : content;
 }
-
-/** Texts of the table tools (search, jump), per locale. */
-const TOOL_TEXT = {
-    th: {
-        searchPh: 'ค้นหารายการ เช่น DB12, ฝ้า, ท่อ',
-        jump: 'ไปที่หมวด…',
-        found: (n: number) => `พบ ${String(n)} รายการ`,
-        none: 'ไม่พบรายการที่ตรงกับคำค้น',
-        clear: 'ล้างคำค้น',
-    },
-    en: {
-        searchPh: 'Search items, e.g. DB12, ceiling, pipe',
-        jump: 'Go to section…',
-        found: (n: number) => `${String(n)} items found`,
-        none: 'No items match the search',
-        clear: 'Clear search',
-    },
-} as const;
 
 /** An edited value: an orange inner outline on top of the bold text. */
 const editedCls = (on: boolean) => (on ? 'shadow-[inset_0_0_0_2px_#fdba74]' : '');
@@ -88,8 +70,7 @@ function Highlight({ text, q }: { text: string; q: string }) {
 
 export function BoqHomePage() {
     const t = useTranslations('boqHome');
-    const locale = useLocale();
-    const tt = locale === 'en' ? TOOL_TEXT.en : TOOL_TEXT.th;
+    const tt = useTranslations('boqHome.tools');
     const hasHydrated = useProjectStore(s => s.hasHydrated);
     const project = useProjectStore(s => s.project);
     const setMeta = useProjectStore(s => s.setMeta);
@@ -340,7 +321,7 @@ export function BoqHomePage() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2 justify-end">
                         <Button icon={<AuditOutlined />} onClick={review.run} aria-expanded={review.open} aria-controls="boq-review">
-                            {REVIEW_TEXT.button}
+                            {t('review.button')}
                         </Button>
                         <BoqExportButtons project={project} />
                         <RevisionButtons />
@@ -365,22 +346,22 @@ export function BoqHomePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="bg-white border border-orange-200 rounded-card p-4 shadow-card">
                     <Text type="secondary" className="text-[13px]">{t('constructionTotal')}</Text>
-                    <div className="text-2xl font-bold text-orange-500 tabular-nums">฿ {formatNumber(boq.constructionTotal)}</div>
+                    <div className="text-2xl font-bold text-orange-500 tabular-nums">{t('currencySymbol')} {formatNumber(boq.constructionTotal)}</div>
                 </div>
                 <div className="bg-white border border-gray-200 rounded-card p-4 shadow-card">
                     <Text type="secondary" className="text-[13px]">{t('preConstruction')}</Text>
-                    <div className="text-2xl font-semibold text-gray-700 tabular-nums">฿ {formatNumber(boq.preConstructionTotal)}</div>
+                    <div className="text-2xl font-semibold text-gray-700 tabular-nums">{t('currencySymbol')} {formatNumber(boq.preConstructionTotal)}</div>
                 </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 bg-white border border-gray-200 rounded-card px-3 py-2 shadow-card">
-                <Input allowClear prefix={<SearchOutlined className="text-gray-400" />} placeholder={tt.searchPh} aria-label={t('search')}
+                <Input allowClear prefix={<SearchOutlined className="text-gray-400" />} placeholder={tt('searchPh')} aria-label={t('search')}
                     value={query} onChange={e => setQuery(e.target.value)} style={{ width: 300, maxWidth: '100%' }} />
-                <Select<number> showSearch={{ optionFilterProp: 'label' }} placeholder={tt.jump} aria-label={tt.jump}
+                <Select<number> showSearch={{ optionFilterProp: 'label' }} placeholder={tt('jump')} aria-label={tt('jump')}
                     style={{ width: 260, maxWidth: '100%' }}
                     options={visibleSections.map(s => ({ value: s.no, label: `${String(s.no)}. ${s.title}` }))}
                     onSelect={jumpTo} />
-                {filtering && <span className="text-[13px] text-gray-500">{tt.found(matchCount)}</span>}
+                {filtering && <span className="text-[13px] text-gray-500">{tt('found', { count: matchCount })}</span>}
                 <span className="ml-auto flex gap-2">
                     <Button disabled={filtering} onClick={() => setCollapsed(new Set())}>{t('expandAll')}</Button>
                     <Button disabled={filtering}
@@ -423,9 +404,9 @@ export function BoqHomePage() {
                         <tbody>
                             <tr>
                                 <td className={`${cell} text-center text-gray-500 py-8`} colSpan={13}>
-                                    {tt.none}
+                                    {tt('none')}
                                     <div className="mt-2">
-                                        <Button size="small" onClick={() => setQuery('')}>{tt.clear}</Button>
+                                        <Button size="small" onClick={() => setQuery('')}>{tt('clear')}</Button>
                                     </div>
                                 </td>
                             </tr>

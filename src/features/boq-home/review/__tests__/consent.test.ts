@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { CONSENT_TEXT, reviewClickAction, type AiReviewGate } from '../consent';
+import { reviewClickAction, type AiReviewGate } from '../consent';
+import boqHome from '@/i18n/messages/th/boqHome.json';
+
+const CONSENT_TEXT = boqHome.consent;
 
 const ready: AiReviewGate = { signedIn: true, moduleEnabled: true, workspaceId: 'ws-1', rowCount: 212 };
 

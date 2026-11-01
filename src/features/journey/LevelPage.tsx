@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Button, Popconfirm, Popover, Result, Spin, Tag, Tooltip, Typography } from 'antd';
 import {
     AppstoreOutlined, ArrowLeftOutlined, ArrowRightOutlined, CheckOutlined, FileSearchOutlined, LockOutlined,
@@ -12,7 +13,7 @@ import { useProjectStore } from '@/store/project-store';
 import { computeProject } from '@/domain/project';
 import {
     JOURNEY_LEVELS, blockingLevels, firstStepToward, getLevel, isUnlocked, levelTotal, missingRequirements, nextLevel,
-    nextOpenLevel, phaseOf, previousLevel, requiredFields, type JourneyLevel, type JourneyProgress, type MissingValue,
+    nextOpenLevel, phaseOf, previousLevel, requiredFields, type JourneyLevel, type JourneyProgress, type LevelMark, type MissingValue,
 } from '@/domain/journey';
 import { CALCULATOR_PAGES } from '@/features/calculators/pages';
 import { totalText } from './total-text';
@@ -66,8 +67,6 @@ function useStepShortcuts(onPrev: (() => void) | undefined, onNext: (() => void)
     }, [onPrev, onNext]);
 }
 
-const SHORTCUT_HINT = 'ปุ่มลัด: Shift + → ขั้นตอนถัดไป · Shift + ← ขั้นตอนก่อนหน้า';
-
 /** Scroll a missing value into view (its field, card or the add button; else the step's inputs) and focus it. */
 function scrollToMissing(m: MissingValue, fallback: HTMLElement | null) {
     const el = targetSelectors(targetOf(m)).reduce<Element | null>((found, sel) => found ?? document.querySelector(sel), null)
@@ -80,6 +79,7 @@ function scrollToMissing(m: MissingValue, fallback: HTMLElement | null) {
 
 /** "ยังต้องกรอก 3 รายการ: …" under a failed confirm: the first few labels, the rest behind "ดูทั้งหมด". */
 function MissingList({ missing, onPick }: { missing: readonly MissingValue[]; onPick: (m: MissingValue) => void }) {
+    const t = useTranslations('journeyUi.levelPage');
     const s = missingSummary(missing);
     const all = (
         <ul className="m-0 p-0 list-none max-h-[50vh] overflow-auto max-w-[min(420px,85vw)]">
@@ -95,11 +95,11 @@ function MissingList({ missing, onPick }: { missing: readonly MissingValue[]; on
     );
     return (
         <div role="alert" className="max-w-[1248px] mx-auto px-4 sm:px-6 pt-2 flex flex-wrap items-baseline gap-x-2 text-[13px] leading-snug">
-            <span className="font-medium text-red-600 whitespace-nowrap">ยังต้องกรอก {s.count} รายการ:</span>
+            <span className="font-medium text-red-600 whitespace-nowrap">{t('missingHead', { count: s.count })}</span>
             <span className="min-w-0 text-gray-600 [overflow-wrap:anywhere]">{s.shown.join(' · ')}</span>
             {s.more > 0 && (
                 <Popover content={all} trigger="click" placement="topLeft">
-                    <Button type="link" size="small" className="!px-0 !h-auto">ดูทั้งหมด</Button>
+                    <Button type="link" size="small" className="!px-0 !h-auto">{t('viewAll')}</Button>
                 </Popover>
             )}
         </div>
@@ -108,24 +108,95 @@ function MissingList({ missing, onPick }: { missing: readonly MissingValue[]; on
 
 /** A step opened before what it waits for is passed: what is missing, and the open step to do first on the way. */
 function StepNotReady({ level, progress }: { level: JourneyLevel; progress: JourneyProgress }) {
+    const t = useTranslations('journeyUi.levelPage');
     const waiting = blockingLevels(level.id, progress);
     // May be further back than what the step waits for directly.
     const step = firstStepToward(level.id, progress);
     return (
         <Result
             icon={<LockOutlined className="!text-gray-400" />}
-            title={`ขั้นตอน "${level.title}" ยังไม่พร้อมทำ`}
-            subTitle={`ต้องทำให้เสร็จก่อน: ${waiting.map(l => l.title).join(', ')}`}
+            title={t('notReadyTitle', { title: level.title })}
+            subTitle={t('notReadySub', { names: waiting.map(l => l.title).join(', ') })}
             extra={step && (
-                <Link href={`/journey/${step.id}`}><Button type="primary">ทำต่อ: {step.title}</Button></Link>
+                <Link href={`/journey/${step.id}`}><Button type="primary">{t('continueTo', { title: step.title })}</Button></Link>
             )}
         />
+    );
+}
+
+/** The fixed bottom bar of a step: the totals, the way back and the confirm / skip / next buttons. */
+function StepBottomBar({ barRef, revealed, missing, onPick, prev, next, level, mark, total, constructionTotal, outsideConstruction, onConfirm, onGoNext, onSkip }: {
+    barRef: (el: HTMLDivElement | null) => (() => void) | undefined;
+    revealed: boolean; missing: readonly MissingValue[]; onPick: (m: MissingValue) => void;
+    prev: JourneyLevel | undefined; next: JourneyLevel | undefined; level: JourneyLevel; mark: LevelMark | undefined;
+    total: number; constructionTotal: number; outsideConstruction: boolean;
+    onConfirm: () => void; onGoNext: () => void; onSkip: () => void;
+}) {
+    const t = useTranslations('journeyUi.levelPage');
+    return (
+    <div ref={barRef}
+        className="fixed bottom-0 left-0 right-0 z-20 bg-white/95 backdrop-blur border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,.05)] pb-[env(safe-area-inset-bottom)]">
+        {revealed && <MissingList missing={missing} onPick={onPick} />}
+        {/* On a phone the buttons wrap under the total instead of squeezing it. */}
+        <div className="max-w-[1248px] mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+            {prev
+                ? (
+                    <Tooltip title={t('prevStepTip', { title: prev.title })} mouseEnterDelay={0.8}>
+                        <Link href={`/journey/${prev.id}`}><Button size="large" icon={<ArrowLeftOutlined />} aria-label={t('prevStepNamed', { title: prev.title })} /></Link>
+                    </Tooltip>
+                )
+                : <Button size="large" icon={<ArrowLeftOutlined />} disabled aria-label={t('prevStep')} />}
+            {level.kind.type !== 'meta' && (
+                <div className="min-w-[140px] flex-1 sm:flex-none sm:min-w-0">
+                    <div className="text-[12px] text-gray-500 leading-tight">{t('stepValue')}</div>
+                    <div className="text-[18px] font-bold tabular-nums leading-tight">{t('amountBaht', { amount: totalText(mark === 'skipped' ? 0 : total) })}</div>
+                    {outsideConstruction && (
+                        <div className="text-[12px] text-gray-500 leading-tight">{t('preCostNote')}</div>
+                    )}
+                </div>
+            )}
+            {/* The divider separates it from the step's own total; without one (project info) it has none. */}
+            <div className={`hidden sm:block min-w-0 ${level.kind.type !== 'meta' ? 'pl-3 border-l border-gray-200' : ''}`}>
+                <div className="text-[12px] text-gray-500 leading-tight">{t('totalLabel')}</div>
+                <div className="text-[15px] font-semibold tabular-nums leading-tight text-gray-700">
+                    {t('amountBaht', { amount: totalText(constructionTotal) })}
+                </div>
+            </div>
+            <div className="ml-auto flex flex-wrap justify-end items-center gap-2">
+                {level.optional && mark === undefined && (
+                    <Popconfirm title={t('skipConfirmTitle')} description={t('skipConfirmDesc')}
+                        okText={t('ok')} cancelText={t('cancel')} onConfirm={onSkip}>
+                        <Button size="large" icon={<StepForwardOutlined />}>{t('skipped')}</Button>
+                    </Popconfirm>
+                )}
+                {mark === undefined
+                    ? (
+                        <Button type="primary" size="large" icon={<CheckOutlined />} onClick={onConfirm} className="max-w-full">
+                            <span className="truncate min-w-0 max-w-[62vw] sm:max-w-[380px]">
+                                {next ? t('confirmGoNext', { title: next.title }) : t('confirmFinish')}
+                            </span>
+                        </Button>
+                    )
+                    : (
+                        <Tooltip title={next ? t('shortcutHint') : undefined} mouseEnterDelay={0.8}>
+                            <Button type="primary" size="large" onClick={onGoNext} className="max-w-full">
+                                <span className="truncate min-w-0 max-w-[62vw] sm:max-w-[380px]">
+                                    {next ? t('goNext', { title: next.title }) : t('backToOverview')}
+                                </span>
+                                {next && <ArrowRightOutlined />}
+                            </Button>
+                        </Tooltip>
+                    )}
+            </div>
+        </div>
+    </div>
     );
 }
 
 /** One journey level: what to read from the plan, the inputs, and the way on to the next level. */
 export function LevelPage({ levelId }: { levelId: string }) {
     const router = useRouter();
+    const t = useTranslations('journeyUi.levelPage');
     const project = useProjectStore(s => s.project);
     const setLevelMark = useProjectStore(s => s.setLevelMark);
     const result = useMemo(() => computeProject(project), [project]);
@@ -183,7 +254,7 @@ export function LevelPage({ levelId }: { levelId: string }) {
         unlocked && mark !== undefined ? goNextCb : undefined,
     );
 
-    if (!level) return <Result status="404" title="ไม่พบขั้นตอนนี้" extra={<Link href="/journey"><Button>กลับไปภาพรวมขั้นตอน</Button></Link>} />;
+    if (!level) return <Result status="404" title={t('notFound')} extra={<Link href="/journey"><Button>{t('backToOverview')}</Button></Link>} />;
 
     const index = JOURNEY_LEVELS.indexOf(level);
     const phase = phaseOf(level.id);
@@ -212,15 +283,15 @@ export function LevelPage({ levelId }: { levelId: string }) {
             <div className="sticky top-0 z-10 -mx-4 px-4 sm:-mx-6 sm:px-6 py-2 bg-page/95 backdrop-blur-sm">
                 <div className="flex items-center gap-3">
                     <Link href="/journey">
-                        <Button icon={<AppstoreOutlined />} aria-label="ภาพรวมขั้นตอน">
-                            <span className="hidden sm:inline">ภาพรวมขั้นตอน</span>
+                        <Button icon={<AppstoreOutlined />} aria-label={t('overview')}>
+                            <span className="hidden sm:inline">{t('overview')}</span>
                         </Button>
                     </Link>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-baseline gap-2 text-[13px] min-w-0">
                             <span className="font-semibold text-gray-800 truncate">{level.title}</span>
                             <Text type="secondary" className="text-[12px] whitespace-nowrap">
-                                {phase?.title} · ขั้นตอน {index + 1}/{JOURNEY_LEVELS.length}
+                                {t('stepOf', { phase: phase?.title ?? '', index: index + 1, total: JOURNEY_LEVELS.length })}
                             </Text>
                         </div>
                         <div className="mt-1 h-1 rounded-full bg-gray-200 overflow-hidden" aria-hidden>
@@ -235,19 +306,19 @@ export function LevelPage({ levelId }: { levelId: string }) {
             <div className="bg-white border border-gray-200 rounded-card p-5 shadow-card">
                 <div className="flex flex-wrap items-center gap-2">
                     <Title level={3} style={{ margin: 0 }}>{level.title}</Title>
-                    {mark === 'done' && <Tag color="green" icon={<CheckOutlined />}>เสร็จแล้ว</Tag>}
-                    {mark === 'skipped' && <Tag icon={<StepForwardOutlined />}>ไม่มีในโครงการนี้</Tag>}
+                    {mark === 'done' && <Tag color="green" icon={<CheckOutlined />}>{t('done')}</Tag>}
+                    {mark === 'skipped' && <Tag icon={<StepForwardOutlined />}>{t('skipped')}</Tag>}
                 </div>
                 {doneButIncomplete > 0 && (
                     <div className="mt-2 flex flex-wrap items-center gap-x-2 text-[13px] text-amber-700">
-                        <span>ข้อมูลยังไม่ครบ {doneButIncomplete} รายการ</span>
-                        <Button type="link" size="small" className="!px-0 !h-auto" onClick={() => reveal(missing[0])}>ดูรายการ</Button>
+                        <span>{t('incomplete', { count: doneButIncomplete })}</span>
+                        <Button type="link" size="small" className="!px-0 !h-auto" onClick={() => reveal(missing[0])}>{t('viewItems')}</Button>
                     </div>
                 )}
                 <div className="mt-3 flex gap-3 rounded-lg bg-blue-50 border border-blue-100 px-4 py-3">
                     <FileSearchOutlined className="text-blue-500 text-[20px] mt-0.5" />
                     <div>
-                        <div className="text-[12px] font-semibold text-blue-700">ดูจากแบบแปลน</div>
+                        <div className="text-[12px] font-semibold text-blue-700">{t('fromPlan')}</div>
                         <div className="text-[14px] text-gray-800">{level.planHint}</div>
                     </div>
                 </div>
@@ -256,9 +327,9 @@ export function LevelPage({ levelId }: { levelId: string }) {
             {mark === 'skipped'
                 ? (
                     <div className="bg-white border border-gray-200 rounded-card p-8 text-center text-gray-500">
-                        ขั้นตอนนี้ระบุว่า &quot;ไม่มีในโครงการนี้&quot; — ไม่นำมาคิดมูลค่า
+                        {t('skippedBody')}
                         <div className="mt-3">
-                            <Button icon={<UndoOutlined />} onClick={() => setLevelMark(level.id, undefined)}>มีงานส่วนนี้ กลับไปกรอกข้อมูล</Button>
+                            <Button icon={<UndoOutlined />} onClick={() => setLevelMark(level.id, undefined)}>{t('undoSkip')}</Button>
                         </div>
                     </div>
                 )
@@ -275,62 +346,9 @@ export function LevelPage({ levelId }: { levelId: string }) {
                     </div>
                 )}
 
-            <div ref={barRef}
-                className="fixed bottom-0 left-0 right-0 z-20 bg-white/95 backdrop-blur border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,.05)] pb-[env(safe-area-inset-bottom)]">
-                {revealed && <MissingList missing={missing} onPick={m => reveal(m)} />}
-                {/* On a phone the buttons wrap under the total instead of squeezing it. */}
-                <div className="max-w-[1248px] mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-                    {prev
-                        ? (
-                            <Tooltip title={`ขั้นตอนก่อนหน้า: ${prev.title} (Shift + ←)`} mouseEnterDelay={0.8}>
-                                <Link href={`/journey/${prev.id}`}><Button size="large" icon={<ArrowLeftOutlined />} aria-label={`ขั้นตอนก่อนหน้า: ${prev.title}`} /></Link>
-                            </Tooltip>
-                        )
-                        : <Button size="large" icon={<ArrowLeftOutlined />} disabled aria-label="ขั้นตอนก่อนหน้า" />}
-                    {level.kind.type !== 'meta' && (
-                        <div className="min-w-[140px] flex-1 sm:flex-none sm:min-w-0">
-                            <div className="text-[12px] text-gray-500 leading-tight">มูลค่าขั้นตอนนี้</div>
-                            <div className="text-[18px] font-bold tabular-nums leading-tight">{totalText(mark === 'skipped' ? 0 : total)} บาท</div>
-                            {outsideConstruction && (
-                                <div className="text-[12px] text-gray-500 leading-tight">ค่าใช้จ่ายก่อนเริ่มงาน ไม่รวมในราคาค่าก่อสร้าง</div>
-                            )}
-                        </div>
-                    )}
-                    {/* The divider separates it from the step's own total; without one (project info) it has none. */}
-                    <div className={`hidden sm:block min-w-0 ${level.kind.type !== 'meta' ? 'pl-3 border-l border-gray-200' : ''}`}>
-                        <div className="text-[12px] text-gray-500 leading-tight">ราคาค่าก่อสร้างรวม</div>
-                        <div className="text-[15px] font-semibold tabular-nums leading-tight text-gray-700">
-                            {totalText(result.boq.constructionTotal)} บาท
-                        </div>
-                    </div>
-                    <div className="ml-auto flex flex-wrap justify-end items-center gap-2">
-                        {level.optional && mark === undefined && (
-                            <Popconfirm title="ยืนยันว่าไม่มีงานส่วนนี้ในโครงการ?" description="ระบบจะไม่นำขั้นตอนนี้มาคิดมูลค่า (แก้ไขภายหลังได้)"
-                                okText="ยืนยัน" cancelText="ยกเลิก" onConfirm={skip}>
-                                <Button size="large" icon={<StepForwardOutlined />}>ไม่มีในโครงการนี้</Button>
-                            </Popconfirm>
-                        )}
-                        {mark === undefined
-                            ? (
-                                <Button type="primary" size="large" icon={<CheckOutlined />} onClick={pass} className="max-w-full">
-                                    <span className="truncate min-w-0 max-w-[62vw] sm:max-w-[380px]">
-                                        {next ? `ยืนยัน แล้วไปขั้นตอน${next.title}` : 'ยืนยันและเสร็จสิ้น'}
-                                    </span>
-                                </Button>
-                            )
-                            : (
-                                <Tooltip title={next ? SHORTCUT_HINT : undefined} mouseEnterDelay={0.8}>
-                                    <Button type="primary" size="large" onClick={goNext} className="max-w-full">
-                                        <span className="truncate min-w-0 max-w-[62vw] sm:max-w-[380px]">
-                                            {next ? `ไปขั้นตอน${next.title}` : 'กลับไปภาพรวมขั้นตอน'}
-                                        </span>
-                                        {next && <ArrowRightOutlined />}
-                                    </Button>
-                                </Tooltip>
-                            )}
-                    </div>
-                </div>
-            </div>
+            <StepBottomBar barRef={barRef} revealed={revealed} missing={missing} onPick={m => reveal(m)} prev={prev} next={next} level={level}
+                mark={mark} total={total} constructionTotal={result.boq.constructionTotal} outsideConstruction={outsideConstruction}
+                onConfirm={pass} onGoNext={goNext} onSkip={skip} />
         </div>
     );
 }

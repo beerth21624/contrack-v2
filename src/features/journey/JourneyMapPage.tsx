@@ -2,6 +2,7 @@
 
 import { Fragment, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Button, Tag } from 'antd';
 import { ArrowRightOutlined, CheckOutlined, DownOutlined, RightOutlined, TableOutlined } from '@ant-design/icons';
 import { useProjectStore } from '@/store/project-store';
@@ -18,6 +19,7 @@ import { RevisionButtons } from '@/features/cloud/revisions/RevisionButtons';
 import { useCloud } from '@/features/cloud/state';
 
 const baht = totalText;
+type Translate = ReturnType<typeof useTranslations<'journeyUi.map'>>;
 const numberOf = (level: JourneyLevel) => JOURNEY_LEVELS.indexOf(level) + 1;
 
 /** Money of a group: its steps that are not marked "ไม่มีในโครงการนี้". */
@@ -35,16 +37,16 @@ function StepMark({ state, n }: { state: LevelState; n: number }) {
 }
 
 /** "รอ: ฉาบปูน": what a locked step waits for (one or two names, else the first one and how many more). */
-function waitingText(waiting: readonly JourneyLevel[]): string {
+function waitingText(waiting: readonly JourneyLevel[], t: Translate): string {
     const [first] = waiting;
     if (first === undefined) return '';
-    if (waiting.length <= 2) return waitingList(waiting);
-    return `รอ: ${first.title} และอีก ${String(waiting.length - 1)} ขั้นตอน`;
+    if (waiting.length <= 2) return waitingList(waiting, t);
+    return t('waitingMore', { first: first.title, count: waiting.length - 1 });
 }
 
 /** "รอ: ฉาบปูน, ก่ออิฐ": every name (phones, where there is no tooltip to show the rest). */
-function waitingList(waiting: readonly JourneyLevel[]): string {
-    return waiting.length === 0 ? '' : `รอ: ${waiting.map(l => l.title).join(', ')}`;
+function waitingList(waiting: readonly JourneyLevel[], t: Translate): string {
+    return waiting.length === 0 ? '' : t('waitingList', { names: waiting.map(l => l.title).join(', ') });
 }
 
 function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
@@ -56,18 +58,19 @@ function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
     /** Required values a done step now lacks (a small amber dot; the step page lists them). */
     incomplete: number;
 }) {
+    const t = useTranslations('journeyUi.map');
     const open = state !== 'locked';
     const waits = state === 'locked' && waiting.length > 0;
     const right = state === 'current'
-        ? <span className="text-[13px] font-medium text-orange-600 whitespace-nowrap">ทำต่อ <ArrowRightOutlined className="text-[11px]" /></span>
-        : state === 'skipped' ? <span className="text-[12px] text-gray-400 whitespace-nowrap">ไม่มีในโครงการนี้</span>
+        ? <span className="text-[13px] font-medium text-orange-600 whitespace-nowrap">{t('continue')} <ArrowRightOutlined className="text-[11px]" /></span>
+        : state === 'skipped' ? <span className="text-[12px] text-gray-400 whitespace-nowrap">{t('skipped')}</span>
             : state === 'done' && level.kind.type !== 'meta' ? <span className="text-[13px] tabular-nums text-gray-700 whitespace-nowrap">{baht(value)}</span>
                 // Wider screens: one line beside the name (the row's tooltip names every step). Phones: under the name.
                 : waits
-                    ? <span className="hidden sm:inline text-[12px] text-gray-400 truncate max-w-[280px]">{waitingText(waiting)}</span>
+                    ? <span className="hidden sm:inline text-[12px] text-gray-400 truncate max-w-[280px]">{waitingText(waiting, t)}</span>
                     : null;
     const warn = state === 'done' && incomplete > 0 && (
-        <span role="img" aria-label={`ข้อมูลยังไม่ครบ ${String(incomplete)} รายการ`} title={`ข้อมูลยังไม่ครบ ${String(incomplete)} รายการ`}
+        <span role="img" aria-label={t('incomplete', { count: incomplete })} title={t('incomplete', { count: incomplete })}
             className="shrink-0 w-1.5 h-1.5 rounded-full bg-amber-500" />
     );
     const row = (
@@ -78,7 +81,7 @@ function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
                 <div className={`text-[14px] leading-[22px] truncate ${open ? 'text-gray-900' : 'text-gray-400'} ${primary ? 'font-semibold' : ''}`}>
                     {level.title}
                 </div>
-                {waits && <div className="sm:hidden text-[12px] leading-[18px] text-gray-400 line-clamp-2">{waitingList(waiting)}</div>}
+                {waits && <div className="sm:hidden text-[12px] leading-[18px] text-gray-400 line-clamp-2">{waitingList(waiting, t)}</div>}
                 {/* The assign control sits inside the row's link: its clicks (and its menu's, which bubble through the portal) must not open the step. */}
                 {team.enabled && (
                     <div className="mt-0.5" onClick={e => { e.preventDefault(); e.stopPropagation(); }}>
@@ -97,7 +100,7 @@ function StepRow({ level, state, primary, waiting, value, team, incomplete }: {
         <li>
             {open
                 ? <Link href={`/journey/${level.id}`} aria-current={primary ? 'step' : undefined} className="block">{row}</Link>
-                : <div title={waitingList(waiting)}>{row}</div>}
+                : <div title={waitingList(waiting, t)}>{row}</div>}
         </li>
     );
 }
@@ -113,6 +116,7 @@ function PhaseSection({ phase, index, states, primaryId, waiting, progress, resu
     result: ProjectResult; team: CloudLevelInfo; expanded: boolean; onToggle: () => void;
     incomplete: ReadonlyMap<string, number>;
 }) {
+    const t = useTranslations('journeyUi.map');
     const done = phase.levels.filter(l => progress[l.id] !== undefined).length;
     const all = done === phase.levels.length;
     // "กำลังทำ" marks the group of the main next step only (other groups may have steps open beside it).
@@ -126,10 +130,10 @@ function PhaseSection({ phase, index, states, primaryId, waiting, progress, resu
                 <span className="text-gray-300 text-[10px] w-3">{expanded ? <DownOutlined /> : <RightOutlined />}</span>
                 <span className="text-[11px] font-semibold tabular-nums text-gray-400 w-5">{String(index + 1).padStart(2, '0')}</span>
                 <span className={`text-[15px] font-semibold ${future ? 'text-gray-500' : 'text-gray-900'}`}>{phase.title}</span>
-                {current && <span className="text-[12px] font-medium text-orange-600 bg-orange-50 rounded px-1.5 py-0.5">กำลังทำ</span>}
+                {current && <span className="text-[12px] font-medium text-orange-600 bg-orange-50 rounded px-1.5 py-0.5">{t('inProgress')}</span>}
                 <span className="ml-auto flex items-center gap-4 text-[12px] tabular-nums">
-                    <span className={all ? 'text-green-700' : 'text-gray-500'}>{all ? 'เสร็จแล้ว' : `${String(done)}/${String(phase.levels.length)}`}</span>
-                    <span className="hidden sm:inline w-28 text-right text-gray-700">{money !== 0 ? `${baht(money)} บาท` : '—'}</span>
+                    <span className={all ? 'text-green-700' : 'text-gray-500'}>{all ? t('allDone') : `${String(done)}/${String(phase.levels.length)}`}</span>
+                    <span className="hidden sm:inline w-28 text-right text-gray-700">{money !== 0 ? t('amountBaht', { amount: baht(money) }) : '—'}</span>
                 </span>
             </button>
             {expanded && (
@@ -163,6 +167,7 @@ function PhaseBar({ progress }: { progress: Record<string, string> }) {
 
 /** Where the money goes: each group's share of the project, as thin bars. */
 function CostBreakdown({ progress, result }: { progress: Record<string, string>; result: ProjectResult }) {
+    const t = useTranslations('journeyUi.map');
     const rows = JOURNEY.map(p => ({ id: p.id, title: p.title, money: phaseMoney(p, progress, result) }));
     const max = Math.max(1, ...rows.map(r => r.money));
     const total = rows.reduce((s, r) => s + r.money, 0);
@@ -179,13 +184,14 @@ function CostBreakdown({ progress, result }: { progress: Record<string, string>;
                     </div>
                 </div>
             ))}
-            {total > 0 && <div className="text-[12px] text-gray-400">สัดส่วนตามมูลค่าแต่ละกลุ่มงาน</div>}
+            {total > 0 && <div className="text-[12px] text-gray-400">{t('shareNote')}</div>}
         </div>
     );
 }
 
 /** The project overview: what to do next, every step by group, and where the money stands. */
 export function JourneyMapPage() {
+    const t = useTranslations('journeyUi.map');
     const project = useProjectStore(s => s.project);
     const progress = project.journey ?? {};
     const result = useMemo(() => computeProject(project), [project]);
@@ -203,7 +209,7 @@ export function JourneyMapPage() {
     const passed = JOURNEY_LEVELS.filter(l => progress[l.id] !== undefined).length;
     const team = useCloudLevelInfo();
     const cloudName = useCloud(s => s.project?.name);
-    const title = project.meta.projectName !== '' ? project.meta.projectName : cloudName ?? 'โครงการของฉัน';
+    const title = project.meta.projectName !== '' ? project.meta.projectName : cloudName ?? t('defaultTitle');
     const nextPhase = next ? phaseOf(next.id) : undefined;
 
     // Finished groups start folded, so the eye goes to what is left.
@@ -221,8 +227,8 @@ export function JourneyMapPage() {
             <header className="flex flex-wrap items-end gap-3">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-[12px] text-gray-500">
-                        <span className="whitespace-nowrap">ภาพรวมโครงการ</span>
-                        {project.start !== 'blank' && <Tag variant="filled" className="!text-[12px] !m-0 min-w-0 truncate">เทมเพลตบ้านเดี่ยว 1 ชั้น</Tag>}
+                        <span className="whitespace-nowrap">{t('overview')}</span>
+                        {project.start !== 'blank' && <Tag variant="filled" className="!text-[12px] !m-0 min-w-0 truncate">{t('templateTag')}</Tag>}
                     </div>
                     <h1 className="m-0 mt-1 text-[26px] leading-tight font-semibold text-gray-900" style={{ overflowWrap: 'anywhere' }}>{title}</h1>
                     {project.meta.siteAddress !== '' && <div className="mt-1 text-[13px] text-gray-500">{project.meta.siteAddress}</div>}
@@ -238,13 +244,13 @@ export function JourneyMapPage() {
                             <>
                                 <div className="min-w-0 flex-1">
                                     <div className="text-[12px] text-white/50">
-                                        {passed === 0 ? 'เริ่มต้น' : 'ขั้นตอนถัดไป'} · {nextPhase?.title} · ขั้นตอน {numberOf(next)} จาก {JOURNEY_LEVELS.length}
+                                        {t(passed === 0 ? 'headingStart' : 'headingNext', { phase: nextPhase?.title ?? '', n: numberOf(next), total: JOURNEY_LEVELS.length })}
                                     </div>
                                     <div className="mt-1 text-[22px] font-semibold leading-tight">{next.title}</div>
                                     <div className="mt-1.5 text-[13px] text-white/60 line-clamp-2">{next.planHint}</div>
                                     {alsoOpen.length > 0 && (
                                         <div className="mt-3 text-[13px] text-white/50">
-                                            ทำพร้อมกันได้อีก {alsoOpen.length} ขั้นตอน:{' '}
+                                            {t('alsoOpen', { count: alsoOpen.length })}{' '}
                                             {alsoOpen.map((l, i) => (
                                                 <Fragment key={l.id}>
                                                     {i > 0 && ' · '}
@@ -259,19 +265,19 @@ export function JourneyMapPage() {
                                 </div>
                                 <Link href={`/journey/${next.id}`} className="shrink-0">
                                     <Button type="primary" size="large" className="!h-11 !px-6">
-                                        {passed === 0 ? 'เริ่มขั้นตอนแรก' : 'ทำต่อ'} <ArrowRightOutlined />
+                                        {passed === 0 ? t('startFirst') : t('continue')} <ArrowRightOutlined />
                                     </Button>
                                 </Link>
                             </>
                         ) : (
                             <>
                                 <div className="min-w-0 flex-1">
-                                    <div className="text-[12px] text-white/50">ครบทุกขั้นตอนแล้ว</div>
-                                    <div className="mt-1 text-[22px] font-semibold leading-tight">สรุป BOQ ทั้งโครงการพร้อมใช้งาน</div>
-                                    <div className="mt-1.5 text-[13px] text-white/60">ตรวจทาน ปรับราคา แล้วพิมพ์หรือส่งออกเพื่อส่งให้เจ้าของบ้าน</div>
+                                    <div className="text-[12px] text-white/50">{t('allStepsDone')}</div>
+                                    <div className="mt-1 text-[22px] font-semibold leading-tight">{t('summaryReady')}</div>
+                                    <div className="mt-1.5 text-[13px] text-white/60">{t('summaryHint')}</div>
                                 </div>
                                 <Link href="/boq" className="shrink-0">
-                                    <Button type="primary" size="large" icon={<TableOutlined />} className="!h-11 !px-6">ดูสรุป BOQ</Button>
+                                    <Button type="primary" size="large" icon={<TableOutlined />} className="!h-11 !px-6">{t('viewBoq')}</Button>
                                 </Link>
                             </>
                         )}
@@ -286,29 +292,29 @@ export function JourneyMapPage() {
 
                 <aside className="flex flex-col gap-4 lg:sticky lg:top-4">
                     <div className="bg-white rounded-card border border-gray-200 shadow-card p-5">
-                        <div className="text-[12px] text-gray-500">มูลค่าค่าก่อสร้าง</div>
+                        <div className="text-[12px] text-gray-500">{t('constructionValue')}</div>
                         <div className="mt-1 text-[28px] font-semibold tabular-nums tracking-tight text-gray-900 leading-none">
-                            {baht(result.boq.constructionTotal)} <span className="text-[13px] font-normal text-gray-500">บาท</span>
+                            {baht(result.boq.constructionTotal)} <span className="text-[13px] font-normal text-gray-500">{t('baht')}</span>
                         </div>
                         {result.boq.preConstructionTotal > 0 && (
                             <div className="mt-1.5 text-[12px] text-gray-500">
-                                ไม่รวมค่าใช้จ่ายก่อนเริ่มงาน {baht(result.boq.preConstructionTotal)} บาท
+                                {t('excludesPre', { amount: baht(result.boq.preConstructionTotal) })}
                             </div>
                         )}
                         <div className="mt-5 flex items-baseline justify-between text-[12px]">
-                            <span className="text-gray-500">ความคืบหน้า</span>
-                            <span className="tabular-nums text-gray-900">{passed} จาก {JOURNEY_LEVELS.length} ขั้นตอน</span>
+                            <span className="text-gray-500">{t('progress')}</span>
+                            <span className="tabular-nums text-gray-900">{t('progressOf', { passed, total: JOURNEY_LEVELS.length })}</span>
                         </div>
                         <div className="mt-2"><PhaseBar progress={progress} /></div>
                         <div className="mt-5 flex flex-wrap gap-2">
-                            <Link href="/boq"><Button icon={<TableOutlined />}>เปิด BOQ</Button></Link>
+                            <Link href="/boq"><Button icon={<TableOutlined />}>{t('openBoq')}</Button></Link>
                             {complete && <BoqExportButtons />}
                             {complete && <RevisionButtons />}
                         </div>
                     </div>
 
                     <div className="bg-white rounded-card border border-gray-200 shadow-card p-5">
-                        <div className="text-[13px] font-semibold text-gray-900 mb-3">มูลค่าตามกลุ่มงาน</div>
+                        <div className="text-[13px] font-semibold text-gray-900 mb-3">{t('byGroup')}</div>
                         <CostBreakdown progress={progress} result={result} />
                     </div>
                 </aside>

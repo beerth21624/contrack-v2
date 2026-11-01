@@ -37,5 +37,37 @@
   "search": "Search items",
   "expandAll": "Expand all",
   "collapseAll": "Collapse all",
-  "documentDatePh": "dd/mm/yyyy"
+  "documentDatePh": "dd/mm/yyyy",
+  "currencySymbol": "฿",
+  "tools": {
+    "searchPh": "Search items, e.g. DB12, ceiling, pipe",
+    "jump": "Go to section…",
+    "found": "{count} items found",
+    "none": "No items match the search",
+    "clear": "Clear search"
+  },
+  "review": {
+    "button": "Check BOQ before sending",
+    "title": "Things that look off",
+    "hint": "Observations only; no number is changed. Click an item to go to its row.",
+    "empty": "Nothing unusual found",
+    "loading": "Checking with AI…",
+    "unavailable": "AI check is not available",
+    "close": "Close",
+    "found": "{count} items found",
+    "errors": "{count} errors",
+    "warns": "{count} to review",
+    "severityError": "Error",
+    "severityWarn": "Review",
+    "probabilityTitle": "Probability from the decision model"
+  },
+  "consent": {
+    "title": "Send BOQ data to AI for a check?",
+    "sends": "The system will send the line items of this project's BOQ (project name, item names, units, quantities, waste percentages, unit prices and notes) to an external AI model (Jev by TypeSafe AI) to find rows that look inconsistent. The owner's name, the site and other personal data are not sent.",
+    "hints": "The result is an observation only and may be wrong. The system does not change any number; the estimator still decides on every item.",
+    "cost": "An AI check has a cost per run and only runs when you confirm in this dialog. It never runs by itself when data is edited.",
+    "confirm": "Send to AI",
+    "rulesOnly": "Basic rules only",
+    "cancel": "Cancel"
+  }
 }

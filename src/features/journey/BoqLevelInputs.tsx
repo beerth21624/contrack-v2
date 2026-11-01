@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { Button } from 'antd';
+import { useTranslations } from 'next-intl';
 import { useProjectStore } from '@/store/project-store';
 import { calculatorInput, computeProject } from '@/domain/project';
 import type { BoqItemRow } from '@/domain/boq/types';
@@ -27,6 +28,7 @@ function useColumnCount(): number {
  * the unit prices are standard values, folded away.
  */
 export function BoqLevelInputs({ sections }: { sections: number[] }) {
+    const t = useTranslations('journeyUi.boqLevel');
     const project = useProjectStore(s => s.project);
     const setOverride = useProjectStore(s => s.setBoqOverride);
     const result = useMemo(() => computeProject(project), [project]);
@@ -43,10 +45,10 @@ export function BoqLevelInputs({ sections }: { sections: number[] }) {
         <div className="flex flex-col gap-4">
             {sections.includes(PLATES_SECTION) && columns > 0 && (
                 <FromLevel levelId="column">
-                    <div>เสาที่กรอกไว้ {formatNumber(columns, 0)} ต้น — ปกติเสาที่รับโครงหลังคามีเพลทหัวเสาต้นละ 1 จุด</div>
+                    <div>{t('columnsNote', { count: formatNumber(columns, 0) })}</div>
                     {editable.length > 0 && !atColumns && (
                         <Button className="mt-1.5" size="small" onClick={() => editable.forEach(r => setOverride(r.key, 'qty', columns))}>
-                            ใช้ {formatNumber(columns, 0)} จุด ทุกรายการ
+                            {t('useCount', { count: formatNumber(columns, 0) })}
                         </Button>
                     )}
                 </FromLevel>
@@ -56,10 +58,10 @@ export function BoqLevelInputs({ sections }: { sections: number[] }) {
                 <table className="w-full border-collapse min-w-[420px]">
                     <thead>
                         <tr className="bg-gray-50 text-[12px] text-gray-700">
-                            <th className={cell}>รายการ</th>
-                            <th className={cell} style={{ width: 110 }}>จำนวน</th>
-                            <th className={cell} style={{ width: 70 }}>หน่วย</th>
-                            <th className={cell} style={{ width: 120 }}>รวม (บาท)</th>
+                            <th className={cell}>{t('colItem')}</th>
+                            <th className={cell} style={{ width: 110 }}>{t('colQty')}</th>
+                            <th className={cell} style={{ width: 70 }}>{t('colUnit')}</th>
+                            <th className={cell} style={{ width: 120 }}>{t('colTotal')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -71,7 +73,7 @@ export function BoqLevelInputs({ sections }: { sections: number[] }) {
                                     <td className={num}>
                                         {r.editable.qty
                                             ? <NumberCell value={r.qty} edited={ov.qty !== undefined} digits={r.qty % 1 === 0 ? 0 : 2} blankZero
-                                                onCommit={v => setOverride(r.key, 'qty', v)} ariaLabel={`${r.desc} จำนวน`} />
+                                                onCommit={v => setOverride(r.key, 'qty', v)} ariaLabel={t('qtyAria', { desc: r.desc })} />
                                             : formatNumber(r.qty, r.qty % 1 === 0 ? 0 : 2)}
                                     </td>
                                     <td className={`${cell} text-center`}>{r.unit}</td>
@@ -88,9 +90,9 @@ export function BoqLevelInputs({ sections }: { sections: number[] }) {
                     <table className="w-full border-collapse min-w-[480px]">
                         <thead>
                             <tr className="bg-gray-50 text-[12px] text-gray-700">
-                                <th className={cell}>รายการ</th>
-                                <th className={cell} style={{ width: 130 }}>ค่าวัสดุต่อหน่วย (บาท)</th>
-                                <th className={cell} style={{ width: 130 }}>ค่าแรงต่อหน่วย (บาท)</th>
+                                <th className={cell}>{t('colItem')}</th>
+                                <th className={cell} style={{ width: 130 }}>{t('colMatUnit')}</th>
+                                <th className={cell} style={{ width: 130 }}>{t('colLabUnit')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -101,11 +103,11 @@ export function BoqLevelInputs({ sections }: { sections: number[] }) {
                                         <td className={cell}>{r.desc} <span className="text-gray-500">/ {r.unit}</span></td>
                                         <td className={num}>
                                             <NumberCell value={r.matUnit} edited={ov.mat !== undefined}
-                                                onCommit={v => setOverride(r.key, 'mat', v)} ariaLabel={`${r.desc} ค่าวัสดุ`} />
+                                                onCommit={v => setOverride(r.key, 'mat', v)} ariaLabel={t('matAria', { desc: r.desc })} />
                                         </td>
                                         <td className={num}>
                                             <NumberCell value={r.labUnit} edited={ov.lab !== undefined}
-                                                onCommit={v => setOverride(r.key, 'lab', v)} ariaLabel={`${r.desc} ค่าแรง`} />
+                                                onCommit={v => setOverride(r.key, 'lab', v)} ariaLabel={t('labAria', { desc: r.desc })} />
                                         </td>
                                     </tr>
                                 );
@@ -116,7 +118,7 @@ export function BoqLevelInputs({ sections }: { sections: number[] }) {
             </AdvancedSection>
 
             {/* Once there is a quantity the result is the money, shown in the table and the bottom bar: no box. */}
-            {total === 0 && <ResultSummary items={[]} empty="ใส่จำนวนจากแบบ ระบบจะคิดค่าวัสดุและค่าแรงให้" />}
+            {total === 0 && <ResultSummary items={[]} empty={t('empty')} />}
         </div>
     );
 }

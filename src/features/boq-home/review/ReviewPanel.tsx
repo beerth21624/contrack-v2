@@ -4,28 +4,17 @@
 // Same pattern as the required-fields list of a journey step: short lines, click one and the page scrolls to the
 // row it points at. Findings never change a number; the user decides what to do with each.
 import { Button, Spin } from 'antd';
+import { useTranslations } from 'next-intl';
 import { CheckCircleOutlined, CloseCircleFilled, CloseOutlined, ExclamationCircleFilled } from '@ant-design/icons';
 import type { BoqReviewFinding } from '@/shared/contract/ai-assist';
 import { aiPercent, countBySeverity } from './merge';
 import type { AiReviewStatus } from './useBoqReview';
 
-export const REVIEW_TEXT = {
-    button: 'ตรวจ BOQ ก่อนส่ง',
-    title: 'สิ่งที่ดูผิดปกติ',
-    hint: 'เป็นข้อสังเกตเท่านั้น ไม่มีตัวเลขใดถูกแก้ กดที่รายการเพื่อไปดูแถวนั้น',
-    empty: 'ไม่พบสิ่งผิดปกติ',
-    loading: 'กำลังตรวจด้วย AI…',
-    unavailable: 'ตรวจด้วย AI ไม่พร้อมใช้งาน',
-    close: 'ปิด',
-    found: (n: number) => `พบ ${String(n)} รายการ`,
-    errors: (n: number) => `ผิดพลาด ${String(n)}`,
-    warns: (n: number) => `ควรตรวจ ${String(n)}`,
-} as const;
-
 function SeverityIcon({ severity }: { severity: BoqReviewFinding['severity'] }) {
+    const t = useTranslations('boqHome.review');
     return severity === 'error'
-        ? <CloseCircleFilled className="text-red-600 text-[14px] shrink-0 mt-[3px]" aria-label="ผิดพลาด" />
-        : <ExclamationCircleFilled className="text-amber-600 text-[14px] shrink-0 mt-[3px]" aria-label="ควรตรวจ" />;
+        ? <CloseCircleFilled className="text-red-600 text-[14px] shrink-0 mt-[3px]" aria-label={t('severityError')} />
+        : <ExclamationCircleFilled className="text-amber-600 text-[14px] shrink-0 mt-[3px]" aria-label={t('severityWarn')} />;
 }
 
 export interface ReviewPanelProps {
@@ -36,6 +25,7 @@ export interface ReviewPanelProps {
 }
 
 export function ReviewPanel({ findings, ai, onPick, onClose }: ReviewPanelProps) {
+    const t = useTranslations('boqHome.review');
     const { errors, warns } = countBySeverity(findings);
     const settled = ai !== 'loading';
     const empty = findings.length === 0;
@@ -45,25 +35,25 @@ export function ReviewPanel({ findings, ai, onPick, onClose }: ReviewPanelProps)
             <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                        <h3 id="boq-review-title" className="m-0 text-section font-semibold text-gray-900">{REVIEW_TEXT.title}</h3>
+                        <h3 id="boq-review-title" className="m-0 text-section font-semibold text-gray-900">{t('title')}</h3>
                         {!empty && (
                             <span className="text-secondary text-gray-600 tabular-nums">
-                                {REVIEW_TEXT.found(findings.length)}
+                                {t('found', { count: findings.length })}
                                 {' · '}
-                                {errors > 0 && <span className="text-red-600">{REVIEW_TEXT.errors(errors)}</span>}
+                                {errors > 0 && <span className="text-red-600">{t('errors', { count: errors })}</span>}
                                 {errors > 0 && warns > 0 && ' · '}
-                                {warns > 0 && <span className="text-amber-700">{REVIEW_TEXT.warns(warns)}</span>}
+                                {warns > 0 && <span className="text-amber-700">{t('warns', { count: warns })}</span>}
                             </span>
                         )}
                     </div>
-                    <div className="text-caption text-gray-500">{REVIEW_TEXT.hint}</div>
+                    <div className="text-caption text-gray-500">{t('hint')}</div>
                 </div>
-                <Button type="text" size="small" icon={<CloseOutlined />} aria-label={REVIEW_TEXT.close} onClick={onClose} />
+                <Button type="text" size="small" icon={<CloseOutlined />} aria-label={t('close')} onClick={onClose} />
             </div>
 
             {empty && settled && (
                 <div className="flex items-center gap-2 mt-3 text-secondary text-green-700">
-                    <CheckCircleOutlined /> {REVIEW_TEXT.empty}
+                    <CheckCircleOutlined /> {t('empty')}
                 </div>
             )}
 
@@ -77,7 +67,7 @@ export function ReviewPanel({ findings, ai, onPick, onClose }: ReviewPanelProps)
                                 <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{f.message}</span>
                                 {f.source === 'ai' && f.probability !== undefined && (
                                     <span className="shrink-0 self-center rounded-sm border border-gray-200 bg-gray-50 px-1.5 text-[11px] leading-[18px] text-gray-600 tabular-nums"
-                                        title="ความน่าจะเป็นจากโมเดลตัดสินใจ">
+                                        title={t('probabilityTitle')}>
                                         {aiPercent(f.probability)}
                                     </span>
                                 )}
@@ -89,11 +79,11 @@ export function ReviewPanel({ findings, ai, onPick, onClose }: ReviewPanelProps)
 
             {ai === 'loading' && (
                 <div className="flex items-center gap-2 mt-2 text-caption text-gray-500" role="status">
-                    <Spin size="small" /> {REVIEW_TEXT.loading}
+                    <Spin size="small" /> {t('loading')}
                 </div>
             )}
             {ai === 'unavailable' && (
-                <div className="mt-2 text-caption text-gray-500">{REVIEW_TEXT.unavailable}</div>
+                <div className="mt-2 text-caption text-gray-500">{t('unavailable')}</div>
             )}
         </section>
     );
