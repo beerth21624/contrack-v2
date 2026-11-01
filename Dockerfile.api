@@ -16,6 +16,10 @@ COPY backend ./backend
 RUN cd backend && npm run build && npm prune --omit=dev
 
 FROM node:24-alpine
+# Default module set baked into the image (env at run time still overrides it). Release builds keep the default;
+# ERP demo builds pass the ERP list and ENTITLEMENTS=open (docs/deploy/01-dev-docker.md).
+ARG MODULES_ENABLED=subcontracting,workforce
+ARG ENTITLEMENTS=
 WORKDIR /app/backend
 ENV NODE_ENV=production \
     PORT=4000 \
@@ -25,7 +29,8 @@ ENV NODE_ENV=production \
     TRUST_PROXY=uniquelocal \
     FILE_STORAGE=local \
     FILE_STORAGE_DIR=/data/files \
-    MODULES_ENABLED=subcontracting,workforce \
+    MODULES_ENABLED=${MODULES_ENABLED} \
+    ENTITLEMENTS=${ENTITLEMENTS} \
     SEED_DEMO=true
 COPY --from=build /app/backend/package.json ./package.json
 COPY --from=build /app/backend/node_modules ./node_modules

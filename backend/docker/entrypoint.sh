@@ -5,6 +5,8 @@
 # set SEED_DEMO=false for anything that is not a dev / demo environment.
 set -e
 cd /app/backend
+# The image bakes ENTITLEMENTS from a build arg that is empty in release builds; empty = let the API pick its default.
+[ -z "${ENTITLEMENTS:-}" ] && unset ENTITLEMENTS
 
 echo "contrack-api: applying database migrations"
 node dist/backend/src/shared/infrastructure/database/migrate.js

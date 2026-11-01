@@ -80,6 +80,12 @@ image `contrack-api` มี `goverment_price.json` ติดมาด้วย �
 | `ENTITLEMENTS` | `open` | ทุกบริษัทเปิดใช้เองได้ทันที · ถ้าไม่ใส่ `NODE_ENV=production` จะเป็น `enforce` (ต้องกด "ทดลองใช้" หรือให้แอดมินให้สิทธิ์) |
 | `PLATFORM_ADMIN_EMAILS` | อีเมลแอดมิน (คั่นด้วย `,`) | ใช้หน้า `/admin/entitlements` |
 
+**tag `:erp-*` เปิดโมดูล ERP + `ENTITLEMENTS=open` ไว้แล้วเป็นค่าเริ่มต้น** (build ด้วย `--build-arg MODULES_ENABLED=<รายการข้างบน> --build-arg ENTITLEMENTS=open`)
+จึงไม่ต้องใส่ env เพิ่ม · tag `:dev` / release build ไม่ส่ง build-arg จึงยังเป็น release 1
+
+ถ้าฐานข้อมูล **มีข้อมูลเดิมอยู่แล้ว** seed จะไม่รันซ้ำ บริษัทเดิมต้องเปิดโมดูลเองที่เมนู **โมดูลเสริม** (`/workspace/modules`) โดยเปิด "Project Hub" ก่อน
+ส่วนโครงการ ERP ตัวอย่างจะมีเฉพาะตอนเริ่มจากฐานข้อมูลว่าง
+
 ตั้ง `SEED_DEMO=true` บนฐานข้อมูลว่างแล้ว จะได้โครงการ "บ้านพักอาศัย ERP ตัวอย่าง – คุณมานะ ตั้งใจ" ที่มีข้อมูลตั้งแต่ใบเสนอราคาจนถึงรอบจ่ายเงิน
 (รายละเอียดใน `backend/SEED.md`)
 
