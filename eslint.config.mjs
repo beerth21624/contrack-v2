@@ -86,6 +86,8 @@ const eslintConfig = defineConfig([
       "src/features/cloud/api/errors.ts",
       "src/store/{project-store,notice-texts}.ts",
       "src/app/(app)/{login,register,invite,calc}/**/*.{ts,tsx}",
+      // Track I-02: sheet components (journey/ is I-03)
+      "src/components/sheet/*.{ts,tsx}",
     ],
     rules: {
       "no-restricted-syntax": [

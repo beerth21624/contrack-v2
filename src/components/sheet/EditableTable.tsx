@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button, Select } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { NumberCell, TextCell, SHEET_COLORS, formatNumber } from './NumberCell';
@@ -41,8 +42,9 @@ const td = 'border border-gray-200 px-1 py-0.5 text-[13px] align-middle';
 const NO_WIDTH = 36;
 
 export function EditableTable<R>({
-    rows, columns, onChange, newRow, addLabel = '+ เพิ่มรายการ', lockedRows = 0, canDelete = true, footer,
+    rows, columns, onChange, newRow, addLabel, lockedRows = 0, canDelete = true, footer,
 }: EditableTableProps<R>) {
+    const t = useTranslations('sheet');
     const replace = (i: number, row: R) => onChange(rows.map((r, j) => (j === i ? row : r)));
     // Inside the journey an unfilled plan value shows as an empty cell, not "0.00".
     const inJourney = useJourneyMode();
@@ -113,7 +115,7 @@ export function EditableTable<R>({
                             {canDelete && (
                                 <td className={`${td} text-center`}>
                                     {i >= lockedRows && (
-                                        <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label="ลบแถว"
+                                        <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label={t('table.deleteRow')}
                                             onClick={() => onChange(rows.filter((_, j) => j !== i))} />
                                     )}
                                 </td>
@@ -126,7 +128,7 @@ export function EditableTable<R>({
             {newRow && (
                 <Button type="dashed" size="small" icon={<PlusOutlined />} className="mt-2"
                     onClick={() => onChange([...rows, newRow(rows.length)])}>
-                    {addLabel.replace(/^\+\s*/, '')}
+                    {(addLabel ?? t('table.addItem')).replace(/^\+\s*/, '')}
                 </Button>
             )}
         </div>

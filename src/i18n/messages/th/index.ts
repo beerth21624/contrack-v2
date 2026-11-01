@@ -34,6 +34,7 @@ import jobCost from './jobCost.json';
 import payables from './payables.json';
 import taxReports from './taxReports.json';
 import handover from './handover.json';
+import sheet from './sheet.json';
 
 const messages = {
   common,
@@ -72,6 +73,7 @@ const messages = {
   payables,
   taxReports,
   handover,
+  sheet,
 };
 
 export default messages;

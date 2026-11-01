@@ -74,7 +74,7 @@
 | WP | Title | Status | Commit | Notes |
 |---|---|---|---|---|
 | I-01 | เปลือกแอป บัญชี ล็อกอิน error | done | 9c5133f | ไม่มี migration; namespace `auth` ใหม่ + `shell.*` เพิ่ม; ESLint glob เพิ่ม; D-367…D-370 |
-| I-02 | components/sheet | todo | | |
+| I-02 | components/sheet | done | HASH | ไม่มี migration; namespace `sheet` ใหม่; ESLint glob เพิ่ม; D-371 |
 | I-03 | components/sheet/journey | todo | | |
 | I-04 | boq-home + journey | todo | | |
 | I-05 | export (BOQ print/xlsx) | todo | | |
@@ -467,6 +467,7 @@
 | D-368 | 2026-11-01 | (I-01) `RULES` ใน `form-rules.ts` กลายเป็น `buildRules(t)` + hook `useRules()` (`auth/use-rules.ts`); `RULES` คงไว้เป็นชุดไทย (สร้างจาก `th/auth.json`) สำหรับ ProjectsPage/MembersPage/RevisionButtons/workforce ที่ I-10/I-11 จะเปลี่ยนเป็น `useRules()` | ไม่แตะไฟล์นอกขอบเขต |
 | D-369 | 2026-11-01 | (I-01) `READ_ONLY_TEXT`/`CLOUD_NEW_PROJECT_TEXT` เปลี่ยนเป็น `readOnlyText()`/`cloudNewProjectText()` ใน `src/store/notice-texts.ts` (createTranslator + คุกกี้ภาษา แบบ `baseline-locked-text.ts`); เทสต์ store 2 ไฟล์แก้ให้เรียกฟังก์ชันใหม่; `LOCAL_PROJECT_TEXT` ถูกลบ; `syncStatusText` ใน `cloud/state.ts` ไม่มีผู้ใช้แล้ว (ProjectBadge ใช้ `shell.sync.*`) ให้ I-10 ลบ | store ไม่มี React |
 | D-370 | 2026-11-01 | (I-01) `NotificationBell` ใช้ `useFormat().dateTime` (ไทย `26 ต.ค. 2026 11:17` แทน `26 ต.ค. 26 11:17`); ชื่อโมดูลใน `ModuleGate` ใช้ `modules.<id>.label` (ไทยเท่า `MODULE_LABEL`); ป้ายบทบาทใน AccountMenu ใช้ `roles.<role>.label`; ปุ่มสลับภาษาหน้า login/register ยังไม่ทำ (D-56) | |
+| D-371 | 2026-11-01 | (I-02) `NEGATIVE_VALUE_WARNING` (const ไทย) → hook `useNegativeValueWarning()` ใน NumberCell.tsx; `journey/Fields.tsx` (JNumber) แก้เฉพาะจุดเรียกใช้ (I-03 ย้ายที่เหลือ); `addLabel` ของ EditableTable/StructureTable เป็น optional ค่า default มาจาก `sheet.table.*` | ไม่มีไทยในไฟล์ใน glob |
 
 ## Handoff notes
 
@@ -1203,3 +1204,8 @@
 - ESLint ห้ามไทยครอบไฟล์เหล่านี้แล้ว (ห้ามเติมไทยกลับ); `formatDateTime` ใน `cloud/ui/common.tsx` ยังใช้ `th-TH` (มีเทสต์เดิม; ผู้ใช้ภายนอกคือ I-10)
 - WP ถัดไปต้องรู้: ผู้เรียก `thaiErrorMessage`/`RULES` (cloud/projects, workspaces, revisions, workforce, planning, subcontracting, vendor) ยังเป็นไทยจนกว่า track I ของกลุ่มนั้นเปลี่ยนเป็น `useErrorMessage()`/`useRules()`
 - ตรวจแล้ว: tsc web ผ่าน; eslint ไฟล์ที่แก้ผ่าน; vitest `src/store src/i18n src/features/cloud/ui src/features/cloud/api` ผ่าน; ไม่เขียนเทสต์ใหม่
+
+### I-02 — components/sheet (HASH)
+- ย้ายไทยตรงตัวของ `src/components/sheet/*.tsx` เข้า `sheet.json` (th+en, parity ผ่าน); ESLint glob `src/components/sheet/*.{ts,tsx}` เพิ่ม
+- WP ถัดไปต้องรู้: ผู้เรียกที่ส่ง `addLabel`/`title`/`hint` เองยังเป็นไทยจนกว่า I-06…I-08; `NEGATIVE_VALUE_WARNING` ถูกลบ ใช้ `useNegativeValueWarning()`
+- ตรวจแล้ว: tsc web, eslint, vitest `src/i18n src/components/sheet` ผ่าน; ไม่เขียนเทสต์ใหม่

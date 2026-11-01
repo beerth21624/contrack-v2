@@ -1,0 +1,21 @@
+{
+  "advanced": {
+    "title": "Prices and default values",
+    "hint": "Standard values, no need to change"
+  },
+  "rebar": {
+    "header": "Reinforcement (kg)",
+    "total": "Total (sent to the BOQ by bar size)"
+  },
+  "table": {
+    "addItem": "+ Add item",
+    "addRow": "Add row",
+    "deleteRow": "Delete row",
+    "no": "No."
+  },
+  "lengths": {
+    "hint": "Type each length separated by +, e.g. 12.5+11+4.5",
+    "placeholder": "e.g. 12.5+11+4.5"
+  },
+  "negativeWarning": "Negative value - please check again (calculated as entered)"
+}

@@ -4,6 +4,7 @@
 // group headers (row 4), bar-size sub-headers (row 5), the totals row ">>" (row 6), column headers (row 7)
 // and one editable row per element. Used by the footing and pedestal pages.
 import type { ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button, Select } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { NumberCell, SHEET_COLORS, formatNumber } from '@/components/sheet/NumberCell';
@@ -56,7 +57,8 @@ interface StructureTableProps<R> {
     lockedRows?: number;
 }
 
-export function StructureTable<R>({ rows, groups, onChange, newRow, addLabel = 'เพิ่มแถว', lockedRows = 0 }: StructureTableProps<R>) {
+export function StructureTable<R>({ rows, groups, onChange, newRow, addLabel, lockedRows = 0 }: StructureTableProps<R>) {
+    const t = useTranslations('sheet');
     const replace = (i: number, row: R) => onChange(rows.map((r, j) => (j === i ? row : r)));
     const hasBand = groups.some(g => g.band);
     const hasSub = groups.some(g => g.columns.some(c => c.sub !== undefined));
@@ -114,7 +116,7 @@ export function StructureTable<R>({ rows, groups, onChange, newRow, addLabel = '
                         </tr>
                     )}
                     <tr>
-                        <th className={th} style={{ background: GROUP_COLORS.info }}>ลำดับ</th>
+                        <th className={th} style={{ background: GROUP_COLORS.info }}>{t('table.no')}</th>
                         {groups.flatMap(g => g.columns.map(c => (
                             <th key={c.key} className={th} style={{ background: GROUP_COLORS.info, minWidth: c.width ?? 72 }}>{c.title}</th>
                         )))}
@@ -159,7 +161,7 @@ export function StructureTable<R>({ rows, groups, onChange, newRow, addLabel = '
                             }))}
                             <td className={`${td} text-center`}>
                                 {i >= lockedRows && (
-                                    <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label="ลบแถว"
+                                    <Button type="text" size="small" danger icon={<DeleteOutlined />} aria-label={t('table.deleteRow')}
                                         onClick={() => onChange(rows.filter((_, j) => j !== i))} />
                                 )}
                             </td>
@@ -170,7 +172,7 @@ export function StructureTable<R>({ rows, groups, onChange, newRow, addLabel = '
             {newRow && (
                 <Button type="dashed" size="small" icon={<PlusOutlined />} className="mt-2"
                     onClick={() => onChange([...rows, newRow(rows.length)])}>
-                    {addLabel}
+                    {addLabel ?? t('table.addRow')}
                 </Button>
             )}
         </div>

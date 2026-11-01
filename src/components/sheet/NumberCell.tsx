@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { evaluateNumber } from './evaluate';
 
 /**
@@ -73,7 +74,9 @@ export function selectIfFocused(el: Pick<HTMLInputElement, 'select'> & { ownerDo
 }
 
 /** Tooltip of a cell holding a value below 0 (kept and computed; the user is asked to check it). */
-export const NEGATIVE_VALUE_WARNING = 'ค่าติดลบ — ตรวจสอบอีกครั้ง (ระบบคำนวณตามที่กรอก)';
+export function useNegativeValueWarning(): string {
+    return useTranslations('sheet')('negativeWarning');
+}
 const NEGATIVE_BORDER = '#f59e0b';
 
 /**
@@ -84,6 +87,7 @@ export function NumberCell({
     value, onCommit, edited, digits = 2, percent, ariaLabel, tone = 'input', placeholder, blankZero, allowNegative,
 }: NumberCellProps) {
     // Sizes, quantities and prices below 0 are kept and computed as typed (as Excel does), with a warning outline.
+    const negativeWarning = useNegativeValueWarning();
     const negative = !allowNegative && Number.isFinite(value) && value < 0;
     // Draft text only while the cell is being edited; otherwise the formatted value is shown.
     const [text, setText] = useState<string | null>(null);
@@ -112,7 +116,7 @@ export function NumberCell({
             aria-label={ariaLabel}
             inputMode="decimal"
             placeholder={placeholder}
-            title={negative ? NEGATIVE_VALUE_WARNING : undefined}
+            title={negative ? negativeWarning : undefined}
             data-warning={negative ? 'negative' : undefined}
             value={text ?? numberCellText(value, { digits, percent, blankZero })}
             onFocus={(e) => {

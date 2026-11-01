@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { TextCell, SHEET_COLORS } from '@/components/sheet/NumberCell';
 
 /**
@@ -32,9 +33,10 @@ export function formatLengths(lengths: number[]): string {
 export function LengthsCell({ lengths, onChange, ariaLabel }: {
     lengths: number[]; onChange: (lengths: number[]) => void; ariaLabel?: string;
 }) {
+    const t = useTranslations('sheet');
     return (
-        <div style={{ background: SHEET_COLORS.input, borderRadius: 3 }} title="พิมพ์ความยาวแต่ละช่วงคั่นด้วย + เช่น 12.5+11+4.5">
-            <TextCell value={formatLengths(lengths)} ariaLabel={ariaLabel} placeholder="เช่น 12.5+11+4.5"
+        <div style={{ background: SHEET_COLORS.input, borderRadius: 3 }} title={t('lengths.hint')}>
+            <TextCell value={formatLengths(lengths)} ariaLabel={ariaLabel} placeholder={t('lengths.placeholder')}
                 onCommit={v => {
                     const parsed = parseLengths(v ?? '');
                     if (parsed) onChange(parsed);
