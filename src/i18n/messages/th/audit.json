@@ -55,7 +55,11 @@
     "quote": "บันทึกราคาเสนอ",
     "award": "เลือกผู้ขาย",
     "confirm": "ยืนยัน",
-    "reopen": "เปิดแก้ไขอีกครั้ง"
+    "reopen": "เปิดแก้ไขอีกครั้ง",
+    "build": "คำนวณงวด",
+    "pay": "จ่ายแล้ว",
+    "create_advance": "บันทึกเบิกล่วงหน้า",
+    "write_off": "ตัดหนี้สูญ"
   },
   "entities": {
     "approval_request": "คำขออนุมัติ",
@@ -79,6 +83,9 @@
     "purchase_order": "ใบสั่งซื้อ",
     "goods_receipt": "ใบรับของ",
     "site_report": "รายงานประจำวัน",
-    "site_issue": "ปัญหาหน้างาน"
+    "site_issue": "ปัญหาหน้างาน",
+    "timesheet": "ใบลงเวลา",
+    "pay_period": "งวดค่าแรง",
+    "wage_advance": "เบิกล่วงหน้า"
   }
 }

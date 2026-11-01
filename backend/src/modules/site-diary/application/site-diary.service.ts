@@ -7,7 +7,8 @@ import { round2 } from '@contrack/domain/money';
 import { latestProgress } from '@contrack/domain/site-diary/progress';
 import type { ProjectGrant } from '../../../shared/application/module-access';
 import {
-    type CostLedgerEntry, type CostLedgerEntryInput, CostCodeLookup, CostLedger, CrewDailyCost, FileService, ModuleFlags, UnitOfWork,
+    type CostLedgerEntry, type CostLedgerEntryInput, CostCodeLookup, CostLedger, CrewDailyCost, FileService, ModuleFlags, type SiteDiaryCrewDay,
+    SiteDiaryManpower, UnitOfWork,
 } from '../../../shared/application/ports';
 import { DomainError } from '../../../shared/domain/domain-error';
 import type { ProjectId, UserId, WorkspaceId } from '../../../shared/domain/ids';
@@ -164,5 +165,21 @@ export class SiteDiaryEffects {
     /** Reverses every labour row the report posted (none when it posted nothing). */
     async reverseLabour(r: SiteReportRecord, by: UserId, date: string): Promise<Result<CostLedgerEntry[], DomainError>> {
         return this.ledger.reverseSource(r.workspaceId, LEDGER_SOURCE, r.id, { by, date, note: 'site report reopened' });
+    }
+}
+
+/** The SiteDiaryManpower port (labour, WP-44): the crews of a day's report, to prefill timesheets. */
+@Injectable()
+export class SiteDiaryManpowerReader extends SiteDiaryManpower {
+    constructor(private readonly repo: SiteDiaryRepository) {
+        super();
+    }
+
+    async crewsOn(workspaceId: WorkspaceId, projectId: ProjectId, date: string): Promise<SiteDiaryCrewDay[]> {
+        const r = await this.repo.findByDate(workspaceId, projectId, date);
+        if (r === undefined) return [];
+        return (await this.repo.manpowerOf(workspaceId, r.id))
+            .filter(m => m.crewId !== null)
+            .map(m => ({ crewId: m.crewId ?? '', hours: m.hours, costCodeId: m.costCodeId }));
     }
 }

@@ -55,7 +55,11 @@
     "quote": "Recorded a quote",
     "award": "Awarded",
     "confirm": "Confirmed",
-    "reopen": "Reopened"
+    "reopen": "Reopened",
+    "build": "Pay period built",
+    "pay": "Paid",
+    "create_advance": "Wage advance recorded",
+    "write_off": "Written off"
   },
   "entities": {
     "approval_request": "Approval request",
@@ -79,6 +83,9 @@
     "purchase_order": "Purchase order",
     "goods_receipt": "Goods receipt",
     "site_report": "Daily report",
-    "site_issue": "Site issue"
+    "site_issue": "Site issue",
+    "timesheet": "Timesheet",
+    "pay_period": "Pay period",
+    "wage_advance": "Wage advance"
   }
 }

@@ -1,14 +1,15 @@
 // ─── Workforce (W1/W2, business module `workforce`): people, crews, crews on planned tasks, site supervisors, waits ───
 // docs/workforce/00-crew-management-design.md. Needs WorkspaceAccess (workspaces), ProjectStatusLookup (projects) and
-// RateCardLookup (rate-cards); provides CrewDailyCost (site diary, WP-42); registers its per-project rows with
+// RateCardLookup (rate-cards); provides CrewDailyCost (site diary, WP-42) and PeopleDirectory (labour, WP-44); registers its per-project rows with
 // ProjectDependents, so deleting a project removes its
 // assignments, supervisors and task waits (PostgreSQL also cascades). Always loaded: while MODULES_ENABLED leaves
 // `workforce` out, its routes answer 404 `module_disabled` (RequiresModule on every controller) and its data is kept.
 // No realtime: the gateway has project rooms only; clients refetch after their own writes.
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
-import { CrewDailyCost, ProjectDependents } from '../../shared/application/ports';
+import { CrewDailyCost, PeopleDirectory, ProjectDependents } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
 import { WorkforceCrewDailyCost } from './application/crew-daily-cost';
+import { WorkforcePeopleDirectory } from './application/people-directory';
 import { CrewPricing } from './application/crew-pricing';
 import { CrewAssignmentRepository } from './application/ports/crew-assignment.repository';
 import { CrewRepository } from './application/ports/crew.repository';
@@ -65,6 +66,8 @@ import { TaskLagsController } from './presentation/task-lags.controller';
         CrewPricing,
         WorkforceCrewDailyCost,
         { provide: CrewDailyCost, useExisting: WorkforceCrewDailyCost },
+        WorkforcePeopleDirectory,
+        { provide: PeopleDirectory, useExisting: WorkforcePeopleDirectory },
         ListPeopleUseCase,
         CreatePersonUseCase,
         UpdatePersonUseCase,
@@ -83,7 +86,7 @@ import { TaskLagsController } from './presentation/task-lags.controller';
         PutProjectTaskLagsUseCase,
         ListWorkspaceTaskLagsUseCase,
     ],
-    exports: [CrewDailyCost],
+    exports: [CrewDailyCost, PeopleDirectory],
 })
 export class WorkforceModule implements OnModuleInit {
     constructor(

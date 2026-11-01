@@ -14,7 +14,8 @@
     "variation_awaiting_customer": "งานเพิ่ม-ลด {number} {title} รอลูกค้าตอบรับ",
     "purchase_request_to_order": "ใบขอซื้อ {number} อนุมัติแล้ว รอสั่งซื้อ",
     "purchase_order_to_receive": "ใบสั่งซื้อ {number} จาก {supplierName} รอรับของ",
-    "site_report_missing": "ยังไม่ได้ส่งรายงานประจำวันของวันที่ {date}"
+    "site_report_missing": "ยังไม่ได้ส่งรายงานประจำวันของวันที่ {date}",
+    "pay_period_ready": "งวดค่าแรง {periodKey} อนุมัติแล้ว รอจ่าย"
   },
   "risky": {
     "title": "โครงการที่ต้องจับตา",

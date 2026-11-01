@@ -2,13 +2,14 @@
 // One report per project per day (weather, manpower, work done per cost code, photos, issues). Submitting sets the cost
 // codes' reported progress (CostCodeLookup) and, while `labour` is off, posts the crews' estimated labour cost
 // (CrewDailyCost from workforce → CostLedger, source `site_diary`); reopening reverses it. Registers HubRollups
-// (progressPct), PortalSources (no report today on a project in progress) and ProjectDependents.
+// (progressPct), PortalSources (no report today on a project in progress) and ProjectDependents; provides
+// SiteDiaryManpower (the crews of a day, for labour timesheets).
 import { Global, Module, type OnModuleInit } from '@nestjs/common';
-import { HubRollups, PortalSources, ProjectDependents } from '../../shared/application/ports';
+import { HubRollups, PortalSources, ProjectDependents, SiteDiaryManpower } from '../../shared/application/ports';
 import { persistence } from '../../shared/infrastructure/core.module';
 import { SiteDiaryRepository } from './application/ports/site-diary.repository';
 import { SiteDiaryHandlers } from './application/site-diary-handlers';
-import { MODULE, SiteDiaryEffects, SiteDiaryViews } from './application/site-diary.service';
+import { MODULE, SiteDiaryEffects, SiteDiaryManpowerReader, SiteDiaryViews } from './application/site-diary.service';
 import {
     GetSiteProgressUseCase, GetSiteReportUseCase, ListSiteIssuesUseCase, ListSiteReportsUseCase, PatchSiteIssueUseCase,
     PutSiteReportUseCase, ReopenSiteReportUseCase, SubmitSiteReportUseCase,
@@ -25,6 +26,8 @@ import { SiteDiaryController } from './presentation/site-diary.controller';
         SiteDiaryViews,
         SiteDiaryEffects,
         SiteDiaryHandlers,
+        SiteDiaryManpowerReader,
+        { provide: SiteDiaryManpower, useExisting: SiteDiaryManpowerReader },
         ListSiteReportsUseCase,
         GetSiteReportUseCase,
         GetSiteProgressUseCase,
@@ -34,6 +37,7 @@ import { SiteDiaryController } from './presentation/site-diary.controller';
         ListSiteIssuesUseCase,
         PatchSiteIssueUseCase,
     ],
+    exports: [SiteDiaryManpower],
 })
 export class SiteDiaryModule implements OnModuleInit {
     constructor(

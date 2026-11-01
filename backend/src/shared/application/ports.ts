@@ -1534,3 +1534,58 @@ export abstract class CrewDailyCost {
     /** The crews of the workspace among `crewIds` (active or archived); unknown ids are absent from the map. */
     abstract dailyCostOf(workspaceId: WorkspaceId, crewIds: readonly string[]): Promise<Map<string, CrewDailyCostInfo>>;
 }
+
+// ── People for the labour module (WP-44): provided by workforce ──
+
+/** A workforce person as labour sees them. */
+export interface LabourPerson {
+    personId: string;
+    name: string;
+    role: string;
+    /** ฿/day (whole baht); null when not set, or when the caller asked without `wages` (workforce.seeWages). */
+    dailyWage: number | null;
+    archived: boolean;
+}
+
+/** Provided by workforce. No module check: the caller checked its own. Filters by workspace. */
+export abstract class PeopleDirectory {
+    /**
+     * The people of the workspace among `ids` (active or archived); unknown ids are absent. `wages` = the caller may see
+     * daily wages (its role holds `workforce.seeWages`, or the server needs the wage to compute an amount).
+     */
+    abstract find(workspaceId: WorkspaceId, ids: readonly string[], opts: { wages: boolean }): Promise<Map<string, LabourPerson>>;
+    /** Leader + named members of each crew (order: leader first), crews of the workspace only. */
+    abstract crewMembers(workspaceId: WorkspaceId, crewIds: readonly string[]): Promise<Map<string, { crewName: string; personIds: string[] }>>;
+}
+
+// ── Site diary manpower for timesheets (WP-44): provided by site-diary ──
+
+export interface SiteDiaryCrewDay {
+    crewId: string;
+    hours: number;
+    costCodeId: string | null;
+}
+
+/** Provided by site-diary. No module check (labour depends on site-diary). */
+export abstract class SiteDiaryManpower {
+    /** Manpower rows with a crew of the project's report of that day (draft or submitted); [] without a report. */
+    abstract crewsOn(workspaceId: WorkspaceId, projectId: ProjectId, date: string): Promise<SiteDiaryCrewDay[]>;
+}
+
+// ── Pay period bills (WP-44 / WP-49): payables registers a check; labour refuses to pay a period that has a bill ──
+
+export type PayPeriodBillCheck = (workspaceId: WorkspaceId, periodId: string) => Promise<boolean>;
+
+/** Provided by core. No check registered = no bill. */
+export class PayPeriodBillChecks {
+    private readonly checks: PayPeriodBillCheck[] = [];
+
+    register(check: PayPeriodBillCheck): void {
+        this.checks.push(check);
+    }
+
+    async hasBill(workspaceId: WorkspaceId, periodId: string): Promise<boolean> {
+        for (const check of this.checks) if (await check(workspaceId, periodId)) return true;
+        return false;
+    }
+}

@@ -32,6 +32,7 @@ import { PortalModule } from './modules/portal/portal.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { ProcurementModule } from './modules/procurement/procurement.module';
 import { SiteDiaryModule } from './modules/site-diary/site-diary.module';
+import { LabourModule } from './modules/labour/labour.module';
 
 @Module({})
 export class AppModule {
@@ -59,6 +60,7 @@ export class AppModule {
                 SuppliersModule,
                 ProcurementModule,
                 SiteDiaryModule,
+                LabourModule,
             ],
             controllers: [HealthController],
             providers: [

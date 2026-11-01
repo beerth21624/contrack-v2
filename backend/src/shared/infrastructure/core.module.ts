@@ -2,7 +2,7 @@
 import { Global, Module, type DynamicModule, type OnApplicationShutdown, type OnModuleInit, type Provider, Inject, Optional } from '@nestjs/common';
 import {
     ApprovalHandlers, BaselineUnlockGuards, BoqEditLocks, Clock, CustomerLinkHandlers, DailySweeps, HubRollups, IdGenerator, ModuleWorkRegistry,
-    PortalSources, ProjectDeletionGuards, ProjectDependents, RevisionHooks, SearchSources, UnitOfWork, WorkspaceDeletionGuards,
+    PayPeriodBillChecks, PortalSources, ProjectDeletionGuards, ProjectDependents, RevisionHooks, SearchSources, UnitOfWork, WorkspaceDeletionGuards,
 } from '../application/ports';
 import { AppConfig, type Env } from './config/env';
 import { DatabaseContext, DrizzleUnitOfWork, InMemoryUnitOfWork, createDatabase, createPool } from './database/database';
@@ -61,6 +61,7 @@ export class CoreModule {
             { provide: RevisionHooks, useValue: new RevisionHooks() },
             { provide: BoqEditLocks, useValue: new BoqEditLocks() },
             { provide: BaselineUnlockGuards, useValue: new BaselineUnlockGuards() },
+            { provide: PayPeriodBillChecks, useValue: new PayPeriodBillChecks() },
         ];
         if (config.persistence === 'postgres') {
             const url = options.env.DATABASE_URL;
@@ -82,7 +83,7 @@ export class CoreModule {
             exports: [
                 AppConfig, Clock, IdGenerator, UnitOfWork, ProjectDependents, ModuleWorkRegistry, ApprovalHandlers, DailySweeps,
                 ProjectDeletionGuards, WorkspaceDeletionGuards, CustomerLinkHandlers, HubRollups, PortalSources, SearchSources, RevisionHooks,
-                BoqEditLocks, BaselineUnlockGuards,
+                BoqEditLocks, BaselineUnlockGuards, PayPeriodBillChecks,
                 ...(config.persistence === 'postgres' ? [DatabaseContext] : []),
             ],
         };

@@ -137,6 +137,14 @@
     "nothing_received": "Enter a quantity received or rejected",
     "qty_exceeds_received": "More would be billed than was received",
     "future_date": "A daily report cannot be written for a future date; pick today or an earlier day",
-    "duplicate_cost_code": "Each cost code can appear only once in a report"
+    "duplicate_cost_code": "Each cost code can appear only once in a report",
+    "period_locked": "This pay period was sent for approval, approved or paid; its timesheets cannot change",
+    "over_one_day": "A person can be recorded for at most one day per day across all projects",
+    "daily_wage_required": "This person has no daily wage yet; enter one",
+    "paid_via_payables": "This pay period is paid through payables",
+    "entry_approved": "This person's timesheet for the day is already approved and cannot change",
+    "duplicate_person": "Each person can appear only once per day",
+    "future_work_date": "Timesheets cannot be written for a future date; pick today or an earlier day",
+    "advance_paid": "This advance is already paid; its date and amount cannot change"
   }
 }
