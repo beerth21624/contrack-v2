@@ -4,6 +4,8 @@
 // R68 ถมดินกลับ is the footing sheet's backfill (sheet 24 Q6) — not this sheet.
 // Spec: docs/excel-spec/02-structure-steps-06-13.md §2.3 and §3 (rows 67–80).
 import { defineCalculator } from '../types';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
+import { GROUND_BEAM_TRACE_LABELS } from './trace.labels';
 import { roundUp } from '../../boq/engine';
 import { REBAR_SIZES, rebarSlotRows, type RebarSize, kgPerMetre, isRebarSize } from '../../boq/slots';
 
@@ -46,14 +48,15 @@ export interface GroundBeamRowResult {
     concrete: number;                   // X = C*D*E
 }
 
-export function groundBeamRow(r: GroundBeamRow): GroundBeamRowResult {
+/** One beam. `tr` (dev mode) records every intermediate value; call inside `tr.row(i, label, …)`. */
+export function groundBeamRow(r: GroundBeamRow, tr: Tracer = NO_TRACE): GroundBeamRowResult {
     const C = num(r.width), D = num(r.depth), E = num(r.length), G = num(r.leanThickness);
     const K = num(r.mainCount), P = num(r.stirrupSpacing);
     const mainLength = K * E;
     const stirrupCount = P !== 0 ? roundUp(E / P) : null;
     const stirrupLength = 2 * (C + D);
     const stirrupTotalLength = stirrupCount === null ? null : stirrupCount * stirrupLength;
-    return {
+    const res = {
         lean: C * E * G,
         mainLength,
         mainWeight: mainLength * kgPerMetre(r.mainSize),
@@ -64,6 +67,26 @@ export function groundBeamRow(r: GroundBeamRow): GroundBeamRowResult {
         formwork: 2 * D * E,
         concrete: C * D * E,
     };
+    if (tr.enabled) {
+        const kgM = kgPerMetre(r.mainSize), kgS = kgPerMetre(r.stirrupSize);
+        tr.constant('kgPerM', kgM, { params: { size: r.mainSize || '-' } });
+        tr.constant('kgPerM', kgS, { params: { size: r.stirrupSize || '-' } });
+        tr.step('lean', res.lean, { width: C, length: E, leanThickness: G });
+        tr.step('mainLength', mainLength, { mainCount: K, length: E });
+        tr.step('mainKg', res.mainWeight, { mainLength, kgPerM: kgM }, { params: { size: r.mainSize || '-' } });
+        if (stirrupCount !== null && stirrupTotalLength !== null) {
+            tr.step('stirrupCount', stirrupCount, { length: E, stirrupSpacing: P });
+            tr.step('stirrupLength', stirrupLength, { width: C, depth: D });
+            tr.step('stirrupTotalLength', stirrupTotalLength, { stirrupCount, stirrupLength });
+            tr.step('stirrupKg', res.stirrupWeight, { stirrupTotalLength, kgPerM: kgS }, { params: { size: r.stirrupSize || '-' } });
+        } else {
+            tr.step('stirrupLength', stirrupLength, { width: C, depth: D });
+            tr.step('stirrupNone', res.stirrupWeight, { stirrupSpacing: P });
+        }
+        tr.step('formwork', res.formwork, { depth: D, length: E });
+        tr.step('concrete', res.concrete, { width: C, depth: D, length: E });
+    }
+    return res;
 }
 
 export interface GroundBeamTotals {
@@ -74,11 +97,13 @@ export interface GroundBeamTotals {
     concrete: number;                      // X6
 }
 
-export function groundBeamTotals(input: GroundBeamInput): GroundBeamTotals {
+export function groundBeamTotals(input: GroundBeamInput, tr: Tracer = NO_TRACE): GroundBeamTotals {
     const zero = () => Object.fromEntries(REBAR_SIZES.map(s => [s, 0])) as Record<RebarSize, number>;
     const t: GroundBeamTotals = { lean: 0, main: zero(), stirrup: zero(), formwork: 0, concrete: 0 };
-    for (const r of input.beams) {
-        const x = groundBeamRow(r);
+    const per: GroundBeamRowResult[] = [];
+    input.beams.forEach((r, i) => {
+        const x = tr.enabled ? tr.row(i, r.name || `#${i + 1}`, () => groundBeamRow(r, tr)) : groundBeamRow(r);
+        per.push(x);
         // D1: Excel G6 = SUM(H8:H18) and V6/X6 = SUM(V8:V17)/SUM(X8:X17) although the table runs to row 21,
         // so sheet rows 19–21 (lean; ลำดับ 12–14) and 18–21 (formwork, concrete; ลำดับ 11–14) were silently
         // ignored. Here every row counts. The rebar SUMIFs already cover rows 8–100. The sample uses 4 rows,
@@ -88,6 +113,20 @@ export function groundBeamTotals(input: GroundBeamInput): GroundBeamTotals {
         t.concrete += x.concrete;
         if (isRebarSize(r.mainSize)) t.main[r.mainSize] += x.mainWeight;
         if (isRebarSize(r.stirrupSize)) t.stirrup[r.stirrupSize] += x.stirrupWeight;
+    });
+    if (tr.enabled) {
+        tr.step('totalLean', t.lean, { lean: per.map(c => c.lean) });
+        tr.step('totalFormwork', t.formwork, { formwork: per.map(c => c.formwork) });
+        tr.step('totalConcrete', t.concrete, { concrete: per.map(c => c.concrete) });
+        for (const s of REBAR_SIZES) {
+            const m = per.flatMap((c, i) => (input.beams[i]?.mainSize === s ? [c.mainWeight] : []));
+            const st = per.flatMap((c, i) => (input.beams[i]?.stirrupSize === s ? [c.stirrupWeight] : []));
+            if (m.length + st.length === 0) continue;
+            const params = { size: s };
+            if (m.length > 0) tr.step('totalMain', t.main[s], { mainKg: m }, { params });
+            if (st.length > 0) tr.step('totalStirrup', t.stirrup[s], { stirrupKg: st }, { params });
+            tr.step('totalRebar', t.main[s] + t.stirrup[s], { mainWeight: t.main[s], stirrupWeight: t.stirrup[s] }, { params });
+        }
     }
     return t;
 }
@@ -129,8 +168,8 @@ export const groundBeam = defineCalculator<GroundBeamInput>({
     }),
     // A real project: no beam types until the user adds them from the ground-beam plan.
     blank: () => ({ beams: [] }),
-    compute: (input) => {
-        const t = groundBeamTotals(input);
+    compute: (input, _ctx, tr = NO_TRACE) => {
+        const t = groundBeamTotals(input, tr);
         const out: Record<string, number> = {
             lean: t.lean,
             formwork: t.formwork,
@@ -143,6 +182,7 @@ export const groundBeam = defineCalculator<GroundBeamInput>({
         }
         return out;
     },
+    traceLabels: GROUND_BEAM_TRACE_LABELS,
     boqLinks: [
         { line: 'R69', field: 'qty', output: 'lean' },      // E69 = sheet24 E8 = Beam!G6
         { line: 'R77', field: 'qty', output: 'formwork' },  // E77 = Beam!V6

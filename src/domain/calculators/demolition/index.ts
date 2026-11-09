@@ -2,6 +2,8 @@
 // Spec: docs/excel-spec/01-boq-home-and-steps-00-05.md, Section 1 (b-1).
 import type { BoqLineKey } from '../../boq/types';
 import { defineCalculator } from '../types';
+import { NO_TRACE } from '../../trace/tracer';
+import { DEMOLITION_TRACE_LABELS } from './trace.labels';
 
 export interface DemolitionLine {
     label: string;    // B รายการ
@@ -49,16 +51,24 @@ export const demolition = defineCalculator<DemolitionInput>({
     blank: () => ({
         items: DEMOLITION_FIXED_ITEMS.map(i => ({ ...i, qty: 0, rate: 0 })),
     }),
-    compute: (input) => {
+    compute: (input, _ctx, tr = NO_TRACE) => {
         // F11 รวมทั้งหมด = SUM(F4:F10) (static 0 in Excel v5)
         const total = demolitionTotal(input.items);
-        return {
-            total,
-            // BOQ E12 is a typed 0 เหมา in Excel. Linked as 1 เหมา only when there is demolition work,
-            // so an empty list keeps the row (and section 1) at 0 like Excel.
-            boqQty: total > 0 ? 1 : 0,
-        };
+        // BOQ E12 is a typed 0 เหมา in Excel. Linked as 1 เหมา only when there is demolition work,
+        // so an empty list keeps the row (and section 1) at 0 like Excel.
+        const boqQty = total > 0 ? 1 : 0;
+        if (tr.enabled) {
+            const per = input.items.map((l, i) => tr.row(i, l.label || `#${i + 1}`, () => {
+                const v = lineTotal(l);
+                tr.step('lineTotal', v, { qty: num(l.qty), rate: num(l.rate) });
+                return v;
+            }));
+            tr.step('total', total, { lineTotal: per });
+            tr.step('boqQty', boqQty, { total });
+        }
+        return { total, boqQty };
     },
+    traceLabels: DEMOLITION_TRACE_LABELS,
     // Excel does not link F11 into the BOQ; decision D3 links it to K12 (labour) — the rate is
     // labour + basic tools + incidentals per unit.
     boqLinks: [

@@ -4,6 +4,8 @@
 // which reads each circuit's lengths from the outputs below (Excel: Cable!G r = Pipe!E r + G r, H r = F r + H r).
 // Spec: docs/excel-spec/05-mep-sanitary-misc.md §4 (oddities D3, D4, D6).
 import { defineCalculator, type CalcContext } from '../types';
+import { NO_TRACE } from '../../trace/tracer';
+import { ELECTRICAL_PIPE_TRACE_LABELS } from './trace.labels';
 
 /** C ขนาด CB — dropdown C6:C29 (informational, no effect on any formula). */
 export const BREAKER_SIZES = ['16A.', '20A.', '32A.', '40A.'] as const;
@@ -233,7 +235,7 @@ export const electricalPipe = defineCalculator<ElectricalPipeInput>({
             circuit(14, 'เต้ารับไฟฟ้า : ห้องครัว', '20A.', 5, 0, 1.5, 6.9, [3, 2.3]),                                   // H =3*2.3
         ],
     }),
-    compute: (input) => {
+    compute: (input, _ctx, tr = NO_TRACE) => {
         // I4 = SUM(I6:I29); every circuit is summed (Excel has no I formula on rows 20–29 — D1/D6).
         const total = input.circuits.reduce((s, c) => s + circuitTotal(c), 0);
         const out: Record<string, number> = { total, R185: total, 'circuit.count': input.circuits.length };
@@ -244,7 +246,26 @@ export const electricalPipe = defineCalculator<ElectricalPipeInput>({
             const t = pipeTypeKey(c.pipeType);
             out[t] = (out[t] ?? 0) + circuitTotal(c);
         }
+        if (tr.enabled) {
+            const per = input.circuits.map((c, i) => tr.row(i, c.name || `#${i + 1}`, () => {
+                const ops = { mainH: num(c.mainH), deviceH: num(c.deviceH), mainV: num(c.mainV), deviceV: num(c.deviceV) };
+                tr.step('mainLen', circuitMainLength(c), { mainH: ops.mainH, mainV: ops.mainV });
+                tr.step('deviceLen', circuitDeviceLength(c), { deviceH: ops.deviceH, deviceV: ops.deviceV });
+                const v = circuitTotal(c);
+                tr.step('circuitTotal', v, ops);
+                return v;
+            }));
+            tr.step('total', total, { circuitTotal: per });
+            tr.step('toBoq', total, { total });
+            tr.step('count', input.circuits.length, {});
+            const types = [...new Set(input.circuits.map(c => c.pipeType.trim()))];
+            for (const type of types) {
+                tr.step('pipeType', out[pipeTypeKey(type)] ?? 0,
+                    { circuitTotal: per.filter((_, i) => input.circuits[i]?.pipeType.trim() === type) }, { params: { type: type || '-' } });
+            }
+        }
         return out;
     },
+    traceLabels: ELECTRICAL_PIPE_TRACE_LABELS,
     boqLinks: [{ line: 'R185', field: 'qty', output: 'R185' }],
 });

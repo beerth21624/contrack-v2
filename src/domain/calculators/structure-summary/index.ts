@@ -4,6 +4,8 @@
 // Spec: docs/excel-spec/02-structure-steps-06-13.md §1.
 import { REBAR_SIZES } from '../../boq/slots';
 import { defineCalculator, type CalcContext } from '../types';
+import { NO_TRACE } from '../../trace/tracer';
+import { STRUCTURE_SUMMARY_TRACE_LABELS } from './trace.labels';
 
 /** Columns C–Q of sheet 24 (I–M are the five bar sizes). */
 export const SUMMARY_COLUMNS = [
@@ -53,7 +55,7 @@ export const structureSummary = defineCalculator<Record<string, never>>({
     sections: [6, 7, 8, 9, 10, 11, 12, 13],
     deps: SUMMARY_ELEMENTS.map(e => e.calc),
     defaults: () => ({}),
-    compute: (_input, ctx) => {
+    compute: (_input, ctx, tr = NO_TRACE) => {
         const out: Record<string, number> = {};
         for (const col of SUMMARY_COLUMNS) {
             let total = 0;
@@ -64,10 +66,19 @@ export const structureSummary = defineCalculator<Record<string, never>>({
             }
             // Row 18 รวม. Excel's Q18 = SUM(Q7:Q17) leaves out the footing backfill Q6 — summed here (D1).
             out[`total.${col.key}`] = total;
+            if (tr.enabled) {
+                tr.step(`colTotal.${col.key}`, total, { cell: SUMMARY_ELEMENTS.map(el => out[`${el.calc}.${col.key}`] ?? 0) });
+            }
         }
         // Row 20: total rebar kg.
         out['total.rebar'] = REBAR_SIZES.reduce((s, size) => s + (out[`total.rebar.${size}`] ?? 0), 0);
+        if (tr.enabled) {
+            const ops: Record<string, number> = {};
+            for (const size of REBAR_SIZES) ops[`kg_${size}`] = out[`total.rebar.${size}`] ?? 0;
+            tr.step('rebarAll', out['total.rebar'] ?? 0, ops);
+        }
         return out;
     },
+    traceLabels: STRUCTURE_SUMMARY_TRACE_LABELS,
     boqLinks: [],
 });

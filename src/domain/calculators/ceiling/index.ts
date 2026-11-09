@@ -2,6 +2,8 @@
 // The paint-group totals (`paint.ภายนอก` / `paint.ภายใน` / `paint.ไม้ระแนง`) feed the paint sheet (sheet 19 C7/C8/C9).
 // Spec: docs/excel-spec/04-ceiling-tiles-finishes-paint.md §1 (oddities O-1, O-13, O-14).
 import { defineCalculator } from '../types';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
+import { CEILING_TRACE_LABELS } from './trace.labels';
 
 /** Dropdown B5:B28 สัญลักษณ์ — the key BOQ E199–E202 SUMIF on. */
 export const CEILING_CODES = ['C1', 'C2', 'C3', 'C4'] as const;
@@ -70,13 +72,25 @@ export interface CeilingInput {
 const num = (v: number | undefined) => (v !== undefined && Number.isFinite(v) ? v : 0);
 
 /** F รวม (ตร.ม.) = `D*E`, or `(D*E)/COS(RADIANS(slope))` for a sloped row. An impossible slope (≥ 90°) gives 0. */
-export function ceilingRowArea(r: CeilingRow): number {
+function ceilingRowAreaTraced(r: CeilingRow, tr: Tracer): number {
     const plan = num(r.width) * num(r.length);
     const slope = num(r.slope);
-    if (slope === 0) return plan;
+    if (tr.enabled) tr.step('plan', plan, { width: num(r.width), length: num(r.length) });
+    if (slope === 0) {
+        if (tr.enabled) tr.step('areaFlat', plan, { plan });
+        return plan;
+    }
     const cos = Math.cos((slope * Math.PI) / 180);
-    return cos > 1e-9 ? plan / cos : 0;
+    const area = cos > 1e-9 ? plan / cos : 0;
+    if (tr.enabled) {
+        tr.step('cos', cos, { slope });
+        if (cos > 1e-9) tr.step('areaSloped', area, { plan, cos });
+        else tr.step('areaInvalid', area, { cos, slope });
+    }
+    return area;
 }
+
+export const ceilingRowArea = (r: CeilingRow): number => ceilingRowAreaTraced(r, NO_TRACE);
 
 /** `SUMIF(B:B, code, F:F)`. */
 export function ceilingAreaByCode(input: CeilingInput, code: CeilingCode): number {
@@ -121,7 +135,7 @@ export const ceiling = defineCalculator<CeilingInput>({
     }),
     // A real project: no rooms yet (the sheet has no prices or constants of its own — they sit in the BOQ).
     blank: () => ({ rows: [] }),
-    compute: input => {
+    compute: (input, _ctx, tr = NO_TRACE) => {
         const c1 = ceilingAreaByCode(input, 'C1');
         const c2 = ceilingAreaByCode(input, 'C2');
         const c3 = ceilingAreaByCode(input, 'C3');
@@ -135,8 +149,19 @@ export const ceiling = defineCalculator<CeilingInput>({
             R202: c4,
         };
         for (const g of CEILING_PAINT_GROUPS) out[paintKey(g)] = ceilingAreaByPaint(input, g);
+        if (tr.enabled) {
+            const areas = input.rows.map((r, i) => tr.row(i, r.location || `#${i + 1}`, () => ceilingRowAreaTraced(r, tr)));
+            const byCode = (code: CeilingCode) => areas.filter((_, i) => input.rows[i]?.code === code);
+            for (const code of CEILING_CODES) tr.step('byCode', out[code] ?? 0, { area: byCode(code) }, { params: { code } });
+            tr.step('total', out.total ?? 0, { area: areas });
+            CEILING_CODES.forEach((code, i) => tr.step('toBoq', out[`R${199 + i}`] ?? 0, { byCode: out[code] ?? 0 }, { params: { code } }));
+            for (const g of CEILING_PAINT_GROUPS) {
+                tr.step('paint', out[paintKey(g)] ?? 0, { area: areas.filter((_, i) => input.rows[i]?.paint === g) }, { params: { group: g } });
+            }
+        }
         return out;
     },
+    traceLabels: CEILING_TRACE_LABELS,
     boqLinks: [
         { line: 'R199', field: 'qty', output: 'R199' },
         { line: 'R200', field: 'qty', output: 'R200' },

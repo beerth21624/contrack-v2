@@ -1,0 +1,86 @@
+// ─── Dev-mode trace labels of the electrical conduit step (docs/dev-mode/README.md §5) ───
+// Names follow the electrical conduit page. Never mention the spreadsheet here.
+// Per-circuit output keys (`circuit|<id>|main` ...) cannot be matched by a pattern; the circuits' values are shown
+// in the calculation steps of each circuit instead.
+import type { CalcTraceLabels } from '../../trace/types';
+
+export const ELECTRICAL_PIPE_TRACE_LABELS: CalcTraceLabels = {
+    th: {
+        terms: {
+            name: 'วงจร',
+            breaker: 'ขนาด CB',
+            pipeType: 'ชนิดท่อ',
+            mainH: 'แนวราบ · วงจรย่อย (สายเมน)',
+            deviceH: 'แนวราบ · เข้าอุปกรณ์',
+            mainV: 'แนวดิ่ง · วงจรย่อย (สายเมน)',
+            deviceV: 'แนวดิ่ง · เข้าอุปกรณ์',
+            points: 'จำนวนจุด',
+            dropEach: 'ระยะลงต่อจุด',
+            mainLen: 'ความยาวท่อ วงจรย่อย (สายเมน)',
+            deviceLen: 'ความยาวท่อ เข้าอุปกรณ์',
+            circuitTotal: 'ความยาวท่อรวม (ต่อวงจร)',
+            total: 'ความยาวท่อรวม',
+            R185: 'ความยาวท่อร้อยสายไฟ ส่ง BOQ',
+            'circuit.count': 'จำนวนวงจร',
+            'pipe|PVC 1/2"': 'ท่อ PVC 1/2" รวม',
+            'pipe|PVC 3/4"': 'ท่อ PVC 3/4" รวม',
+            'row.*.mainH': 'วงจร {0} · แนวราบ · วงจรย่อย',
+            'row.*.deviceH': 'วงจร {0} · แนวราบ · เข้าอุปกรณ์',
+            'row.*.mainV': 'วงจร {0} · แนวดิ่ง · วงจรย่อย',
+            'row.*.deviceV': 'วงจร {0} · แนวดิ่ง · เข้าอุปกรณ์',
+        },
+        units: {
+            mainH: 'ม.', deviceH: 'ม.', mainV: 'ม.', deviceV: 'ม.', points: 'จุด', dropEach: 'ม.',
+            mainLen: 'ม.', deviceLen: 'ม.', circuitTotal: 'ม.', total: 'ม.', R185: 'ม.', 'circuit.count': 'วงจร',
+            'pipe|PVC 1/2"': 'ม.', 'pipe|PVC 3/4"': 'ม.',
+        },
+        steps: {
+            mainLen: { label: 'ความยาวท่อ วงจรย่อย (สายเมน)', formula: '{mainH} + {mainV}', unit: 'ม.' },
+            deviceLen: { label: 'ความยาวท่อ เข้าอุปกรณ์', formula: '{deviceH} + {deviceV}', unit: 'ม.' },
+            circuitTotal: { label: 'ความยาวท่อรวม (ต่อวงจร)', formula: '{mainH} + {deviceH} + {mainV} + {deviceV}', unit: 'ม.' },
+            total: { label: 'ความยาวท่อรวมทุกวงจร', formula: 'Σ {circuitTotal}', unit: 'ม.' },
+            toBoq: { label: 'ความยาวท่อร้อยสายไฟ ส่ง BOQ', formula: '{total}', unit: 'ม.' },
+            count: { label: 'จำนวนวงจร', formula: 'นับวงจรทั้งหมด', unit: 'วงจร' },
+            pipeType: { label: 'ท่อ {type} รวม', formula: 'Σ {circuitTotal} (วงจรที่ใช้ท่อ {type})', unit: 'ม.' },
+        },
+    },
+    en: {
+        terms: {
+            name: 'Circuit',
+            breaker: 'Breaker size',
+            pipeType: 'Conduit type',
+            mainH: 'Horizontal · branch circuit (main wire)',
+            deviceH: 'Horizontal · to the device',
+            mainV: 'Vertical · branch circuit (main wire)',
+            deviceV: 'Vertical · to the device',
+            points: 'Number of points',
+            dropEach: 'Drop per point',
+            mainLen: 'Conduit length, branch circuit (main wire)',
+            deviceLen: 'Conduit length, to the device',
+            circuitTotal: 'Total conduit length (per circuit)',
+            total: 'Total conduit length',
+            R185: 'Conduit length sent to BOQ',
+            'circuit.count': 'Number of circuits',
+            'pipe|PVC 1/2"': 'PVC 1/2" conduit, total',
+            'pipe|PVC 3/4"': 'PVC 3/4" conduit, total',
+            'row.*.mainH': 'Circuit {0} · Horizontal · branch circuit',
+            'row.*.deviceH': 'Circuit {0} · Horizontal · to the device',
+            'row.*.mainV': 'Circuit {0} · Vertical · branch circuit',
+            'row.*.deviceV': 'Circuit {0} · Vertical · to the device',
+        },
+        units: {
+            mainH: 'm', deviceH: 'm', mainV: 'm', deviceV: 'm', points: 'points', dropEach: 'm',
+            mainLen: 'm', deviceLen: 'm', circuitTotal: 'm', total: 'm', R185: 'm', 'circuit.count': 'circuits',
+            'pipe|PVC 1/2"': 'm', 'pipe|PVC 3/4"': 'm',
+        },
+        steps: {
+            mainLen: { label: 'Conduit length, branch circuit (main wire)', formula: '{mainH} + {mainV}', unit: 'm' },
+            deviceLen: { label: 'Conduit length, to the device', formula: '{deviceH} + {deviceV}', unit: 'm' },
+            circuitTotal: { label: 'Total conduit length (per circuit)', formula: '{mainH} + {deviceH} + {mainV} + {deviceV}', unit: 'm' },
+            total: { label: 'Total conduit length, all circuits', formula: 'Σ {circuitTotal}', unit: 'm' },
+            toBoq: { label: 'Conduit length sent to BOQ', formula: '{total}', unit: 'm' },
+            count: { label: 'Number of circuits', formula: 'count of all circuits', unit: 'circuits' },
+            pipeType: { label: '{type} conduit, total', formula: 'Σ {circuitTotal} (circuits using {type})', unit: 'm' },
+        },
+    },
+};
