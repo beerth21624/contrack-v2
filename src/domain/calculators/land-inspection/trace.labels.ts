@@ -5,6 +5,7 @@ import type { CalcTraceLabels } from '../../trace/types';
 export const LAND_INSPECTION_TRACE_LABELS: CalcTraceLabels = {
     th: {
         terms: {
+            done: 'รายการตรวจ · ทำแล้ว',
             label: 'รายการค่าใช้จ่าย',
             qty: 'จำนวน',
             unit: 'หน่วย',
@@ -25,6 +26,7 @@ export const LAND_INSPECTION_TRACE_LABELS: CalcTraceLabels = {
     },
     en: {
         terms: {
+            done: 'Checklist · done',
             label: 'Expense item',
             qty: 'Quantity',
             unit: 'Unit',

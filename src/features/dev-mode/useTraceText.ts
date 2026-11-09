@@ -74,14 +74,34 @@ export function useTraceText() {
         const groupOf = (row: number | undefined, labels: Map<number, string>): string =>
             row === undefined ? '' : labels.get(row) ?? t('trace.rowLabel', { row: row + 1 });
 
+        /**
+         * Short references so a substituted number can be matched with the value above: inputs A1, A2… and calculation
+         * steps S1, S2…, numbered by name (every row of a row-based step shares them; the row heading tells the rows apart).
+         */
+        const fieldOf = (term: string): string => term.split('.').pop() ?? term;
+        const refs = (trace: CalcTrace) => {
+            const input = new Map<string, string>();
+            for (const i of trace.inputs) {
+                const k = fieldOf(i.term);
+                if (!input.has(k)) input.set(k, `A${String(input.size + 1)}`);
+            }
+            const step = new Map<string, string>();
+            for (const st of trace.steps) if (!step.has(st.id)) step.set(st.id, `S${String(step.size + 1)}`);
+            return { input, step, of: (name: string): string | undefined => input.get(name) ?? step.get(name) };
+        };
+        const withRef = (ref: string | undefined, text: string): string => (ref === undefined ? text : `${ref} · ${text}`);
+
         const inputRows = (trace: CalcTrace, labels: TraceLabelSet | undefined): InputRow[] => {
             const rl = rowLabels(trace);
+            const rf = refs(trace);
             return trace.inputs.map((i: TraceInput) => {
                 const fromLabels = i.from ? labelsOf(i.from.calc) : labels;
+                const fromName = termLabel(fromLabels, i.term, i.params);
                 const r: InputRow = {
                     path: i.path,
                     group: groupOf(i.row, rl),
-                    name: termLabel(fromLabels, i.term, i.params),
+                    // A dependency value the other step does not name: this step's own label for it, if any.
+                    name: withRef(rf.input.get(fieldOf(i.term)), fromName === i.term && i.from ? termLabel(labels, i.term, i.params) : fromName),
                     value: value(i.value),
                     unit: termUnit(fromLabels, i.term),
                     source: i.source,
@@ -94,9 +114,10 @@ export function useTraceText() {
 
         const stepRows = (trace: CalcTrace, labels: TraceLabelSet | undefined): StepRow[] => {
             const rl = rowLabels(trace);
+            const rf = refs(trace);
             return trace.steps.map(s => {
-                const r = renderStep(labels, s, num);
-                return { key: s.key, group: groupOf(s.row, rl), label: r.label, words: r.words, numbers: r.numbers, value: num(s.value), unit: r.unit };
+                const r = renderStep(labels, s, num, rf.of);
+                return { key: s.key, group: groupOf(s.row, rl), label: withRef(rf.step.get(s.id), r.label), words: r.words, numbers: r.numbers, value: num(s.value), unit: r.unit };
             });
         };
 

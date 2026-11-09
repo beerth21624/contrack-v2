@@ -7,6 +7,8 @@ import type { CalcTraceLabels } from '../../trace/types';
 export const ELECTRICAL_PIPE_TRACE_LABELS: CalcTraceLabels = {
     th: {
         terms: {
+            id: 'รหัสวงจร',
+            'circuit.*.main': 'ท่อเมน วงจร {0}', 'circuit.*.device': 'ท่อลงอุปกรณ์ วงจร {0}', 'circuit.*.total': 'ท่อรวม วงจร {0}',
             name: 'วงจร',
             breaker: 'ขนาด CB',
             pipeType: 'ชนิดท่อ',
@@ -46,6 +48,8 @@ export const ELECTRICAL_PIPE_TRACE_LABELS: CalcTraceLabels = {
     },
     en: {
         terms: {
+            id: 'Circuit id',
+            'circuit.*.main': 'Main conduit, circuit {0}', 'circuit.*.device': 'Device drops, circuit {0}', 'circuit.*.total': 'Conduit total, circuit {0}',
             name: 'Circuit',
             breaker: 'Breaker size',
             pipeType: 'Conduit type',

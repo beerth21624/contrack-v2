@@ -10,18 +10,32 @@ export function traceLabelSet(labels: CalcTraceLabels | undefined, locale: strin
     return locale === 'en' ? labels.en : labels.th;
 }
 
+/** Path separators: '.' in input paths, '|' in some output keys ('circuit|c1|main'). */
+const SEP = /[.|]/;
+
 /**
- * Looks a key up in a term table: exact key first, then patterns with '*' for one path segment.
+ * Looks a key up in a term table: exact key first, then patterns with '*' for one path segment, then (for a dotted
+ * input path like 'rows.width' or 'panels.width') the same lookups on its trailing segments, since the label files name
+ * row fields by the field name alone.
  * The segments matched by '*' are returned (numeric ones 1-based) for {0}, {1}… in the text.
  */
 function lookup(table: Readonly<Record<string, string>> | undefined, key: string): { text: string; wild: string[] } | undefined {
     if (!table) return undefined;
+    const parts = key.split('.');
+    for (let i = 0; i < parts.length; i++) {
+        const hit = lookupExact(table, parts.slice(i).join('.'));
+        if (hit) return hit;
+    }
+    return undefined;
+}
+
+function lookupExact(table: Readonly<Record<string, string>>, key: string): { text: string; wild: string[] } | undefined {
     const exact = table[key];
     if (exact !== undefined) return { text: exact, wild: [] };
-    const parts = key.split('.');
+    const parts = key.split(SEP);
     for (const [pattern, text] of Object.entries(table)) {
         if (!pattern.includes('*')) continue;
-        const pp = pattern.split('.');
+        const pp = pattern.split(SEP);
         if (pp.length !== parts.length) continue;
         const wild: string[] = [];
         let ok = true;
@@ -49,7 +63,7 @@ export function fillParams(text: string, params?: TraceParams, wild: readonly st
 export function termLabel(set: TraceLabelSet | undefined, key: string, params?: TraceParams): string {
     const t = lookup(set?.terms, key);
     if (t) return fillParams(t.text, params, t.wild);
-    const s = set?.steps[key];
+    const s = set?.steps[key] ?? set?.steps[key.split('.').pop() ?? key];
     if (s) return fillParams(s.label, params);
     return key;
 }
@@ -83,7 +97,11 @@ export interface RenderedStep {
 }
 
 /** Label, formula in words, formula with numbers and unit of a recorded step. */
-export function renderStep(set: TraceLabelSet | undefined, step: Pick<TraceStep, 'id' | 'operands' | 'params'>, fmt: NumberFormat = plainNumber): RenderedStep {
+export function renderStep(
+    set: TraceLabelSet | undefined, step: Pick<TraceStep, 'id' | 'operands' | 'params'>, fmt: NumberFormat = plainNumber,
+    /** Short reference shown after each substituted number (e.g. 'A3' for an input listed above), if any. */
+    refOf?: (name: string) => string | undefined,
+): RenderedStep {
     const def = set?.steps[step.id];
     const formula = def?.formula ?? Object.keys(step.operands).map(k => `{${k}}`).join(' , ');
     const sub = (fn: (name: string) => string) => formula.replace(/\{(\w+)\}/g, (m, name: string) => {
@@ -94,7 +112,11 @@ export function renderStep(set: TraceLabelSet | undefined, step: Pick<TraceStep,
     return {
         label: def ? fillParams(def.label, step.params) : step.id,
         words: sub(name => termLabel(set, name, step.params)),
-        numbers: sub(name => operandNumbers(step.operands[name] ?? 0, fmt)),
+        numbers: sub(name => {
+            const n = operandNumbers(step.operands[name] ?? 0, fmt);
+            const ref = refOf?.(name);
+            return ref === undefined ? n : `${n} (${ref})`;
+        }),
         unit: def?.unit ?? '',
     };
 }

@@ -5,6 +5,7 @@ import type { CalcTraceLabels } from '../../trace/types';
 export const FILL_TRACE_LABELS: CalcTraceLabels = {
     th: {
         terms: {
+            material: 'วัสดุถม · ผู้จัดหา',
             width: 'ขนาดที่ดิน กว้าง',
             length: 'ขนาดที่ดิน ยาว',
             height: 'ถมดินสูง',
@@ -22,6 +23,7 @@ export const FILL_TRACE_LABELS: CalcTraceLabels = {
     },
     en: {
         terms: {
+            material: 'Fill material · supplied by',
             width: 'Land size, width',
             length: 'Land size, length',
             height: 'Fill height',

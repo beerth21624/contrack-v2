@@ -41,6 +41,7 @@ function build(l: 'th' | 'en'): TraceLabelSet {
     const units: Record<string, string> = { 'total.rebar': l === 'th' ? 'กก.' : 'kg' };
     const steps: Record<string, { label: string; formula: string; unit: string }> = {};
     for (const c of COLUMNS) {
+        terms[c.key] = c[l];   // a dependency value of that column (e.g. footing › excavation)
         terms[`total.${c.key}`] = `${c[l]} ${total}`;
         units[`total.${c.key}`] = c.unit[l];
         for (const e of ELEMENTS) {
