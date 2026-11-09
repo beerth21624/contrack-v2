@@ -4,6 +4,8 @@
 // keeps only the wire settings D/E/F of each circuit, keyed by the circuit id.
 // Spec: docs/excel-spec/05-mep-sanitary-misc.md §5 (oddities D4, D6, D7, D8).
 import { defineCalculator, type CalcContext } from '../types';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
+import { ELECTRICAL_CABLE_TRACE_LABELS } from './trace.labels';
 import { circuitKind, circuitLengths, type Circuit, type CircuitKind, type CircuitLengths } from '../electrical-pipe';
 
 /** Dropdown D6:E28 (verbatim). */
@@ -151,7 +153,7 @@ export const electricalCable = defineCalculator<ElectricalCableInput>({
     // A real project has no circuits yet (they are added at the conduit level), so no wire settings.
     blank: () => ({ wiring: {} }),
     defaults: () => ({ wiring: sampleWiring() }),
-    compute: (input, ctx) => {
+    compute: (input, ctx, tr = NO_TRACE) => {
         // I4:L4 = SUM(I6:I28) …; every circuit of the conduit sheet is counted (Excel links G/H on rows 6–19 only — D6).
         const rows = cableRows(input, ctx);
         const out: Record<string, number> = {
@@ -163,7 +165,44 @@ export const electricalCable = defineCalculator<ElectricalCableInput>({
             out[sizeKey(b.size)] = total;
             if (b.line) out[b.line] = total;
         }
+        if (tr.enabled) traceCable(rows, out, tr);
         return out;
     },
+    traceLabels: ELECTRICAL_CABLE_TRACE_LABELS,
     boqLinks: WIRE_BUCKETS.flatMap(b => (b.line ? [{ line: b.line, field: 'qty' as const, output: b.line }] : [])),
 });
+
+/** Dev mode: records the steps of the compute above (observes values already computed; changes nothing). */
+function traceCable(rows: CableRow[], out: Record<string, number>, tr: Tracer): void {
+    const known = (s: string) => (WIRE_SIZES as readonly string[]).includes(s);
+    rows.forEach((r, i) => {
+        tr.row(i, `#${i + 1}`, () => {
+            const f = num(r.wiring.conductors);
+            const main = r.wiring.mainSize.trim();
+            const device = r.wiring.deviceSize.trim();
+            for (const size of WIRE_SIZES) {
+                const params = { size };
+                const v = r.bySize[size];
+                if (main === size && device === size) {
+                    tr.step('wireBoth', v, { mainLength: r.main, deviceLength: r.device, conductors: f }, { params });
+                } else if (main === size) {
+                    tr.step('wireMain', v, { mainLength: r.main, conductors: f }, { params });
+                } else if (device === size) {
+                    tr.step('wireDevice', v, { deviceLength: r.device, conductors: f }, { params });
+                }
+            }
+            if (r.unassigned !== 0) {
+                if (f === 0) tr.step('unassignedAll', r.unassigned, { mainLength: r.main, deviceLength: r.device });
+                else tr.step('unassignedPart', r.unassigned, {
+                    unassignedMain: known(main) ? 0 : r.main,
+                    unassignedDevice: known(device) ? 0 : r.device,
+                });
+            }
+        });
+    });
+    tr.step('circuitCount', out['circuit.count'] ?? 0, {});
+    tr.step('totalUnassigned', out.unassigned ?? 0, { unassigned: rows.map(r => r.unassigned) });
+    for (const b of WIRE_BUCKETS) {
+        tr.step('totalSize', out[sizeKey(b.size)] ?? 0, { wireLength: rows.map(r => r.bySize[b.size]) }, { params: { size: b.size } });
+    }
+}

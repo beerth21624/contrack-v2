@@ -5,7 +5,9 @@
 // waist main bars, 2 temperature bars per step (spacing AB unused), step-side formwork 2·I·G, props from area.
 import { roundUp } from '../../boq/engine';
 import { REBAR_SIZES, rebarSlotRows, type RebarSize, kgPerMetre, isRebarSize } from '../../boq/slots';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
 import { defineCalculator } from '../types';
+import { STAIR_TRACE_LABELS } from './trace.labels';
 
 /** Bar-size dropdown of L/Q/V/AA 8:17. */
 export const STAIR_BAR_SIZES = ['RB6', 'RB9', 'DB12', 'DB16', 'DB20'] as const;
@@ -13,6 +15,9 @@ export const STAIR_BAR_SIZES = ['RB6', 'RB9', 'DB12', 'DB16', 'DB20'] as const;
 export const STAIR_NAMES = ['บันไดข้างบ้าน', 'บันไดหน้าบ้าน', 'บันไดหลังบ้าน'] as const;
 /** Hard-coded anchorage added to each waist main bar (O = (G + 1.2) × N). */
 export const STAIR_ANCHORAGE = 1.2;
+/** Hard-coded: 2 temperature bars per step (H × 2) and one prop per 0.6 m² of soffit. */
+const STAIR_TEMP_BARS_PER_STEP = 2;
+const STAIR_PROP_AREA = 0.6;
 
 /** One stair (rows 8–17 in Excel; unlimited here, D5). */
 export interface StairRow {
@@ -69,7 +74,13 @@ export interface StairRowResult {
 const group = (count: number | null, length: number | null, size: string): StairBarGroup =>
     ({ count, length, kg: (length ?? 0) * kgPerMetre(size) });
 
+/** One stair (no trace: safe to pass to `rows.map(stairRow)`). */
 export function stairRow(r: StairRow): StairRowResult {
+    return stairRowTraced(r, NO_TRACE);
+}
+
+/** One stair. `tr` (dev mode) records every intermediate value; call inside `tr.row(i, label, …)`. */
+export function stairRowTraced(r: StairRow, tr: Tracer): StairRowResult {
     const c = num(r.width), d = num(r.waist), e = num(r.rise), f = num(r.run);
     const h = num(r.steps), i = num(r.riser), j = num(r.tread);
     const g = Math.sqrt(f * f + e * e);
@@ -77,7 +88,7 @@ export function stairRow(r: StairRow): StairRowResult {
     const n = barCount(c, num(r.waistMainSpacing));
     const s = barCount(g, num(r.waistTempSpacing));
     const x = barCount(c, num(r.stepMainSpacing));
-    const ac = 2 * h;
+    const ac = STAIR_TEMP_BARS_PER_STEP * h;
 
     const soffit = c * g;
     const waistSides = 2 * (d * g);
@@ -85,18 +96,68 @@ export function stairRow(r: StairRow): StairRowResult {
     const risers = h * i * c;
     const waistConcrete = d * g * c;
     const stepConcrete = h * (0.5 * j * i) * c;
-    return {
+    const res: StairRowResult = {
         inclined: g,
         waistMain: group(n, n === null ? null : (g + STAIR_ANCHORAGE) * n, r.waistMainSize),
         waistTemp: group(s, s === null ? null : c * s, r.waistTempSize),
         stepMain: group(x, x === null ? null : x * (f + e), r.stepMainSize),
         stepTemp: group(ac, ac * c, r.stepTempSize),
-        props: roundUp(soffit / 0.6),
+        props: roundUp(soffit / STAIR_PROP_AREA),
         soffit, waistSides, stepSides, risers,
         formwork: soffit + waistSides + stepSides + risers,
         waistConcrete, stepConcrete,
         concrete: waistConcrete + stepConcrete,
     };
+    if (tr.enabled) traceStairRow(r, res, { c, d, e, f, h, i, j }, tr);
+    return res;
+}
+
+/** Dev mode: records the steps of `stairRow` (observes the values it already computed). */
+function traceStairRow(
+    r: StairRow, res: StairRowResult, v: { c: number; d: number; e: number; f: number; h: number; i: number; j: number },
+    tr: Tracer,
+): void {
+    const { c, d, e, f, h, i, j } = v;
+    tr.constant('anchorage', STAIR_ANCHORAGE);
+    tr.constant('tempBarsPerStep', STAIR_TEMP_BARS_PER_STEP);
+    tr.constant('propArea', STAIR_PROP_AREA);
+    tr.step('inclined', res.inclined, { run: f, rise: e });
+    const groups = [
+        ['waistMain', res.waistMain, r.waistMainSize],
+        ['waistTemp', res.waistTemp, r.waistTempSize],
+        ['stepMain', res.stepMain, r.stepMainSize],
+        ['stepTemp', res.stepTemp, r.stepTempSize],
+    ] as const;
+    for (const [key, grp, size] of groups) {
+        const params = { size: size || '-' };
+        const kg = kgPerMetre(size);
+        tr.constant('kgPerM', kg, { params });
+        if (grp.count !== null && grp.length !== null) {
+            if (key === 'waistMain') {
+                tr.step('waistMainCount', grp.count, { width: c, waistMainSpacing: num(r.waistMainSpacing) });
+                tr.step('waistMainLength', grp.length, { inclined: res.inclined, anchorage: STAIR_ANCHORAGE, waistMainCount: grp.count });
+            } else if (key === 'waistTemp') {
+                tr.step('waistTempCount', grp.count, { inclined: res.inclined, waistTempSpacing: num(r.waistTempSpacing) });
+                tr.step('waistTempLength', grp.length, { width: c, waistTempCount: grp.count });
+            } else if (key === 'stepMain') {
+                tr.step('stepMainCount', grp.count, { width: c, stepMainSpacing: num(r.stepMainSpacing) });
+                tr.step('stepMainLength', grp.length, { stepMainCount: grp.count, run: f, rise: e });
+            } else {
+                tr.step('stepTempCount', grp.count, { tempBarsPerStep: STAIR_TEMP_BARS_PER_STEP, steps: h });
+                tr.step('stepTempLength', grp.length, { stepTempCount: grp.count, width: c });
+            }
+        }
+        tr.step(`${key}Kg`, grp.kg, { [`${key}Length`]: grp.length ?? 0, kgPerM: kg }, { params });
+    }
+    tr.step('soffit', res.soffit, { width: c, inclined: res.inclined });
+    tr.step('waistSides', res.waistSides, { waist: d, inclined: res.inclined });
+    tr.step('stepSides', res.stepSides, { riser: i, inclined: res.inclined });
+    tr.step('risers', res.risers, { steps: h, riser: i, width: c });
+    tr.step('formwork', res.formwork, { soffit: res.soffit, waistSides: res.waistSides, stepSides: res.stepSides, risers: res.risers });
+    tr.step('props', res.props, { soffit: res.soffit, propArea: STAIR_PROP_AREA });
+    tr.step('waistConcrete', res.waistConcrete, { waist: d, inclined: res.inclined, width: c });
+    tr.step('stepConcrete', res.stepConcrete, { steps: h, tread: j, riser: i, width: c });
+    tr.step('concrete', res.concrete, { waistConcrete: res.waistConcrete, stepConcrete: res.stepConcrete });
 }
 
 export type StairGroupKey = 'waistMain' | 'waistTemp' | 'stepMain' | 'stepTemp';
@@ -121,16 +182,20 @@ export interface StairTotals {
     concrete: number;  // AN6 = Σ AP
 }
 
+export const stairRowLabel = (r: StairRow, i: number): string => r.name || `#${i + 1}`;
+
 const zeroBySize = (): Record<RebarSize, number> => ({ RB6: 0, RB9: 0, DB12: 0, DB16: 0, DB20: 0 });
 
 /** Row-6 totals (Excel AG6/AH6/AN6 cover rows 8–17 = the whole 10-row table; every row counts here). */
-export function stairTotals(input: StairInput): StairTotals {
+export function stairTotals(input: StairInput, tr: Tracer = NO_TRACE): StairTotals {
     const t: StairTotals = {
         groups: { waistMain: zeroBySize(), waistTemp: zeroBySize(), stepMain: zeroBySize(), stepTemp: zeroBySize() },
         rebar: zeroBySize(), props: 0, formwork: 0, concrete: 0,
     };
-    for (const row of input.rows) {
-        const r = stairRow(row);
+    const per: StairRowResult[] = [];
+    input.rows.forEach((row, idx) => {
+        const r = tr.enabled ? tr.row(idx, stairRowLabel(row, idx), () => stairRowTraced(row, tr)) : stairRow(row);
+        per.push(r);
         for (const grp of STAIR_GROUPS) {
             const size = row[grp.size];
             if (isRebarSize(size)) t.groups[grp.key][size] += r[grp.key].kg;
@@ -138,11 +203,33 @@ export function stairTotals(input: StairInput): StairTotals {
         t.props += r.props;
         t.formwork += r.formwork;
         t.concrete += r.concrete;
-    }
+    });
     for (const s of REBAR_SIZES) {
         t.rebar[s] = STAIR_GROUPS.reduce((sum, grp) => sum + t.groups[grp.key][s], 0);
     }
+    if (tr.enabled) traceStairTotals(input, per, t, tr);
     return t;
+}
+
+/** Dev mode: records the totals of `stairTotals` (Σ over the rows; per bar size only for sizes some row uses). */
+function traceStairTotals(input: StairInput, per: StairRowResult[], t: StairTotals, tr: Tracer): void {
+    tr.step('totalProps', t.props, { props: per.map(r => r.props) });
+    tr.step('totalFormwork', t.formwork, { formwork: per.map(r => r.formwork) });
+    tr.step('totalConcrete', t.concrete, { concrete: per.map(r => r.concrete) });
+    for (const s of REBAR_SIZES) {
+        const used: StairGroupKey[] = [];
+        for (const grp of STAIR_GROUPS) {
+            const kgs = input.rows.flatMap((row, i) => (row[grp.size] === s ? [per[i]?.[grp.key].kg ?? 0] : []));
+            if (kgs.length === 0) continue;
+            used.push(grp.key);
+            tr.step(`total${grp.key[0]?.toUpperCase()}${grp.key.slice(1)}Kg`, t.groups[grp.key][s], { [`${grp.key}Kg`]: kgs }, { params: { size: s } });
+        }
+        if (used.length === 0) continue;
+        tr.step('totalRebar', t.rebar[s], {
+            waistMainWeight: t.groups.waistMain[s], waistTempWeight: t.groups.waistTemp[s],
+            stepMainWeight: t.groups.stepMain[s], stepTempWeight: t.groups.stepTemp[s],
+        }, { params: { size: s } });
+    }
 }
 
 const sample = (name: string, width: number): StairRow => ({
@@ -197,12 +284,13 @@ export const stair = defineCalculator<StairInput>({
     }),
     // A real project starts with no stairs; each added stair gets the Excel bar spec (newStairRow).
     blank: () => ({ rows: [] }),
-    compute: (input) => {
-        const t = stairTotals(input);
+    compute: (input, _ctx, tr = NO_TRACE) => {
+        const t = stairTotals(input, tr);
         const out: Record<string, number> = { props: t.props, formwork: t.formwork, concrete: t.concrete };
         for (const s of REBAR_SIZES) out[`rebar.${s}`] = t.rebar[s];
         return out;
     },
+    traceLabels: STAIR_TRACE_LABELS,
     boqLinks: [
         { line: 'R140', field: 'qty', output: 'props' },      // 2) ไม้ค้ำยัน ← sheet24 N14 = AG6
         { line: 'R142', field: 'qty', output: 'formwork' },   // 3) - ไม้แบบ ← sheet24 O14 = AH6

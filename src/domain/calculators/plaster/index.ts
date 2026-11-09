@@ -4,6 +4,8 @@
 // Spec: docs/excel-spec/03-roof-brick-plaster-doors.md §5 and §7 (oddities 5, 11).
 import { defineCalculator, type CalcContext } from '../types';
 import { netByPartKey } from '../brick';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
+import { PLASTER_TRACE_LABELS } from './trace.labels';
 
 /** The wall part of the hard-coded structure row (columns/beams); it has no brick source. */
 export const STRUCTURAL_WALL = 'ผนังโครงสร้าง';
@@ -78,9 +80,10 @@ export const plaster = defineCalculator<PlasterInput>({
     // the areas come from the brick sheet, so with no walls every row is 0. Only the typed structure-wall area
     // (columns / beams, read off the plan) starts empty.
     blank: () => ({ rows: sampleRows(0) }),
-    compute: (input, ctx) => {
+    compute: (input, ctx, tr = NO_TRACE) => {
         const exterior = plasterTotal(input, ctx, 'ฉาบภายนอก');
         const interior = plasterTotal(input, ctx, 'ฉาบภายใน');
+        if (tr.enabled) tracePlaster(input, ctx, tr, exterior, interior);
         return {
             exterior,
             interior,
@@ -89,8 +92,36 @@ export const plaster = defineCalculator<PlasterInput>({
             R190: interior,  // E190 = SUMIF(C,"ฉาบภายใน",E)
         };
     },
+    traceLabels: PLASTER_TRACE_LABELS,
     boqLinks: [
         { line: 'R189', field: 'qty', output: 'R189' },
         { line: 'R190', field: 'qty', output: 'R190' },
     ],
 });
+
+/** Dev mode: records the steps of the compute above (observes values already computed; changes nothing). */
+function tracePlaster(input: PlasterInput, ctx: CalcContext, tr: Tracer, exterior: number, interior: number): void {
+    const areas: { kind: string; area: number }[] = [];
+    input.rows.forEach((r, i) => {
+        const part = r.wallPart.trim();
+        const label = part === '' ? `#${i + 1}` : `${part} · ${r.kind.trim()}`;
+        const area = plasterRowArea(r, ctx);
+        tr.row(i, label, () => {
+            const sides = num(r.sides);
+            let perSide = 0;
+            if (part !== '' && part === STRUCTURAL_WALL) {
+                perSide = num(r.manualArea);
+                tr.step('perSideManual', perSide, { manualArea: perSide });
+            } else if (part !== '') {
+                perSide = num(ctx.outputs('brick')?.[netByPartKey(part)]);
+                tr.step('perSideBrick', perSide, { brickNet: perSide }, { params: { part } });
+            }
+            tr.step('area', area, { perSide, sides });
+        });
+        areas.push({ kind: r.kind.trim(), area });
+    });
+    const of = (kind: string) => areas.filter(a => a.kind === kind).map(a => a.area);
+    tr.step('exterior', exterior, { area: of('ฉาบภายนอก') });
+    tr.step('interior', interior, { area: of('ฉาบภายใน') });
+    tr.step('total', exterior + interior, { exterior, interior });
+}

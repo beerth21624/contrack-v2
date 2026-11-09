@@ -4,8 +4,10 @@
 // Spec: docs/excel-spec/05-mep-sanitary-misc.md §7.
 import { defineCalculator } from '../types';
 import {
-    computePickList, pickListSlotRows, pickRow, type Catalogue, type PickListInput,
+    boqRows, computePickList, matchKey, pickListSlotRows, pickRow, pickRowCalc, type Catalogue, type PickListInput,
 } from '../shared/pick-list';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
+import { ELECTRICAL_EQUIPMENT_TRACE_LABELS } from './trace.labels';
 
 export type ElectricalEquipmentInput = PickListInput;
 
@@ -54,7 +56,34 @@ export const electricalEquipment = defineCalculator<ElectricalEquipmentInput>({
             pickRow(SOCKET_WP, 2, 'ตัว'),
         ],
     }),
-    compute: input => computePickList(input.items, EQUIPMENT_CATALOGUE),
+    compute: (input, _ctx, tr = NO_TRACE) => {
+        const out = computePickList(input.items, EQUIPMENT_CATALOGUE);
+        if (tr.enabled) tracePickList(input, tr, out);
+        return out;
+    },
+    traceLabels: ELECTRICAL_EQUIPMENT_TRACE_LABELS,
     boqLinks: [],
     boqSlots: input => ({ items: pickListSlotRows(input.items, EQUIPMENT_CATALOGUE) }),
 });
+
+/** Dev mode: records the steps of the compute above (observes values already computed; changes nothing). */
+function tracePickList(input: PickListInput, tr: Tracer, out: Record<string, number>): void {
+    const mats: number[] = [], labs: number[] = [], totals: number[] = [];
+    for (const { row, index } of boqRows(input.items)) {
+        const c = pickRowCalc(row, EQUIPMENT_CATALOGUE);
+        const qty = Number.isFinite(row.qty) ? row.qty : 0;
+        tr.row(index, matchKey(row.item), () => {
+            // A price that is not typed on the row comes from the hard-coded price list.
+            if (row.mat === null && c.known) tr.constant('catalogueMat', c.mat, { params: { item: matchKey(row.item) } });
+            if (row.lab === null && c.known) tr.constant('catalogueLab', c.lab, { params: { item: matchKey(row.item) } });
+            tr.step('matTotal', c.matTotal, { unitMat: c.mat, qty });
+            tr.step('labTotal', c.labTotal, { unitLab: c.lab, qty });
+            tr.step('rowTotal', c.total, { unitMat: c.mat, unitLab: c.lab, qty });
+        });
+        mats.push(c.matTotal); labs.push(c.labTotal); totals.push(c.total);
+    }
+    tr.step('rows', out.rows ?? 0, {});
+    tr.step('totalMat', out.mat ?? 0, { matTotal: mats });
+    tr.step('totalLab', out.lab ?? 0, { labTotal: labs });
+    tr.step('total', out.total ?? 0, { rowTotal: totals });
+}

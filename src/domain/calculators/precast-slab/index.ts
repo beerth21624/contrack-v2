@@ -4,6 +4,8 @@
 //   section 8:  slot `precast-slab.shear-key` (row 75 เหล็กล๊อคหัวแผ่นพื้นสำเร็จรูป, sheet 24 I10:M10) — no tie wire.
 // Spec: docs/excel-spec/02-structure-steps-06-13.md §2.5 and §3 (rows 74–75, 96–104).
 import { defineCalculator } from '../types';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
+import { PRECAST_SLAB_TRACE_LABELS } from './trace.labels';
 import { roundUp } from '../../boq/engine';
 import { REBAR_SIZES, rebarSlotRows, type RebarSize, kgPerMetre, isRebarSize } from '../../boq/slots';
 
@@ -40,13 +42,14 @@ export interface PrecastPanelResult {
     concrete: number;              // S = E*R (topping)
 }
 
-export function precastPanel(r: PrecastPanelRow): PrecastPanelResult {
+/** One panel. `tr` (dev mode) records every intermediate value; call inside `tr.row(i, label, …)`. */
+export function precastPanel(r: PrecastPanelRow, tr: Tracer = NO_TRACE): PrecastPanelResult {
     const B = num(r.width), C = num(r.length), I = num(r.keySpacing), J = num(r.keyBarLength), R = num(r.topping);
     const area = B * C;
     const keyCount = I !== 0 ? roundUp((2 * B) / I) : null;
     const keyTotalLength = keyCount === null ? null : keyCount * J;
     const perimeter = 2 * (B + C);
-    return {
+    const res: PrecastPanelResult = {
         area,
         wiremesh: area,
         keyCount,
@@ -56,7 +59,22 @@ export function precastPanel(r: PrecastPanelRow): PrecastPanelResult {
         formwork: perimeter * R,
         concrete: area * R,
     };
+    if (tr.enabled) {
+        const kg = kgPerMetre(r.keySize);
+        tr.constant('kgPerM', kg, { params: { size: r.keySize || '-' } });
+        tr.step('area', res.area, { width: B, length: C });
+        tr.step('wiremesh', res.wiremesh, { area: res.area });
+        if (keyCount !== null) tr.step('keyCount', keyCount, { width: B, keySpacing: I });
+        if (keyTotalLength !== null && keyCount !== null) tr.step('keyTotalLength', keyTotalLength, { keyCount, keyBarLength: J });
+        tr.step('keyWeight', res.keyWeight, { keyTotalLength: keyTotalLength ?? 0, kgPerM: kg }, { params: { size: r.keySize || '-' } });
+        tr.step('perimeter', res.perimeter, { width: B, length: C });
+        tr.step('formwork', res.formwork, { perimeter: res.perimeter, topping: R });
+        tr.step('concrete', res.concrete, { area: res.area, topping: R });
+    }
+    return res;
 }
+
+export const precastPanelLabel = (_r: PrecastPanelRow, i: number): string => `#${i + 1}`;
 
 export interface PrecastSlabTotals {
     area: number;                        // E6 = SUM(E8:E24)
@@ -66,17 +84,30 @@ export interface PrecastSlabTotals {
     concrete: number;                    // R6 = SUM(S8:S24)
 }
 
-export function precastSlabTotals(input: PrecastSlabInput): PrecastSlabTotals {
+export function precastSlabTotals(input: PrecastSlabInput, tr: Tracer = NO_TRACE): PrecastSlabTotals {
     const shearKey = Object.fromEntries(REBAR_SIZES.map(s => [s, 0])) as Record<RebarSize, number>;
     const t: PrecastSlabTotals = { area: 0, wiremesh: 0, shearKey, formwork: 0, concrete: 0 };
     // Excel's totals already cover the whole table (rows 8–24) — no short range to fix here.
-    for (const r of input.panels) {
-        const x = precastPanel(r);
+    const per: PrecastPanelResult[] = [];
+    input.panels.forEach((r, i) => {
+        const x = tr.enabled ? tr.row(i, precastPanelLabel(r, i), () => precastPanel(r, tr)) : precastPanel(r);
+        per.push(x);
         t.area += x.area;
         t.wiremesh += x.wiremesh;
         t.formwork += x.formwork;
         t.concrete += x.concrete;
         if (isRebarSize(r.keySize)) t.shearKey[r.keySize] += x.keyWeight;
+    });
+    if (tr.enabled) {
+        tr.step('totalArea', t.area, { area: per.map(x => x.area) });
+        tr.step('totalWiremesh', t.wiremesh, { wiremesh: per.map(x => x.wiremesh) });
+        tr.step('totalFormwork', t.formwork, { formwork: per.map(x => x.formwork) });
+        tr.step('totalConcrete', t.concrete, { concrete: per.map(x => x.concrete) });
+        // Shear-key weight per bar size: only sizes some panel uses.
+        for (const s of REBAR_SIZES) {
+            const kgs = input.panels.flatMap((r, i) => (r.keySize === s ? [per[i]?.keyWeight ?? 0] : []));
+            if (kgs.length > 0) tr.step('totalKeyWeight', t.shearKey[s], { keyWeight: kgs }, { params: { size: s } });
+        }
     }
     return t;
 }
@@ -108,8 +139,8 @@ export const precastSlab = defineCalculator<PrecastSlabInput>({
     }),
     // A real project starts with no spans; each added span gets the Excel shear key / topping (newPrecastPanel).
     blank: () => ({ panels: [] }),
-    compute: (input) => {
-        const t = precastSlabTotals(input);
+    compute: (input, _ctx, tr = NO_TRACE) => {
+        const t = precastSlabTotals(input, tr);
         const out: Record<string, number> = {
             area: t.area,
             wiremesh: t.wiremesh,
@@ -120,6 +151,7 @@ export const precastSlab = defineCalculator<PrecastSlabInput>({
         for (const s of REBAR_SIZES) out[`rebar.${s}`] = t.shearKey[s];
         return out;
     },
+    traceLabels: PRECAST_SLAB_TRACE_LABELS,
     boqLinks: [
         { line: 'R97', field: 'qty', output: 'area' },       // E97 = PS!E6
         { line: 'R99', field: 'qty', output: 'wiremesh' },   // E99 = sheet24 H10 = PS!G6
