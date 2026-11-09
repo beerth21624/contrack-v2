@@ -3,7 +3,9 @@
 // The sheet was not supplied (decision D8): reconstructed from review deck p19.
 // Spec: docs/excel-spec/01-boq-home-and-steps-00-05.md, Section 4.
 import { roundUp } from '../../boq/engine';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
 import { defineCalculator } from '../types';
+import { LAYOUT_TRACE_LABELS } from './trace.labels';
 
 /** One row of the material table. */
 export interface LayoutMaterialLine {
@@ -44,10 +46,16 @@ export interface LayoutLineResult {
     total: number;        // รวมราคา = จำนวนสั่งซื้อ × ราคาต่อหน่วย
 }
 
-export function layoutLine(line: LayoutMaterialLine, input: LayoutInput): LayoutLineResult {
+export function layoutLine(line: LayoutMaterialLine, input: LayoutInput, tr: Tracer = NO_TRACE): LayoutLineResult {
     const fixed = line.fixedFromStakes ? num(input.stakes) : num(line.fixed);
     const beforeWaste = num(line.perPoint) * num(input.points) + fixed;
     const orderQty = roundUp(beforeWaste * (1 + num(input.waste)));
+    if (tr.enabled) {
+        if (line.fixedFromStakes) tr.step('fixedStakes', fixed, { stakes: num(input.stakes) });
+        tr.step('beforeWaste', beforeWaste, { perPoint: num(line.perPoint), points: num(input.points), fixed });
+        tr.step('orderQty', orderQty, { beforeWaste, waste: num(input.waste) });
+        tr.step('lineTotal', orderQty * num(line.unitPrice), { orderQty, unitPrice: num(line.unitPrice) });
+    }
     return { fixed, beforeWaste, orderQty, total: orderQty * num(line.unitPrice) };
 }
 
@@ -87,8 +95,10 @@ export const layout = defineCalculator<LayoutInput>({
         labour: 0,
         materials: sampleMaterials(),
     }),
-    compute: (input) => {
-        const lines = input.materials.map(l => layoutLine(l, input));
+    compute: (input, _ctx, tr = NO_TRACE) => {
+        const lines = input.materials.map((l, i) => (tr.enabled
+            ? tr.row(i, l.item.trim() || `#${i + 1}`, () => layoutLine(l, input, tr))
+            : layoutLine(l, input)));
         const materialTotal = lines.reduce((s, l) => s + l.total, 0);   // รวมค่าวัสดุ
         const labour = num(input.labour);                              // ค่าแรง
         const out: Record<string, number> = {
@@ -99,10 +109,18 @@ export const layout = defineCalculator<LayoutInput>({
             total: materialTotal + labour,                             // รวม Step 04
         };
         for (const p of LAYOUT_LIVE_PREVIEW) out[p.output] = lines[p.row]?.orderQty ?? 0;
+        if (tr.enabled) {
+            tr.step('materialTotal', materialTotal, { lineTotal: lines.map(l => l.total) });
+            tr.step('total', materialTotal + labour, { materialTotal, labour });
+            for (const p of LAYOUT_LIVE_PREVIEW) {
+                tr.step(p.output, out[p.output] ?? 0, { orderQty: lines[p.row]?.orderQty ?? 0 });
+            }
+        }
         return out;
     },
     // Not linked yet: the deck's sheet has all prices 0 while Excel BOQ I32 / K32 are typed 4,000 / 1,500,
     // so linking would zero the section. Once the real sheet is supplied (D8):
     //   [{ line: 'R32', field: 'mat', output: 'materialTotal' }, { line: 'R32', field: 'lab', output: 'labour' }]
     boqLinks: [],
+    traceLabels: LAYOUT_TRACE_LABELS,
 });

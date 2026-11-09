@@ -2,7 +2,9 @@
 // Spec: docs/excel-spec/01-boq-home-and-steps-00-05.md, Section 2.
 // Decision D9: v5 layout only (no MEA tables, no labour % / profit rows of the deck-p10 variant).
 import { ceilingTo } from '../../boq/engine';
+import { NO_TRACE } from '../../trace/tracer';
 import { defineCalculator } from '../types';
+import { TEMP_UTILITIES_TRACE_LABELS } from './trace.labels';
 
 /** Unit prices of the item table (column F, yellow). F20 and F24 are yellow in Excel but unused. */
 export interface TempUtilitiesPrices {
@@ -72,7 +74,7 @@ export const tempUtilities = defineCalculator<TempUtilitiesInput>({
         electricalAccPct: 0.15,
         prices: { pvcPipe: 60, faucet: 120, powerBox: 1200, cable: 2500, lightPlug: 200 },
     }),
-    compute: (input) => {
+    compute: (input, _ctx, tr = NO_TRACE) => {
         const waste = num(input.waste);
         const p = input.prices;
         // Quantities (column C)
@@ -92,6 +94,26 @@ export const tempUtilities = defineCalculator<TempUtilitiesInput>({
         // Summary
         const waterMaterial = pipeTotal + faucetTotal + waterFittings;                       // C27 SUM(G18:G20)
         const powerMaterial = powerBoxTotal + cableTotal + lightPlugTotal + electricalAcc;   // C28 SUM(G21:G24)
+        if (tr.enabled) {
+            tr.constant('pvcStick', PVC_STICK_M);
+            tr.constant('cableRoll', CABLE_ROLL_M);
+            tr.constant('powerBoxSets', powerBoxQty);
+            tr.step('pipeQty', pipeQty, { waterDistance: num(input.waterDistance), pvcStick: PVC_STICK_M, waste });
+            tr.step('faucetQty', faucetQty, { waterPoints: num(input.waterPoints) });
+            tr.step('powerBoxQty', powerBoxQty, { powerBoxSets: powerBoxQty });
+            tr.step('cableQty', cableQty, { powerDistance: num(input.powerDistance), cableRoll: CABLE_ROLL_M, waste });
+            tr.step('lightPlugQty', lightPlugQty, { powerPoints: num(input.powerPoints) });
+            tr.step('pipeTotal', pipeTotal, { pvcPipe: num(p.pvcPipe), pipeQty });
+            tr.step('faucetTotal', faucetTotal, { faucet: num(p.faucet), faucetQty });
+            tr.step('waterFittings', waterFittings, { pipeTotal, faucetTotal, waterFittingsPct: num(input.waterFittingsPct) });
+            tr.step('powerBoxTotal', powerBoxTotal, { powerBox: num(p.powerBox), powerBoxQty });
+            tr.step('cableTotal', cableTotal, { cable: num(p.cable), cableQty });
+            tr.step('lightPlugTotal', lightPlugTotal, { lightPlug: num(p.lightPlug), lightPlugQty });
+            tr.step('electricalAcc', electricalAcc, { cableTotal, lightPlugTotal, electricalAccPct: num(input.electricalAccPct) });
+            tr.step('waterMaterial', waterMaterial, { pipeTotal, faucetTotal, waterFittings });
+            tr.step('powerMaterial', powerMaterial, { powerBoxTotal, cableTotal, lightPlugTotal, electricalAcc });
+            tr.step('total', waterMaterial + powerMaterial, { waterMaterial, powerMaterial });
+        }
         return {
             pipeQty, faucetQty, powerBoxQty, cableQty, lightPlugQty,
             pipeTotal, faucetTotal, waterFittings, powerBoxTotal, cableTotal, lightPlugTotal, electricalAcc,
@@ -102,4 +124,5 @@ export const tempUtilities = defineCalculator<TempUtilitiesInput>({
     // Excel retypes C30 (6,469) as 6,500 in BOQ I16; decision D3 links it. K16 labour (1,500) has no
     // source in v5 and stays the BOQ's typed value.
     boqLinks: [{ line: 'R16', field: 'mat', output: 'total' }],
+    traceLabels: TEMP_UTILITIES_TRACE_LABELS,
 });

@@ -4,7 +4,9 @@
 // the Roofing sheet K7, like Excel's E14/E15 = 'มุงหลังคา_Roofing'!K7.
 import { roundUp } from '../../boq/engine';
 import { roofing, slopeArea } from '../roofing';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
 import { defineCalculator, type CalcContext } from '../types';
+import { ROOF_STRUCTURE_TRACE_LABELS } from './trace.labels';
 
 /** C ซีคู่ — Excel dropdown "1,2" (1 = single C, 2 = double C "2-C"). */
 export const DOUBLE_C_OPTIONS = [1, 2] as const;
@@ -92,6 +94,64 @@ export function areaTotal(m: AreaMember, linked: number): number {
 
 const lengthTotal = (m: LengthMember) => (num(m.count) * segmentSum(m.lengths)) * num(m.c);
 
+// ─── dev-mode trace (observes the values compute() already produced; nothing here feeds back into a result) ───
+type LengthKey = 'wallPlate' | 'ridge';
+type AreaKey = 'rafter' | 'purlin';
+
+function traceLengthMember(tr: Tracer, k: LengthKey, m: LengthMember, length: number, total: number): void {
+    tr.step(`${k}.length`, length, { [`${k}Segments`]: m.lengths.map(num) });
+    tr.step(`${k}.total`, total, { [`${k}Count`]: num(m.count), [`${k}Length`]: length, [`${k}C`]: num(m.c) });
+}
+
+function traceAreaMember(tr: Tracer, k: AreaKey, m: AreaMember, linked: number, area: number, total: number): void {
+    if (m.area === null) tr.step(`${k}.area`, area, { linkedSlopeArea: linked });
+    else tr.step(`${k}.areaTyped`, area, { [`${k}AreaInput`]: num(m.area) });
+    if (num(m.spacing) === 0) tr.step(`${k}.totalNoSpacing`, total, { [`${k}Spacing`]: num(m.spacing) });
+    else {
+        tr.step(`${k}.total`, total, {
+            [`${k}Area`]: num(area), [`${k}Spacing`]: num(m.spacing), [`${k}Factor`]: num(m.factor), [`${k}C`]: num(m.c),
+        });
+    }
+}
+
+function traceRoofStructure(input: RoofStructureInput, ctx: CalcContext, linked: number, out: Record<string, number>, tr: Tracer): void {
+    tr.constant('stickLength', STICK_LENGTH);
+    // The roofing step's slope area, or (when that step is not in the project) the hard-coded sample.
+    const fromRoofing = ctx.outputs('roofing')?.slopeArea;
+    if (fromRoofing !== undefined) tr.step('linkedSlopeArea', linked, { slopeArea: fromRoofing });
+    else {
+        tr.constant('slopeAreaDefault', linked);
+        tr.step('linkedSlopeAreaDefault', linked, { slopeAreaDefault: linked });
+    }
+    const sticksStep = (key: string, total: number, name: string) =>
+        tr.step(key, out[key] ?? 0, { [name]: total, stickLength: STICK_LENGTH });
+
+    traceLengthMember(tr, 'wallPlate', input.wallPlate, out['wallPlate.length'] ?? 0, out['wallPlate.total'] ?? 0);
+    sticksStep('R152', out['wallPlate.total'] ?? 0, 'wallPlateTotal');
+
+    const parts = input.kingPosts.parts.map((p, i) => tr.row(i, p.desc.trim() || `#${i + 1}`, () => {
+        const t = partTotal(p);
+        tr.step('partTotal', t, { partCount: num(p.count), partLength: num(p.length), partC: num(p.c) });
+        return t;
+    }));
+    tr.step('kingPosts.total', out['kingPosts.total'] ?? 0, { partTotal: parts });
+    sticksStep('R153', out['kingPosts.total'] ?? 0, 'kingPostsTotal');
+
+    traceLengthMember(tr, 'ridge', input.ridge, out['ridge.length'] ?? 0, out['ridge.total'] ?? 0);
+    sticksStep('R154', out['ridge.total'] ?? 0, 'ridgeTotal');
+
+    const v = input.valley;
+    tr.step('valley.length', out['valley.length'] ?? 0, { runA: num(v.runA), runB: num(v.runB), deg: num(v.deg) });
+    tr.step('valley.total', out['valley.total'] ?? 0, { valleyCount: num(v.count), valleyLength: out['valley.length'] ?? 0, valleyC: num(v.c) });
+    sticksStep('R155', out['valley.total'] ?? 0, 'valleyTotal');
+
+    traceAreaMember(tr, 'rafter', input.rafter, linked, out['rafter.area'] ?? 0, out['rafter.total'] ?? 0);
+    sticksStep('R156', out['rafter.total'] ?? 0, 'rafterTotal');
+    traceAreaMember(tr, 'purlin', input.purlin, linked, out['purlin.area'] ?? 0, out['purlin.total'] ?? 0);
+    sticksStep('R157', out['purlin.total'] ?? 0, 'purlinTotal');
+    tr.step('R159', out.R159 ?? 0, { purlinArea: out['purlin.area'] ?? 0 });
+}
+
 export const roofStructure = defineCalculator<RoofStructureInput>({
     id: 'roof-structure',
     sheetName: 'โครงสร้างหลังคา Roof Structure',
@@ -131,7 +191,7 @@ export const roofStructure = defineCalculator<RoofStructureInput>({
         rafter: { desc: 'จันทัน C 100x50x20x2.3 มม.', c: 1, factor: 1.15, area: null, spacing: 1 },
         purlin: { desc: 'แปสำเร็จรูป GZ หนา 0.7 มม.', c: 1, factor: 1.15, area: null, spacing: 0.34 },
     }),
-    compute: (input, ctx) => {
+    compute: (input, ctx, tr = NO_TRACE) => {
         const linked = linkedSlopeArea(ctx);
         // I = ความยาวรวม (ม.), J = จำนวน (ท่อน) = ROUNDUP(I/6, 0)
         const wallPlate = lengthTotal(input.wallPlate);                                   // I5
@@ -165,8 +225,10 @@ export const roofStructure = defineCalculator<RoofStructureInput>({
             R159: purlinArea,
         };
         input.kingPosts.parts.forEach((p, i) => { out[`kingPosts.part.${i}`] = partTotal(p); }); // I7…I11
+        if (tr.enabled) traceRoofStructure(input, ctx, linked, out, tr);
         return out;
     },
+    traceLabels: ROOF_STRUCTURE_TRACE_LABELS,
     boqLinks: (['R152', 'R153', 'R154', 'R155', 'R156', 'R157', 'R159'] as const)
         .map(line => ({ line, field: 'qty' as const, output: line })),
     // D152…D157 = B5, B6, B12, B13, B14, B15.

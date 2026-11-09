@@ -1,0 +1,91 @@
+// ─── Dev-mode trace labels of the layout / setting-out step (docs/dev-mode/README.md §5) ───
+// Names follow the layout page. Never mention the spreadsheet here (no sheet names, column letters or row numbers).
+import type { CalcTraceLabels } from '../../trace/types';
+
+export const LAYOUT_TRACE_LABELS: CalcTraceLabels = {
+    th: {
+        terms: {
+            // inputs
+            points: 'จำนวนผัง (จุด)',
+            stakes: 'จำนวนไม้ปักหมุด (ต้น)',
+            waste: 'เผื่อวัสดุ (%)',
+            labour: 'ค่าแรงวางผัง / ปักหมุด',
+            'materials.item': 'รายการวัสดุ',
+            'materials.unit': 'หน่วย',
+            'materials.perPoint': 'ฐานต่อ 1 ผัง',
+            'materials.fixed': 'ฐานคงที่',
+            'materials.fixedFromStakes': 'ฐานคงที่ = จำนวนไม้ปักหมุด',
+            'materials.unitPrice': 'ราคาต่อหน่วย',
+            // operands of the per-row steps
+            perPoint: 'ฐานต่อ 1 ผัง',
+            fixed: 'ฐานคงที่',
+            unitPrice: 'ราคาต่อหน่วย',
+            beforeWaste: 'จำนวนก่อนเผื่อ',
+            orderQty: 'จำนวนสั่งซื้อ',
+            lineTotal: 'รวมราคา',
+            // outputs
+            materialTotal: 'รวมค่าวัสดุ',
+            total: 'รวมงานวางผัง / ปักหมุด',
+            orderBoards: 'ไม้หน้าสาม · จำนวนสั่งซื้อ',
+            orderEucalyptus: 'ไม้ยูคา · จำนวนสั่งซื้อ',
+            orderStakes: 'ไม้ปักหมุด · จำนวนสั่งซื้อ',
+        },
+        units: {
+            points: 'จุด', stakes: 'ต้น', waste: '%', labour: 'บาท', 'materials.unitPrice': 'บาท',
+            unitPrice: 'บาท', lineTotal: 'บาท', materialTotal: 'บาท', total: 'บาท',
+            orderBoards: 'ท่อน', orderEucalyptus: 'ท่อน', orderStakes: 'ต้น',
+        },
+        steps: {
+            fixedStakes: { label: 'ฐานคงที่ (เท่ากับจำนวนไม้ปักหมุด)', formula: '{stakes}', unit: '' },
+            beforeWaste: { label: 'จำนวนก่อนเผื่อ', formula: '{perPoint} × {points} + {fixed}', unit: '' },
+            orderQty: { label: 'จำนวนสั่งซื้อ', formula: 'ปัดขึ้น({beforeWaste} × (1 + {waste}))', unit: '' },
+            lineTotal: { label: 'รวมราคา', formula: '{orderQty} × {unitPrice}', unit: 'บาท' },
+            materialTotal: { label: 'รวมค่าวัสดุ', formula: 'Σ {lineTotal}', unit: 'บาท' },
+            total: { label: 'รวมงานวางผัง / ปักหมุด', formula: '{materialTotal} + {labour}', unit: 'บาท' },
+            orderBoards: { label: 'ไม้หน้าสาม · จำนวนสั่งซื้อ', formula: '{orderQty} (แถวไม้หน้าสาม)', unit: 'ท่อน' },
+            orderEucalyptus: { label: 'ไม้ยูคา · จำนวนสั่งซื้อ', formula: '{orderQty} (แถวไม้ยูคา)', unit: 'ท่อน' },
+            orderStakes: { label: 'ไม้ปักหมุด · จำนวนสั่งซื้อ', formula: '{orderQty} (แถวไม้ปักหมุด)', unit: 'ต้น' },
+        },
+    },
+    en: {
+        terms: {
+            points: 'Number of layouts (points)',
+            stakes: 'Number of stakes (pcs)',
+            waste: 'Material allowance (%)',
+            labour: 'Layout / staking labour',
+            'materials.item': 'Material item',
+            'materials.unit': 'Unit',
+            'materials.perPoint': 'Base per layout',
+            'materials.fixed': 'Fixed base',
+            'materials.fixedFromStakes': 'Fixed base = number of stakes',
+            'materials.unitPrice': 'Price per unit',
+            perPoint: 'Base per layout',
+            fixed: 'Fixed base',
+            unitPrice: 'Price per unit',
+            beforeWaste: 'Quantity before allowance',
+            orderQty: 'Order quantity',
+            lineTotal: 'Total price',
+            materialTotal: 'Total material cost',
+            total: 'Total layout / staking work',
+            orderBoards: 'Timber boards · order quantity',
+            orderEucalyptus: 'Eucalyptus poles · order quantity',
+            orderStakes: 'Stakes · order quantity',
+        },
+        units: {
+            points: 'points', stakes: 'pcs', waste: '%', labour: 'THB', 'materials.unitPrice': 'THB',
+            unitPrice: 'THB', lineTotal: 'THB', materialTotal: 'THB', total: 'THB',
+            orderBoards: 'pcs', orderEucalyptus: 'pcs', orderStakes: 'pcs',
+        },
+        steps: {
+            fixedStakes: { label: 'Fixed base (= number of stakes)', formula: '{stakes}', unit: '' },
+            beforeWaste: { label: 'Quantity before allowance', formula: '{perPoint} × {points} + {fixed}', unit: '' },
+            orderQty: { label: 'Order quantity', formula: 'round up({beforeWaste} × (1 + {waste}))', unit: '' },
+            lineTotal: { label: 'Total price', formula: '{orderQty} × {unitPrice}', unit: 'THB' },
+            materialTotal: { label: 'Total material cost', formula: 'Σ {lineTotal}', unit: 'THB' },
+            total: { label: 'Total layout / staking work', formula: '{materialTotal} + {labour}', unit: 'THB' },
+            orderBoards: { label: 'Timber boards · order quantity', formula: '{orderQty} (timber boards row)', unit: 'pcs' },
+            orderEucalyptus: { label: 'Eucalyptus poles · order quantity', formula: '{orderQty} (eucalyptus poles row)', unit: 'pcs' },
+            orderStakes: { label: 'Stakes · order quantity', formula: '{orderQty} (stakes row)', unit: 'pcs' },
+        },
+    },
+};

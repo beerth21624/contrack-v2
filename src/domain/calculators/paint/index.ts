@@ -3,7 +3,9 @@
 // The same 8 areas are priced three times (prices stay in the BOQ template, per section — oddity O-10);
 // the skim-coat line C13 only goes to section 23.
 // Spec: docs/excel-spec/04-ceiling-tiles-finishes-paint.md §5 (oddities O-3, O-4, O-5, O-10, O-15).
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
 import { defineCalculator, type CalcContext } from '../types';
+import { PAINT_TRACE_LABELS } from './trace.labels';
 
 /** One moulding (บัว) run: paint girth (face + 2 × thickness, ม.) × length (ม.). */
 export interface MouldingRun {
@@ -138,6 +140,39 @@ export function paintAreas(input: PaintInput, ctx: CalcContext): Record<PaintLin
     };
 }
 
+/** Records the 9 area lines (and the 27 BOQ quantities that copy them). Observes only; `areas` is paintAreas' result. */
+function tracePaint(input: PaintInput, ctx: CalcContext, areas: Record<PaintLineKey, number>, tr: Tracer): void {
+    // The five lines taken from other steps: the step's value, or the hard-coded fallback when it is not in the project.
+    const linked: [PaintLineKey, number | undefined, number][] = [
+        ['wallExterior', read(ctx, 'plaster', 'exterior'), PAINT_EXCEL_FALLBACK.wallExterior],
+        ['wallInterior', read(ctx, 'plaster', 'interior'), PAINT_EXCEL_FALLBACK.wallInterior],
+        ['ceilingExterior', read(ctx, 'ceiling', 'paint.ภายนอก'), PAINT_EXCEL_FALLBACK.ceilingExterior],
+        ['ceilingInterior', read(ctx, 'ceiling', 'paint.ภายใน'), PAINT_EXCEL_FALLBACK.ceilingInterior],
+        ['ceilingSlat', read(ctx, 'ceiling', 'paint.ไม้ระแนง'), PAINT_EXCEL_FALLBACK.ceilingSlat],
+    ];
+    for (const [key, fromStep, fallback] of linked) {
+        if (fromStep !== undefined) {
+            tr.step(key, areas[key], { [`${key}From`]: fromStep });
+        } else {
+            tr.constant(`${key}Fallback`, fallback);
+            tr.step(`${key}Default`, areas[key], { [`${key}Fallback`]: fallback });
+        }
+    }
+    tr.step('wallSlat', areas.wallSlat, { slatWallArea: num(input.slatWallArea) });
+    const parts = input.mouldings.map((m, i) => tr.row(i, m.size.trim() || `#${i + 1}`, () => {
+        const a = mouldingArea(m);
+        tr.step('mouldingArea', a, { girth: num(m.girth), length: num(m.length) });
+        return a;
+    }));
+    tr.step('moulding', areas.moulding, { mouldingArea: parts });
+    tr.step('fascia', areas.fascia, { fasciaLength: num(input.fasciaLength), fasciaHeight: num(input.fasciaHeight) });
+    tr.step('skim', areas.skim, { wallInterior: areas.wallInterior, wallExterior: areas.wallExterior });
+    // BOQ quantities: each paint line fills the same area in every section that prices it.
+    for (const line of PAINT_LINES) {
+        for (const row of line.boq) tr.step(row, areas[line.key], { [line.key]: areas[line.key] });
+    }
+}
+
 export const paint = defineCalculator<PaintInput>({
     id: 'paint',
     sheetName: 'ทาสี_Paint ',
@@ -166,8 +201,9 @@ export const paint = defineCalculator<PaintInput>({
         fasciaLength: 0,
         fasciaHeight: 0.23,
     }),
-    compute: (input, ctx) => {
+    compute: (input, ctx, tr = NO_TRACE) => {
         const areas = paintAreas(input, ctx);
+        if (tr.enabled) tracePaint(input, ctx, areas, tr);
         const out: Record<string, number> = { ...areas };
         for (const line of PAINT_LINES) {
             for (const row of line.boq) out[row] = areas[line.key];
@@ -175,4 +211,5 @@ export const paint = defineCalculator<PaintInput>({
         return out;
     },
     boqLinks: PAINT_LINES.flatMap(l => l.boq.map(row => ({ line: row, field: 'qty' as const, output: row }))),
+    traceLabels: PAINT_TRACE_LABELS,
 });
