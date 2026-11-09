@@ -253,7 +253,7 @@ export const pedestal = defineCalculator<PedestalInput>({
                     tr.step('footingBackfill', out[footingBackfillKey(i)] ?? 0,
                         { footingBackfillGross: fo[footingRowKey(i, 'backfillGross')] ?? 0, pedestalConcrete: on }, { params: { n: i + 1 } });
                 });
-                tr.step('backfill', out.backfill ?? 0, { footingBackfillGross: fo.backfillGross ?? 0, concrete: t.concrete });
+                tr.step('backfill', out.backfill, { footingBackfillGross: fo.backfillGross ?? 0, concrete: t.concrete });
             }
         }
         return out;
