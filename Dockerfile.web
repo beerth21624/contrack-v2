@@ -18,9 +18,13 @@ COPY . .
 RUN npx next build
 
 FROM node:24-alpine
+# Dev mode (calculation trace, docs/dev-mode/README.md) baked in as the default; env at run time still overrides it.
+# Release builds leave it empty (off); ERP demo / test builds pass --build-arg DEV_MODE=true.
+ARG DEV_MODE=
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
+    DEV_MODE=${DEV_MODE} \
     PORT=3000 \
     HOSTNAME=0.0.0.0 \
     API_URL=http://api:4000 \
