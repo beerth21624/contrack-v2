@@ -1,0 +1,178 @@
+{
+  "toggle": {
+    "label": "Calculation check mode",
+    "hint": "Show where every number comes from: values entered, hard-coded values, formulas and the BOQ lines they fill",
+    "on": "Turn calculation check mode on",
+    "off": "Turn calculation check mode off"
+  },
+  "source": {
+    "user": "User-entered",
+    "default": "Hard-coded default (unchanged)",
+    "constant": "Hard-coded constant in the formula",
+    "dependency": "From another step",
+    "templatePrice": "Hard-coded unit price in the BOQ template",
+    "hint": {
+      "user": "A value the user typed or changed",
+      "default": "A hard-coded starting value: editable, but the user has not changed it",
+      "constant": "A constant hard-coded in the formula; it cannot be changed on screen",
+      "dependency": "An output of another step; click to open that step",
+      "templatePrice": "A unit price hard-coded in the BOQ template"
+    },
+    "legend": "Source symbols"
+  },
+  "trace": {
+    "title": "Where the numbers come from (calculation check mode)",
+    "inputs": "① Values used",
+    "steps": "② Calculation steps",
+    "outputs": "③ Where the results go",
+    "checks": "⚠ Things to check",
+    "col": {
+      "name": "Item",
+      "value": "Value",
+      "unit": "Unit",
+      "source": "Source",
+      "row": "Row",
+      "step": "Step",
+      "formulaWords": "Formula",
+      "formulaNumbers": "With numbers",
+      "result": "Result",
+      "output": "Output",
+      "destination": "Goes to",
+      "defaultValue": "Hard-coded value"
+    },
+    "rowLabel": "Row {row}",
+    "totals": "All rows",
+    "notInstrumented": "This step does not show its formulas yet; only the values used and the results are shown",
+    "noSteps": "No calculation steps",
+    "noInputs": "No values used",
+    "noOutputs": "No results",
+    "noChecks": "Nothing to check",
+    "toBoqLine": "BOQ {item} {desc} · {field}",
+    "toStep": "Used in step {step}",
+    "notUsed": "Not sent to the BOQ or another step directly",
+    "slotRows": "BOQ lines this step creates",
+    "openBoqLine": "Show on the BOQ",
+    "openStep": "Open step",
+    "overridden": "Replaced by a value edited on the BOQ page",
+    "notApplied": "Not sent to the BOQ",
+    "dependents": "Steps using these results",
+    "field": {
+      "qty": "Quantity",
+      "mat": "Material unit price",
+      "lab": "Labour unit price"
+    }
+  },
+  "warning": {
+    "defaultsInUse": "{count} hard-coded defaults still in use (not changed by the user)",
+    "dependencyMissing": "Step {step} is not filled in yet; values read from it count as 0",
+    "invalidInput": "{count} values are not valid numbers and count as 0",
+    "invalidOutput": "{count} results are not valid numbers, so the BOQ lines keep their template values",
+    "boqOverride": "A value edited on the BOQ page replaces this result at {item} {desc} ({field})",
+    "skipped": "This step is marked \"not in this project\": all its results are 0"
+  },
+  "explain": {
+    "title": "Explain this cell",
+    "close": "Close",
+    "goToStep": "Open step {step}",
+    "goToLine": "Go to line {item}",
+    "cell": {
+      "qty": "Net quantity",
+      "waste": "Waste allowance",
+      "gross": "Gross quantity",
+      "matUnit": "Material unit price",
+      "matTotal": "Material total",
+      "labUnit": "Labour unit price",
+      "labTotal": "Labour total",
+      "total": "Total"
+    },
+    "total": "Total = material total + labour total",
+    "priceTotal": "{name} = unit price × {basis}",
+    "basis": {
+      "net": "net quantity",
+      "gross": "gross quantity"
+    },
+    "gross": {
+      "none": "This line has no gross quantity; the net quantity is used",
+      "std": "Gross quantity = net quantity × (1 + waste allowance)",
+      "ceilInt": "Gross quantity = net quantity × (1 + waste allowance), rounded up to a whole number",
+      "concrete": "Gross quantity = net quantity × (1 + waste allowance), rounded up to 0.25 cu.m, at least 1 cu.m (no quantity = 0)",
+      "tieWire": "Gross quantity = sum of the gross quantities of lines {lines} × {ratio}"
+    },
+    "net": {
+      "override": "Edited on the BOQ page",
+      "calc": "Result {output} of step {step}",
+      "calcUnknown": "Result of a calculation step",
+      "skipped": "0 because it is marked \"not in this project\"",
+      "slot": "A line created by step {step}",
+      "template": "Hard-coded value in the BOQ template",
+      "line": "= quantity of line {line} × {factor}",
+      "sumLines": "= sum of the quantities of lines {lines}",
+      "none": "This line has no net quantity"
+    },
+    "price": {
+      "override": "Edited on the BOQ page",
+      "calc": "Result {output} of step {step}",
+      "calcUnknown": "Result of a calculation step",
+      "slot": "Price set for this line by step {step}",
+      "template": "Hard-coded unit price in the BOQ template",
+      "linePrice": "= price of line {line} × {factor}",
+      "consumables": "= {pct}% of (material total + labour total) of lines {lines}"
+    },
+    "waste": {
+      "override": "Edited on the BOQ page",
+      "template": "Hard-coded value in the BOQ template"
+    },
+    "cleaned": "The original value was not a valid number and counts as 0"
+  },
+  "report": {
+    "title": "BOQ number source report",
+    "open": "Print the number source report",
+    "project": "Project",
+    "revision": "Revision",
+    "generatedAt": "Generated at",
+    "engineVersion": "Calculation engine version",
+    "summary": "Things to check across the project",
+    "lines": "All BOQ lines",
+    "appendix": "Appendix: details of each step",
+    "col": {
+      "item": "No.",
+      "desc": "Description",
+      "qty": "Quantity",
+      "unit": "Unit",
+      "gross": "Gross quantity",
+      "matUnit": "Material/unit",
+      "matTotal": "Material total",
+      "labUnit": "Labour/unit",
+      "labTotal": "Labour total",
+      "total": "Total",
+      "source": "Source",
+      "formula": "Formula"
+    },
+    "noWarnings": "Nothing to check"
+  },
+  "flag": {
+    "action": "Flag this value as wrong",
+    "title": "Flag a value that looks wrong",
+    "comment": "Comment",
+    "commentPlaceholder": "Explain what is wrong and what the right value should be",
+    "submit": "Save",
+    "cancel": "Cancel",
+    "remove": "Delete",
+    "resolve": "Resolved",
+    "list": "Values flagged as wrong",
+    "empty": "Nothing flagged yet",
+    "by": "Flagged by {name}",
+    "at": "On {date}",
+    "count": "{count} flagged as wrong",
+    "shared": "Shared with the team in the cloud",
+    "local": "Kept on this device only"
+  },
+  "export": {
+    "excel": "Export the number sources as a spreadsheet",
+    "fileName": "BOQ-number-sources",
+    "sheetLines": "BOQ lines",
+    "sheetSteps": "Calculation steps",
+    "sheetInputs": "Values used",
+    "sheetFlags": "Flagged values"
+  }
+}

@@ -3,6 +3,8 @@
 // It turns its own input into named outputs, and declares which BOQ (Home) cells those outputs fill.
 
 import type { BoqHeadingTemplate, BoqItemTemplate, BoqLineKey } from '../boq/types';
+import type { Tracer } from '../trace/tracer';
+import type { CalcTraceLabels } from '../trace/types';
 
 /** A row a calculator supplies for a BOQ slot. `key` must be unique and stable within the slot. */
 export type SlotRow = Omit<BoqItemTemplate, 'excelRow'> | Omit<BoqHeadingTemplate, 'excelRow'>;
@@ -38,8 +40,14 @@ export interface CalculatorDef<I = unknown> {
      * empty, while prices, waste and spec choices keep the Excel values. Without it a blank project uses `defaults()`.
      */
     blank?(): I;
-    /** Pure: same input → same outputs. Outputs are plain numbers keyed by name. */
-    compute(input: I, ctx: CalcContext): Record<string, number>;
+    /**
+     * Pure: same input → same outputs. Outputs are plain numbers keyed by name.
+     * `tr` (dev mode only) records the calculation steps; it never changes a result. Calculators default it to
+     * NO_TRACE (`compute: (input, ctx, tr = NO_TRACE) => …`) — see docs/dev-mode/README.md.
+     */
+    compute(input: I, ctx: CalcContext, tr?: Tracer): Record<string, number>;
+    /** Names, step labels and formulas for the dev-mode trace (the calculator's own trace.labels.ts). */
+    traceLabels?: CalcTraceLabels;
     boqLinks: BoqLink[];
     /** Optional text for BOQ cells (description D / unit F / note N), e.g. a pile spec built from the inputs. */
     boqText?(input: I, ctx: CalcContext): Record<BoqLineKey, { desc?: string; note?: string; unit?: string }>;

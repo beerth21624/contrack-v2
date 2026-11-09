@@ -43,6 +43,7 @@ import cloud from './cloud.json';
 import workforce from './workforce.json';
 import subcontracting from './subcontracting.json';
 import vendor from './vendor.json';
+import devMode from './devMode.json';
 
 const messages = {
   common,
@@ -90,6 +91,7 @@ const messages = {
   workforce,
   subcontracting,
   vendor,
+  devMode,
 };
 
 export default messages;

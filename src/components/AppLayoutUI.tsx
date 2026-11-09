@@ -18,6 +18,7 @@ import { BaselineLockedBanner } from '@/features/erp/boq-control/BaselineLockedB
 import { SandboxBanner } from '@/features/erp/variations/SandboxLauncher';
 import { useModuleEnabled } from '@/features/modules/modules';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
+import { DevModeToggle } from '@/features/dev-mode/DevModeToggle';
 import { useHasVendorWorkspace } from '@/features/subcontracting/shared/useHasVendorWorkspace';
 import { useAntdLocale } from '@/i18n/LocaleProvider';
 import { type AntdMenuItem, ErpHeaderExtras, activeWorkspaceNavKey, useWorkspaceNavMenu } from '@/features/erp/hub/nav-registry';
@@ -134,6 +135,8 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
                 </div>
 
                 <ErpHeaderExtras />
+
+                <DevModeToggle />
 
                 <div className="shrink-0"><NotificationBell /></div>
 

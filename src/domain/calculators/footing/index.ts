@@ -13,6 +13,8 @@ import { REBAR_SIZES, rebarSlotRows, type RebarSize, kgPerMetre } from '../../bo
 /** Re-exported for the pedestal sheet. */
 export { kgPerMetre } from '../../boq/slots';
 import { defineCalculator } from '../types';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
+import { FOOTING_TRACE_LABELS } from './trace.labels';
 
 export interface FootingRow {
     name: string;            // B ชื่อ ฐานราก (dropdown F1,F2,F4)
@@ -77,8 +79,13 @@ export interface FootingRowResult {
     backfillGross: number;
 }
 
-export function footingRow(r: FootingRow): FootingRowResult {
+/**
+ * One row of the sheet. `tr` (dev mode) records every intermediate value; the arithmetic is the same with or
+ * without it. Call inside `tr.row(i, label, …)` so the steps are attributed to the row.
+ */
+export function footingRow(r: FootingRow, tr: Tracer = NO_TRACE): FootingRowResult {
     const n = num(r.count), w = num(r.width), l = num(r.length), t = num(r.depth);
+    const M = EXCAVATION_MARGIN;
     // (D+0.4+0.4)*(E+0.4+0.4)
     const pit = (w + 2 * EXCAVATION_MARGIN) * (l + 2 * EXCAVATION_MARGIN);
     const excavation = n * pit * num(r.excavationDepth);          // I = C*pit*H
@@ -95,15 +102,41 @@ export function footingRow(r: FootingRow): FootingRowResult {
     const ringKg = ringTotal * kgPerMetre(r.ringBarSize);          // AC
     const formwork = n * (2 * w + 2 * l) * t;                      // AE = C*((2*D)+(2*E))*F
     const concrete = n * (w * l) * t;                              // AG = C*(D*E)*F
+    const backfillGross = excavation - sand - lean - concrete;
+    if (tr.enabled) {
+        tr.constant('margin', M);
+        tr.constant('sandFactor', SAND_FACTOR);
+        const kg = (size: string) => { const v = kgPerMetre(size); tr.constant('kgPerM', v, { params: { size: size || '-' } }); return v; };
+        const kS = kg(r.shortBarSize), kL = kg(r.longBarSize), kR = kg(r.ringBarSize);
+        tr.step('pit', pit, { width: w, length: l, margin: M });
+        tr.step('excavation', excavation, { count: n, pit, excavationDepth: num(r.excavationDepth) });
+        tr.step('sand', sand, { count: n, pit, sandThickness: num(r.sandThickness), sandFactor: SAND_FACTOR });
+        tr.step('lean', lean, { count: n, pit, leanThickness: num(r.leanThickness) });
+        tr.step('shortLength', shortLength, { width: w, depth: t });
+        tr.step('shortTotal', shortTotal, { count: n, shortBarCount: num(r.shortBarCount), shortLength });
+        tr.step('shortKg', shortKg, { shortTotal, kgPerM: kS }, { params: { size: r.shortBarSize || '-' } });
+        tr.step('longLength', longLength, { length: l, depth: t });
+        tr.step('longTotal', longTotal, { count: n, longBarCount: num(r.longBarCount), longLength });
+        tr.step('longKg', longKg, { longTotal, kgPerM: kL }, { params: { size: r.longBarSize || '-' } });
+        tr.step('ringLength', ringLength, { width: w, length: l });
+        tr.step('ringTotal', ringTotal, { count: n, ringBarCount: num(r.ringBarCount), ringLength });
+        tr.step('ringKg', ringKg, { ringTotal, kgPerM: kR }, { params: { size: r.ringBarSize || '-' } });
+        tr.step('formwork', formwork, { count: n, width: w, length: l, depth: t });
+        tr.step('concrete', concrete, { count: n, width: w, length: l, depth: t });
+        tr.step('backfillGross', backfillGross, { excavation, sand, lean, concrete });
+    }
     return {
         excavation, sand, lean,
         shortLength, shortTotal, shortKg,
         longLength, longTotal, longKg,
         ringLength, ringTotal, ringKg,
         formwork, concrete,
-        backfillGross: excavation - sand - lean - concrete,
+        backfillGross,
     };
 }
+
+/** What a footing row is called in the trace: its name, else its 1-based number. */
+export const footingRowLabel = (r: FootingRow, i: number): string => r.name || `#${i + 1}`;
 
 export interface FootingTotals {
     excavation: number;   // H6
@@ -118,14 +151,17 @@ export interface FootingTotals {
     backfillGross: number;
 }
 
-export function footingTotals(rows: FootingRow[]): FootingTotals {
+/** Totals of all rows. With a tracer: every row's steps (via footingRow) and the totals' steps. */
+export function footingTotals(rows: FootingRow[], tr: Tracer = NO_TRACE): FootingTotals {
     const t: FootingTotals = {
         excavation: 0, sand: 0, lean: 0,
         short: emptyWeights(), long: emptyWeights(), ring: emptyWeights(), rebar: emptyWeights(),
         formwork: 0, concrete: 0, backfillGross: 0,
     };
-    for (const r of rows) {
-        const c = footingRow(r);
+    const per: FootingRowResult[] = [];
+    rows.forEach((r, i) => {
+        const c = tr.enabled ? tr.row(i, footingRowLabel(r, i), () => footingRow(r, tr)) : footingRow(r);
+        per.push(c);
         t.excavation += c.excavation;
         t.sand += c.sand;
         t.lean += c.lean;
@@ -135,8 +171,31 @@ export function footingTotals(rows: FootingRow[]): FootingTotals {
         t.formwork += c.formwork;
         t.concrete += c.concrete;
         t.backfillGross += c.backfillGross;
-    }
+    });
     for (const s of REBAR_SIZES) t.rebar[s] = t.short[s] + t.long[s] + t.ring[s];
+    if (tr.enabled) {
+        const col = (f: (c: FootingRowResult) => number) => per.map(f);
+        tr.step('totalExcavation', t.excavation, { excavation: col(c => c.excavation) });
+        tr.step('totalSand', t.sand, { sand: col(c => c.sand) });
+        tr.step('totalLean', t.lean, { lean: col(c => c.lean) });
+        tr.step('totalFormwork', t.formwork, { formwork: col(c => c.formwork) });
+        tr.step('totalConcrete', t.concrete, { concrete: col(c => c.concrete) });
+        tr.step('totalBackfillGross', t.backfillGross, { backfillGross: col(c => c.backfillGross) });
+        // Weight per bar size: only sizes some row uses (Σ of the rows' weights of that size).
+        const bySize = (size: string, pick: (r: FootingRow) => string, kg: (c: FootingRowResult) => number) =>
+            rows.flatMap((r, i) => (pick(r) === size ? [kg(per[i] ?? footingRow(r))] : []));
+        for (const s of REBAR_SIZES) {
+            const sh = bySize(s, r => r.shortBarSize, c => c.shortKg);
+            const lo = bySize(s, r => r.longBarSize, c => c.longKg);
+            const ri = bySize(s, r => r.ringBarSize, c => c.ringKg);
+            if (sh.length + lo.length + ri.length === 0) continue;
+            const params = { size: s };
+            if (sh.length > 0) tr.step('totalShortKg', t.short[s], { shortKg: sh }, { params });
+            if (lo.length > 0) tr.step('totalLongKg', t.long[s], { longKg: lo }, { params });
+            if (ri.length > 0) tr.step('totalRingKg', t.ring[s], { ringKg: ri }, { params });
+            tr.step('totalRebar', t.rebar[s], { shortWeight: t.short[s], longWeight: t.long[s], ringWeight: t.ring[s] }, { params });
+        }
+    }
     return t;
 }
 
@@ -189,8 +248,8 @@ export const footing = defineCalculator<FootingInput>({
     }),
     // A real project: no footing types until the user adds them from the foundation plan.
     blank: () => ({ rows: [] }),
-    compute: (input) => {
-        const t = footingTotals(input.rows);
+    compute: (input, _ctx, tr = NO_TRACE) => {
+        const t = footingTotals(input.rows, tr);
         const out: Record<string, number> = {
             excavation: t.excavation,   // H6 → BOQ E38 (direct ref)
             sand: t.sand,               // J6 → sheet 24 D6 → BOQ E40
@@ -213,6 +272,7 @@ export const footing = defineCalculator<FootingInput>({
         });
         return out;
     },
+    traceLabels: FOOTING_TRACE_LABELS,
     boqLinks: [
         { line: 'R38', field: 'qty', output: 'excavation' },
         { line: 'R40', field: 'qty', output: 'sand' },

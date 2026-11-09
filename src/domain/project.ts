@@ -1,5 +1,5 @@
 // ─── Project = everything the user typed. Results are always recomputed from it. ───
-import { computeBoq } from './boq/engine';
+import { computeBoq, type ComputeBoqInput } from './boq/engine';
 import { BOQ_TEMPLATE_V5 } from './boq/template.v5';
 import type {
     BoqHeadingTemplate, BoqItemTemplate, BoqLineKey, BoqLineOverride, BoqResult, BoqSectionTemplate, GrossRule,
@@ -147,15 +147,29 @@ export interface ProjectResult {
     planning: PlanningResult;
 }
 
-export function computeProject(project: Project, calculators?: CalculatorDef[]): ProjectResult {
+/** Everything computeBoq is run with for a project, plus where linked values came from (dev-mode explanations). */
+export interface ProjectBoqInput {
+    calcOutputs: Record<string, Record<string, number>>;
+    boqInput: ComputeBoqInput & { overrides: Record<BoqLineKey, BoqLineOverride | undefined>; linked: LinkedValues; slots: SlotLines };
+    /** Which step output filled each linked BOQ cell (the last link wins, like `linked`). */
+    origins: Record<BoqLineKey, Partial<Record<'qty' | 'mat' | 'lab', { calc: string; output: string }>> | undefined>;
+    /** Lines forced to quantity 0 ("not in this project"), with the step that caused it when known. */
+    zeroed: Map<BoqLineKey, string | undefined>;
+    /** Steps marked "not in this project". */
+    skippedCalcs: Set<string>;
+}
+
+/** Runs every calculator and builds the computeBoq input (shared by computeProject and the dev-mode trace). */
+export function projectBoqInput(project: Project, calculators?: CalculatorDef[]): ProjectBoqInput {
     const calcOutputs: Record<string, Record<string, number>> = {};
     const linked: LinkedValues = {};
     const slots: SlotLines = {};
+    const origins: ProjectBoqInput['origins'] = {};
     const slotRow = new Map<string, number>();
     for (const s of BOQ_TEMPLATE_V5) for (const l of s.lines) if (l.type === 'slot') slotRow.set(`${l.calc}.${l.slot}`, l.excelRow);
     const skipped = skippedWork(project);
     // Lines forced to quantity 0 by "ไม่มีในโครงการนี้" (a quantity typed on the BOQ page must not bring them back).
-    const zeroed = new Set(skipped.lines);
+    const zeroed = new Map<BoqLineKey, string | undefined>([...skipped.lines].map(l => [l, undefined]));
 
     for (const def of calculatorsInOrder(calculators)) {
         const input = calculatorInput(project, def);
@@ -163,7 +177,7 @@ export function computeProject(project: Project, calculators?: CalculatorDef[]):
         if (skipped.calcs.has(def.id)) {
             // "ไม่มีในโครงการนี้": every output 0, every BOQ line it fills gets quantity 0, its slots stay empty.
             calcOutputs[def.id] = Object.fromEntries(Object.keys(def.compute(input, ctx)).map(k => [k, 0]));
-            for (const link of def.boqLinks) zeroed.add(link.line);
+            for (const link of def.boqLinks) zeroed.set(link.line, def.id);
             for (const slot of Object.keys(def.boqSlots?.(input, ctx) ?? {})) slots[`${def.id}.${slot}`] = [];
             continue;
         }
@@ -173,6 +187,7 @@ export function computeProject(project: Project, calculators?: CalculatorDef[]):
             const v = outputs[link.output];
             if (v === undefined || !Number.isFinite(v)) continue;
             linked[link.line] = { ...linked[link.line], [link.field]: v };
+            origins[link.line] = { ...origins[link.line], [link.field]: { calc: def.id, output: link.output } };
         }
         for (const [line, text] of Object.entries(def.boqText?.(input, ctx) ?? {})) {
             linked[line] = { ...linked[line], ...text };
@@ -183,14 +198,25 @@ export function computeProject(project: Project, calculators?: CalculatorDef[]):
         }
     }
 
-    for (const line of zeroed) linked[line] = { ...linked[line], qty: 0 };
+    for (const line of zeroed.keys()) linked[line] = { ...linked[line], qty: 0 };
 
-    const boq = computeBoq({
-        sections: project.start === 'blank' ? BLANK_TEMPLATE_V5 : BOQ_TEMPLATE_V5,
-        overrides: withoutQtyOverrides(project.boqOverrides, zeroed),
-        linked,
-        slots,
-    });
+    return {
+        calcOutputs,
+        boqInput: {
+            sections: project.start === 'blank' ? BLANK_TEMPLATE_V5 : BOQ_TEMPLATE_V5,
+            overrides: withoutQtyOverrides(project.boqOverrides, new Set(zeroed.keys())),
+            linked,
+            slots,
+        },
+        origins,
+        zeroed,
+        skippedCalcs: skipped.calcs,
+    };
+}
+
+export function computeProject(project: Project, calculators?: CalculatorDef[]): ProjectResult {
+    const { calcOutputs, boqInput } = projectBoqInput(project, calculators);
+    const boq = computeBoq(boqInput);
     const planning = computePlanning(projectPlanningInput(project), boq);
     return { calcOutputs, boq, planning };
 }
