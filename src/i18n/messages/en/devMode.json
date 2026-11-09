@@ -153,6 +153,7 @@
       "formula": "Formula"
     },
     "noWarnings": "Nothing to check",
+    "projectMismatch": "The open project is not the project of this report (the page was reloaded or opened from a link). Open the project again and press \"Print number trace report\" on the BOQ page.",
     "unavailable": "This report is available only when calculation check mode is on"
   },
   "flag": {

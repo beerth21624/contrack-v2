@@ -296,14 +296,26 @@ function Report() {
 export function BoqTraceReportPage() {
     const tx = useTraceText();
     const hasHydrated = useProjectStore(s => s.hasHydrated);
+    const binding = useProjectStore(s => s.binding);
     const { enabled } = useDevMode();
     const [allowed, setAllowed] = useState<boolean | undefined>(undefined);
+    // ?p=<cloud project id | local> from the BOQ page's button. A cloud project lives in memory only, so after a reload
+    // (or a copied link) the store holds the guest project instead: say so rather than print the wrong project.
+    const [wanted, setWanted] = useState<string | null | undefined>(undefined);
     useEffect(() => {
         let live = true;
-        void loadDevModeAllowed().then(a => { if (live) setAllowed(a); });
+        void loadDevModeAllowed().then(a => {
+            if (!live) return;
+            setWanted(new URLSearchParams(window.location.search).get('p'));
+            setAllowed(a);
+        });
         return () => { live = false; };
     }, []);
-    if (allowed === undefined || !hasHydrated) return <div className="p-6"><Skeleton active /></div>;
+    if (allowed === undefined || !hasHydrated || wanted === undefined) return <div className="p-6"><Skeleton active /></div>;
     if (!allowed || !enabled) return <div className="p-4"><Alert type="info" showIcon title={tx.t('report.unavailable')} /></div>;
+    const open = binding.kind === 'guest' ? 'local' : binding.projectId;
+    if (wanted !== null && wanted !== open) {
+        return <div className="p-4"><Alert type="warning" showIcon title={tx.t('report.projectMismatch')} /></div>;
+    }
     return <Report />;
 }

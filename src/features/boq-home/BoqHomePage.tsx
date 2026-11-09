@@ -383,7 +383,7 @@ export function BoqHomePage() {
                         <BoqExportButtons project={project} />
                         <RevisionButtons />
                         {devMode && (
-                            <Link href="/print/boq-trace">
+                            <Link href={`/print/boq-trace?p=${cloud?.projectId ?? 'local'}`}>
                                 <Button icon={<FileSearchOutlined />}>{dt('report.open')}</Button>
                             </Link>
                         )}
