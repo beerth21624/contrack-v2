@@ -30,6 +30,8 @@ import { AiConsentModal } from './review/AiConsentModal';
 import { useDevMode } from '@/features/dev-mode/useDevMode';
 import { useBoqExplanation } from '@/features/dev-mode/useTrace';
 import { BoqExplainDrawer, type ExplainTarget } from '@/features/dev-mode/BoqExplainDrawer';
+import { FlagButton, ReviewFlagList } from '@/features/dev-mode/ReviewFlags';
+import { TraceExportButton } from '@/features/dev-mode/TraceExportButton';
 import type { BoqCellField } from '@/domain/trace';
 
 const { Title, Text } = Typography;
@@ -239,6 +241,11 @@ export function BoqHomePage() {
                                 onClick={() => setExplain({ line: r.key, field: 'qty' })} />
                         </Tooltip>
                     )}
+                    {devMode && (
+                        <span className="float-right mr-1">
+                            <FlagButton target={{ kind: 'boq', line: r.key }} anyField title={[r.itemNo, bt.line(r.key, r.desc)].filter(Boolean).join(' ')} />
+                        </span>
+                    )}
                     {rate === undefined ? <Highlight text={bt.line(r.key, r.desc)} q={q} /> : (
                         <div className="flex items-start justify-between gap-2">
                             <span className="min-w-0"><Highlight text={bt.line(r.key, r.desc)} q={q} /></span>
@@ -380,6 +387,7 @@ export function BoqHomePage() {
                                 <Button icon={<FileSearchOutlined />}>{dt('report.open')}</Button>
                             </Link>
                         )}
+                        {devMode && <TraceExportButton />}
                         {cloud !== undefined && <CreateQuotationButton projectId={cloud.projectId} workspaceId={cloud.workspaceId} />}
                     </div>
                 </div>
@@ -429,6 +437,7 @@ export function BoqHomePage() {
                     onLine={line => { setExplain({ line, field: 'qty' }); setPinnedKey(line); jumpToRow(line); }} />
             )}
             {devMode && <div className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-card px-3 py-2">{dt('explain.hint')}</div>}
+            {devMode && <ReviewFlagList expl={explanation} onLine={line => { setExplain({ line, field: 'qty' }); setPinnedKey(line); jumpToRow(line); }} />}
 
             <AiConsentModal open={review.consent} onConfirm={review.confirmAi} onRulesOnly={review.rulesOnly} onCancel={review.cancelAi} />
             {review.open && (

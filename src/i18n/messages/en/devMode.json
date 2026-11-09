@@ -170,7 +170,21 @@
     "at": "On {date}",
     "count": "{count} flagged as wrong",
     "shared": "Shared with the team in the cloud",
-    "local": "Kept on this device only"
+    "local": "Kept on this device only",
+    "name": "Your name",
+    "namePlaceholder": "Name shown with the flag",
+    "reopen": "Reopen",
+    "statusOpen": "Open",
+    "statusResolved": "Resolved",
+    "target": "Value",
+    "status": "Status",
+    "actions": "Actions",
+    "marker": "{count} open flags",
+    "existing": "Already flagged here",
+    "readOnly": "You can view flags but not add or change them in this project",
+    "commentRequired": "Please write a comment",
+    "deleteConfirm": "Delete this flag?",
+    "openTarget": "Open"
   },
   "export": {
     "excel": "Export the number sources as a spreadsheet",
@@ -178,6 +192,21 @@
     "sheetLines": "BOQ lines",
     "sheetSteps": "Calculation steps",
     "sheetInputs": "Values used",
-    "sheetFlags": "Flagged values"
+    "sheetFlags": "Flagged values",
+    "sheetWarnings": "Things to check",
+    "failed": "Could not create the file",
+    "col": {
+      "step": "Step",
+      "group": "Row",
+      "kind": "Kind",
+      "warning": "Things to check",
+      "line": "BOQ line",
+      "flagTarget": "Value",
+      "comment": "Comment",
+      "by": "Flagged by",
+      "at": "When",
+      "status": "Status",
+      "section": "Section"
+    }
   }
 }

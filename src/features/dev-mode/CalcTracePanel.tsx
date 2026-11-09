@@ -7,6 +7,7 @@ import { Collapse, Tag, Tooltip } from 'antd';
 import { getCalculator } from '@/domain/calculators/registry';
 import type { CalcTrace, TraceLabelSet } from '@/domain/trace';
 import { termLabel, termUnit } from '@/domain/trace';
+import { FlagButton } from './ReviewFlags';
 import { useCalcTrace } from './useTrace';
 import { SOURCE_ICON, boqLineHref, stepHref, useTraceText, type InputRow, type StepRow, type TraceText } from './useTraceText';
 
@@ -122,7 +123,13 @@ function OutputsTable({ trace, labels, tx }: { trace: CalcTrace; labels: TraceLa
                         <tbody>
                             {trace.outputs.map(o => (
                                 <tr key={o.key}>
-                                    <td className={td}>{termLabel(labels, o.key)}</td>
+                                    <td className={td}>
+                                        <span className="inline-flex items-center gap-1">
+                                            {termLabel(labels, o.key)}
+                                            <FlagButton target={{ kind: 'output', calc: trace.calcId, output: o.key }}
+                                                title={`${tx.stepName(trace.calcId)} · ${termLabel(labels, o.key)}`} />
+                                        </span>
+                                    </td>
                                     <td className={`${tdNum} font-semibold`}>{tx.num(o.value)}</td>
                                     <td className={td}>{termUnit(labels, o.key)}</td>
                                     <td className={td}>

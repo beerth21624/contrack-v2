@@ -4,10 +4,10 @@ import { isoDateTimeSchema, uuidSchema } from './common';
 
 /**
  * A project is stored as documents, one per sheet the user edits (see src/domain/sync/doc-keys.ts):
- * `meta`, `journey`, `calc:<calculatorId>`, `boq:<lineKey>`, `planning:<manday|schedule|cashflow>`.
+ * `meta`, `journey`, `calc:<calculatorId>`, `boq:<lineKey>`, `planning:<manday|schedule|cashflow>`, `flag:<id>`.
  * The shape is checked here; whether the calculator / BOQ line exists is checked by the shared domain.
  */
-export const DOC_KEY_PATTERN = /^(meta|journey|calc:[a-z0-9-]{1,64}|boq:[A-Za-z0-9:._-]{1,128}|planning:(manday|schedule|cashflow))$/;
+export const DOC_KEY_PATTERN = /^(meta|journey|calc:[a-z0-9-]{1,64}|boq:[A-Za-z0-9:._-]{1,128}|planning:(manday|schedule|cashflow)|flag:[A-Za-z0-9_-]{1,64})$/;
 export const docKeySchema = z.string().regex(DOC_KEY_PATTERN);
 
 /** Largest accepted document (bytes of its JSON). */
@@ -57,7 +57,8 @@ export const projectDetailDtoSchema = z.object({
 });
 export type ProjectDetailDto = z.infer<typeof projectDetailDtoSchema>;
 
-/** A document's data: any JSON value, but the field must be present (only null means eset). */
+/** A document's data: any JSON value, but the field must be present (only null means 
+eset). */
 const presentData = z.unknown().refine(v => v !== undefined, { message: 'data is required (null resets the document)' });
 
 export const initialDocSchema = z.object({ docKey: docKeySchema, data: presentData });

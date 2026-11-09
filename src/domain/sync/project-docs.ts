@@ -7,7 +7,8 @@ import {
     computeProject, createProject, DEFAULT_PROJECT_META, type Project, type ProjectMeta, type ProjectResult,
     type ProjectStart,
 } from '../project';
-import { PLANNING_SHEETS, boqDocKey, calcDocKey, parseDocKey, planningDocKey, type DocKey } from './doc-keys';
+import { reviewFlagProblem, type ReviewFlag } from '../review-flags';
+import { PLANNING_SHEETS, boqDocKey, calcDocKey, flagDocKey, parseDocKey, planningDocKey, type DocKey } from './doc-keys';
 
 export interface DocEntry {
     docKey: DocKey;
@@ -44,6 +45,7 @@ export function projectToDocs(project: Project): DocEntry[] {
         const v = project.planning?.[sheet];
         if (v !== undefined) docs.push({ docKey: planningDocKey(sheet), data: v });
     }
+    for (const [id, flag] of Object.entries(project.reviewFlags ?? {})) docs.push({ docKey: flagDocKey(id), data: flag });
     return docs;
 }
 
@@ -72,6 +74,10 @@ export function applyDoc(project: Project, docKey: string, data: unknown): Proje
             const others = Object.entries(project.planning ?? {}).filter(([k]) => k !== parsed.sheet);
             const planning = Object.fromEntries(reset ? others : [...others, [parsed.sheet, data]]) as Partial<PlanningInput>;
             return { ...project, planning };
+        }
+        case 'flag': {
+            const others = Object.entries(project.reviewFlags ?? {}).filter(([k]) => k !== parsed.flagId);
+            return { ...project, reviewFlags: Object.fromEntries(reset ? others : [...others, [parsed.flagId, data as ReviewFlag]]) };
         }
     }
 }
@@ -206,6 +212,10 @@ export function validateDoc(docKey: string, data: unknown): Validation {
         case 'planning':
             if (!isPlainObject(data)) return fail('the document must be an object');
             return parsed.sheet === 'manday' ? validateManDayDoc(data) : ok;
+        case 'flag': {
+            const problem = reviewFlagProblem(data);
+            return problem === undefined ? ok : fail(problem);
+        }
     }
 }
 

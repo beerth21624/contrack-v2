@@ -7,6 +7,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import { Button, Drawer } from 'antd';
 import type { BoqCellField, BoqExplanation, BoqLineExplanation } from '@/domain/trace';
+import { FlagButton } from './ReviewFlags';
 import { stepHref, useTraceText, type TraceText } from './useTraceText';
 
 export interface ExplainTarget { line: string; field: BoqCellField }
@@ -107,6 +108,12 @@ export function BoqExplainDrawer({ expl, target, onClose, onLine }: {
                 <div className="min-w-0">
                     <div className="text-[12px] font-normal text-gray-500">{tx.t('explain.title')}</div>
                     <div className="text-[14px] [overflow-wrap:anywhere]">{tx.lineText(line.itemNo, line.key, line.desc)}</div>
+                    {target && (
+                        <div className="mt-1 text-[12px] font-normal">
+                            <FlagButton label target={{ kind: 'boq', line: line.key, field: target.field }}
+                                title={`${tx.lineText(line.itemNo, line.key, line.desc)} · ${tx.t(`explain.cell.${target.field}`)}`} />
+                        </div>
+                    )}
                 </div>
             ) : tx.t('explain.title')}
             footer={<Button onClick={onClose}>{tx.t('explain.close')}</Button>}>

@@ -1,4 +1,5 @@
 // ─── Project = everything the user typed. Results are always recomputed from it. ───
+import type { ReviewFlag } from './review-flags';
 import { computeBoq, type ComputeBoqInput } from './boq/engine';
 import { BOQ_TEMPLATE_V5 } from './boq/template.v5';
 import type {
@@ -56,6 +57,8 @@ export interface Project {
     start?: ProjectStart;
     /** Levels of the guided journey passed or marked "ไม่มีในโครงการนี้". Missing = none yet. */
     journey?: JourneyProgress;
+    /** Dev mode: values testers flagged as wrong, by flag id. Missing = none. Never read by the engine. */
+    reviewFlags?: Record<string, ReviewFlag>;
 }
 
 export type ProjectStart = 'blank' | 'sample';

@@ -16,11 +16,13 @@ import {
 } from '@/domain/trace';
 import { resolveLocale } from '@/i18n/config';
 import { useFormat } from '@/i18n/useFormat';
+import { listReviewFlags } from '@/domain/review-flags';
 import { useProjectStore } from '@/store/project-store';
 import { useBoqText } from '@/features/boq-home/useBoqText';
 import { PrintFrame } from '@/features/erp/shared/PrintFrame';
 import { loadDevModeAllowed } from './config';
 import { useDevMode } from './useDevMode';
+import { flagTargetText } from './ReviewFlags';
 import { SOURCE_ICON, useTraceText, type TraceText } from './useTraceText';
 
 const CSS = `
@@ -186,6 +188,7 @@ function Report() {
     const cleanedLines = expl.order.map(k => expl.lines[k]).filter((l): l is BoqLineExplanation =>
         l !== undefined && (l.net.cleaned || l.mat.cleaned || l.lab.cleaned));
     const withWarnings = steps.filter(s => s.trace.warnings.length > 0);
+    const flags = listReviewFlags(project.reviewFlags);
     const sectionTitle = new Map(base.boq.sections.map(s => [s.no, bt.section(s.no, s.title)]));
     const title = `${tx.t('report.title')} ${project.meta.projectName}`.trim();
     // Shown without the spreadsheet prefix of the internal id (never mention the spreadsheet on screen).
@@ -223,6 +226,27 @@ function Report() {
                             </ul>
                         </div>
                     )}
+
+                <h2>{tx.t('flag.list')}</h2>
+                {flags.length === 0 ? <div className="muted">{tx.t('flag.empty')}</div> : (
+                    <table>
+                        <thead><tr>
+                            <th>{tx.t('flag.target')}</th><th>{tx.t('flag.comment')}</th><th>{tx.t('export.col.by')}</th>
+                            <th>{tx.t('export.col.at')}</th><th>{tx.t('flag.status')}</th>
+                        </tr></thead>
+                        <tbody>
+                            {flags.map(({ id, flag }) => (
+                                <tr key={id}>
+                                    <td>{flagTargetText(tx, expl, flag.target)}</td>
+                                    <td style={{ whiteSpace: 'pre-wrap' }}>{flag.comment}</td>
+                                    <td>{flag.by}</td>
+                                    <td>{fmt.dateTime(flag.at)}</td>
+                                    <td>{flag.status === 'open' ? tx.t('flag.statusOpen') : tx.t('flag.statusResolved')}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
 
                 <h2>{tx.t('report.lines')}</h2>
                 <table>

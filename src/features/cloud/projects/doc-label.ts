@@ -16,6 +16,7 @@ export function docLabel(docKey: string): string {
         case 'journey': return t('docLabel.journey');
         case 'planning': return t(`docLabel.${parsed.sheet}`);
         case 'boq': return t('docLabel.boq');
+        case 'flag': return t('docLabel.flag');
         case 'calc': {
             const level = JOURNEY_LEVELS.find(l => l.kind.type === 'calc' && l.kind.calc === parsed.calcId);
             if (level) return t('docLabel.level', { title: levelTitleIn(level, locale) });

@@ -223,7 +223,10 @@ src/domain/trace/run.ts          runTrace
 src/domain/trace/explain-boq.ts  explainBoq, explainCell
 src/domain/trace/project.ts      projectTraceBase, traceProjectCalculator, explainProjectBoq
 src/domain/trace/index.ts        public API (UI imports '@/domain/trace'; calculators import '../../trace/tracer')
-src/features/dev-mode/           config.ts, useDevMode.ts, DevModeToggle.tsx, useTrace.ts
+src/features/dev-mode/           config.ts, useDevMode.ts, DevModeToggle.tsx, useTrace.ts, useTraceText.ts, CalcTracePanel.tsx,
+                                 BoqExplainDrawer.tsx, BoqTraceReportPage.tsx, useReviewFlags.ts, ReviewFlags.tsx,
+                                 TraceExportButton.tsx, trace-xlsx.ts
+src/domain/review-flags.ts       ReviewFlag type, shape check, ids (stored as Project.reviewFlags, doc key flag:<id>)
 src/i18n/messages/{th,en}/devMode.json
 ```
 
@@ -276,3 +279,21 @@ src/i18n/messages/{th,en}/devMode.json
   of `ENGINE_VERSION` (product rule: never mention the spreadsheet).
 - D13 — Report appendix lists every calculator in dependency order (`calculatorsInOrder()`), skipped ones included
   (their ⚠ says "not in this project"), with the same ①②③ tables as the step panel.
+- D14 — Review flags ("แจ้งว่าค่านี้ผิด"), implementing D8 with one change: **one sync document per flag**
+  (`flag:<id>`, id `[A-Za-z0-9_-]{1,64}`) instead of a single `review` document, so two testers flagging at the same
+  time never hit a version conflict. Stored in `Project.reviewFlags` (optional; missing = none; the engine never reads
+  it, so no number can change). Guest project → saved with the project in this browser; cloud project → shared with the
+  team by the existing document sync (no new endpoint, no migration: `project_docs.doc_key` is free text; the server
+  checks the key with `DOC_KEY_PATTERN` + the shared `validateDoc`). A flag is
+  `{ target: {kind:'boq', line, field?} | {kind:'output', calc, output}, comment ≤2000, by ≤120, at ISO, status open|resolved }`.
+  Flags are *not* baseline-locked (store `editAny`, server `isBaselineDoc` unchanged), so testers can flag a locked
+  BOQ; a role that may not edit the project (viewer…) sees flags but cannot add/change them (server needs
+  `projects.edit`). "Who" = a name field prefilled with the last name used in this browser (localStorage
+  `contrack-dev-mode-name`, try/catch), else the signed-in user's display name. UI: flag button per BOQ line (marker
+  with open count, any cell), per cell in the "explain this cell" drawer, per output in the step panel; list on the BOQ
+  page (resolve / reopen / delete, links to the line or step); section in the PDF report. All only in dev mode.
+- D15 — "Export the number sources as a spreadsheet" (BOQ page header, dev mode): workbook built on demand with
+  exceljs (lazy import, like `src/features/export/xlsx.ts`) with five filterable sheets: BOQ lines (numbers, source,
+  formula, section), values used per step (with source), calculation steps, things to check, flagged values. Numbers are
+  written raw (not formatted) so they sort/filter; texts come from `useTraceText`, so they match panel, drawer and
+  report. The button text says "spreadsheet", never the product name (product rule).

@@ -5,8 +5,10 @@
 //   calc:<calculatorId>       one calculator sheet's input
 //   boq:<lineKey>             one BOQ (Home) line edited on the BOQ page
 //   planning:<sheet>          Man-Day / S-Curve / CashFlow input
+//   flag:<id>                 one dev-mode review flag (a value a tester marked as wrong)
 import { BOQ_TEMPLATE_V5 } from '../boq/template.v5';
 import { CALCULATORS } from '../calculators/registry';
+import { REVIEW_FLAG_ID_PATTERN } from '../review-flags';
 
 export const PLANNING_SHEETS = ['manday', 'schedule', 'cashflow'] as const;
 export type PlanningSheet = (typeof PLANNING_SHEETS)[number];
@@ -16,14 +18,16 @@ export type DocKey =
     | 'journey'
     | `calc:${string}`
     | `boq:${string}`
-    | `planning:${PlanningSheet}`;
+    | `planning:${PlanningSheet}`
+    | `flag:${string}`;
 
 export type ParsedDocKey =
     | { kind: 'meta' }
     | { kind: 'journey' }
     | { kind: 'calc'; calcId: string }
     | { kind: 'boq'; lineKey: string }
-    | { kind: 'planning'; sheet: PlanningSheet };
+    | { kind: 'planning'; sheet: PlanningSheet }
+    | { kind: 'flag'; flagId: string };
 
 const CALC_IDS = new Set(CALCULATORS.map(c => c.id));
 
@@ -66,6 +70,7 @@ export function parseDocKey(key: string): ParsedDocKey | undefined {
     if (head === 'calc') return isKnownCalculator(rest) ? { kind: 'calc', calcId: rest } : undefined;
     if (head === 'boq') return isKnownBoqLine(rest) ? { kind: 'boq', lineKey: rest } : undefined;
     if (head === 'planning') return isPlanningSheet(rest) ? { kind: 'planning', sheet: rest } : undefined;
+    if (head === 'flag') return REVIEW_FLAG_ID_PATTERN.test(rest) ? { kind: 'flag', flagId: rest } : undefined;
     return undefined;
 }
 
@@ -76,3 +81,4 @@ export function isDocKey(key: string): key is DocKey {
 export const calcDocKey = (calcId: string): DocKey => `calc:${calcId}`;
 export const boqDocKey = (lineKey: string): DocKey => `boq:${lineKey}`;
 export const planningDocKey = (sheet: PlanningSheet): DocKey => `planning:${sheet}`;
+export const flagDocKey = (flagId: string): DocKey => `flag:${flagId}`;

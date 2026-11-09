@@ -25,6 +25,7 @@
     "boq": "BOQ items",
     "level": "Step \"{title}\"",
     "calc": "\"{title}\"",
+    "flag": "Values flagged as wrong",
     "calcFallback": "Calculator data"
   },
   "notice": {

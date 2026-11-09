@@ -6,6 +6,7 @@ import type { BoqLineKey, BoqLineOverride } from '@/domain/boq/types';
 import type { PlanningInput } from '@/domain/planning';
 import { createProject, PROJECT_SCHEMA_VERSION, type Project, type ProjectMeta, type ProjectStart } from '@/domain/project';
 import type { LevelMark } from '@/domain/journey/progress';
+import type { ReviewFlag } from '@/domain/review-flags';
 import { can, type Role } from '@/shared/contract';
 import { emitNotice } from './notices';
 import { baselineLockedText } from './baseline-locked-text';
@@ -69,6 +70,8 @@ interface ProjectState {
     setPlanning: (patch: { [K in keyof PlanningInput]?: PlanningInput[K] | undefined }) => void;
     /** Mark a journey level passed / not in this project, or clear the mark (undefined). */
     setLevelMark: (levelId: string, mark: LevelMark | undefined) => void;
+    /** Dev mode: add / change (or delete with undefined) one review flag. Allowed while a baseline locks the BOQ. */
+    setReviewFlag: (id: string, flag: ReviewFlag | undefined) => void;
     /** Throw the current project away and start a new one: blank (from a plan) or the Excel sample house. */
     newProject: (start: ProjectStart) => void;
     resetProject: () => void;
@@ -217,6 +220,11 @@ export const useProjectStore = create<ProjectState>()(
                     const others = Object.entries(s.project.journey ?? {}).filter(([k]) => k !== levelId);
                     const journey = Object.fromEntries(mark === undefined ? others : [...others, [levelId, mark]]);
                     return { project: { ...s.project, journey } };
+                }),
+                setReviewFlag: (id, flag) => editAny(s => {
+                    const others = Object.entries(s.project.reviewFlags ?? {}).filter(([k]) => k !== id);
+                    const reviewFlags = Object.fromEntries(flag === undefined ? others : [...others, [id, flag]]);
+                    return { project: { ...s.project, reviewFlags } };
                 }),
                 newProject: (start) => startOver(start),
                 resetProject: () => startOver(undefined),
