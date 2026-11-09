@@ -1,7 +1,9 @@
 // Sheet "ปูกระเบื้องพื้น_Floor Tile" (Excel v5 sheet 16) → BOQ (Home) section 20, rows 205 (F1), 206 (F3), 207 (F4).
 // The BOQ note "ราคากระเบื้องไม่เกิน 300.-/ตร.ม." on R205/R206 is template text.
 // Spec: docs/excel-spec/04-ceiling-tiles-finishes-paint.md §2 (oddities O-11, O-13).
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
 import { defineCalculator } from '../types';
+import { FLOOR_TILE_TRACE_LABELS } from './trace.labels';
 
 /** Dropdown B5:B34 สัญลักษณ์ — the key BOQ E205–E207 SUMIF on. Excel has no F2. */
 export const FLOOR_TILE_CODES = ['F1', 'F3', 'F4'] as const;
@@ -80,21 +82,41 @@ export const floorTile = defineCalculator<FloorTileInput>({
     }),
     // A real project: no rooms yet (prices sit in the BOQ, the sheet has no constants of its own).
     blank: () => ({ rows: [] }),
-    compute: input => {
+    compute: (input, _ctx, tr = NO_TRACE) => {
         const f1 = floorTileAreaByCode(input, 'F1');
         const f3 = floorTileAreaByCode(input, 'F3');
         const f4 = floorTileAreaByCode(input, 'F4');
-        return {
+        const out = {
             F1: f1, F3: f3, F4: f4,
             total: input.rows.reduce((s, r) => s + floorTileRowArea(r), 0),
             R205: f1,   // E205 = IFERROR(SUMIF(FloorTile!B:B,"F1",FloorTile!F:F),0)
             R206: f3,
             R207: f4,
         };
+        if (tr.enabled) traceFloorTile(input, tr, out);
+        return out;
     },
+    traceLabels: FLOOR_TILE_TRACE_LABELS,
     boqLinks: [
         { line: 'R205', field: 'qty', output: 'R205' },
         { line: 'R206', field: 'qty', output: 'R206' },
         { line: 'R207', field: 'qty', output: 'R207' },
     ],
 });
+
+/** Dev mode: records the steps of the compute above (observes values already computed; changes nothing). */
+function traceFloorTile(input: FloorTileInput, tr: Tracer, out: Record<string, number>): void {
+    const areas = input.rows.map((r, i) => {
+        const area = floorTileRowArea(r);
+        tr.row(i, r.location || r.code || `#${i + 1}`, () => tr.step('area', area, { width: num(r.width), length: num(r.length) }));
+        return area;
+    });
+    const byCode = (code: FloorTileCode) => input.rows.flatMap((r, i) => (r.code === code ? [areas[i] ?? 0] : []));
+    tr.step('F1', out.F1 ?? 0, { area: byCode('F1') });
+    tr.step('F3', out.F3 ?? 0, { area: byCode('F3') });
+    tr.step('F4', out.F4 ?? 0, { area: byCode('F4') });
+    tr.step('total', out.total ?? 0, { area: areas });
+    tr.step('R205', out.R205 ?? 0, { F1: out.F1 ?? 0 });
+    tr.step('R206', out.R206 ?? 0, { F3: out.F3 ?? 0 });
+    tr.step('R207', out.R207 ?? 0, { F4: out.F4 ?? 0 });
+}

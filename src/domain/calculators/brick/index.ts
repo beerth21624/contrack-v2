@@ -2,7 +2,9 @@
 // R183 เสาเอ็นและคานทับหลัง (= SUM E179:E182) and the ×2 full-brick prices are BOQ formulas (template);
 // R185 ท่อร้อยสายไฟ comes from the electrical-pipe sheet. Net areas by wall part also feed the plaster sheet.
 // Spec: docs/excel-spec/03-roof-brick-plaster-doors.md §4 and §7 (oddities 1, 2, 5).
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
 import { defineCalculator, type CalcContext } from '../types';
+import { BRICK_TRACE_LABELS } from './trace.labels';
 import { BRICK_THICKNESSES, BRICK_TYPES, WALL_PARTS, openingKey } from '../door-window';
 
 // Dropdowns B/C/D share their values with the door-window sheet (D/E/F).
@@ -148,7 +150,7 @@ export const brick = defineCalculator<BrickInput>({
     }),
     // A real project: no walls yet (every wall length / height is read off the plan). No prices live on this sheet.
     blank: () => ({ walls: [] }),
-    compute: (input, ctx) => {
+    compute: (input, ctx, tr = NO_TRACE) => {
         const openings = brickOpenings(ctx);
         const rows = brickWallResults(input, openings);
         const out: Record<string, number> = {
@@ -165,7 +167,56 @@ export const brick = defineCalculator<BrickInput>({
             const b = BRICK_BOQ_ROWS.find(x => x.brickType === w.brickType.trim() && x.thickness === w.thickness.trim());
             if (b) out[b.line] = (out[b.line] ?? 0) + net;
         });
+        if (tr.enabled) traceBrick(input, tr, openings, rows, out);
         return out;
     },
+    traceLabels: BRICK_TRACE_LABELS,
     boqLinks: BRICK_BOQ_ROWS.map(b => ({ line: b.line, field: 'qty' as const, output: b.line })),
 });
+
+/** Dev mode: records the steps of the compute above (observes values already computed; changes nothing). */
+function traceBrick(
+    input: BrickInput, tr: Tracer, openings: Record<string, number>, rows: BrickWallResult[], out: Record<string, number>,
+): void {
+    const groups = new Map<string, number[]>();
+    input.walls.forEach((w, i) => groups.set(wallKey(w), [...(groups.get(wallKey(w)) ?? []), i]));
+    input.walls.forEach((w, i) => {
+        const res = rows[i] ?? { area: 0, openings: 0, net: 0 };
+        const k = wallKey(w);
+        const members = groups.get(k) ?? [i];
+        const total = openings[k] ?? 0;
+        const groupArea = members.reduce((acc, j) => acc + (rows[j]?.area ?? 0), 0);
+        tr.row(i, w.wallPart.trim() || `#${i + 1}`, () => {
+            if (w.shape === 'triangle') {
+                tr.constant('triangleFactor', 0.5);
+                tr.step('areaTriangle', res.area, { triangleFactor: 0.5, length: num(w.length), height: num(w.height) });
+            } else {
+                tr.step('area', res.area, { length: num(w.length), height: num(w.height) });
+            }
+            if (total !== 0 && members.length > 1 && groupArea !== 0) {
+                tr.step('openingsShare', res.openings, { groupOpenings: total, area: res.area, groupArea });
+            } else if (total !== 0 && members.length > 1 && members[0] !== i) {
+                tr.step('openingsNone', res.openings, {});
+            } else {
+                tr.step('openings', res.openings, { groupOpenings: total });
+            }
+            tr.step('net', res.net, { area: res.area, openings: res.openings });
+        });
+    });
+    const col = (f: (r: BrickWallResult) => number) => rows.map(f);
+    tr.step('totalGross', out.gross ?? 0, { area: col(r => r.area) });
+    tr.step('totalOpenings', out.openings ?? 0, { openings: col(r => r.openings) });
+    tr.step('totalNet', out.net ?? 0, { net: col(r => r.net) });
+    const unmatched = Object.values(unmatchedOpenings(input, openings));
+    tr.step('unmatchedOpenings', out.unmatchedOpenings ?? 0, { groupOpenings: unmatched });
+    for (const b of BRICK_BOQ_ROWS) {
+        const nets = input.walls.flatMap((w, i) =>
+            (b.brickType === w.brickType.trim() && b.thickness === w.thickness.trim() ? [rows[i]?.net ?? 0] : []));
+        tr.step(b.line, out[b.line] ?? 0, { net: nets });
+    }
+    const parts = [...new Set(input.walls.map(w => w.wallPart.trim()))];
+    for (const part of parts) {
+        const nets = input.walls.flatMap((w, i) => (w.wallPart.trim() === part ? [rows[i]?.net ?? 0] : []));
+        tr.step('partNet', out[netByPartKey(part)] ?? 0, { net: nets }, { params: { part } });
+    }
+}

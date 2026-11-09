@@ -1,6 +1,8 @@
 // Sheet "พื้นหล่อในที่_S" (Excel v5 sheet 28) → BOQ (Home) section 9 (rows 88–94).
 // Spec: docs/excel-spec/02-structure-steps-06-13.md §2.4 (and §1.2 row 9 of the summary sheet 24).
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
 import { defineCalculator } from '../types';
+import { SLAB_ON_GRADE_TRACE_LABELS } from './trace.labels';
 import { rebarSlotRows, REBAR_SIZES, kgPerMetre } from '../../boq/slots';
 
 /** One slab panel = one row of the sheet (rows 8–24; D5: unlimited). */
@@ -37,13 +39,16 @@ export interface SlabRowCalc {
     concrete: number;   // S (ลบ.ม.)
 }
 
-/** Formulas of one slab row (Excel row 8, shared down the table). */
-export function slabRowCalc(r: SlabRow): SlabRowCalc {
+/** Row name shown in the dev-mode trace. */
+export const slabRowLabel = (r: SlabRow, i: number): string => r.name || `#${i + 1}`;
+
+/** Formulas of one slab row (Excel row 8, shared down the table). `tr` (dev mode) records the steps; call inside `tr.row(i, …)`. */
+export function slabRowCalc(r: SlabRow, tr: Tracer = NO_TRACE): SlabRowCalc {
     const area = num(r.width) * num(r.length);
     // P = (IFERROR(((C*D)/O)*2, "0"))*N — area / spacing × 2 directions × layers; a zero spacing gives 0.
     const perLayer = num(r.spacing) !== 0 ? (area / num(r.spacing)) * 2 : 0;
     const barLength = perLayer * num(r.layers);
-    return {
+    const res: SlabRowCalc = {
         backfill: area * num(r.fillDepth),                 // H = (C*D)*G
         sand: area * num(r.sandThickness) * (1 + 0.25),    // J = (C*D)*I*(100%+25%)
         plastic: area,                                     // K = C*D
@@ -51,11 +56,31 @@ export function slabRowCalc(r: SlabRow): SlabRowCalc {
         weight: barLength * kgPerMetre(r.barSize),             // Q = IFERROR(P*SWITCH(M,…),0)
         concrete: area * num(r.thickness),                 // S = C*D*E
     };
+    if (tr.enabled) {
+        const w = num(r.width), l = num(r.length), sp = num(r.spacing);
+        const kg = kgPerMetre(r.barSize);
+        tr.constant('sandFactor', 1 + 0.25);
+        tr.constant('directions', 2);
+        tr.constant('kgPerM', kg, { params: { size: r.barSize || '-' } });
+        tr.step('area', area, { width: w, length: l });
+        tr.step('backfill', res.backfill, { area, fillDepth: num(r.fillDepth) });
+        tr.step('sand', res.sand, { area, sandThickness: num(r.sandThickness), sandFactor: 1 + 0.25 });
+        tr.step('plastic', res.plastic, { area });
+        if (sp !== 0) {
+            tr.step('perLayer', perLayer, { area, spacing: sp, directions: 2 });
+            tr.step('barLength', barLength, { perLayer, layers: num(r.layers) });
+        } else {
+            tr.step('barLengthNone', barLength, { spacing: sp });
+        }
+        tr.step('weight', res.weight, { barLength, kgPerM: kg }, { params: { size: r.barSize || '-' } });
+        tr.step('concrete', res.concrete, { area, thickness: num(r.thickness) });
+    }
+    return res;
 }
 
 /** Totals row 6 of the sheet. Every row is summed (Excel's ranges already cover the whole table). */
-export function computeSlabOnGrade(input: SlabOnGradeInput): Record<string, number> {
-    const rows = input.slabs.map(slabRowCalc);
+export function computeSlabOnGrade(input: SlabOnGradeInput, tr: Tracer = NO_TRACE): Record<string, number> {
+    const rows = input.slabs.map((r, i) => (tr.enabled ? tr.row(i, slabRowLabel(r, i), () => slabRowCalc(r, tr)) : slabRowCalc(r)));
     const sum = (f: (c: SlabRowCalc) => number) => rows.reduce((s, c) => s + f(c), 0);
     const out: Record<string, number> = {
         backfill: sum(c => c.backfill),   // G6 = SUM(H8:H24)
@@ -66,6 +91,17 @@ export function computeSlabOnGrade(input: SlabOnGradeInput): Record<string, numb
     // M6..Q6 = SUMIF($M$8:$M$100, size, $Q$8:$Q$100)
     for (const size of REBAR_SIZES) {
         out[`rebar.${size}`] = input.slabs.reduce((s, r, i) => s + (r.barSize === size ? rows[i]?.weight ?? 0 : 0), 0);
+    }
+    if (tr.enabled) {
+        tr.step('totalBackfill', out.backfill ?? 0, { backfill: rows.map(c => c.backfill) });
+        tr.step('totalSand', out.sand ?? 0, { sand: rows.map(c => c.sand) });
+        tr.step('totalPlastic', out.plastic ?? 0, { plastic: rows.map(c => c.plastic) });
+        tr.step('totalConcrete', out.concrete ?? 0, { concrete: rows.map(c => c.concrete) });
+        // Weight per bar size: only sizes some row uses (Σ of the rows' weights of that size).
+        for (const size of REBAR_SIZES) {
+            const w = input.slabs.flatMap((r, i) => (r.barSize === size ? [rows[i]?.weight ?? 0] : []));
+            if (w.length > 0) tr.step('totalRebar', out[`rebar.${size}`] ?? 0, { weight: w }, { params: { size } });
+        }
     }
     return out;
 }
@@ -108,7 +144,8 @@ export const slabOnGrade = defineCalculator<SlabOnGradeInput>({
     }),
     // A real project starts with no panels; each added panel gets the Excel bar spec (newSlabRow).
     blank: () => ({ slabs: [] }),
-    compute: (input) => computeSlabOnGrade(input),
+    compute: (input, _ctx, tr = NO_TRACE) => computeSlabOnGrade(input, tr),
+    traceLabels: SLAB_ON_GRADE_TRACE_LABELS,
     // BOQ 9.2–9.4, 9.6 read sheet 24 row 9 (Q9 = G6, D9 = I6, F9 = K6, P9 = S6).
     boqLinks: [
         { line: 'R88', field: 'qty', output: 'backfill' },

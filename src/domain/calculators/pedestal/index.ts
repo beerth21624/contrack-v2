@@ -13,7 +13,9 @@
 import { REBAR_SIZES, rebarSlotRows } from '../../boq/slots';
 import { roundUp } from '../../boq/engine';
 import { addWeight, emptyWeights, footingRowKey, kgPerMetre, nextUnusedName, type RebarWeights } from '../footing';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
 import { defineCalculator, type CalcContext } from '../types';
+import { PEDESTAL_TRACE_LABELS } from './trace.labels';
 
 export interface PedestalRow {
     name: string;            // B ชื่อเสา (dropdown C1,C2,C3)
@@ -67,7 +69,14 @@ export interface PedestalRowResult {
     concrete: number;            // V คอนกรีต โครงสร้าง (ลบ.ม.)
 }
 
-export function pedestalRow(r: PedestalRow, f: FootingRef): PedestalRowResult {
+/** Hard-coded: the bar's anchoring length in the footing is the footing width ÷ 3 (dev-mode trace). */
+const ANCHOR_DIVISOR = 3;
+
+/** Row name shown in the dev-mode trace. */
+export const pedestalRowLabel = (r: PedestalRow, i: number): string => r.name || `#${i + 1}`;
+
+/** One row. `tr` (dev mode) records the steps; call inside `tr.row(i, …)`. The arithmetic is the same with or without it. */
+export function pedestalRow(r: PedestalRow, f: FootingRef, tr: Tracer = NO_TRACE): PedestalRowResult {
     const n = num(r.count), w = num(r.width), l = num(r.length), h = num(r.height);
     // J = F + Footing!F + (Footing!D / 3)
     const mainLength = h + f.depth + f.width / 3;
@@ -81,11 +90,33 @@ export function pedestalRow(r: PedestalRow, f: FootingRef): PedestalRowResult {
     const stirrupLength = 2 * (w + l);                             // P = 2*(D+E)
     const stirrupTotal = stirrupCount === null ? null : n * stirrupCount * stirrupLength; // Q = IFERROR(C*O*P,"-")
     const stirrupKg = stirrupTotal === null ? 0 : stirrupTotal * kgPerMetre(r.stirrupSize); // R = IFERROR(…,0)
+    const formwork = n * (2 * (w + l)) * h;                        // T = C*(2*(D+E))*F
+    const concrete = n * (w * l) * h;                              // V = C*(D*E)*F
+    if (tr.enabled) {
+        tr.constant('anchorDivisor', ANCHOR_DIVISOR);
+        const kM = kgPerMetre(r.mainBarSize), kS = kgPerMetre(r.stirrupSize);
+        tr.constant('kgPerM', kM, { params: { size: r.mainBarSize || '-' } });
+        tr.constant('kgPerM', kS, { params: { size: r.stirrupSize || '-' } });
+        tr.step('mainLength', mainLength, { height: h, footingDepth: f.depth, footingWidth: f.width, anchorDivisor: ANCHOR_DIVISOR });
+        tr.step('mainTotal', mainTotal, { count: n, mainLength, mainBarCount: num(r.mainBarCount) });
+        tr.step('mainKg', mainKg, { mainTotal, kgPerM: kM }, { params: { size: r.mainBarSize || '-' } });
+        if (stirrupCount !== null && stirrupTotal !== null) {
+            tr.step('stirrupCount', stirrupCount, { footingDepth: f.depth, height: h, stirrupSpacing: s });
+            tr.step('stirrupLength', stirrupLength, { width: w, length: l });
+            tr.step('stirrupTotal', stirrupTotal, { count: n, stirrupCount, stirrupLength });
+            tr.step('stirrupKg', stirrupKg, { stirrupTotal, kgPerM: kS }, { params: { size: r.stirrupSize || '-' } });
+        } else {
+            tr.step('stirrupLength', stirrupLength, { width: w, length: l });
+            tr.step('stirrupNone', stirrupKg, { stirrupSpacing: s });
+        }
+        tr.step('formwork', formwork, { count: n, width: w, length: l, height: h });
+        tr.step('concrete', concrete, { count: n, width: w, length: l, height: h });
+    }
     return {
         mainLength, mainTotal, mainKg,
         stirrupCount, stirrupLength, stirrupTotal, stirrupKg,
-        formwork: n * (2 * (w + l)) * h,                           // T = C*(2*(D+E))*F
-        concrete: n * (w * l) * h,                                 // V = C*(D*E)*F
+        formwork,
+        concrete,
     };
 }
 
@@ -97,16 +128,35 @@ export interface PedestalTotals {
     concrete: number;       // V6
 }
 
-export function pedestalTotals(rows: PedestalRow[], footingOutputs: Record<string, number> | undefined): PedestalTotals {
+export function pedestalTotals(rows: PedestalRow[], footingOutputs: Record<string, number> | undefined, tr: Tracer = NO_TRACE): PedestalTotals {
     const t: PedestalTotals = { main: emptyWeights(), stirrup: emptyWeights(), rebar: emptyWeights(), formwork: 0, concrete: 0 };
-    for (const r of rows) {
-        const c = pedestalRow(r, footingRefFor(footingOutputs, r.footing));
+    const per: PedestalRowResult[] = [];
+    rows.forEach((r, i) => {
+        const ref = footingRefFor(footingOutputs, r.footing);
+        const c = tr.enabled ? tr.row(i, pedestalRowLabel(r, i), () => pedestalRow(r, ref, tr)) : pedestalRow(r, ref);
+        per.push(c);
         addWeight(t.main, r.mainBarSize, c.mainKg);
         addWeight(t.stirrup, r.stirrupSize, c.stirrupKg);
         t.formwork += c.formwork;
         t.concrete += c.concrete;
-    }
+    });
     for (const s of REBAR_SIZES) t.rebar[s] = t.main[s] + t.stirrup[s];
+    if (tr.enabled) {
+        tr.step('totalFormwork', t.formwork, { formwork: per.map(c => c.formwork) });
+        tr.step('totalConcrete', t.concrete, { concrete: per.map(c => c.concrete) });
+        // Weight per bar size: only sizes some row uses (Σ of the rows' weights of that size).
+        const bySize = (size: string, pick: (r: PedestalRow) => string, kg: (c: PedestalRowResult) => number) =>
+            rows.flatMap((r, i) => (pick(r) === size ? [kg(per[i] ?? pedestalRow(r, footingRefFor(footingOutputs, r.footing)))] : []));
+        for (const s of REBAR_SIZES) {
+            const m = bySize(s, r => r.mainBarSize, c => c.mainKg);
+            const st = bySize(s, r => r.stirrupSize, c => c.stirrupKg);
+            if (m.length + st.length === 0) continue;
+            const params = { size: s };
+            if (m.length > 0) tr.step('totalMain', t.main[s], { mainKg: m }, { params });
+            if (st.length > 0) tr.step('totalStirrup', t.stirrup[s], { stirrupKg: st }, { params });
+            tr.step('totalRebar', t.rebar[s], { mainWeight: t.main[s], stirrupWeight: t.stirrup[s] }, { params });
+        }
+    }
     return t;
 }
 
@@ -172,9 +222,9 @@ export const pedestal = defineCalculator<PedestalInput>({
     }),
     // A real project: no pedestals until the user adds them (after the footing types they sit on).
     blank: () => ({ rows: [] }),
-    compute: (input, ctx) => {
+    compute: (input, ctx, tr = NO_TRACE) => {
         const fo = footingOf(ctx);
-        const t = pedestalTotals(input.rows, fo);
+        const t = pedestalTotals(input.rows, fo, tr);
         const out: Record<string, number> = {
             formwork: t.formwork,   // T6 → sheet 24 O7 → BOQ E62
             concrete: t.concrete,   // V6 → sheet 24 P7 → BOQ E65
@@ -197,9 +247,18 @@ export const pedestal = defineCalculator<PedestalInput>({
             // Excel lets backfill go negative (pedestals with no footing pit); no soil can be negative (D1).
             onFooting.forEach((v, i) => { out[footingBackfillKey(i)] = Math.max(0, (fo[footingRowKey(i, 'backfillGross')] ?? 0) - v); });
             out.backfill = Math.max(0, (fo.backfillGross ?? 0) - t.concrete);   // Footing!AI6 → sheet 24 Q6 → BOQ E68
+            if (tr.enabled) {
+                onFooting.forEach((_v, i) => {
+                    const on = input.rows.flatMap(r => (r.footing === i ? [pedestalRow(r, footingRefFor(fo, r.footing)).concrete] : []));
+                    tr.step('footingBackfill', out[footingBackfillKey(i)] ?? 0,
+                        { footingBackfillGross: fo[footingRowKey(i, 'backfillGross')] ?? 0, pedestalConcrete: on }, { params: { n: i + 1 } });
+                });
+                tr.step('backfill', out.backfill ?? 0, { footingBackfillGross: fo.backfillGross ?? 0, concrete: t.concrete });
+            }
         }
         return out;
     },
+    traceLabels: PEDESTAL_TRACE_LABELS,
     boqLinks: [
         { line: 'R62', field: 'qty', output: 'formwork' },
         { line: 'R65', field: 'qty', output: 'concrete' },
