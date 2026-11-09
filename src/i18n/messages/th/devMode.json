@@ -7,10 +7,10 @@
   },
   "source": {
     "user": "กรอกเอง",
-    "default": "ค่าฮาร์ดโค้ด (ยังไม่ได้แก้)",
-    "constant": "ค่าคงที่ฮาร์ดโค้ดในสูตร",
+    "default": "Hard code",
+    "constant": "Hard code",
     "dependency": "จากขั้นตอนอื่น",
-    "templatePrice": "ราคาต่อหน่วยฮาร์ดโค้ดในแม่แบบ BOQ",
+    "templatePrice": "Hard code",
     "hint": {
       "user": "ค่าที่ผู้ใช้กรอกหรือแก้ไขแล้ว",
       "default": "ค่าเริ่มต้นที่ฮาร์ดโค้ดไว้ แก้ไขได้ แต่ผู้ใช้ยังไม่ได้เปลี่ยน",
@@ -18,7 +18,8 @@
       "dependency": "ผลลัพธ์จากขั้นตอนอื่น กดเพื่อไปที่ขั้นตอนนั้น",
       "templatePrice": "ราคาต่อหน่วยที่ฮาร์ดโค้ดไว้ในแม่แบบ BOQ"
     },
-    "legend": "สัญลักษณ์ที่มา"
+    "legend": "สัญลักษณ์ที่มา",
+    "hardCode": "Hard code"
   },
   "trace": {
     "title": "ที่มาของตัวเลข (โหมดตรวจสอบการคำนวณ)",
@@ -38,7 +39,7 @@
       "result": "ผลลัพธ์",
       "output": "ผลลัพธ์",
       "destination": "ส่งไปที่",
-      "defaultValue": "ค่าฮาร์ดโค้ด"
+      "defaultValue": "ค่า Hard code"
     },
     "rowLabel": "แถว {row}",
     "totals": "รวมทุกแถว",
@@ -63,7 +64,7 @@
     }
   },
   "warning": {
-    "defaultsInUse": "ยังใช้ค่าฮาร์ดโค้ดอยู่ {count} ค่า (ผู้ใช้ยังไม่ได้เปลี่ยน)",
+    "defaultsInUse": "ยังใช้ค่า Hard code อยู่ {count} ค่า (ผู้ใช้ยังไม่ได้เปลี่ยน)",
     "dependencyMissing": "ขั้นตอน {step} ยังไม่ได้กรอก ค่าที่อ่านจากขั้นตอนนั้นนับเป็น 0",
     "invalidInput": "มีค่าที่ไม่ใช่ตัวเลขที่ใช้ได้ {count} ค่า ระบบนับเป็น 0",
     "invalidOutput": "ผลลัพธ์ {count} ค่าไม่ใช่ตัวเลขที่ใช้ได้ รายการ BOQ จึงใช้ค่าในแม่แบบแทน",
@@ -99,28 +100,28 @@
       "tieWire": "ปริมาณรวมเผื่อ = ผลรวมปริมาณรวมเผื่อของรายการ {lines} × {ratio}"
     },
     "net": {
-      "override": "แก้ไขในหน้า BOQ",
-      "calc": "ผลลัพธ์ {output} จากขั้นตอน {step}",
+      "override": "แก้ในหน้า BOQ",
+      "calc": "{step} › {output}",
       "calcUnknown": "ผลลัพธ์จากขั้นตอนคำนวณ",
       "skipped": "เป็น 0 เพราะตั้งเป็น \"ไม่มีในโครงการนี้\"",
       "slot": "รายการที่ขั้นตอน {step} สร้างให้",
-      "template": "ค่าฮาร์ดโค้ดในแม่แบบ BOQ",
+      "template": "Hard code",
       "line": "= ปริมาณของรายการ {line} × {factor}",
       "sumLines": "= ผลรวมปริมาณของรายการ {lines}",
       "none": "รายการนี้ไม่มีปริมาณสุทธิ"
     },
     "price": {
-      "override": "แก้ไขในหน้า BOQ",
-      "calc": "ผลลัพธ์ {output} จากขั้นตอน {step}",
+      "override": "แก้ในหน้า BOQ",
+      "calc": "{step} › {output}",
       "calcUnknown": "ผลลัพธ์จากขั้นตอนคำนวณ",
       "slot": "ราคาที่ขั้นตอน {step} กำหนดให้รายการนี้",
-      "template": "ราคาต่อหน่วยฮาร์ดโค้ดในแม่แบบ BOQ",
+      "template": "Hard code",
       "linePrice": "= ราคาของรายการ {line} × {factor}",
       "consumables": "= {pct}% ของ (ค่าวัสดุรวม + ค่าแรงรวม) ของรายการ {lines}"
     },
     "waste": {
-      "override": "แก้ไขในหน้า BOQ",
-      "template": "ค่าฮาร์ดโค้ดในแม่แบบ BOQ"
+      "override": "แก้ในหน้า BOQ",
+      "template": "Hard code"
     },
     "cleaned": "ค่าเดิมไม่ใช่ตัวเลขที่ใช้ได้ ระบบนับเป็น 0",
     "openLine": "อธิบายที่มาของตัวเลขในรายการนี้",

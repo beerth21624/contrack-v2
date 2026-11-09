@@ -24,6 +24,7 @@ import { loadDevModeAllowed } from './config';
 import { useDevMode } from './useDevMode';
 import { flagTargetText } from './ReviewFlags';
 import { SOURCE_ICON, useTraceText, type TraceText } from './useTraceText';
+import { HARD_CODE_STYLE, isHardCodedNet, isHardCodedPrice, isHardCodedWaste, SourceText } from './SourceText';
 
 const CSS = `
 .dtr { font-size: 9pt; }
@@ -53,10 +54,10 @@ interface StepTrace { calc: string; name: string; trace: CalcTrace }
 function LineSource({ expl, line: l, tx }: { expl: BoqExplanation; line: BoqLineExplanation; tx: TraceText }) {
     return (
         <div className="small">
-            <div>{tx.t('explain.cell.qty')}: {tx.netSource(expl, l.net.source)}{l.net.cleaned ? ` ⚠ ${tx.t('explain.cleaned')}` : ''}</div>
-            <div>{tx.t('explain.cell.waste')}: {tx.t(`explain.waste.${l.waste.source}`)}</div>
-            <div>{tx.t('explain.cell.matUnit')}: {tx.priceSource(expl, l.mat)}</div>
-            <div>{tx.t('explain.cell.labUnit')}: {tx.priceSource(expl, l.lab)}</div>
+            <div>{tx.t('explain.cell.qty')}: <SourceText text={tx.netSource(expl, l.net.source)} hard={isHardCodedNet(l.net.source)} />{l.net.cleaned ? ` ⚠ ${tx.t('explain.cleaned')}` : ''}</div>
+            <div>{tx.t('explain.cell.waste')}: <SourceText text={tx.t(`explain.waste.${l.waste.source}`)} hard={isHardCodedWaste(l)} /></div>
+            <div>{tx.t('explain.cell.matUnit')}: <SourceText text={tx.priceSource(expl, l.mat)} hard={isHardCodedPrice(l.mat)} /></div>
+            <div>{tx.t('explain.cell.labUnit')}: <SourceText text={tx.priceSource(expl, l.lab)} hard={isHardCodedPrice(l.lab)} /></div>
         </div>
     );
 }
@@ -97,7 +98,7 @@ function StepAppendix({ s, tx, locale }: { s: StepTrace; tx: TraceText; locale: 
                             rows.push(
                                 <tr key={r.path}>
                                     <td>{r.name}</td><td className="num">{r.value}</td><td>{r.unit}</td>
-                                    <td>{SOURCE_ICON[r.source]} {r.source === 'dependency' && r.from !== undefined ? tx.stepName(r.from) : tx.t(`source.${r.source}`)}</td>
+                                    <td style={r.source === 'default' || r.source === 'constant' ? HARD_CODE_STYLE : undefined}>{SOURCE_ICON[r.source]} {r.source === 'dependency' && r.from !== undefined ? tx.stepName(r.from) : tx.t(`source.${r.source}`)}</td>
                                     <td className="num">{r.defaultValue ?? ''}</td>
                                 </tr>,
                             );

@@ -16,7 +16,7 @@ const th = `${td} bg-gray-50 font-semibold text-left whitespace-nowrap`;
 const tdNum = `${td} text-right tabular-nums whitespace-nowrap`;
 
 const SOURCE_TONE: Record<InputRow['source'], string> = {
-    user: 'text-blue-700', default: 'text-amber-700', constant: 'text-gray-700', dependency: 'text-green-700',
+    user: 'text-blue-700', default: 'text-red-600 font-semibold', constant: 'text-red-600 font-semibold', dependency: 'text-green-700',
 };
 
 export function SourceBadge({ source, from, tx }: { source: InputRow['source']; from?: string; tx: TraceText }) {

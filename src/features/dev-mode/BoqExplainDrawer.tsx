@@ -9,12 +9,13 @@ import { Button, Drawer } from 'antd';
 import type { BoqCellField, BoqExplanation, BoqLineExplanation } from '@/domain/trace';
 import { FlagButton } from './ReviewFlags';
 import { stepHref, useTraceText, type TraceText } from './useTraceText';
+import { isHardCodedNet, isHardCodedPrice, isHardCodedWaste, SourceText } from './SourceText';
 
 export interface ExplainTarget { line: string; field: BoqCellField }
 
 function Cell({ field, active, title, value, rule, numbers, source, extra }: {
     field: BoqCellField; active: boolean; title: string; value: string;
-    rule?: string; numbers?: string; source?: string; extra?: ReactNode;
+    rule?: string; numbers?: string; source?: ReactNode; extra?: ReactNode;
 }) {
     const ref = useRef<HTMLDivElement>(null);
     useEffect(() => { if (active) ref.current?.scrollIntoView({ block: 'nearest' }); }, [active]);
@@ -27,7 +28,7 @@ function Cell({ field, active, title, value, rule, numbers, source, extra }: {
             </div>
             {rule !== undefined && rule !== '' && <div className="text-[12px] text-gray-700 mt-1">{rule}</div>}
             {numbers !== undefined && numbers !== '' && <div className="text-[12px] text-gray-600 tabular-nums mt-0.5">{numbers}</div>}
-            {source !== undefined && source !== '' && <div className="text-[12px] text-blue-800 mt-1">{source}</div>}
+            {source !== undefined && <div className="text-[12px] text-blue-800 mt-1">{source}</div>}
             {extra}
         </div>
     );
@@ -69,7 +70,7 @@ function LineBody({ expl, line: l, field, tx, onLine }: {
         const totalName = tx.t(`explain.cell.${totalField}`);
         return [
             <Cell key={unitField} field={unitField} active={field === unitField} title={tx.t(`explain.cell.${unitField}`)} value={n(p.unit)}
-                source={`${tx.t('explain.sourceLabel')}: ${tx.priceSource(expl, p)}`} numbers={tx.priceUnitNumbers(p)}
+                source={<>{tx.t('explain.sourceLabel')}: <SourceText text={tx.priceSource(expl, p)} hard={isHardCodedPrice(p)} /></>} numbers={tx.priceUnitNumbers(p)}
                 extra={<>{cleaned(p.cleaned)}<Refs expl={expl} refs={priceRefs(p)} step={tx.stepOfPrice(p)} tx={tx} onLine={onLine} /></>} />,
             <Cell key={totalField} field={totalField} active={field === totalField} title={totalName} value={n(p.total)}
                 rule={tx.priceTotalRule(totalName, p)} numbers={tx.priceTotalNumbers(p)} />,
@@ -78,10 +79,10 @@ function LineBody({ expl, line: l, field, tx, onLine }: {
     return (
         <div className="flex flex-col gap-2">
             <Cell field="qty" active={field === 'qty'} title={tx.t('explain.cell.qty')} value={`${n(l.net.source.kind === 'none' ? null : l.net.value)} ${tx.unit(l.unit)}`}
-                source={`${tx.t('explain.sourceLabel')}: ${tx.netSource(expl, l.net.source)}`} numbers={tx.netNumbers(l)}
+                source={<>{tx.t('explain.sourceLabel')}: <SourceText text={tx.netSource(expl, l.net.source)} hard={isHardCodedNet(l.net.source)} /></>} numbers={tx.netNumbers(l)}
                 extra={<>{cleaned(l.net.cleaned)}<Refs expl={expl} refs={netRefs} step={tx.stepOfNet(l.net.source)} tx={tx} onLine={onLine} /></>} />
             <Cell field="waste" active={field === 'waste'} title={tx.t('explain.cell.waste')} value={`${tx.num(l.waste.value * 100)}%`}
-                source={`${tx.t('explain.sourceLabel')}: ${tx.t(`explain.waste.${l.waste.source}`)}`} />
+                source={<>{tx.t('explain.sourceLabel')}: <SourceText text={tx.t(`explain.waste.${l.waste.source}`)} hard={isHardCodedWaste(l)} /></>} />
             <Cell field="gross" active={field === 'gross'} title={tx.t('explain.cell.gross')} value={n(l.gross.value)}
                 rule={tx.grossRule(expl, l.gross.rule)} numbers={tx.grossNumbers(l)}
                 extra={<Refs expl={expl} refs={grossRefs} step={undefined} tx={tx} onLine={onLine} />} />
