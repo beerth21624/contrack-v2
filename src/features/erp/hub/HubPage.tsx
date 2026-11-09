@@ -114,7 +114,7 @@ export function HubPage() {
                     />
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 min-[1900px]:grid-cols-4">
                     {list.data.map(row => <ProjectCard key={row.project.id} row={row} defaultType={defaultType} />)}
                 </div>
             )}

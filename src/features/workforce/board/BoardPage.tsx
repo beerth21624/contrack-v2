@@ -155,7 +155,7 @@ function WorkspaceBoard({ workspace, workspaces, onSelect }: {
     };
 
     return (
-        <div className="flex flex-col gap-4 max-w-[1200px] mx-auto w-full min-w-0">
+        <div className="flex flex-col gap-4 w-full min-w-0">
             <div className="bg-white border border-gray-200 rounded-card p-4 md:p-5 shadow-card flex flex-col md:flex-row md:items-center gap-3">
                 <div className="flex-1 min-w-0">
                     <Title level={3} style={{ margin: 0 }}>{t('board.title')}</Title>

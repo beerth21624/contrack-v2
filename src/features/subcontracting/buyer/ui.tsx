@@ -17,7 +17,7 @@ import {
 export function ScPage({ next, children }: { next: string; children: React.ReactNode }) {
     return (
         <ModuleGate module="subcontracting" next={next}>
-            <div className="flex flex-col gap-4 max-w-[1200px] mx-auto w-full">{children}</div>
+            <div className="flex flex-col gap-4 w-full">{children}</div>
         </ModuleGate>
     );
 }

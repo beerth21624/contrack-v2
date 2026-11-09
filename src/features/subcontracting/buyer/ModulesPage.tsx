@@ -33,7 +33,7 @@ function ModulesContent() {
     const { workspace, workspaces, isLoading, select } = useCurrentWorkspace();
     if (isLoading) return spinner;
     return (
-        <div className="flex flex-col gap-4 max-w-[1200px] mx-auto w-full">
+        <div className="flex flex-col gap-4 w-full">
             <PageHead title={t('page.title')} sub={t('page.subtitle')}
                 extra={workspace && workspaces.length > 1 ? (
                     <Select value={workspace.id} onChange={select} style={{ minWidth: 220 }} aria-label={t('page.workspaceLabel')}

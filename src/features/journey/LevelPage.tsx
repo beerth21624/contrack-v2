@@ -97,7 +97,7 @@ function MissingList({ missing, onPick }: { missing: readonly MissingValue[]; on
         </ul>
     );
     return (
-        <div role="alert" className="max-w-[1248px] mx-auto px-4 sm:px-6 pt-2 flex flex-wrap items-baseline gap-x-2 text-[13px] leading-snug">
+        <div role="alert" className="px-4 sm:px-6 pt-2 flex flex-wrap items-baseline gap-x-2 text-[13px] leading-snug">
             <span className="font-medium text-red-600 whitespace-nowrap">{t('missingHead', { count: s.count })}</span>
             <span className="min-w-0 text-gray-600 [overflow-wrap:anywhere]">{s.shown.join(' · ')}</span>
             {s.more > 0 && (
@@ -143,7 +143,7 @@ function StepBottomBar({ barRef, revealed, missing, onPick, prev, next, level, m
         className="fixed bottom-0 left-0 right-0 z-20 bg-white/95 backdrop-blur border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,.05)] pb-[env(safe-area-inset-bottom)]">
         {revealed && <MissingList missing={missing} onPick={onPick} />}
         {/* On a phone the buttons wrap under the total instead of squeezing it. */}
-        <div className="max-w-[1248px] mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="px-4 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center gap-x-3 gap-y-2">
             {prev
                 ? (
                     <Tooltip title={t('prevStepTip', { title: lt.level(prev) })} mouseEnterDelay={0.8}>
@@ -284,7 +284,7 @@ export function LevelPage({ levelId }: { levelId: string }) {
     const doneButIncomplete = incompleteDoneCount(mark, missing);
 
     return (
-        <div className="flex flex-col gap-4 max-w-[1200px] mx-auto w-full" style={{ paddingBottom: barHeight + 24 }}>
+        <div className="flex flex-col gap-4 w-full" style={{ paddingBottom: barHeight + 24 }}>
             {/* Compact progress that stays on top while the step is scrolled: where am I and how far (the overview says how many are left). */}
             <div className="sticky top-0 z-10 -mx-4 px-4 sm:-mx-6 sm:px-6 py-2 bg-page/95 backdrop-blur-sm">
                 <div className="flex items-center gap-3">

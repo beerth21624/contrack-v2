@@ -103,7 +103,7 @@ export function ProjectShell({ projectId, children }: { projectId: string; child
     const activeKey = activeProjectTabKey(pathname) ?? 'overview';
 
     return (
-        <div className="mx-auto flex w-full min-w-0 max-w-[1200px] flex-col gap-4">
+        <div className="flex w-full min-w-0 flex-col gap-4">
             <PageHeader
                 breadcrumb={[{ label: t('shell.back'), href: '/hub' }, { label: d.project.name }]}
                 title={

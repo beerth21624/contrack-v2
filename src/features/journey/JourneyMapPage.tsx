@@ -231,7 +231,7 @@ export function JourneyMapPage() {
     });
 
     return (
-        <div className="max-w-[1200px] mx-auto w-full flex flex-col gap-6">
+        <div className="w-full flex flex-col gap-6">
             <header className="flex flex-wrap items-end gap-3">
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 text-[12px] text-gray-500">

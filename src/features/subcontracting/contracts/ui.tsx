@@ -24,7 +24,7 @@ export function PageFrame({ title, subtitle, extra, children, back }: {
     children: React.ReactNode;
 }) {
     return (
-        <div className="flex flex-col gap-4 max-w-[1200px] mx-auto w-full">
+        <div className="flex flex-col gap-4 w-full">
             <div className={`${CARD} p-5 flex flex-col md:flex-row md:items-center gap-3`}>
                 <div className="flex-1 min-w-0">
                     {back !== undefined && (

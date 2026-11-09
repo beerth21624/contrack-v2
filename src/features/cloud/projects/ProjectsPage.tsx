@@ -165,7 +165,7 @@ function ProjectsContent() {
     const list = showTools ? sortProjects(filterProjects(all, search), sort) : all;
 
     return (
-        <div className="flex flex-col gap-4 max-w-[1200px] mx-auto w-full">
+        <div className="flex flex-col gap-4 w-full">
             <div className="bg-white border border-gray-200 rounded-card p-4 sm:p-5 shadow-card flex flex-col md:flex-row md:items-center gap-3">
                 <div className="flex-1 min-w-0">
                     <Title level={3} style={{ margin: 0 }}>{t('heading')}</Title>
@@ -249,7 +249,7 @@ function ProjectsContent() {
                     <div className="mt-2"><Button size="small" onClick={() => setSearch('')}>{t('clearSearch')}</Button></div>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 min-[1900px]:grid-cols-5 gap-3">
                     {list.map(p => {
                         const pendingCount = savedPendingCount(p.id);
                         const items = menuFor(p).items ?? [];

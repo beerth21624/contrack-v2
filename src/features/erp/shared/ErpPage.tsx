@@ -21,7 +21,7 @@ export function ErpPage({ title, subtitle, extra, breadcrumb, children }: {
     children: ReactNode;
 }) {
     return (
-        <div className="flex flex-col gap-4 max-w-[1200px] mx-auto w-full min-w-0">
+        <div className="flex flex-col gap-4 w-full min-w-0">
             {title !== undefined && <PageHeader title={title} subtitle={subtitle} extra={extra} breadcrumb={breadcrumb} />}
             {children}
         </div>

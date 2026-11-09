@@ -69,7 +69,7 @@ export function ModuleTiles({ tiles, generatedAt }: { tiles: readonly ModuleTile
     const now = new Date(generatedAt).getTime();
     return (
         <SectionCard title={t('tiles.title')} extra={mayManage ? <Link href="/workspace/modules">{t('tiles.manage')}</Link> : undefined}>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 min-[1900px]:grid-cols-5">
                 {shown.map(tile => <Tile key={tile.module} tile={tile} workspaceId={workspaceId} mayManage={mayManage} now={now} />)}
             </div>
         </SectionCard>

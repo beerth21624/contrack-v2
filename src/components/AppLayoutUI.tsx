@@ -183,9 +183,9 @@ function AppLayoutUIContent({ children }: { children: React.ReactNode }) {
                 />
             </Drawer>
 
-            {/* One frame for every page: 1200 content width, 24 px gutters (16 on phones). */}
+            {/* One frame for every page: full screen width, 24 px gutters (16 on phones). */}
             <Content className="px-4 py-4 sm:px-6 sm:py-6"
-                style={{ maxWidth: 1248, margin: '0 auto', width: '100%', background: '#F6F7F9', minHeight: 'calc(100vh - 64px - 52px)' }}>
+                style={{ width: '100%', background: '#F6F7F9', minHeight: 'calc(100vh - 64px - 52px)' }}>
                 {!hasHydrated ? (
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '60vh' }}>
                         <Spin size="large" />
