@@ -25,6 +25,7 @@ import { confirmOutcome, incompleteDoneCount } from './confirm';
 import { BoqLevelInputs } from './BoqLevelInputs';
 import { ProjectInfoInputs } from './ProjectInfoInputs';
 import { LevelSoftLock } from '@/features/cloud/presence/LevelPresence';
+import { CalcTracePanel } from '@/features/dev-mode/CalcTracePanel';
 
 const { Title, Text } = Typography;
 
@@ -350,6 +351,8 @@ export function LevelPage({ levelId }: { levelId: string }) {
                         </JourneyModeContext.Provider>
                     </div>
                 )}
+
+            {level.kind.type === 'calc' && <CalcTracePanel calcId={level.kind.calc} />}
 
             <StepBottomBar barRef={barRef} revealed={revealed} missing={missing} onPick={m => reveal(m)} prev={prev} next={next} level={level}
                 mark={mark} total={total} constructionTotal={result.boq.constructionTotal} outsideConstruction={outsideConstruction}

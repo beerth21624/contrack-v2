@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Input, Select, Spin, Tooltip, Typography } from 'antd';
-import { AuditOutlined, CaretDownOutlined, CaretRightOutlined, UndoOutlined, LinkOutlined, SearchOutlined } from '@ant-design/icons';
+import { AuditOutlined, CaretDownOutlined, CaretRightOutlined, UndoOutlined, LinkOutlined, SearchOutlined, QuestionCircleOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { useTranslations } from 'next-intl';
 import { useBoqText } from './useBoqText';
 import { isReadOnly, useProjectStore } from '@/store/project-store';
@@ -27,6 +27,10 @@ import { SubcontractSectionLink } from '@/features/subcontracting/shared/Subcont
 import { useBoqReview } from './review/useBoqReview';
 import { ReviewPanel } from './review/ReviewPanel';
 import { AiConsentModal } from './review/AiConsentModal';
+import { useDevMode } from '@/features/dev-mode/useDevMode';
+import { useBoqExplanation } from '@/features/dev-mode/useTrace';
+import { BoqExplainDrawer, type ExplainTarget } from '@/features/dev-mode/BoqExplainDrawer';
+import type { BoqCellField } from '@/domain/trace';
 
 const { Title, Text } = Typography;
 
@@ -96,6 +100,12 @@ export function BoqHomePage() {
     const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const boxRef = useRef<HTMLDivElement>(null);
     const headRef = useRef<HTMLTableSectionElement>(null);
+    // Dev mode ("calculation check mode"): explain a cell, highlight the line a step link points to.
+    const dt = useTranslations('devMode');
+    const devMode = useDevMode().active;
+    const explanation = useBoqExplanation();
+    const [explain, setExplain] = useState<ExplainTarget | null>(null);
+    const [pinnedKey, setPinnedKey] = useState<string | null>(null);
 
     const result = useMemo(() => computeProject(project), [project]);
     const overrides = project.boqOverrides;
@@ -106,6 +116,26 @@ export function BoqHomePage() {
     const review = useBoqReview(result.boq, BOQ_TEMPLATE_V5, reviewProject);
 
     useEffect(() => () => { if (flashTimer.current !== null) clearTimeout(flashTimer.current); }, []);
+
+    // Arriving from a dev-mode step link (/boq?line=<key>): bring the line into view and keep it outlined.
+    useEffect(() => {
+        if (!hasHydrated) return;
+        let line: string | null = null;
+        try { line = new URLSearchParams(window.location.search).get('line'); } catch { line = null; }
+        if (line === null || line === '') return;
+        const target = line;
+        // Sections start open and unfiltered, so the row is in the table: scroll it under the sticky header.
+        requestAnimationFrame(() => {
+            setPinnedKey(target);
+            const box = boxRef.current;
+            const el = box?.querySelector(`[data-boq-row="${CSS.escape(target)}"]`);
+            if (!box || !(el instanceof HTMLElement)) return;
+            const head = headRef.current?.offsetHeight ?? 0;
+            const rowTop = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+            box.scrollTo({ top: rowTop - head - Math.max(0, (box.clientHeight - head - el.offsetHeight) / 2) });
+            box.scrollIntoView({ block: 'nearest' });
+        });
+    }, [hasHydrated]);
 
     if (!hasHydrated) {
         return <div className="flex justify-center p-20"><Spin size="large" /></div>;
@@ -164,6 +194,17 @@ export function BoqHomePage() {
         });
     };
 
+    /** Dev mode: props that make a computed cell open "explain this cell". */
+    const explainCell = (key: string, field: BoqCellField) => (devMode
+        ? {
+            onClick: () => setExplain({ line: key, field }),
+            role: 'button' as const,
+            title: dt('explain.title'),
+            'data-explain': field,
+        }
+        : {});
+    const explainCls = devMode ? 'cursor-help hover:!outline hover:!outline-2 hover:!outline-amber-400' : '';
+
     const toggle = (no: number) => setCollapsed(prev => {
         const next = new Set(prev);
         if (next.has(no)) next.delete(no); else next.add(no);
@@ -187,10 +228,17 @@ export function BoqHomePage() {
         const qtyTip = r.qtySource === 'calc' ? t('fromCalc') : r.qtySource === 'line' || r.qtySource === 'sumLines' ? t('fromLine') : undefined;
         return (
             <tr key={r.key} data-boq-row={r.key}
-                className={`hover:bg-orange-50/40 [&>td]:transition-colors [&>td]:duration-500 ${flashCls(flashKey === r.key)}`}>
+                className={`hover:bg-orange-50/40 [&>td]:transition-colors [&>td]:duration-500 ${flashCls(flashKey === r.key)} ${pinnedKey === r.key ? 'outline outline-2 outline-amber-500 -outline-offset-2' : ''}`}>
                 <td className={`${cell} bg-white ${STICKY.no.className}`} />
                 <td className={`${cell} text-center text-gray-500 bg-white ${STICKY.step.className}`}>{r.itemNo}</td>
                 <td className={`${cell} min-w-[260px] bg-white ${STICKY.desc.className}`}>
+                    {devMode && (
+                        <Tooltip title={dt('explain.openLine')}>
+                            <Button type="text" size="small" className="!float-right !h-5 !w-5 !min-w-0 !p-0 text-amber-600"
+                                icon={<QuestionCircleOutlined />} aria-label={dt('explain.openLine')}
+                                onClick={() => setExplain({ line: r.key, field: 'qty' })} />
+                        </Tooltip>
+                    )}
                     {rate === undefined ? <Highlight text={bt.line(r.key, r.desc)} q={q} /> : (
                         <div className="flex items-start justify-between gap-2">
                             <span className="min-w-0"><Highlight text={bt.line(r.key, r.desc)} q={q} /></span>
@@ -206,14 +254,14 @@ export function BoqHomePage() {
                                 tone={r.fromCalc.qty ? 'calc' : 'input'}
                                 onCommit={v => setOverride(r.key, 'qty', v)} ariaLabel={`${bt.line(r.key, r.desc)} ${t('colQty')}`} /></div>
                           </Tooltip>
-                        : <CalcValue value={r.qtySource === 'none' ? null : r.qty} tip={qtyTip} />}
+                        : <span className={explainCls} {...explainCell(r.key, 'qty')}><CalcValue value={r.qtySource === 'none' ? null : r.qty} tip={qtyTip} /></span>}
                 </td>
                 <td className={`${cell} text-center`}>{bt.unit(r.unit)}</td>
                 <td className={`${num} ${editedCls(ov.waste !== undefined)}`} style={{ minWidth: 64 }}>
                     <NumberCell value={r.waste} percent edited={ov.waste !== undefined}
                         onCommit={v => setOverride(r.key, 'waste', v)} ariaLabel={`${bt.line(r.key, r.desc)} ${t('colWaste')}`} />
                 </td>
-                <td className={num} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.grossQty} /></td>
+                <td className={`${num} ${explainCls}`} style={{ background: SHEET_COLORS.calc }} {...explainCell(r.key, 'gross')}><CalcValue value={r.grossQty} /></td>
                 <td className={`${num} ${editedCls(ov.mat !== undefined)}`} style={{ minWidth: 90 }}>
                     {showPriceRef
                         ? (
@@ -231,13 +279,13 @@ export function BoqHomePage() {
                                 onCommit={v => setOverride(r.key, 'mat', v)} ariaLabel={`${bt.line(r.key, r.desc)} ${t('colMat')}`} />
                         )}
                 </td>
-                <td className={num} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.matTotal} /></td>
+                <td className={`${num} ${explainCls}`} style={{ background: SHEET_COLORS.calc }} {...explainCell(r.key, 'matTotal')}><CalcValue value={r.matTotal} /></td>
                 <td className={`${num} ${editedCls(ov.lab !== undefined)}`} style={{ minWidth: 90 }}>
                     <NumberCell value={r.labUnit} edited={ov.lab !== undefined} tone={r.fromCalc.lab ? 'calc' : 'input'}
                         onCommit={v => setOverride(r.key, 'lab', v)} ariaLabel={`${bt.line(r.key, r.desc)} ${t('colLab')}`} />
                 </td>
-                <td className={num} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.labTotal} /></td>
-                <td className={`${num} font-semibold`} style={{ background: SHEET_COLORS.calc }}><CalcValue value={r.total} /></td>
+                <td className={`${num} ${explainCls}`} style={{ background: SHEET_COLORS.calc }} {...explainCell(r.key, 'labTotal')}><CalcValue value={r.labTotal} /></td>
+                <td className={`${num} font-semibold ${explainCls}`} style={{ background: SHEET_COLORS.calc }} {...explainCell(r.key, 'total')}><CalcValue value={r.total} /></td>
                 <td className={`${cell} min-w-[160px] text-gray-600 ${editedCls(ov.note !== undefined)}`}>
                     <TextCell value={r.note ?? ''} edited={ov.note !== undefined}
                         onCommit={v => setOverride(r.key, 'note', v)} ariaLabel={`${bt.line(r.key, r.desc)} ${t('colNote')}`} />
@@ -327,6 +375,11 @@ export function BoqHomePage() {
                         </Button>
                         <BoqExportButtons project={project} />
                         <RevisionButtons />
+                        {devMode && (
+                            <Link href="/print/boq-trace">
+                                <Button icon={<FileSearchOutlined />}>{dt('report.open')}</Button>
+                            </Link>
+                        )}
                         {cloud !== undefined && <CreateQuotationButton projectId={cloud.projectId} workspaceId={cloud.workspaceId} />}
                     </div>
                 </div>
@@ -370,6 +423,12 @@ export function BoqHomePage() {
                         onClick={() => setCollapsed(new Set(boq.sections.map(s => s.no)))}>{t('collapseAll')}</Button>
                 </span>
             </div>
+
+            {devMode && (
+                <BoqExplainDrawer expl={explanation} target={explain} onClose={() => setExplain(null)}
+                    onLine={line => { setExplain({ line, field: 'qty' }); setPinnedKey(line); jumpToRow(line); }} />
+            )}
+            {devMode && <div className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-card px-3 py-2">{dt('explain.hint')}</div>}
 
             <AiConsentModal open={review.consent} onConfirm={review.confirmAi} onRulesOnly={review.rulesOnly} onCancel={review.cancelAi} />
             {review.open && (

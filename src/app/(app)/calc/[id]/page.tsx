@@ -6,6 +6,7 @@ import { Result, Spin } from 'antd';
 import { useTranslations } from 'next-intl';
 import { CALCULATOR_PAGES } from '@/features/calculators/pages';
 import { useProjectStore } from '@/store/project-store';
+import { CalcTracePanel } from '@/features/dev-mode/CalcTracePanel';
 
 export default function CalculatorRoute() {
     const t = useTranslations('shell');
@@ -17,7 +18,10 @@ export default function CalculatorRoute() {
     if (!hasHydrated) return <div className="flex justify-center p-20"><Spin size="large" /></div>;
     return (
         <Suspense fallback={<div className="flex justify-center p-20"><Spin size="large" /></div>}>
-            <Page />
+            <div className="flex flex-col gap-4">
+                <Page />
+                <CalcTracePanel calcId={params.id} />
+            </div>
         </Suspense>
     );
 }

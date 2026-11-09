@@ -122,7 +122,11 @@
       "override": "Edited on the BOQ page",
       "template": "Hard-coded value in the BOQ template"
     },
-    "cleaned": "The original value was not a valid number and counts as 0"
+    "cleaned": "The original value was not a valid number and counts as 0",
+    "openLine": "Explain the numbers of this line",
+    "hint": "Calculation check mode: click a calculated number cell (shaded) or the ? button after a line description to see where the number comes from",
+    "sourceLabel": "Source",
+    "unknownLine": "(a line not in this BOQ)"
   },
   "report": {
     "title": "BOQ number source report",
@@ -148,7 +152,8 @@
       "source": "Source",
       "formula": "Formula"
     },
-    "noWarnings": "Nothing to check"
+    "noWarnings": "Nothing to check",
+    "unavailable": "This report is available only when calculation check mode is on"
   },
   "flag": {
     "action": "Flag this value as wrong",

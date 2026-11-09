@@ -253,3 +253,26 @@ src/i18n/messages/{th,en}/devMode.json
   projects share them with the team through the existing document sync; this needs a new document key
   (e.g. `review`) added to `DOC_KEY_PATTERN` (`src/shared/contract/projects.ts`) and to
   `src/domain/sync/project-docs.ts` — shared files, change them in one dedicated step.
+- D9 — Step trace panel (`src/features/dev-mode/CalcTracePanel.tsx`) is mounted by the two places that render a step,
+  not by each calculator page: the calculator route `src/app/(app)/calc/[id]/page.tsx` and the journey step
+  (`src/features/journey/LevelPage.tsx`, calc levels only, also when the step is skipped so the ⚠ "not in this project"
+  shows). So every calculator gets it — including the few pages that do not use `CalculatorShell` — and no
+  calculator folder is edited. It renders `null` unless dev mode is active (no DOM, no trace computed).
+  Order: ⚠ things to check first (what a tester should look at), then ① ② ③ in a collapse (② and ③ open).
+- D10 — Step links use `/calc/<id>` (works in both the classic and the journey UI); BOQ line links use
+  `/boq?line=<lineKey>`. The key only travels in the URL, never on screen. The BOQ page reads `line` once after
+  hydration (from `window.location`, no `useSearchParams` so the page stays statically renderable), scrolls to the
+  row and keeps it outlined until another line is picked.
+- D11 — "Explain this cell" on the BOQ page: in dev mode a click on a *computed* number cell (non-editable qty, gross,
+  material total, labour total, total) opens the drawer at that cell. Editable cells (qty, waste, unit prices) keep
+  their click-to-edit, so each line also gets a small `?` button after its description that opens the drawer on the
+  same line (all eight cells are shown, the picked one highlighted). Lines a value derives from open in the same
+  drawer and are scrolled to on the BOQ page. Text for all three screens comes from one hook
+  (`src/features/dev-mode/useTraceText.ts`) so panel, drawer and report always say the same thing.
+- D12 — PDF report at `/print/boq-trace` (route group `(print)`, `PrintFrame`, A4 landscape). It reads the open
+  project from the project store, so the BOQ page opens it with a same-tab link (a cloud project lives in memory and
+  would be missing in a new tab); the toolbar's close goes back. It shows only when the server allows dev mode and
+  the browser's toggle is on (else a short notice). Engine version is shown without the internal `excel-` prefix
+  of `ENGINE_VERSION` (product rule: never mention the spreadsheet).
+- D13 — Report appendix lists every calculator in dependency order (`calculatorsInOrder()`), skipped ones included
+  (their ⚠ says "not in this project"), with the same ①②③ tables as the step panel.
