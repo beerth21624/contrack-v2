@@ -6,6 +6,8 @@
 //    `opening|<wall part>|<brick>|<thickness>` outputs below.
 // Spec: docs/excel-spec/03-roof-brick-plaster-doors.md §6.
 import { defineCalculator, type SlotRow } from '../types';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
+import { DOOR_WINDOW_TRACE_LABELS } from './trace.labels';
 
 // ─── Dropdown lists of the sheet (exact Excel strings, trailing spaces trimmed — spec oddity 5) ───
 
@@ -121,21 +123,47 @@ export function scheduleRows(input: DoorWindowInput): TaggedRow[] {
     return tagged;
 }
 
-export function computeDoorWindow(input: DoorWindowInput): Record<string, number> {
+/** Dev mode: every intermediate value of one schedule row (call inside `tr.row`). Observes only. */
+function traceOpeningRow(r: OpeningRow, c: OpeningRowCalc, tr: Tracer): void {
+    const w = num(r.width), h = num(r.height), n = num(r.count);
+    tr.step('area', c.area, { width: w, height: h });
+    tr.step('total', c.total, { area: c.area, count: n });
+    if (r.matPrice !== null) tr.step('matUnitTyped', c.matUnit, { matPrice: r.matPrice });
+    else if (isType(r, ALUMINIUM)) tr.step('matUnitAlu', c.matUnit, { width: w, height: h, rate: num(r.rate) });
+    else if (isType(r, WOOD)) { tr.constant('woodMat', WOOD_DEFAULT_PRICE.mat); tr.step('matUnitWood', c.matUnit, { woodMat: WOOD_DEFAULT_PRICE.mat }); }
+    else tr.step('matUnitNone', c.matUnit, {});
+    if (r.labPrice !== null) tr.step('labUnitTyped', c.labUnit, { labPrice: r.labPrice });
+    else if (isType(r, WOOD)) { tr.constant('woodLab', WOOD_DEFAULT_PRICE.lab); tr.step('labUnitWood', c.labUnit, { woodLab: WOOD_DEFAULT_PRICE.lab }); }
+    else tr.step('labUnitNone', c.labUnit, {});
+    if (isType(r, WOOD) || isType(r, ALUMINIUM)) tr.step('amount', n * (c.matUnit + c.labUnit), { count: n, matUnit: c.matUnit, labUnit: c.labUnit });
+}
+
+export function computeDoorWindow(input: DoorWindowInput, tr: Tracer = NO_TRACE): Record<string, number> {
     const rows = scheduleRows(input);
     const out: Record<string, number> = {};
     // Every standard combination is present (0 when no opening), plus any other combination typed.
     for (const w of WALL_PARTS) for (const b of OPENING_WALL_TYPES) for (const t of BRICK_THICKNESSES) out[openingKey(w, b, t)] = 0;
     let openingTotal = 0, woodCount = 0, aluCount = 0, woodAmount = 0, aluAmount = 0;
-    for (const { row } of rows) {
-        const c = openingRowCalc(row);
+    const per = { total: [] as number[], woodN: [] as number[], aluN: [] as number[], woodAmt: [] as number[], aluAmt: [] as number[] };
+    const perKey = new Map<string, { parts: [string, string, string]; totals: number[] }>();
+    rows.forEach(({ row, key: rowKey }, idx) => {
+        const c = tr.enabled ? tr.row(idx, rowKey, () => { const x = openingRowCalc(row); traceOpeningRow(row, x, tr); return x; }) : openingRowCalc(row);
         const key = openingKey(row.wallPart, row.brick, row.thickness);
         out[key] = (out[key] ?? 0) + c.total;            // brick H = SUMIFS(K, D, B, E, C, F, D)
         openingTotal += c.total;
         const n = num(row.count);
         if (isType(row, WOOD)) { woodCount += n; woodAmount += n * (c.matUnit + c.labUnit); }
         if (isType(row, ALUMINIUM)) { aluCount += n; aluAmount += n * (c.matUnit + c.labUnit); }
-    }
+        if (tr.enabled) {
+            per.total.push(c.total);
+            const amt = n * (c.matUnit + c.labUnit);
+            if (isType(row, WOOD)) { per.woodN.push(n); per.woodAmt.push(amt); }
+            if (isType(row, ALUMINIUM)) { per.aluN.push(n); per.aluAmt.push(amt); }
+            const g = perKey.get(key) ?? { parts: [row.wallPart.trim(), row.brick.trim(), row.thickness.trim()] as [string, string, string], totals: [] };
+            g.totals.push(c.total);
+            perKey.set(key, g);
+        }
+    });
     out['opening.total'] = openingTotal;
     out['aluminium.count'] = aluCount;
     out['aluminium.amount'] = aluAmount;
@@ -143,6 +171,17 @@ export function computeDoorWindow(input: DoorWindowInput): Record<string, number
     out['wood.amount'] = woodAmount;
     // BOQ E191 วงกบประตูไม้ = SUMIF(C, "บานไม้", G) — doors and windows alike (Excel counts W4; open question).
     out.R191 = woodCount;
+    if (tr.enabled) {
+        for (const g of perKey.values()) {
+            tr.step('opening', out[openingKey(...g.parts)] ?? 0, { total: g.totals }, { params: { wallPart: g.parts[0], brick: g.parts[1], thickness: g.parts[2] } });
+        }
+        tr.step('openingTotal', openingTotal, { total: per.total });
+        tr.step('aluminiumCount', aluCount, { count: per.aluN });
+        tr.step('aluminiumAmount', aluAmount, { amount: per.aluAmt });
+        tr.step('woodCount', woodCount, { count: per.woodN });
+        tr.step('woodAmount', woodAmount, { amount: per.woodAmt });
+        tr.step('woodFrames', woodCount, { woodCount });
+    }
     return out;
 }
 
@@ -206,7 +245,8 @@ export const doorWindow = defineCalculator<DoorWindowInput>({
     // A real project starts with an empty schedule: every opening is read off the plan's door/window table.
     // Prices are per row (aluminium rate, typed prices) and come with each new row (ALUMINIUM_RATES, WOOD_DEFAULT_PRICE).
     blank: () => ({ doors: [], windows: [] }),
-    compute: (input) => computeDoorWindow(input),
+    compute: (input, _ctx, tr = NO_TRACE) => computeDoorWindow(input, tr),
+    traceLabels: DOOR_WINDOW_TRACE_LABELS,
     boqLinks: [{ line: 'R191', field: 'qty', output: 'R191' }],
     boqSlots: (input) => ({
         aluminium: slotRows(input, ALUMINIUM),   // BOQ 24 rows 234…

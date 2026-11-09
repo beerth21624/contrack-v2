@@ -4,6 +4,8 @@
 // Spec: docs/excel-spec/01-boq-home-and-steps-00-05.md, Section 3.
 import { roundUp } from '../../boq/engine';
 import { defineCalculator } from '../types';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
+import { SITE_CAMP_TRACE_LABELS } from './trace.labels';
 
 /** หมวด of the take-off table. Each group takes its room count from one input. */
 export type CampGroupId = 'camp' | 'toilet' | 'shower' | 'store';
@@ -63,12 +65,19 @@ export interface CampLineResult {
     total: number;        // รวมวัสดุ = ปริมาณรวมเผื่อ × ราคาต่อหน่วย
 }
 
-export function campLine(line: CampMaterialLine, input: SiteCampInput): CampLineResult {
+export function campLine(line: CampMaterialLine, input: SiteCampInput, tr: Tracer = NO_TRACE): CampLineResult {
     const rooms = groupRooms(input, line.group);
     const basePer = num(line.basePer);
     const calcQty = basePer === 0 ? 0 : num(line.baseQty) * rooms / basePer;
     const grossQty = roundUp(calcQty * (1 + num(input.waste)));
-    return { rooms, calcQty, grossQty, total: grossQty * num(line.unitPrice) };
+    const total = grossQty * num(line.unitPrice);
+    if (tr.enabled) {
+        tr.step('rooms', rooms, { rooms });
+        tr.step('calcQty', calcQty, { baseQty: num(line.baseQty), rooms, basePer });
+        tr.step('grossQty', grossQty, { calcQty, waste: num(input.waste) });
+        tr.step('total', total, { grossQty, unitPrice: num(line.unitPrice) });
+    }
+    return { rooms, calcQty, grossQty, total };
 }
 
 const row = (group: CampGroupId, code: string, item: string, unit: string, baseQty: number, basePer: number,
@@ -102,7 +111,7 @@ export const siteCamp = defineCalculator<SiteCampInput>({
         labourRate: 0.2,
         materials: sampleMaterials(),
     }),
-    compute: (input) => {
+    compute: (input, _ctx, tr = NO_TRACE) => {
         const out: Record<string, number> = {
             workerRooms: num(input.workerRooms),
             toilets: num(input.toilets),
@@ -125,10 +134,30 @@ export const siteCamp = defineCalculator<SiteCampInput>({
         out.materialTotal = materialTotal;
         out.labour = materialTotal * rate;          // ค่าแรงติดตั้ง = 20% ของค่าวัสดุ
         out.total = out.materialTotal + out.labour;
+        if (tr.enabled) {
+            // Every take-off row (per-row steps), then the per-group and overall totals.
+            const totals = new Map<CampGroupId, number[]>(CAMP_GROUPS.map(g => [g.id, []]));
+            input.materials.forEach((l, i) => {
+                const c = tr.row(i, l.code || `#${i + 1}`, () => campLine(l, input, tr));
+                totals.get(l.group)?.push(c.total);
+            });
+            const at = (k: string) => out[k] ?? 0;
+            for (const g of CAMP_GROUPS) {
+                const rooms = num(input[g.rooms]);
+                tr.step(`mat_${g.id}`, at(`mat_${g.id}`), { total: totals.get(g.id) ?? [] });
+                tr.step(`lab_${g.id}`, at(`lab_${g.id}`), { [`mat_${g.id}`]: at(`mat_${g.id}`), labourRate: rate });
+                tr.step(`matPerRoom_${g.id}`, at(`matPerRoom_${g.id}`), { [`mat_${g.id}`]: at(`mat_${g.id}`), [g.rooms]: rooms });
+                tr.step(`labPerRoom_${g.id}`, at(`labPerRoom_${g.id}`), { [`lab_${g.id}`]: at(`lab_${g.id}`), [g.rooms]: rooms });
+            }
+            tr.step('materialTotal', materialTotal, { mat: CAMP_GROUPS.map(g => at(`mat_${g.id}`)) });
+            tr.step('labour', at('labour'), { materialTotal, labourRate: rate });
+            tr.step('grandTotal', at('total'), { materialTotal, labour: at('labour') });
+        }
         return out;
     },
     // Only the room counts are linked (D3). The BOQ prices 7,000 / 4,700 / 4,500 / 7,000 stay as typed in
     // Excel: the take-off is incomplete (ห้องอาบน้ำ / สโตร์ cut off in the deck), see D8.
+    traceLabels: SITE_CAMP_TRACE_LABELS,
     boqLinks: CAMP_GROUPS.map(g => ({ line: g.boqLine, field: 'qty' as const, output: g.rooms })),
 });
 

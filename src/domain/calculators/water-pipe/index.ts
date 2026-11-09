@@ -3,8 +3,10 @@
 // The BOQ template applies the 15 % waste, labour on gross (L = K × H, §0.1 / D11) and the 50 % consumables row R215;
 // this sheet only supplies E213:E214 (and D213:D214 = B5:B6). Same table and rules as the waste-pipe sheet.
 import { defineCalculator } from '../types';
+import { NO_TRACE } from '../../trace/tracer';
+import { WATER_PIPE_TRACE_LABELS } from './trace.labels';
 import {
-    blankRuns, computePipeRuns, pipeRunsBoqText, type PipeBoqLine, type PipePlainLabel, type PipeRunsInput,
+    blankRuns, computePipeRuns, pipeRunTargets, runLength, pipeRunsBoqText, type PipeBoqLine, type PipePlainLabel, type PipeRunsInput,
 } from '../waste-pipe/pipe-runs';
 
 export {
@@ -59,7 +61,33 @@ export const waterPipe = defineCalculator<WaterPipeInput>({
     defaults,
     // The two fixed rows (B/C typed in Excel, not inputs) with no length: every BOQ line 0.
     blank: () => blankRuns(defaults()),
-    compute: (input) => computePipeRuns(input, WATER_PIPE_BOQ_LINES),
+    compute: (input, _ctx, tr = NO_TRACE) => {
+        const out = computePipeRuns(input, WATER_PIPE_BOQ_LINES);
+        if (tr.enabled) {
+            // Observe only: the lengths are re-read with the same helpers computePipeRuns uses.
+            const targets = pipeRunTargets(input.runs, WATER_PIPE_BOQ_LINES);
+            const lens: number[] = [];
+            const perLine = new Map<string, number[]>(WATER_PIPE_BOQ_LINES.map(l => [l.line, []]));
+            const unlinked: number[] = [];
+            input.runs.forEach((r, i) => {
+                const len = tr.row(i, r.label.trim() || `#${i + 1}`, () => {
+                    const v = runLength(r);
+                    tr.step('length', v, { horizontal: Number.isFinite(r.horizontal) ? r.horizontal : 0, vertical: Number.isFinite(r.vertical) ? r.vertical : 0 });
+                    return v;
+                });
+                lens.push(len);
+                const t = targets[i];
+                const line = t === null || t === undefined ? undefined : WATER_PIPE_BOQ_LINES[t]?.line;
+                if (line === undefined) unlinked.push(len);
+                else perLine.get(line)?.push(len);
+            });
+            for (const l of WATER_PIPE_BOQ_LINES) tr.step(`line_${l.line}`, out[l.line] ?? 0, { length: perLine.get(l.line) ?? [] });
+            tr.step('total', out.total ?? 0, { length: lens });
+            tr.step('unlinked', out.unlinked ?? 0, { length: unlinked });
+        }
+        return out;
+    },
+    traceLabels: WATER_PIPE_TRACE_LABELS,
     boqLinks: WATER_PIPE_BOQ_LINES.map(({ line }) => ({ line, field: 'qty' as const, output: line })),
     boqText: (input) => pipeRunsBoqText(input, WATER_PIPE_BOQ_LINES),
 });

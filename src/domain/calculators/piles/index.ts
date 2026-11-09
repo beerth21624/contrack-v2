@@ -4,6 +4,8 @@
 // small spec form whose fields compose that note. BOQ R39 ตัดหัวเสาเข็ม = E35 through the template.
 // Spec: docs/excel-spec/01-boq-home-and-steps-00-05.md, Section 5.
 import { defineCalculator } from '../types';
+import { NO_TRACE } from '../../trace/tracer';
+import { PILES_TRACE_LABELS } from './trace.labels';
 
 export interface PilesInput {
     pileType: string;      // ชนิดเสาเข็ม
@@ -81,10 +83,20 @@ export const piles = defineCalculator<PilesInput>({
         pricePerPile: 2500,
         extraSpec: '',
     }),
-    compute: (input) => ({
-        count: num(input.count),               // E35 จำนวน (ต้น)
-        pricePerPile: num(input.pricePerPile), // K35 ราคาเหมาต่อต้น (labour column, material 0)
-    }),
+    compute: (input, _ctx, tr = NO_TRACE) => {
+        const out = {
+            count: num(input.count),               // E35 จำนวน (ต้น)
+            pricePerPile: num(input.pricePerPile), // K35 ราคาเหมาต่อต้น (labour column, material 0)
+        };
+        if (tr.enabled) {
+            tr.step('pileCount', out.count, { count: out.count });
+            tr.step('pilePrice', out.pricePerPile, { pricePerPile: out.pricePerPile });
+            // What the page shows as the total pile cost.
+            tr.step('totalCost', out.count * out.pricePerPile, { count: out.count, pricePerPile: out.pricePerPile });
+        }
+        return out;
+    },
+    traceLabels: PILES_TRACE_LABELS,
     boqLinks: [
         { line: 'R35', field: 'qty', output: 'count' },
         { line: 'R35', field: 'lab', output: 'pricePerPile' },

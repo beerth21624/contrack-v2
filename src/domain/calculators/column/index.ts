@@ -2,6 +2,8 @@
 // column rebar block 6.7 in section 6 (slot `column.rebar`, Excel rows 51–53).
 // Spec: docs/excel-spec/02-structure-steps-06-13.md §2.6 (and §1.2 row 11 of the summary sheet 24).
 import { defineCalculator } from '../types';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
+import { COLUMN_TRACE_LABELS } from './trace.labels';
 import { roundUp } from '../../boq/engine';
 import { rebarSlotRows, REBAR_SIZES, kgPerMetre } from '../../boq/slots';
 
@@ -45,7 +47,7 @@ export interface ColumnRowCalc {
 }
 
 /** Formulas of one column row (Excel row 8, shared down the table). */
-export function columnRowCalc(r: ColumnRow): ColumnRowCalc {
+export function columnRowCalc(r: ColumnRow, tr: Tracer = NO_TRACE): ColumnRowCalc {
     const n = num(r.count), w = num(r.width), d = num(r.depth), h = num(r.height);
     const mainBarLength = h;                                   // J = F (no lap)
     const mainTotalLength = n * mainBarLength * num(r.mainCount); // K = C*J*I
@@ -55,7 +57,7 @@ export function columnRowCalc(r: ColumnRow): ColumnRowCalc {
     const stirrupLength = 2 * (w + d);                         // P = 2*(D+E), no hook
     // Q = IFERROR(C*O*P, "-")
     const stirrupTotalLength = stirrupCount === null ? null : n * stirrupCount * stirrupLength;
-    return {
+    const result: ColumnRowCalc = {
         mainBarLength,
         mainTotalLength,
         mainWeight: mainTotalLength * kgPerMetre(r.mainSize),      // L = K*SWITCH(H,…)
@@ -66,11 +68,30 @@ export function columnRowCalc(r: ColumnRow): ColumnRowCalc {
         formwork: n * (2 * (w + d)) * h,                       // T = C*(2*(D+E))*F
         concrete: n * (w * d) * h,                             // V = C*(D*E)*F
     };
+    if (tr.enabled) {
+        const kM = kgPerMetre(r.mainSize), kS = kgPerMetre(r.stirrupSize);
+        const mp = { size: r.mainSize || '-' }, sp = { size: r.stirrupSize || '-' };
+        tr.constant('kgPerM', kM, { params: mp });
+        tr.constant('kgPerM', kS, { params: sp });
+        tr.step('mainBarLength', mainBarLength, { height: h });
+        tr.step('mainTotalLength', mainTotalLength, { count: n, mainBarLength, mainCount: num(r.mainCount) });
+        tr.step('mainWeight', result.mainWeight, { mainTotalLength, kgPerM: kM }, { params: mp });
+        // Spacing 0 / blank: no stirrups (the page shows "_" / "-"; weight counts as 0).
+        if (stirrupCount !== null) tr.step('stirrupCount', stirrupCount, { height: h, stirrupSpacing: s });
+        tr.step('stirrupLength', stirrupLength, { width: w, depth: d });
+        if (stirrupTotalLength !== null) tr.step('stirrupTotalLength', stirrupTotalLength, { count: n, stirrupCount: stirrupCount ?? 0, stirrupLength });
+        tr.step('stirrupWeight', result.stirrupWeight, { stirrupTotalLength: stirrupTotalLength ?? 0, kgPerM: kS }, { params: sp });
+        tr.step('formwork', result.formwork, { count: n, width: w, depth: d, height: h });
+        tr.step('concrete', result.concrete, { count: n, width: w, depth: d, height: h });
+    }
+    return result;
 }
 
 /** Totals row 6 of the sheet. Every row is summed (Excel's ranges already cover the whole table). */
-export function computeColumn(input: ColumnInput): Record<string, number> {
-    const rows = input.columns.map(columnRowCalc);
+export function computeColumn(input: ColumnInput, tr: Tracer = NO_TRACE): Record<string, number> {
+    const rows = tr.enabled
+        ? input.columns.map((r, i) => tr.row(i, r.name || `#${i + 1}`, () => columnRowCalc(r, tr)))
+        : input.columns.map(r => columnRowCalc(r));
     const out: Record<string, number> = {
         formwork: rows.reduce((s, c) => s + c.formwork, 0),   // T6 = SUM(T8:T17)
         concrete: rows.reduce((s, c) => s + c.concrete, 0),   // V6 = SUM(V8:V17)
@@ -83,6 +104,19 @@ export function computeColumn(input: ColumnInput): Record<string, number> {
         out[`stirrup.${size}`] = stirrup;
         // Sheet 24 row 11: I11..M11 = main + stirrup of the same size
         out[`rebar.${size}`] = main + stirrup;
+    }
+    if (tr.enabled) {
+        tr.step('totalFormwork', out.formwork ?? 0, { formwork: rows.map(c => c.formwork) });
+        tr.step('totalConcrete', out.concrete ?? 0, { concrete: rows.map(c => c.concrete) });
+        for (const size of REBAR_SIZES) {
+            const mains = input.columns.flatMap((r, i) => (r.mainSize === size ? [rows[i]?.mainWeight ?? 0] : []));
+            const stirrups = input.columns.flatMap((r, i) => (r.stirrupSize === size ? [rows[i]?.stirrupWeight ?? 0] : []));
+            if (mains.length + stirrups.length === 0) continue;
+            const params = { size };
+            tr.step('totalMain', out[`main.${size}`] ?? 0, { mainWeight: mains }, { params });
+            tr.step('totalStirrup', out[`stirrup.${size}`] ?? 0, { stirrupWeight: stirrups }, { params });
+            tr.step('totalRebar', out[`rebar.${size}`] ?? 0, { mainTotal: out[`main.${size}`] ?? 0, stirrupTotal: out[`stirrup.${size}`] ?? 0 }, { params });
+        }
     }
     return out;
 }
@@ -124,7 +158,8 @@ export const column = defineCalculator<ColumnInput>({
     }),
     // A real project starts with no column types; each added row gets the Excel bar spec (newColumnRow).
     blank: () => ({ columns: [] }),
-    compute: (input) => computeColumn(input),
+    compute: (input, _ctx, tr = NO_TRACE) => computeColumn(input, tr),
+    traceLabels: COLUMN_TRACE_LABELS,
     // BOQ 11 reads sheet 24 row 11 (O11 = T6, P11 = V6).
     boqLinks: [
         { line: 'R108', field: 'qty', output: 'formwork' },
