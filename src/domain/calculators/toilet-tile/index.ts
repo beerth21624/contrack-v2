@@ -2,6 +2,8 @@
 // The water-pipe rows R213–R215 of the same section come from the water-pipe calculator (sheet 06), not from here.
 // Spec: docs/excel-spec/04-ceiling-tiles-finishes-paint.md §3.
 import { defineCalculator } from '../types';
+import { NO_TRACE } from '../../trace/tracer';
+import { TOILET_TILE_TRACE_LABELS } from './trace.labels';
 
 /** Dropdown B5:B15 สัญลักษณ์ — the BOQ key. F3 = floor non-slip granito, P3 = wall granito. */
 export const TOILET_TILE_CODES = ['F3', 'P3'] as const;
@@ -160,9 +162,27 @@ export const toiletTile = defineCalculator<ToiletTileInput>({
     }),
     // A real project: no bathrooms yet (prices sit in the BOQ, the sheet has no constants of its own).
     blank: () => ({ rows: [] }),
-    compute: (input) => {
+    compute: (input, _ctx, tr = NO_TRACE) => {
         const floorArea = toiletTileTotal(input, 'F3');
         const wallArea = toiletTileTotal(input, 'P3');
+        if (tr.enabled) {
+            const areas: (number | null)[] = input.rows.map((r, i) => tr.row(i, `${r.location.trim() || `#${i + 1}`} · ${r.code.trim() || '-'}`, () => {
+                const a = toiletTileArea(r);
+                if (a === null) return null;
+                const dims = [r.width, r.length, r.height].filter(filled);
+                const product = dims.reduce((p, v) => p * v, 1);
+                tr.step('product', product, {}, { params: { dims: dims.join(' × ') } });
+                tr.step('area', a, { product, openings: filled(r.openings) ? r.openings : 0 });
+                return a;
+            }));
+            const sumOf = (code: string) => input.rows.flatMap((r, i) => (
+                r.code.trim().toUpperCase() === code ? [areas[i] ?? 0] : []
+            ));
+            tr.step('floorArea', floorArea, { area: sumOf('F3') });
+            tr.step('wallArea', wallArea, { area: sumOf('P3') });
+            tr.step('R210', floorArea, { floorArea });
+            tr.step('R211', wallArea, { wallArea });
+        }
         return {
             floorArea,
             wallArea,
@@ -170,6 +190,7 @@ export const toiletTile = defineCalculator<ToiletTileInput>({
             R211: wallArea,   // E211 = SUMIF(B,"P3",I)
         };
     },
+    traceLabels: TOILET_TILE_TRACE_LABELS,
     boqLinks: [
         { line: 'R210', field: 'qty', output: 'R210' },
         { line: 'R211', field: 'qty', output: 'R211' },

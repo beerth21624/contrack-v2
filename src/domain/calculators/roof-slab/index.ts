@@ -4,6 +4,8 @@
 import { roundUp } from '../../boq/engine';
 import { REBAR_SIZES, rebarSlotRows, type RebarSize, kgPerMetre, isRebarSize } from '../../boq/slots';
 import { defineCalculator } from '../types';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
+import { ROOF_SLAB_TRACE_LABELS } from './trace.labels';
 
 /** Bar-size dropdown of G8:G24 (Excel leaves DB20 out). */
 export const ROOF_SLAB_BAR_SIZES = ['RB6', 'RB9', 'DB12', 'DB16'] as const;
@@ -39,17 +41,32 @@ export interface RoofSlabRowResult {
     concrete: number;    // P คอนกรีต โครงสร้าง (ลบ.ม.) = C × D × E
 }
 
-export function roofSlabRow(r: RoofSlabRow): RoofSlabRowResult {
+/** Single-argument on purpose: callers pass it to `.map(roofSlabRow)` (the index must not land in a tracer slot). */
+export const roofSlabRow = (r: RoofSlabRow): RoofSlabRowResult => tracedRoofSlabRow(r, NO_TRACE);
+
+function tracedRoofSlabRow(r: RoofSlabRow, tr: Tracer): RoofSlabRowResult {
     const area = num(r.width) * num(r.length);
     const spacing = num(r.spacing);
     const barLength = spacing > 0 ? (area / spacing) * 2 * num(r.layers) : 0;
-    return {
+    const res = {
         barLength,
         kg: barLength * kgPerMetre(r.size),
         props: roundUp(area / 0.6),
         formwork: area,
         concrete: area * num(r.thickness),
     };
+    if (tr.enabled) {
+        const kg = kgPerMetre(r.size);
+        tr.constant('propArea', 0.6);
+        tr.constant('kgPerM', kg, { params: { size: r.size || '-' } });
+        tr.step('area', area, { width: num(r.width), length: num(r.length) });
+        tr.step('barLength', barLength, { area, spacing, layers: num(r.layers) });
+        tr.step('kg', res.kg, { barLength, kgPerM: kg }, { params: { size: r.size || '-' } });
+        tr.step('props', res.props, { area, propArea: 0.6 });
+        tr.step('formwork', res.formwork, { area });
+        tr.step('concrete', res.concrete, { area, thickness: num(r.thickness) });
+    }
+    return res;
 }
 
 export interface RoofSlabTotals {
@@ -61,14 +78,25 @@ export interface RoofSlabTotals {
 }
 
 /** Row-6 totals. Excel M6/N6 sum rows 8–17 of a 17-row table; here every row counts (D1, oddity 3). */
-export function roofSlabTotals(input: RoofSlabInput): RoofSlabTotals {
+export function roofSlabTotals(input: RoofSlabInput, tr: Tracer = NO_TRACE): RoofSlabTotals {
     const t: RoofSlabTotals = { rebar: { RB6: 0, RB9: 0, DB12: 0, DB16: 0, DB20: 0 }, props: 0, formwork: 0, concrete: 0 };
-    for (const row of input.rows) {
-        const r = roofSlabRow(row);
+    const per: RoofSlabRowResult[] = [];
+    input.rows.forEach((row, i) => {
+        const r = tr.enabled ? tr.row(i, row.name || `#${i + 1}`, () => tracedRoofSlabRow(row, tr)) : roofSlabRow(row);
+        per.push(r);
         if (isRebarSize(row.size)) t.rebar[row.size] += r.kg;
         t.props += r.props;
         t.formwork += r.formwork;
         t.concrete += r.concrete;
+    });
+    if (tr.enabled) {
+        tr.step('totalProps', t.props, { props: per.map(c => c.props) });
+        tr.step('totalFormwork', t.formwork, { formwork: per.map(c => c.formwork) });
+        tr.step('totalConcrete', t.concrete, { concrete: per.map(c => c.concrete) });
+        for (const s of REBAR_SIZES) {
+            const kgs = per.filter((_, i) => input.rows[i]?.size === s).map(c => c.kg);
+            if (kgs.length > 0) tr.step('totalRebar', t.rebar[s], { kg: kgs }, { params: { size: s } });
+        }
     }
     return t;
 }
@@ -103,12 +131,13 @@ export const roofSlab = defineCalculator<RoofSlabInput>({
     defaults: () => ({ rows: [panel(1, 4.5), panel(3, 3.5), panel(1.5, 3), panel(1.5, 3)] }),
     // A real project starts with no panels; each added panel gets the Excel bar spec (newRoofSlabRow).
     blank: () => ({ rows: [] }),
-    compute: (input) => {
-        const t = roofSlabTotals(input);
+    compute: (input, _ctx, tr = NO_TRACE) => {
+        const t = roofSlabTotals(input, tr);
         const out: Record<string, number> = { props: t.props, formwork: t.formwork, concrete: t.concrete };
         for (const s of REBAR_SIZES) out[`rebar.${s}`] = t.rebar[s];
         return out;
     },
+    traceLabels: ROOF_SLAB_TRACE_LABELS,
     boqLinks: [
         { line: 'R129', field: 'qty', output: 'props' },      // 2) ไม้ค้ำยัน ← sheet24 N13 = M6
         { line: 'R131', field: 'qty', output: 'formwork' },   // 3) - ไม้แบบ ← sheet24 O13 = N6

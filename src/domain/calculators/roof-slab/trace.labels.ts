@@ -1,0 +1,78 @@
+// ─── Dev-mode trace labels of the roof slab step (docs/dev-mode/README.md §5) ───
+// Names follow the roof slab page's column titles. Never mention the spreadsheet here.
+import type { CalcTraceLabels } from '../../trace/types';
+
+export const ROOF_SLAB_TRACE_LABELS: CalcTraceLabels = {
+    th: {
+        terms: {
+            name: 'ชื่อพื้น',
+            width: 'กว้าง',
+            length: 'ยาว',
+            thickness: 'หนา',
+            size: 'ขนาดเหล็ก',
+            layers: 'วางเหล็ก (ชั้น)',
+            spacing: 'ระยะห่าง',
+            propArea: 'พื้นที่ต่อไม้ค้ำยัน 1 ต้น',
+            kgPerM: 'น้ำหนักเหล็ก {size} ต่อเมตร',
+            area: 'พื้นที่แผ่นพื้น',
+            barLength: 'ยาวรวม (เหล็ก)',
+            kg: 'น้ำหนักเหล็ก',
+            props: 'ไม้ค้ำยัน',
+            formwork: 'ไม้แบบ',
+            concrete: 'คอนกรีต โครงสร้าง',
+            'rebar.*': 'เหล็กเสริม {0} รวม',
+        },
+        units: {
+            width: 'ม.', length: 'ม.', thickness: 'ม.', spacing: 'ม.', layers: 'ชั้น', propArea: 'ตร.ม./ต้น', kgPerM: 'กก./ม.',
+            area: 'ตร.ม.', barLength: 'ม.', kg: 'กก.', props: 'ต้น', formwork: 'ตร.ม.', concrete: 'ลบ.ม.', 'rebar.*': 'กก.',
+        },
+        steps: {
+            area: { label: 'พื้นที่แผ่นพื้น', formula: '{width} × {length}', unit: 'ตร.ม.' },
+            barLength: { label: 'ยาวรวม (เหล็ก)', formula: '({area} ÷ {spacing}) × 2 × {layers} (0 เมื่อไม่มีระยะห่าง)', unit: 'ม.' },
+            kg: { label: 'น้ำหนักเหล็ก {size}', formula: '{barLength} × {kgPerM}', unit: 'กก.' },
+            props: { label: 'ไม้ค้ำยัน', formula: 'ปัดขึ้น({area} ÷ {propArea})', unit: 'ต้น' },
+            formwork: { label: 'ไม้แบบ (ท้องพื้น)', formula: '{area}', unit: 'ตร.ม.' },
+            concrete: { label: 'คอนกรีต โครงสร้าง', formula: '{area} × {thickness}', unit: 'ลบ.ม.' },
+            totalProps: { label: 'ไม้ค้ำยัน รวมทุกแผ่น', formula: 'Σ {props}', unit: 'ต้น' },
+            totalFormwork: { label: 'ไม้แบบ รวมทุกแผ่น', formula: 'Σ {formwork}', unit: 'ตร.ม.' },
+            totalConcrete: { label: 'คอนกรีต โครงสร้าง รวมทุกแผ่น', formula: 'Σ {concrete}', unit: 'ลบ.ม.' },
+            totalRebar: { label: 'เหล็กเสริม {size} รวม', formula: 'Σ {kg} (แผ่นที่ใช้ {size})', unit: 'กก.' },
+        },
+    },
+    en: {
+        terms: {
+            name: 'Slab name',
+            width: 'Width',
+            length: 'Length',
+            thickness: 'Thickness',
+            size: 'Bar size',
+            layers: 'Bar layers',
+            spacing: 'Spacing',
+            propArea: 'Area per prop',
+            kgPerM: 'Weight of {size} bar per metre',
+            area: 'Slab area',
+            barLength: 'Total bar length',
+            kg: 'Bar weight',
+            props: 'Props',
+            formwork: 'Formwork',
+            concrete: 'Structural concrete',
+            'rebar.*': 'Reinforcement {0}, total',
+        },
+        units: {
+            width: 'm', length: 'm', thickness: 'm', spacing: 'm', layers: 'layers', propArea: 'sq.m/prop', kgPerM: 'kg/m',
+            area: 'sq.m', barLength: 'm', kg: 'kg', props: 'props', formwork: 'sq.m', concrete: 'cu.m', 'rebar.*': 'kg',
+        },
+        steps: {
+            area: { label: 'Slab area', formula: '{width} × {length}', unit: 'sq.m' },
+            barLength: { label: 'Total bar length', formula: '({area} ÷ {spacing}) × 2 × {layers} (0 when there is no spacing)', unit: 'm' },
+            kg: { label: 'Bar weight {size}', formula: '{barLength} × {kgPerM}', unit: 'kg' },
+            props: { label: 'Props', formula: 'round up({area} ÷ {propArea})', unit: 'props' },
+            formwork: { label: 'Formwork (soffit)', formula: '{area}', unit: 'sq.m' },
+            concrete: { label: 'Structural concrete', formula: '{area} × {thickness}', unit: 'cu.m' },
+            totalProps: { label: 'Props, all slabs', formula: 'Σ {props}', unit: 'props' },
+            totalFormwork: { label: 'Formwork, all slabs', formula: 'Σ {formwork}', unit: 'sq.m' },
+            totalConcrete: { label: 'Structural concrete, all slabs', formula: 'Σ {concrete}', unit: 'cu.m' },
+            totalRebar: { label: 'Reinforcement {size}, total', formula: 'Σ {kg} (slabs using {size})', unit: 'kg' },
+        },
+    },
+};

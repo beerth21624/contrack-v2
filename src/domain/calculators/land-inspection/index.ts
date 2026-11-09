@@ -1,6 +1,8 @@
 // Sheet "ค่าตรวจสอบที่ดิน" (Excel v5 sheet 36) → BOQ (Home) section 0, row 9.
 // Spec: docs/excel-spec/01-boq-home-and-steps-00-05.md, Section 0.
 import { defineCalculator } from '../types';
+import { NO_TRACE } from '../../trace/tracer';
+import { LAND_INSPECTION_TRACE_LABELS } from './trace.labels';
 
 export interface CostLine {
     label: string;        // รายการค่าใช้จ่าย
@@ -92,10 +94,20 @@ export const landInspection = defineCalculator<LandInspectionInput>({
     // (2 วัน, 1 เที่ยว, 1 คืน, 1 งาน at the Excel prices = 7,500), so a blank project keeps them. The text
     // fields and checklist are already empty in the Excel sample.
     blank: sample,
-    compute: (input) => ({
+    compute: (input, _ctx, tr = NO_TRACE) => {
         // F14 ต้นทุนรวม = SUM(F8:F12)
-        total: input.items.reduce((s, l) => s + lineTotal(l), 0),
-    }),
+        const total = input.items.reduce((s, l) => s + lineTotal(l), 0);
+        if (tr.enabled) {
+            const totals = input.items.map((l, i) => tr.row(i, l.label.trim() || `#${i + 1}`, () => {
+                const v = lineTotal(l);
+                tr.step('lineTotal', v, { qty: Number.isFinite(l.qty) ? l.qty : 0, unitPrice: Number.isFinite(l.unitPrice) ? l.unitPrice : 0 });
+                return v;
+            }));
+            tr.step('total', total, { lineTotal: totals });
+        }
+        return { total };
+    },
+    traceLabels: LAND_INSPECTION_TRACE_LABELS,
     // Excel retypes F14 into BOQ K9 (labour, 1 เหมา); decision D3 links it.
     boqLinks: [{ line: 'R9', field: 'lab', output: 'total' }],
 });
