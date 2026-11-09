@@ -3,9 +3,11 @@
 // Excel links BOQ rows to fixed sheet rows (B5:C12) and types unit/prices in the BOQ; here every list row with
 // qty > 0 becomes a BOQ row priced from the item catalogue below (spec 05 D2, shared core ../shared/pick-list).
 // Spec: docs/excel-spec/05-mep-sanitary-misc.md §6.
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
 import { defineCalculator } from '../types';
+import { LOAD_CENTER_TRACE_LABELS } from './trace.labels';
 import {
-    computePickList, pickListSlotRows, pickRow, type Catalogue, type PickListInput,
+    boqRows, computePickList, matchKey, pickListSlotRows, pickRow, pickRowCalc, type Catalogue, type PickListInput,
 } from '../shared/pick-list';
 
 export type LoadCenterInput = PickListInput;
@@ -61,7 +63,34 @@ export const loadCenter = defineCalculator<LoadCenterInput>({
             pickRow(GROUND_CABLE, 5, 'ม.'),
         ],
     }),
-    compute: input => computePickList(input.items, LOAD_CENTER_CATALOGUE),
+    compute: (input, _ctx, tr = NO_TRACE) => {
+        const out = computePickList(input.items, LOAD_CENTER_CATALOGUE);
+        if (tr.enabled) tracePickList(input, tr, out);
+        return out;
+    },
+    traceLabels: LOAD_CENTER_TRACE_LABELS,
     boqLinks: [],
     boqSlots: input => ({ items: pickListSlotRows(input.items, LOAD_CENTER_CATALOGUE) }),
 });
+
+/** Dev mode: records the steps of the compute above (observes values already computed; changes nothing). */
+function tracePickList(input: PickListInput, tr: Tracer, out: Record<string, number>): void {
+    const mats: number[] = [], labs: number[] = [], totals: number[] = [];
+    for (const { row, index } of boqRows(input.items)) {
+        const c = pickRowCalc(row, LOAD_CENTER_CATALOGUE);
+        const qty = Number.isFinite(row.qty) ? row.qty : 0;
+        tr.row(index, matchKey(row.item), () => {
+            // A price that is not typed on the row comes from the hard-coded price list.
+            if (row.mat === null && c.known) tr.constant('catalogueMat', c.mat, { params: { item: matchKey(row.item) } });
+            if (row.lab === null && c.known) tr.constant('catalogueLab', c.lab, { params: { item: matchKey(row.item) } });
+            tr.step('matTotal', c.matTotal, { unitMat: c.mat, qty });
+            tr.step('labTotal', c.labTotal, { unitLab: c.lab, qty });
+            tr.step('rowTotal', c.total, { unitMat: c.mat, unitLab: c.lab, qty });
+        });
+        mats.push(c.matTotal); labs.push(c.labTotal); totals.push(c.total);
+    }
+    tr.step('rows', out.rows ?? 0, {});
+    tr.step('totalMat', out.mat ?? 0, { matTotal: mats });
+    tr.step('totalLab', out.lab ?? 0, { labTotal: labs });
+    tr.step('total', out.total ?? 0, { rowTotal: totals });
+}

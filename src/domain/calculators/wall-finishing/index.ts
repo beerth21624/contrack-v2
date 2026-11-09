@@ -8,7 +8,9 @@
 // Decision D1 (oddity O-2): Excel's E218 sums the 0.1 moulding and E219 the 0.3 moulding although the rows'
 // description and prices are the other way round. Here R218 (0.3, 400/200) = length of the 0.3 moulding and
 // R219 (0.1, 180/100) = length of the 0.1 moulding. Section 22 with the sample: 15,693 → 16,377 (+684).
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
 import { defineCalculator } from '../types';
+import { WALL_FINISHING_TRACE_LABELS } from './trace.labels';
 
 export const MOULDING_0_3 = 'บัวตกแต่งผนัง ขนาด 0.3 หนา 0.1 ม.';
 export const MOULDING_0_1 = 'บัวตกแต่งผนัง ขนาด 0.1 หนา 0.1 ม.';
@@ -117,17 +119,22 @@ export const wallFinishing = defineCalculator<WallFinishingInput>({
     }),
     // A real project: no mouldings or slat walls yet (prices sit in the BOQ; paint girths live on the paint sheet).
     blank: () => ({ rows: [] }),
-    compute: (input) => {
+    traceLabels: WALL_FINISHING_TRACE_LABELS,
+    compute: (input, _ctx, tr = NO_TRACE) => {
         const out: Record<string, number> = {};
         let mouldingPaintArea = 0;
+        const paintParts: number[] = [];
         for (const m of MOULDINGS) {
             const len = mouldingLength(input, m.item);
             out[`moulding.${m.item}`] = len;
             out[`moulding.${m.key}`] = len;
             // Paint sheet C11 `=(0.5*13)+(0.3*11)`: length × girth (face + 2 × thickness).
-            mouldingPaintArea += len * (m.face + 2 * m.thickness);
+            const part = len * (m.face + 2 * m.thickness);
+            paintParts.push(part);
+            mouldingPaintArea += part;
         }
         const slatWallArea = slatArea(input);
+        if (tr.enabled) traceWallFinishing(input, tr, out, paintParts, mouldingPaintArea, slatWallArea);
         return {
             ...out,
             slatWallArea,
@@ -143,3 +150,35 @@ export const wallFinishing = defineCalculator<WallFinishingInput>({
         { line: 'R220', field: 'qty', output: 'R220' },
     ],
 });
+
+/** Dev mode: records the steps of the compute above (observes values already computed; changes nothing). */
+function traceWallFinishing(
+    input: WallFinishingInput, tr: Tracer, out: Record<string, number>, paintParts: number[],
+    mouldingPaintArea: number, slatWallArea: number,
+): void {
+    const perMoulding = new Map<string, number[]>(MOULDINGS.map(m => [m.item, []]));
+    const slats: number[] = [];
+    input.rows.forEach((r, i) => {
+        const label = r.location.trim() || `#${i + 1}`;
+        const len = wallFinishingLength(r);
+        const area = wallFinishingArea(r);
+        if (len !== null) {
+            tr.row(i, label, () => tr.step('mouldingRowLength', len, { width: num(r.width), length: num(r.length) }));
+            perMoulding.get(r.item.trim())?.push(len);
+        }
+        if (area !== null) {
+            tr.row(i, label, () => tr.step('slatRowArea', area, { width: num(r.width), length: num(r.length) }));
+            slats.push(area);
+        }
+    });
+    MOULDINGS.forEach((m, k) => {
+        const params = { size: m.key };
+        tr.constant('mouldingFace', m.face, { params });
+        tr.constant('mouldingThickness', m.thickness, { params });
+        tr.step('mouldingTotal', out[`moulding.${m.key}`] ?? 0, { mouldingRowLength: perMoulding.get(m.item) ?? [] }, { params });
+        tr.step('mouldingPaint', paintParts[k] ?? 0,
+            { mouldingTotal: out[`moulding.${m.key}`] ?? 0, mouldingFace: m.face, mouldingThickness: m.thickness }, { params });
+    });
+    tr.step('mouldingPaintArea', mouldingPaintArea, { mouldingPaint: paintParts });
+    tr.step('slatWallArea', slatWallArea, { slatRowArea: slats });
+}

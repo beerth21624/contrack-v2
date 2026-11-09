@@ -3,7 +3,9 @@
 // Excel goes through sheet 24 (ตารางสรุปวัสดุงานโครงสร้าง row 12); the app links straight to the BOQ rows.
 import { roundUp } from '../../boq/engine';
 import { REBAR_SIZES, rebarSlotRows, type RebarSize, kgPerMetre, isRebarSize } from '../../boq/slots';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
 import { defineCalculator } from '../types';
+import { ROOF_BEAM_TRACE_LABELS } from './trace.labels';
 
 /** Bar-size dropdown of G8:G21 / L8:L21. */
 export const ROOF_BEAM_BAR_SIZES = ['RB6', 'RB9', 'DB12', 'DB16', 'DB20'] as const;
@@ -44,14 +46,20 @@ export interface RoofBeamRowResult {
     concrete: number;              // V คอนกรีต โครงสร้าง (ลบ.ม.) = C × D × E
 }
 
-export function roofBeamRow(r: RoofBeamRow): RoofBeamRowResult {
+export const roofBeamRowLabel = (r: RoofBeamRow, i: number): string => r.name || `#${i + 1}`;
+
+/** One row (callers pass it to `.map`, so it takes no tracer argument: `roofBeamRowTraced` is the traced form). */
+export const roofBeamRow = (r: RoofBeamRow): RoofBeamRowResult => roofBeamRowTraced(r, NO_TRACE);
+
+/** One row. `tr` (dev mode) records every intermediate value; the arithmetic is the same with or without it. */
+function roofBeamRowTraced(r: RoofBeamRow, tr: Tracer): RoofBeamRowResult {
     const c = num(r.width), d = num(r.depth), e = num(r.length);
     const mainLength = num(r.mainCount) * e;
     const spacing = num(r.stirrupSpacing);
     const stirrupCount = spacing > 0 ? roundUp(e / spacing) : null;
     const stirrupPerimeter = 2 * (c + d);
     const stirrupLength = stirrupCount === null ? null : stirrupCount * stirrupPerimeter;
-    return {
+    const res: RoofBeamRowResult = {
         mainLength,
         mainKg: mainLength * kgPerMetre(r.mainSize),
         stirrupCount,
@@ -63,6 +71,26 @@ export function roofBeamRow(r: RoofBeamRow): RoofBeamRowResult {
         formworkExcel: 2 * d * e + c,
         concrete: c * d * e,
     };
+    if (tr.enabled) {
+        const kM = kgPerMetre(r.mainSize), kS = kgPerMetre(r.stirrupSize);
+        tr.constant('propSpacing', 0.6);
+        tr.constant('kgPerM', kM, { params: { size: r.mainSize || '-' } });
+        tr.constant('kgPerM', kS, { params: { size: r.stirrupSize || '-' } });
+        tr.step('mainLength', res.mainLength, { mainCount: num(r.mainCount), length: e });
+        tr.step('mainKg', res.mainKg, { mainLength: res.mainLength, kgPerM: kM }, { params: { size: r.mainSize || '-' } });
+        if (stirrupCount === null) tr.step('stirrupNone', 0, {});
+        else tr.step('stirrupCount', stirrupCount, { length: e, stirrupSpacing: spacing });
+        tr.step('stirrupPerimeter', stirrupPerimeter, { width: c, depth: d });
+        if (stirrupLength !== null && stirrupCount !== null) {
+            tr.step('stirrupLength', stirrupLength, { stirrupCount, stirrupPerimeter });
+        }
+        tr.step('stirrupKg', res.stirrupKg, { stirrupLength: stirrupLength ?? 0, kgPerM: kS }, { params: { size: r.stirrupSize || '-' } });
+        tr.step('props', res.props, { length: e, propSpacing: 0.6 });
+        tr.step('formwork', res.formwork, { depth: d, length: e, width: c });
+        tr.step('formworkExcel', res.formworkExcel, { depth: d, length: e, width: c });
+        tr.step('concrete', res.concrete, { width: c, depth: d, length: e });
+    }
+    return res;
 }
 
 export interface RoofBeamTotals {
@@ -81,21 +109,38 @@ export interface RoofBeamTotals {
 const zeroBySize = (): Record<RebarSize, number> => ({ RB6: 0, RB9: 0, DB12: 0, DB16: 0, DB20: 0 });
 
 /** Row-6 totals. Excel S6/T6/V6 sum rows 8–17 of a 14-row table; here every row counts (D1, oddity 3). */
-export function roofBeamTotals(input: RoofBeamInput): RoofBeamTotals {
+export function roofBeamTotals(input: RoofBeamInput, tr: Tracer = NO_TRACE): RoofBeamTotals {
     const t: RoofBeamTotals = {
         main: zeroBySize(), stirrup: zeroBySize(), rebar: zeroBySize(),
         props: 0, formwork: 0, formworkExcel: 0, concrete: 0,
     };
-    for (const row of input.rows) {
-        const r = roofBeamRow(row);
+    const per: RoofBeamRowResult[] = [];
+    input.rows.forEach((row, i) => {
+        const r = tr.enabled ? tr.row(i, roofBeamRowLabel(row, i), () => roofBeamRowTraced(row, tr)) : roofBeamRow(row);
+        per.push(r);
         if (isRebarSize(row.mainSize)) t.main[row.mainSize] += r.mainKg;
         if (isRebarSize(row.stirrupSize)) t.stirrup[row.stirrupSize] += r.stirrupKg;
         t.props += r.props;
         t.formwork += r.formwork;
         t.formworkExcel += r.formworkExcel;
         t.concrete += r.concrete;
-    }
+    });
     for (const s of REBAR_SIZES) t.rebar[s] = t.main[s] + t.stirrup[s];
+    if (tr.enabled) {
+        tr.step('totalProps', t.props, { props: per.map(r => r.props) });
+        tr.step('totalFormwork', t.formwork, { formwork: per.map(r => r.formwork) });
+        tr.step('totalFormworkExcel', t.formworkExcel, { formworkExcel: per.map(r => r.formworkExcel) });
+        tr.step('totalConcrete', t.concrete, { concrete: per.map(r => r.concrete) });
+        for (const s of REBAR_SIZES) {
+            const mk = input.rows.flatMap((row, i) => (isRebarSize(row.mainSize) && row.mainSize === s ? [per[i]?.mainKg ?? 0] : []));
+            const sk = input.rows.flatMap((row, i) => (isRebarSize(row.stirrupSize) && row.stirrupSize === s ? [per[i]?.stirrupKg ?? 0] : []));
+            if (mk.length + sk.length === 0) continue;
+            const params = { size: s };
+            if (mk.length > 0) tr.step('totalMainKg', t.main[s], { mainKg: mk }, { params });
+            if (sk.length > 0) tr.step('totalStirrupKg', t.stirrup[s], { stirrupKg: sk }, { params });
+            tr.step('totalRebar', t.rebar[s], { mainWeight: t.main[s], stirrupWeight: t.stirrup[s] }, { params });
+        }
+    }
     return t;
 }
 
@@ -132,8 +177,9 @@ export const roofBeam = defineCalculator<RoofBeamInput>({
     }),
     // A real project starts with no beams; each added beam gets the Excel bar spec (newRoofBeamRow).
     blank: () => ({ rows: [] }),
-    compute: (input) => {
-        const t = roofBeamTotals(input);
+    traceLabels: ROOF_BEAM_TRACE_LABELS,
+    compute: (input, _ctx, tr = NO_TRACE) => {
+        const t = roofBeamTotals(input, tr);
         const out: Record<string, number> = {
             props: t.props,
             formwork: t.formwork,

@@ -1,7 +1,9 @@
 // Sheet "มุงหลังคา_Roofing" (Excel v5 sheet 23) → BOQ (Home) section 16, rows 162–176.
 // Spec: docs/excel-spec/03-roof-brick-plaster-doors.md §3. CPAC concrete tile only (deck p70 "อันนี้แค่หลังคา CPAC").
 import { roundUp } from '../../boq/engine';
+import { NO_TRACE, type Tracer } from '../../trace/tracer';
 import { defineCalculator } from '../types';
+import { ROOFING_TRACE_LABELS } from './trace.labels';
 
 /** D หน่วย (of the factor) — Excel dropdown D5:D21. */
 export const ROOFING_FACTOR_UNITS = ['ตร.ม./ม้วน', 'แผ่น/ตร.ม.', 'แผ่น/ม.', 'ม./แผ่น', 'แผ่น'] as const;
@@ -155,7 +157,8 @@ export const roofing = defineCalculator<RoofingInput>({
     // rows keep their items, factors and units (CPAC spec); slope-area and same-as-row links stay. The rake row's own
     // pitch starts at the roof pitch (0), so the journey page can keep it following the roof pitch.
     blank: () => blankInput(),
-    compute: (input) => computeRoofing(input),
+    compute: (input, _ctx, tr = NO_TRACE) => computeRoofing(input, tr),
+    traceLabels: ROOFING_TRACE_LABELS,
     boqLinks: [
         ...BOQ_LINES.map(line => ({ line, field: 'qty' as const, output: line })),
         { line: 'R175', field: 'qty', output: 'R175' },
@@ -211,7 +214,7 @@ function blankInput(): RoofingInput {
     };
 }
 
-function computeRoofing(input: RoofingInput): Record<string, number> {
+function computeRoofing(input: RoofingInput, tr: Tracer = NO_TRACE): Record<string, number> {
     const k7 = slopeArea(input);
     const takeoffs = roofingTakeoffs(input);
     const out: Record<string, number> = { slopeArea: k7 };
@@ -230,5 +233,45 @@ function computeRoofing(input: RoofingInput): Record<string, number> {
     out.R176 = takeoffs[fasciaIdx >= 0 ? fasciaIdx : FASCIA_ROW] ?? 0;
     // Named outputs for other sheets (the Paint sheet reads the fascia length).
     out.fasciaLength = out.R176;
+    if (tr.enabled) traceRoofing(input, tr, k7, takeoffs, qtys, fasciaIdx >= 0 ? fasciaIdx : FASCIA_ROW, out.R176);
     return out;
+}
+
+/** Dev mode: records the steps of computeRoofing (observes the values already computed above; changes nothing). */
+function traceRoofing(
+    input: RoofingInput, tr: Tracer, k7: number, takeoffs: number[], qtys: number[], fasciaIdx: number, fascia: number,
+): void {
+    tr.step('slopeArea', k7, { planArea: num(input.planArea), slopeDeg: num(input.slopeDeg) });
+    const byKey = new Map(input.rows.map((r, i) => [r.key, i]));
+    input.rows.forEach((r, i) => {
+        tr.row(i, r.item.trim() || `#${i + 1}`, () => {
+            const t = r.takeoff;
+            const e = takeoffs[i] ?? 0;
+            switch (t.kind) {
+                case 'slope':
+                    tr.step('takeoffSlope', e, { slopeArea: k7 });
+                    break;
+                case 'lengths':
+                    tr.step('takeoffLengths', e, { lengths: t.lengths.map(num) });
+                    break;
+                case 'rake': {
+                    const f = perCos(t.deg);
+                    tr.step('rakeFactor', f, { deg: num(t.deg) });
+                    tr.step('takeoffRake', e, { lengths: t.lengths.map(num), rakeFactor: f });
+                    break;
+                }
+                case 'row': {
+                    const j = byKey.get(t.ref);
+                    if (j === undefined) tr.step('takeoffRowMissing', e, {});
+                    else tr.step('takeoffRow', e, { refTakeoff: takeoffs[j] ?? 0 }, { params: { ref: (input.rows[j]?.item.trim() ?? '') || `#${j + 1}` } });
+                    break;
+                }
+            }
+            const c = num(r.factor);
+            if (roofingOp(r.factorUnit) === 'div') tr.step('qtyDiv', qtys[i] ?? 0, { takeoff: e, factor: c });
+            else tr.step('qtyMul', qtys[i] ?? 0, { takeoff: e, factor: c });
+        });
+    });
+    tr.step('laborSlopeArea', k7, { slopeArea: k7 });
+    tr.step('fasciaLength', fascia, { fasciaTakeoff: takeoffs[fasciaIdx] ?? 0 });
 }
