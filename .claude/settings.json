@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Bash(git push)",
+      "Bash(git push:*)",
+      "Bash(git remote add:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git checkout main)",
+      "Bash(git checkout develop)",
+      "Bash(git checkout epic/:*)",
+      "Bash(git switch main)",
+      "Bash(git switch develop)",
+      "Bash(git switch epic/:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh release:*)",
+      "Bash(gh repo:*)",
+      "Bash(docker push:*)",
+      "Bash(docker login:*)",
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.production)",
+      "Edit(Dockerfile.*)",
+      "Edit(**/*.dockerignore)",
+      "Edit(docker-compose*.yml)",
+      "Edit(backend/docker/**)",
+      "Edit(.github/**)",
+      "Edit(.claude/settings.json)",
+      "Edit(.claude/skills/customer-sandbox/**)"
+    ],
+    "ask": [
+      "Bash(git reset --hard:*)",
+      "Bash(git rebase:*)",
+      "Bash(git branch -D:*)",
+      "Bash(git clean:*)"
+    ]
+  }
+}
